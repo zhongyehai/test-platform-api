@@ -1,0 +1,27 @@
+SECRET_KEY: ''
+
+# 数据库信息
+db:
+  host: ''
+  port: 3306
+  user: ''
+  password: ''
+  database: 'test_platform'
+
+# token超时时间，单位为秒
+token_time_out: 36000
+
+# 分页信息
+page:
+  pageNum: 1
+  pageSize: 20
+
+# 即时通讯消息里面映射的前端地址
+report_addr: 'http://xxx.xxx.xxx.xxx/#/apiTest/reportShow?id='  # 展示测试报告页面的前端地址
+diff_addr: 'http://xxx.xxx.xxx.xxx/#/testManage/diffRecordShow?id='  # 展示监控报告页面的前端地址
+error_addr: 'http://xxx.xxx.xxx.xxx/#/apiTest/errorRecord'  # 展示自定义函数错误记录的前端地址
+
+# 即时达推送 的 系统错误通道
+error_push:
+  url: 'http://push.ijingniu.cn/send'
+  key: ''
