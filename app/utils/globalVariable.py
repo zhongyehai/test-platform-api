@@ -710,6 +710,7 @@ API_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r'/reports_api
 UI_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r'/reports_ui/'))  # ui测试报告文件存放地址
 DIFF_RESULT = os.path.abspath(os.path.join(basedir, ".." + r'/diff_result/'))  # yapi接口监控结果存放地址
 CASE_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, '..' + r'/case_files/'))  # 用例数据文件存放地址
+UI_CASE_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, '..' + r'/ui_case_files/'))  # ui用例数据文件存放地址
 MOCK_DATA_ADDRESS = os.path.abspath(os.path.join(basedir, '..' + r'/mock_data/'))  # mock数据文件存放地址
 CALL_BACK_ADDRESS = os.path.abspath(os.path.join(basedir, '..' + r'/call_back/'))  # 回调数据文件存放地址
 CFCA_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, '..' + r'/cfca_files/'))  # CFCA文件存放地址
@@ -732,9 +733,9 @@ def _check_file_path(paths):
 
 
 _check_file_path([
-    LOG_ADDRESS, FUNC_ADDRESS, API_REPORT_ADDRESS, UI_REPORT_ADDRESS, DIFF_RESULT, CASE_FILE_ADDRESS, MOCK_DATA_ADDRESS,
-    CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, GIT_FILE_ADDRESS, DB_BACK_UP_ADDRESS, SWAGGER_FILE_ADDRESS,
-    RUN_LOG_ADDRESS, BROWSER_DRIVER_ADDRESS
+    LOG_ADDRESS, FUNC_ADDRESS, API_REPORT_ADDRESS, UI_REPORT_ADDRESS, DIFF_RESULT, CASE_FILE_ADDRESS, UI_CASE_FILE_ADDRESS,
+    MOCK_DATA_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, GIT_FILE_ADDRESS, DB_BACK_UP_ADDRESS,
+    SWAGGER_FILE_ADDRESS, RUN_LOG_ADDRESS, BROWSER_DRIVER_ADDRESS
 ])
 
 run_api_test_log = os.path.join(RUN_LOG_ADDRESS, 'api_test.log')

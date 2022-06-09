@@ -2,9 +2,8 @@
 
 import os
 
-from ..globalVariable import CASE_FILE_ADDRESS
+from ..globalVariable import UI_CASE_FILE_ADDRESS
 from ..jsonUtil import JsonUtil
-from config.config import ui_assert_mapping
 from ..parse import extract_functions, parse_function, extract_variables
 
 
@@ -12,7 +11,7 @@ class Base(JsonUtil):
 
     def build_file_path(self, filename):
         """ 拼装要上传文件的路径 """
-        return os.path.join(CASE_FILE_ADDRESS, filename)
+        return os.path.join(UI_CASE_FILE_ADDRESS, filename)
 
     def parse_headers(self, headers_list):
         """ 解析头部信息
@@ -195,8 +194,7 @@ class StepFormatModel(Base):
         self.down_func = kwargs.get('down_func')
         self.is_run = kwargs.get('is_run')
         self.execute_type = kwargs.get('execute_type')
-        self.send_keys = kwargs.get('send_keys')
-        # self.replace_host = kwargs.get('replace_host')
+        self.send_keys = self.parse_send_keys(kwargs.get('send_keys'))
         self.extracts = kwargs.get('extracts', [])
         self.validates = kwargs.get('validates', {})
         self.data_driver = kwargs.get('data_driver', {})
@@ -206,3 +204,7 @@ class StepFormatModel(Base):
         self.element_id = kwargs.get('element_id')
         self.case_id = kwargs.get('case_id')
         self.create_user = kwargs.get('create_user')
+
+    def parse_send_keys(self, send_keys):
+        """ 解析输入内容 """
+        return self.build_file_path(send_keys) if '_is_upload' in send_keys else send_keys

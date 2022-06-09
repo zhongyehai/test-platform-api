@@ -114,14 +114,14 @@ class Driver:
         """ 点击元素 """
         self.find_element(locator).click()
 
-    def action_05clear_and_send_keys_need_input(self, locator: tuple, text: str):
-        """ 清空后输入，locator = ("id","xxx")，send_keys(locator, text) """
+    def action_05clear_and_send_keys_is_input(self, locator: tuple, text: str):
+        """ 清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
         element = self.find_element(locator)
         element.clear()
         element.send_keys(text)
 
-    def action_06send_keys_need_input(self, locator: tuple, text: str):
-        """ 追加输入，locator = ("id","xxx")，send_keys(locator, text) """
+    def action_06send_keys_is_input(self, locator: tuple, text: str):
+        """ 追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
         element = self.find_element(locator)
         element.send_keys(text)
 
@@ -129,8 +129,8 @@ class Driver:
         """ 鼠标悬停 """
         ActionChains(self.driver).move_to_element(self.find_element(locator)).perform()
 
-    def action_11js_execute_need_input(self, js: str):
-        """ 执行js """
+    def action_11js_execute_is_input(self, js: str):
+        """ 执行js， is_input标识为输入内容 """
         self.driver.execute_script(js)
 
     def action_12js_focus_element(self, locator: tuple):
@@ -145,22 +145,22 @@ class Driver:
         """ 滚动到底部 """
         self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
 
-    def action_15select_by_index_need_input(self, locator: tuple, index: int = 0):
-        """ 通过索引选中，index是索引第几个，从0开始，默认选第一个 """
+    def action_15select_by_index_is_input(self, locator: tuple, index: int = 0):
+        """ 通过索引选中，index是索引第几个，从0开始，默认选第一个， is_input标识为输入内容 """
         element = self.find_element(locator)
         Select(element).select_by_index(index)
         element.click()
 
-    def action_16select_by_value_need_input(self, locator: tuple, value: str):
-        """ 通过value选中 """
+    def action_16select_by_value_is_input(self, locator: tuple, value: str):
+        """ 通过value选中， is_input标识为输入内容 """
         Select(self.find_element(locator)).select_by_value(value)
 
-    def action_17select_by_text_need_input(self, locator: tuple, text: str):
+    def action_17select_by_text_is_input(self, locator: tuple, text: str):
         """ 通过文本值选中 """
         Select(self.find_element(locator)).select_by_visible_text(text)
 
-    def action_18deselect_by_index_need_input(self, locator: tuple, index: int):
-        """ 通过index索引定位 """
+    def action_18deselect_by_index_is_input(self, locator: tuple, index: int):
+        """ 通过index索引定位， is_input标识为输入内容 """
         Select(self.find_element(locator)).deselect_by_index(index)
 
     def action_19select_first(self, locator: tuple):
@@ -183,20 +183,20 @@ class Driver:
         """ 点击alert取消按钮 """
         return self.driver.switch_to.alert.dismiss()
 
-    def action_20switch_to_window_need_input(self, index: int, *args):
-        """ 切换到指定索引的窗口 """
+    def action_20switch_to_window_is_input(self, index: int, *args):
+        """ 切换到指定索引的窗口， is_input标识为输入内容 """
         self.driver.switch_to.window(self.driver.window_handles[int(index)])
 
     def action_20switch_to_end_window(self, *args):
         """ 切换到最后一个窗口 """
         self.driver.switch_to.window(self.driver.window_handles[-1])
 
-    def action_20upload_file_by_input_need_input(self, locator, file_path, *args):
-        """ 通过input上传文件 """
+    def action_20upload_file_by_input_is_upload(self, locator, file_path, *args):
+        """ 通过input上传文件， is_upload标识为文件上传 """
         self.find_element(locator).send_keys(file_path)
 
-    def action_20upload_file_by_perform_need_input(self, locator, file_path, *args):
-        """ 通过对话框上传文件 """
+    def action_20upload_file_by_perform_is_upload(self, locator, file_path, *args):
+        """ 通过对话框上传文件， is_upload标识为文件上传 """
         ActionChains(driver).click(self.find_element(locator)).perform()
         # https://blog.csdn.net/looker53/article/details/123962960
         # https://blog.csdn.net/qq_39314932/article/details/124233302
@@ -213,7 +213,7 @@ class Driver:
         """ 窗口缩放为指定大小 """
         return self.driver.set_window_size(float(width), float(height))
 
-    def action_24switch_handle_need_input(self, window_name: str):
+    def action_24switch_handle_is_input(self, window_name: str):
         """ 切换到窗口名对应的窗口 """
         self.driver.switch_to.window(window_name)
 
@@ -249,7 +249,7 @@ class Driver:
         """ 获取value值 """
         return self.find_element(locator).get_attribute('value')
 
-    def extract_10_attribute_need_input(self, locator: tuple, name: str, *args):
+    def extract_10_attribute_is_input(self, locator: tuple, name: str, *args):
         """ 获取指定属性 """
         return self.find_element(locator).get_attribute(name)
 

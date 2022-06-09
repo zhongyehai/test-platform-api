@@ -847,16 +847,18 @@ def __parse_testcase_tests(tests, config, project_mapping):
 
                 # build path with base_url
                 # variable in current url maybe extracted from former api
-                request_url = parse_data(
-                    test_dict["request"]["url"],
-                    test_dict["variables"],
-                    functions,
-                    raise_if_variable_not_found=False
-                )
-                test_dict["request"]["url"] = utils.build_url(
-                    base_url,
-                    request_url
-                )
+                # request_url = parse_data(
+                #     test_dict["request"]["url"],
+                #     test_dict["variables"],
+                #     functions,
+                #     raise_if_variable_not_found=False
+                # )
+                # test_dict["request"]["url"] = utils.build_url(
+                #     base_url,
+                #     request_url
+                # )
+                url = test_dict["request"]["url"]
+                test_dict["request"]["url"] = base_url + url if not url.lower().startswith('http') else url
 
         # verify priority: testcase teststep > testcase config
         if "request" in test_dict and "verify" not in test_dict["request"]:

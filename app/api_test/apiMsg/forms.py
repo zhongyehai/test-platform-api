@@ -55,6 +55,12 @@ class AddApiForm(BaseForm):
         if not field.data.split('?')[0]:
             raise ValidationError('接口地址不能为空')
 
+    def validate_choice_host(self, field):
+        """ 保存接口时，判断项目对应接口选择的环境是否已设置 """
+        env = ApiProjectEnv.get_first(project_id=self.project_id.data, env=field.data)
+        if not env.host:
+            raise ValidationError('此接口所在的服务未设置当前选择环境的域名')
+
     def validate_extracts(self, field):
         """ 校验提取数据表达式 """
         self.validate_base_extracts(field.data)

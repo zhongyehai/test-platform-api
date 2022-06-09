@@ -13,12 +13,13 @@ from flask import request, send_from_directory
 from config.config import conf
 from app.test_work import test_work
 from app.utils import restful
-from app.utils.globalVariable import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS
+from app.utils.globalVariable import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, UI_CASE_FILE_ADDRESS
 from app.baseView import BaseMethodView
 from app.utils.required import login_required
 
 folders = {
     'case': CASE_FILE_ADDRESS,
+    'ui_case': UI_CASE_FILE_ADDRESS,
     'cfca': CFCA_FILE_ADDRESS,
     'callBack': CALL_BACK_ADDRESS,
     'temp': TEMP_FILE_ADDRESS,
@@ -89,7 +90,7 @@ def check_file():
     """ 检查文件是否已存在 """
     file_name, file_type = request.args.get('name'), request.args.get('fileType')
     return restful.fail(f'文件 {file_name} 已存在') if os.path.exists(
-        os.path.join(folders.get(file_type), file_name)) else restful.success('文件不存在')
+        os.path.join(folders.get(file_type, 'case'), file_name)) else restful.success('文件不存在')
 
 
 @test_work.route('/file/download', methods=['GET'])
