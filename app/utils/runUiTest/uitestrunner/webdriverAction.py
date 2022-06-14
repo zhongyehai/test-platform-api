@@ -9,6 +9,8 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.ui import WebDriverWait
 
+from app.utils.parse import get_dict_data
+
 
 class GetDriver:
     """ 浏览器对象管理 """
@@ -37,8 +39,10 @@ class GetDriver:
 
         firefox_options.set_preference('browser.download.folderList', 2)  # 置成0代表下载到浏览器默认下载路径，设置成2则可以保存到指定的目录
         firefox_options.set_preference('browser.download.dir', 'd:\\')  # 指定存放目录
-        firefox_options.set_preference('browser.download.manager.showWhenStarting', False)  # 是否显示开始：True为显示开始，False为不显示开始
-        firefox_options.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/octet-stream')  # 对所给文件类型不再弹出框进行询问
+        firefox_options.set_preference('browser.download.manager.showWhenStarting',
+                                       False)  # 是否显示开始：True为显示开始，False为不显示开始
+        firefox_options.set_preference('browser.helperApps.neverAsk.saveToDisk',
+                                       'application/octet-stream')  # 对所给文件类型不再弹出框进行询问
 
         firefox_options.add_argument('--headless')
         firefox_options.add_argument('--no-sandbox')
@@ -184,7 +188,7 @@ class Driver:
         return self.driver.switch_to.alert.dismiss()
 
     def action_20switch_to_window_is_input(self, index: int, *args):
-        """ 切换到指定索引的窗口， is_input标识为输入内容 """
+        """ 切换到指定索引的窗口，is_input标识为输入内容 """
         self.driver.switch_to.window(self.driver.window_handles[int(index)])
 
     def action_20switch_to_end_window(self, *args):
@@ -236,6 +240,63 @@ class Driver:
     def action_29get_size(self, locator: tuple):
         """ 获取元素大小 """
         return self.find_element(locator).size
+
+    def action_30get_local_storage_value_is_input(self, key: str, *args):
+        """ 根据key从localStorage中获取数据 """
+        return self.driver.execute_script(f"window.localStorage.getItem({key});")
+
+    def action_30set_local_storage_value_is_input(self, data: dict, *args):
+        """ 以字典的形式在localStorage中设置数据 """
+        data = get_dict_data(data)
+        for key, value in data.items():
+            self.driver.execute_script(f"window.localStorage.setItem({key}, {value});")
+
+    def action_30remove_local_storage_value_is_input(self, key: str, *args):
+        """ 根据key在localStorage中删除数据 """
+        return self.driver.execute_script(f"window.localStorage.removeItem({key});")
+
+    def action_30clear_local_storage_value(self, *args):
+        """ 清空localStorage中的所有数据 """
+        return self.driver.execute_script("window.localStorage.clear();")
+
+    def action_31get_session_storage_value_is_input(self, key: str, *args):
+        """ 根据key从sessionStorage中获取数据 """
+        return self.driver.execute_script(f"window.sessionStorage.getItem({key});")
+
+    def action_31set_session_storage_value_is_input(self, data: dict, *args):
+        """ 以字典的形式在sessionStorage中设置数据 """
+        data = get_dict_data(data)
+        for key, value in data.items():
+            self.driver.execute_script(f"window.sessionStorage.setItem({key}, {value});")
+
+    def action_31remove_session_storage_value_is_input(self, key: str, *args):
+        """ 根据key在sessionStorage中删除数据 """
+        return self.driver.execute_script(f"window.sessionStorage.removeItem({key});")
+
+    def action_31clear_session_storage_value(self, *args):
+        """ 清空sessionStorage中的所有数据 """
+        return self.driver.execute_script("window.sessionStorage.clear();")
+
+    def action_32get_all_cookie(self, *args):
+        """ 获取cookie中的所有数据 """
+        return self.driver.get_cookies()
+
+    def action_32get_cookie_is_input(self, name: str, *args):
+        """ 根据key获取cookie中的指定数据 """
+        return self.driver.get_cookie(name)
+
+    def action_32add_cookie_is_input(self, cookie: dict, *args):
+        """ 以字典形式添加cookie """
+        cookie = get_dict_data(cookie)
+        return self.driver.add_cookie(cookie)
+
+    def action_32delete_cookie_is_input(self, name: str, *args):
+        """ 根据key删除cookie中的指定数据 """
+        return self.driver.delete_cookie(name)
+
+    def action_32delete_all_cookie(self, *args):
+        """ 删除cookie中的所有数据 """
+        return self.driver.delete_all_cookies()
 
     def extract_08_title(self, *args):
         """ 获取title """

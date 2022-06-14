@@ -18,6 +18,15 @@ from app.utils.regexp import variable_regexp, function_regexp, function_regexp_c
 # function_regexp_compile = re.compile(r"^([\w_]+)\(([\$\w\.\-/_ =,]*)\)$")
 # function_regexp_compile = re.compile(r"^([\w_]+)\(([\$\w\W\.\-/_ =,]*)\)$")
 
+def get_dict_data(content):
+    if isinstance(content, dict):
+        return content
+    try:
+        return json.loads(content)
+    except Exception as error:
+        return content
+
+
 def parse_list_to_dict(data_list: list):
     result = {}
     for data in data_list:
