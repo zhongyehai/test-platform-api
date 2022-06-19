@@ -16,6 +16,7 @@ from app.ui_test.element import views
 from app.ui_test.caseSet import views
 from app.ui_test.case import views
 from app.ui_test.step import views
+from app.ui_test.task import views
 from app.ui_test.report import views
 
 

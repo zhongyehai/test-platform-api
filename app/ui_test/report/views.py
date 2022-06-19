@@ -20,7 +20,7 @@ from .forms import GetReportForm, DownloadReportForm, DeleteReportForm, FindRepo
 
 @ui_test.route('/report/download', methods=['GET'])
 @login_required
-def api_download_report():
+def ui_download_report():
     """ 报告下载 """
     form = DownloadReportForm()
     if form.validate():
@@ -30,7 +30,7 @@ def api_download_report():
 
 @ui_test.route('/report/list', methods=['GET'])
 @login_required
-def api_report_list():
+def ui_report_list():
     """ 报告列表 """
     form = FindReportForm()
     if form.validate():
@@ -40,13 +40,13 @@ def api_report_list():
 
 @ui_test.route('/report/done', methods=['GET'])
 @login_required
-def api_report_is_done():
+def ui_report_is_done():
     """ 报告是否生成 """
     return restful.success(data=Report.get_first(id=request.args.to_dict().get('id')).is_done)
 
 
 @ui_test.route('/report', methods=['GET'])
-def api_get_report():
+def ui_get_report():
     """ 获取测试报告 """
     form = GetReportForm()
     if form.validate():
@@ -58,7 +58,7 @@ def api_get_report():
 
 @ui_test.route('/report', methods=['DELETE'])
 @login_required
-def api_delete_report():
+def ui_delete_report():
     """ 删除测试报告 """
     form = DeleteReportForm()
     if form.validate():

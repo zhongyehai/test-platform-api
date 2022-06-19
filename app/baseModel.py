@@ -205,3 +205,11 @@ class BaseModel(db.Model, JsonUtil):
             return {"total": result.total, "data": [model.to_dict() for model in result.items]}
         all_data = cls.query.filter(*filters).order_by(order_by).all()
         return {"total": len(all_data), "data": [model.to_dict() for model in all_data]}
+
+
+class ApschedulerJobs(BaseModel):
+    """ apscheduler任务表，防止执行数据库迁移的时候，把定时任务删除了 """
+    __tablename__ = 'apscheduler_jobs'
+    id = db.Column(db.String(191), primary_key=True, nullable=False)
+    next_run_time = db.Column(db.String(128), comment='任务下一次运行时间')
+    job_state = db.Column(db.LargeBinary(length=(2 ** 32) - 1), comment='任务详情')

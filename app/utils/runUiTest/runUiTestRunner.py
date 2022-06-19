@@ -6,6 +6,7 @@ import os
 import types
 import importlib
 from datetime import datetime
+from threading import Thread
 
 from flask.json import JSONEncoder
 
@@ -22,6 +23,7 @@ from app.ui_test.caseSet.models import UiCaeSet as Set
 from app.ui_test.case.models import UiCase as Case
 from app.ui_test.step.models import UiStep as Step
 from app.ui_test.report.models import UiReport as Report
+from app.utils.sendReport import async_send_report
 from config.config import ui_action_mapping_reverse
 
 
@@ -35,7 +37,8 @@ class RunCase:
                  task={},
                  report_id=None,
                  performer=None,
-                 create_user=None):
+                 create_user=None,
+                 is_async=True):
 
         self.project_id = project_id
         self.run_name = run_name
@@ -65,7 +68,8 @@ class RunCase:
 
         # UiTestRunner需要的数据格式
         self.DataTemplate = {
-            'project': self.run_name,  # or self.get_formated_project(self.project_id).name,
+            'is_async': is_async,
+            'project': self.run_name,
             'project_mapping': {
                 'functions': {},
                 'variables': {}
@@ -109,53 +113,106 @@ class RunCase:
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
 
-    def parse_api(self, project, api):
-        """ 把解析后的接口对象 解析为httpRunner的数据结构 """
-        return {
-            'name': api.name,  # 接口名
-            'setup_hooks': [up.strip() for up in api.up_func.split(';') if up] if api.up_func else [],
-            'teardown_hooks': [func.strip() for func in api.down_func.split(';') if func] if api.down_func else [],
-            'skip': '',  # 无条件跳过当前测试
-            'skipIf': '',  # 如果条件为真，则跳过当前测试
-            'skipUnless': '',  # 除非条件为真，否则跳过当前测试
-            'times': 1,  # 运行次数
-            'extract': api.extracts,  # 接口要提取的信息
-            'validate': api.validates,  # 接口断言信息
-            'base_url': project.host,
-            'data_type': api.data_type,
-            'request': {
-                'method': api.method,
-                'url': api.addr,
-                'headers': api.headers,  # 接口头部信息
-                'params': api.params,  # 接口查询字符串参数
-                'json': api.data_json,
-                'data': api.data_form['string'] if api.data_type.upper() == 'DATA' else api.data_xml,
-                'files': api.data_form['files'] if api.data_form else {},
-            }
-        }
+    # def parse_api(self, project, api):
+    #     """ 把解析后的接口对象 解析为httpRunner的数据结构 """
+    #     return {
+    #         'name': api.name,  # 接口名
+    #         'setup_hooks': [up.strip() for up in api.up_func.split(';') if up] if api.up_func else [],
+    #         'teardown_hooks': [func.strip() for func in api.down_func.split(';') if func] if api.down_func else [],
+    #         'skip': '',  # 无条件跳过当前测试
+    #         'skipIf': '',  # 如果条件为真，则跳过当前测试
+    #         'skipUnless': '',  # 除非条件为真，否则跳过当前测试
+    #         'times': 1,  # 运行次数
+    #         'extract': api.extracts,  # 接口要提取的信息
+    #         'validate': api.validates,  # 接口断言信息
+    #         'base_url': project.host,
+    #         'data_type': api.data_type,
+    #         'request': {
+    #             'method': api.method,
+    #             'url': api.addr,
+    #             'headers': api.headers,  # 接口头部信息
+    #             'params': api.params,  # 接口查询字符串参数
+    #             'json': api.data_json,
+    #             'data': api.data_form['string'] if api.data_type.upper() == 'DATA' else api.data_xml,
+    #             'files': api.data_form['files'] if api.data_form else {},
+    #         }
+    #     }
 
     def build_report(self, json_result):
         """ 写入测试报告到数据库, 并把数据写入到文本中 """
         result = json.loads(json_result)
         report = Report.get_first(id=self.report_id)
-        with db.auto_commit():
-            report.is_passed = 1 if result['success'] else 0
-            report.is_done = 1
+        report.update({'is_passed': 1 if result['success'] else 0, 'is_done': 1})
 
         # 测试报告写入到文本文件
         with open(os.path.join(UI_REPORT_ADDRESS, f'{report.id}.txt'), 'w') as f:
             f.write(json_result)
 
     def run_case(self):
-        """ 调 UiTestRunner().run() 执行测试 """
+        """ 调 HttpRunner().run() 执行测试 """
+
         logger.info(f'请求数据：\n{self.DataTemplate}')
+
+        if self.DataTemplate.get('is_async', 0):  # 串行执行
+            # 遍历case，以case为维度多线程执行，测试报告按顺序排列
+            run_case_dict = {}
+            for index, case in enumerate(self.DataTemplate['testcases']):
+                run_case_dict[index] = False  # 用例运行标识，索引：是否运行完成
+                temp_case = self.DataTemplate
+                temp_case['testcases'] = [case]
+                self._async_run_case(temp_case, run_case_dict, index)
+        else:  # 并行执行
+            self.sync_run_case()
+
+    def _run_case(self, case, run_case_dict, index):
+        runner = UiTestRunner()
+        runner.run(case)
+        self.update_run_case_status(run_case_dict, index, runner.summary)
+
+    def _async_run_case(self, case, run_case_dict, index):
+        """ 多线程运行用例 """
+        Thread(target=self._run_case, args=[case, run_case_dict, index]).start()
+
+    def sync_run_case(self):
+        """ 单线程运行用例 """
         runner = UiTestRunner()
         runner.run(self.DataTemplate)
         summary = runner.summary
         summary['time']['start_at'] = datetime.fromtimestamp(summary['time']['start_at']).strftime("%Y-%m-%d %H:%M:%S")
+        summary['run_type'] = self.DataTemplate.get('is_async', 0)
         jump_res = json.dumps(summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
         self.build_report(jump_res)
-        return jump_res
+
+        if self.task:  # 多线程发送测试报告
+            async_send_report(content=json.loads(jump_res), **self.task, report_id=self.report_id)
+
+    def update_run_case_status(self, run_dict, run_index, summary):
+        """ 每条用例执行完了都更新对应的运行状态，如果更新后的结果是用例全都运行了，则生成测试报告"""
+        run_dict[run_index] = summary
+        if all(run_dict.values()):  # 全都执行完毕
+            all_summary = run_dict[0]
+            all_summary['run_type'] = self.DataTemplate.get('is_async', 0)
+            all_summary['time']['start_at'] = datetime.fromtimestamp(all_summary['time']['start_at']).strftime(
+                "%Y-%m-%d %H:%M:%S")
+            for index, res in enumerate(run_dict.values()):
+                if index != 0:
+                    self.build_summary(all_summary, res, ['testcases', 'teststeps'])  # 合并用例统计, 步骤统计
+                    all_summary['details'].extend(res['details'])  # 合并测试用例数据
+                    all_summary['success'] = all([all_summary['success'], res['success']])  # 测试报告状态
+                    all_summary['time']['duration'] = summary['time']['duration']  # 总共耗时取运行最长的
+
+            jump_res = json.dumps(all_summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
+            self.build_report(jump_res)
+
+            if self.task:  # 多线程发送测试报告
+                async_send_report(content=json.loads(jump_res), **self.task, report_id=self.report_id)
+
+    def build_summary(self, source1, source2, fields):
+        """ 合并测试报告统计 """
+        for field in fields:
+            for key in source1['stat'][field]:
+                if key != 'project':
+                    source1['stat'][field][key] += source2['stat'][field][key]
 
     def parse_step(self, current_project, project, case, element, step):
         """ 解析测试步骤
@@ -174,8 +231,8 @@ class RunCase:
         headers.update(case.headers)
 
         # 如果是打开页面，则设置为项目域名+页面地址
-        if element.by == 'url':
-            element.element = project.host + element.element
+        # if element.by == 'url':
+        #     element.element = project.host + element.element
 
         return {
             'name': step.name,
@@ -191,7 +248,7 @@ class RunCase:
                 'execute_name': step.execute_name,
                 "action": step.execute_type,
                 "by_type": element.by,
-                "element": element.element,
+                "element": project.host + element.element if element.by == 'url' else element.element,  # 如果是打开页面，则设置为项目域名+页面地址
                 "text": step.send_keys
             }
         }

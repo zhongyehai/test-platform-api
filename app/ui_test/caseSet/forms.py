@@ -106,4 +106,5 @@ class FindCaseSet(BaseForm):
         project = UiProject.get_first(id=field.data)
         if not project:
             raise ValidationError(f'id为【{field.data}】的服务不存在')
-        setattr(self, 'all_sets', project.sets)
+        setattr(self, 'all_sets', project.case_sets)
+

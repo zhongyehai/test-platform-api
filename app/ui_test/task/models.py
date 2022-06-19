@@ -2,9 +2,9 @@
 from app.baseModel import BaseModel, db
 
 
-class ApiTask(BaseModel):
+class UiTask(BaseModel):
     """ 测试任务表 """
-    __tablename__ = 'api_test_task'
+    __tablename__ = 'ui_test_task'
     num = db.Column(db.Integer(), comment='任务序号')
     name = db.Column(db.String(255), comment='任务名称')
     choice_host = db.Column(db.String(10), default='test', comment='运行环境')
@@ -25,11 +25,11 @@ class ApiTask(BaseModel):
 
     set_id = db.Column(db.Text(), comment='用例集id')
 
-    project_id = db.Column(db.Integer, db.ForeignKey('api_test_project.id'), comment='所属的服务id')
-    project = db.relationship('ApiProject', backref='tasks')
+    project_id = db.Column(db.Integer, db.ForeignKey('ui_test_project.id'), comment='所属的服务id')
+    project = db.relationship('UiProject', backref='tasks')
 
     def to_dict(self, *args, **kwargs):
-        return super(ApiTask, self).to_dict(to_dict=['set_id', 'case_id'])
+        return super(UiTask, self).to_dict(to_dict=['set_id', 'case_id'])
 
     @classmethod
     def make_pagination(cls, form):

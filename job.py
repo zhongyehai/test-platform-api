@@ -15,13 +15,16 @@ from flask import request
 from flask.views import MethodView
 from flask_apscheduler import APScheduler
 
+from app.ui_test.task.models import UiTask
+from app.ui_test.caseSet.models import UiCaeSet
 from app.utils import restful
 from app.utils.parseCron import parse_cron
-from app.api_test.sets.models import ApiSet as Set, db
-from app.api_test.task.models import ApiTask as Task
+from app.api_test.sets.models import ApiSet, db
+from app.api_test.task.models import ApiTask
 from app.ucenter.user.models import User
 from app import create_app
-from app.utils.runApiTest.runHttpRunner import RunCase
+from app.utils.runApiTest.runHttpRunner import RunCase as RunApiCase
+from app.utils.runUiTest.runUiTestRunner import RunCase as RunUiCase
 from config.config import conf
 
 os.environ['TZ'] = 'Asia/Shanghai'
@@ -34,10 +37,11 @@ scheduler.init_app(job)
 scheduler.start()
 
 
-def aps_test(case_ids, task, user_id=None):
+def aps_test(case_ids, task, user_id=None, task_type='api'):
     """ 运行定时任务, 并发送测试报告 """
     user = User.get_first(id=user_id)
-    runner = RunCase(
+    run_fun = RunApiCase if task_type == 'api' else RunUiCase
+    runner = run_fun(
         project_id=task.project_id,
         run_name=task.name,
         case_id=case_ids,
@@ -49,7 +53,7 @@ def aps_test(case_ids, task, user_id=None):
     runner.run_case()
 
 
-def async_aps_test(*args):
+def async_run_test(*args):
     """ 多线程执行定时任务 """
     Thread(target=aps_test, args=args).start()
 
@@ -59,17 +63,21 @@ class JobStatus(MethodView):
 
     def post(self):
         """ 添加定时任务 """
-        user_id, task_id = request.json.get('userId'), request.json.get('taskId')
-        task = Task.get_first(id=task_id)
-        cases_id = Set.get_case_id(task.project_id, json.loads(task.set_id), json.loads(task.case_id))
+        user_id, task_id, task_type = request.json.get('userId'), request.json.get('taskId'), request.json.get('type')
+        if task_type == 'api':
+            task = ApiTask.get_first(id=task_id)
+            cases_id = ApiSet.get_case_id(task.project_id, json.loads(task.set_id), json.loads(task.case_id))
+        elif task_type == 'ui':
+            task = UiTask.get_first(id=task_id)
+            cases_id = UiCaeSet.get_case_id(task.project_id, json.loads(task.set_id), json.loads(task.case_id))
         try:
             # 把定时任务添加到apscheduler_jobs表中
-            scheduler.add_job(func=async_aps_test,  # 异步执行任务
+            scheduler.add_job(func=async_run_test,  # 异步执行任务
                               trigger='cron',
                               misfire_grace_time=60,
                               coalesce=False,
-                              args=[cases_id, task, user_id],
-                              id=str(task.id),
+                              args=[cases_id, task, user_id, task_type],
+                              id=f'{task_type}_{str(task.id)}',
                               **parse_cron(task.cron))
             task.status = '启用中'
             db.session.commit()
@@ -79,10 +87,11 @@ class JobStatus(MethodView):
 
     def delete(self):
         """ 删除定时任务 """
-        task = Task.get_first(id=request.json.get('taskId'))
+        task_type = request.json.get('type')
+        task = ApiTask.get_first(id=request.json.get('taskId')) if task_type == 'api' else UiTask.get_first(id=request.json.get('taskId'))
         with db.auto_commit():
             task.status = '禁用中'
-            scheduler.remove_job(str(task.id))  # 移除任务
+            scheduler.remove_job(f'{task_type}_{str(task.id)}')  # 移除任务
         return restful.success(f'任务 {task.name} 禁用成功')
 
 
