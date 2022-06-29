@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : SendEmail.py
-# @Software: PyCharm
+
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText

@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/11/2 14:05
-# @Author : ZhongYeHai
-# @Site : 
-# @File : models.py
-# @Software: PyCharm
+
 from app.baseModel import BaseModel, db
 
 

@@ -1,18 +1,13 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:10
-# @Author : ZhongYeHai
-# @Site : 
-# @File : forms.py
-# @Software: PyCharm
+
 from wtforms import StringField, IntegerField
-from wtforms.validators import ValidationError, Length, DataRequired
+from wtforms.validators import Length, DataRequired
 
 from app.baseForm import BaseForm
-from ..element.models import UiElement as Element
-from ..page.models import UiPage as Page
-from ..module.models import UiModule as Module
-from ..project.models import UiProject as Project
+from ..element.models import UiElement
+from ..page.models import UiPage
+from ..module.models import UiModule
+from ..project.models import UiProject
 
 
 class AddElementForm(BaseForm):
@@ -29,38 +24,40 @@ class AddElementForm(BaseForm):
 
     def validate_project_id(self, field):
         """ 校验项目id """
-        project = Project.get_first(id=field.data)
-        if not project:
-            raise ValidationError(f'id为【{field.data}】的项目不存在')
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
         setattr(self, 'project', project)
 
     def validate_module_id(self, field):
         """ 校验模块id """
-        if not Module.get_first(id=field.data):
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
+        self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
 
     def validate_page_id(self, field):
         """ 校验页面id """
-        if not Page.get_first(id=field.data):
-            raise ValidationError(f'id为【{field.data}】的页面不存在')
+        self.validate_data_is_exist(f'id为【{field.data}】的页面不存在', UiPage, id=field.data)
 
     def validate_by(self, field):
         """ 一个页面只能有一个url地址 """
-        if field.data == 'url' and Element.get_first(page_id=self.page_id.data, by='url'):
-            raise ValidationError(f'一个页面只能有一个地址')
+        self.validate_data_is_false(
+            '一个页面只能有一个地址',
+            field.data == 'url' and UiElement.get_first(page_id=self.page_id.data, by='url')
+        )
 
     def validate_name(self, field):
         """ 校验同一页面元素名不重复 """
-        if Element.get_first(name=field.data, page_id=self.page_id.data):
-            raise ValidationError(f'当前页面下，名为【{field.data}】的元素已存在')
+        self.validate_data_is_not_exist(
+            f'当前页面下，名为【{field.data}】的元素已存在',
+            UiElement,
+            name=field.data,
+            page_id=self.page_id.data
+        )
 
     def update_page_addr(self):
         """ 如果元素是页面地址，则同步修改页面表里面对应的地址 """
         if self.by.data == 'url':  # 增加url地址元素
-            page = Page.get_first(id=self.page_id.data)
+            page = UiPage.get_first(id=self.page_id.data)
             page.update({'addr': self.element.data})
         elif hasattr(self, 'old'):  # 把url改为其他元素
-            page = Page.get_first(id=self.page_id.data)
+            page = UiPage.get_first(id=self.page_id.data)
             page.update({'addr': ''})
 
 
@@ -70,23 +67,29 @@ class EditElementForm(AddElementForm):
 
     def validate_id(self, field):
         """ 校验元素id已存在 """
-        old = Element.get_first(id=field.data)
-        if not old:
-            raise ValidationError(f'id为【{field.data}】的元素不存在')
+        old = self.validate_data_is_exist(f'id为【{field.data}】的元素不存在', UiElement, id=field.data)
         setattr(self, 'old', old)
 
     def validate_name(self, field):
         """ 校验元素名不重复 """
-        old_api = Element.get_first(name=field.data, page_id=self.page_id.data)
-        if old_api and old_api.id != self.id.data:
-            raise ValidationError(f'当前页面下，名为【{field.data}】的元素已存在')
+        self.validate_data_is_not_repeat(
+            f'当前页面下，名为【{field.data}】的元素已存在',
+            UiElement,
+            self.id.data,
+            name=field.data,
+            page_id=self.page_id.data
+        )
 
     def validate_by(self, field):
         """ 一个页面只能有一个url地址 """
         if field.data == 'url':
-            element = Element.get_first(page_id=self.page_id.data, by='url')
-            if element and element.id != self.id.data:
-                raise ValidationError(f'一个页面只能有一个地址')
+            self.validate_data_is_not_repeat(
+                f'一个页面只能有一个地址',
+                UiElement,
+                self.id.data,
+                page_id=self.page_id.data,
+                by='url'
+            )
 
 
 class ValidateProjectId(BaseForm):
@@ -95,8 +98,7 @@ class ValidateProjectId(BaseForm):
 
     def validate_projectId(self, field):
         """ 校验项目id """
-        if not Project.get_first(id=field.data):
-            raise ValidationError(f'id为【{field.data}】的项目不存在')
+        self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
 
 
 class ChangeElementById(BaseForm):
@@ -107,9 +109,7 @@ class ChangeElementById(BaseForm):
 
     def validate_id(self, field):
         """ 校验元素id已存在 """
-        old = Element.get_first(id=field.data)
-        if not old:
-            raise ValidationError(f'id为【{field.data}】的元素不存在')
+        old = self.validate_data_is_exist(f'id为【{field.data}】的元素不存在', UiElement, id=field.data)
         setattr(self, 'old', old)
 
 
@@ -126,19 +126,15 @@ class GetElementById(BaseForm):
     id = IntegerField(validators=[DataRequired('元素id必传')])
 
     def validate_id(self, field):
-        element = Element.get_first(id=field.data)
-        if not element:
-            raise ValidationError(f'id为【{field.data}】的元素不存在')
-        setattr(self, 'api', element)
+        element = self.validate_data_is_exist(f'id为【{field.data}】的元素不存在', UiElement, id=field.data)
+        setattr(self, 'element', element)
 
 
 class DeleteElementForm(GetElementById):
     """ 删除元素 """
 
     def validate_id(self, field):
-        element = Element.get_first(id=field.data)
-        if not element:
-            raise ValidationError(f'id为【{field.data}】的元素不存在')
+        element = self.validate_data_is_exist(f'id为【{field.data}】的元素不存在', UiElement, id=field.data)
 
         # 校验接口是否被测试用例引用
         # case_data = Step.get_first(api_id=field.data)
@@ -146,6 +142,5 @@ class DeleteElementForm(GetElementById):
         #     case = Case.get_first(id=case_data.case_id)
         #     raise ValidationError(f'用例【{case.name}】已引用此接口，请先解除引用')
 
-        if not Project.is_can_delete(element.project_id, element):
-            raise ValidationError('不能删除别人项目下的元素')
-        setattr(self, 'api', element)
+        self.validate_data_is_true('不能删除别人项目下的元素', UiProject.is_can_delete(element.project_id, element))
+        setattr(self, 'element', element)

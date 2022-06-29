@@ -1,20 +1,19 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : views.py
-# @Software: PyCharm
+
+from threading import Thread
 
 from flask import request
+from flask_login import current_user
 
-# from ..report.models import Report
+from ..case.models import UiCase
+from ..report.models import UiReport as Report
 from app.utils import restful
 from app.utils.required import login_required
 from app.ui_test import ui_test
 from app.baseView import BaseMethodView
 from .models import UiCaeSet
-from .forms import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, DeleteCaseSetForm
+from .forms import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, DeleteCaseSetForm, RunCaseSetForm
+from ...utils.runUiTest.runUiTestRunner import RunCase
 
 
 @ui_test.route('/caseSet/list', methods=['GET'])
@@ -27,27 +26,29 @@ def ui_get_set_list():
     return restful.fail(form.get_error())
 
 
-# @ui_test.route('/caseSet/run', methods=['POST'])
-# @login_required
-# def ui_run_case_set():
-#     """ 运行用例集下的用例 """
-#     form = GetCaseSetForm()
-#     if form.validate():
-#         project_id = form.set.project_id
-#         report = Report.get_new_report(form.set.name, 'set', current_user.name, current_user.id, project_id)
-# 
-#         # 新起线程运行任务
-#         Thread(
-#             target=RunCase(
-#                 project_id=project_id,
-#                 run_name=report.name,
-#                 case_id=[case.id for case in UiCase.query.filter_by(set_id=form.set.id).order_by(UiCase.num.asc()).all()
-#                          if case.is_run],
-#                 report_id=report.id
-#             ).run_case
-#         ).start()
-#         return restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
-#     return restful.fail(form.get_error())
+@ui_test.route('/caseSet/run', methods=['POST'])
+@login_required
+def ui_run_case_set():
+    """ 运行用例集下的用例 """
+    form = RunCaseSetForm()
+    if form.validate():
+        project_id = form.set.project_id
+        report = Report.get_new_report(form.set.name, 'set', current_user.name, current_user.id, project_id)
+
+        # 新起线程运行任务
+        Thread(
+            target=RunCase(
+                project_id=project_id,
+                run_name=report.name,
+                case_id=[case.id for case in UiCase.query.filter_by(set_id=form.set.id).order_by(UiCase.num.asc()).all()
+                         if case.is_run],
+                report_id=report.id,
+                is_async=form.is_async.data,
+                env=form.env.data
+            ).run_case
+        ).start()
+        return restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
+    return restful.fail(form.get_error())
 
 
 @ui_test.route('/caseSet/tree', methods=['GET'])
@@ -75,7 +76,7 @@ class UiCaseSetView(BaseMethodView):
         if form.validate():
             form.num.data = UiCaeSet.get_insert_num(project_id=form.project_id.data)
             new_set = UiCaeSet().create(form.data)
-            return restful.success(f'名为【{form.name.data}】的用例集创建成功', new_set.to_dict())
+            return restful.success(f'用例集【{form.name.data}】创建成功', new_set.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):

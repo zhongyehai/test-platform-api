@@ -1,10 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : httpRun.py
-# @Software: PyCharm
+
 import json
 import os
 import types
@@ -17,7 +12,6 @@ from flask.json import JSONEncoder
 from app.utils.runApiTest.httprunner.api import HttpRunner
 from app.api_test.sets.models import ApiSet as Set
 from app.utils.log import logger
-from app.baseModel import db
 from app.api_test.apiMsg.models import ApiMsg
 from app.api_test.case.models import ApiCase as Case
 from app.api_test.step.models import ApiStep as Step
@@ -32,9 +26,9 @@ from app.utils.sendReport import async_send_report
 
 class BaseParse:
 
-    def __init__(self, project_id=None, name=None, report_id=None, performer=None, create_user=None):
+    def __init__(self, project_id=None, name=None, report_id=None, performer=None, create_user=None, env=None):
 
-        self.environment = None
+        self.environment = env  # 运行环境
         self.project_id = project_id
         self.run_name = name
 
@@ -52,7 +46,7 @@ class BaseParse:
         # httpRunner需要的数据格式
         self.DataTemplate = {
             'is_async': False,
-            'project': self.run_name,  # or self.get_formated_project(self.project_id).name,
+            'project': self.run_name,
             'project_mapping': {
                 'functions': {},
                 'variables': {}
@@ -165,6 +159,7 @@ class BaseParse:
         summary = runner.summary
         summary['time']['start_at'] = datetime.fromtimestamp(summary['time']['start_at']).strftime("%Y-%m-%d %H:%M:%S")
         summary['run_type'] = self.DataTemplate.get('is_async', 0)
+        summary['run_env'] = self.environment
         jump_res = json.dumps(summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
         self.build_report(jump_res)
 
@@ -177,6 +172,7 @@ class BaseParse:
         if all(run_dict.values()):  # 全都执行完毕
             all_summary = run_dict[0]
             all_summary['run_type'] = self.DataTemplate.get('is_async', 0)
+            summary['run_env'] = self.environment
             all_summary['time']['start_at'] = datetime.fromtimestamp(all_summary['time']['start_at']).strftime(
                 "%Y-%m-%d %H:%M:%S")
             for index, res in enumerate(run_dict.values()):
@@ -203,14 +199,12 @@ class BaseParse:
 class RunApi(BaseParse):
     """ 接口调试 """
 
-    def __init__(self, project_id=None, run_name=None, api_ids=None, report_id=None, task=None):
-        super().__init__(project_id, run_name, report_id)
+    def __init__(self, project_id=None, run_name=None, api_ids=None, report_id=None, task=None, env='test'):
+        super().__init__(project_id=project_id, name=run_name, report_id=report_id, env=env)
 
         self.task = task
         # 要执行的接口id
         self.api_ids = api_ids
-        self.api_obj = ApiMsg.get_first(id=self.api_ids)
-        self.environment = self.api_obj.choice_host
 
         # 解析当前服务信息
         self.project = self.get_formated_project(self.project_id)
@@ -231,16 +225,17 @@ class RunApi(BaseParse):
         }
 
         # 解析api
-        api = self.get_formated_api(self.project, self.api_obj)
+        for api_obj in self.api_ids:
+            api = self.get_formated_api(self.project, api_obj)
 
-        # 合并头部信息
-        headers = {}
-        headers.update(self.project.headers)
-        headers.update(api['request']['headers'])
-        api['request']['headers'] = headers
+            # 合并头部信息
+            headers = {}
+            headers.update(self.project.headers)
+            headers.update(api['request']['headers'])
+            api['request']['headers'] = headers
 
-        # 把api加入到步骤
-        test_case_template['teststeps'].append(api)
+            # 把api加入到步骤
+            test_case_template['teststeps'].append(api)
 
         # 更新公共变量
         test_case_template['config']['variables'].update(self.project.variables)
@@ -251,15 +246,11 @@ class RunCase(BaseParse):
     """ 运行测试用例 """
 
     def __init__(self, project_id=None, run_name=None, case_id=[], task={}, report_id=None, performer=None,
-                 create_user=None, is_async=True):
-        super().__init__(project_id, run_name, report_id, performer=performer, create_user=create_user)
+                 create_user=None, is_async=True, env='test'):
+        super().__init__(project_id=project_id, name=run_name, report_id=report_id, performer=performer,
+                         create_user=create_user, env=env)
 
         self.task = task
-        if self.task:
-            self.environment = task.get('choice_host') if isinstance(task, dict) else task.choice_host
-        else:
-            self.environment = Case.get_first(id=case_id[0]).choice_host
-
         self.DataTemplate['is_async'] = is_async
 
         # 接口对应的服务字典，在需要解析服务时，先到这里面查，没有则去数据库取出来解析
@@ -332,10 +323,6 @@ class RunCase(BaseParse):
 
             current_case = Case.get_first(id=case_id)
             current_project = self.get_formated_project(Set.get_first(id=current_case.set_id).project_id)
-
-            # 选择运行环境
-            if not self.task:
-                self.environment = current_case.choice_host
 
             # 用例格式模板
             case_template = {

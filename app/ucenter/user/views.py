@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : views.py
-# @Software: PyCharm
+
 from flask_login import login_user, logout_user, current_user
 
 from app.utils import restful
@@ -30,7 +25,9 @@ def user_list():
     """ 用户列表 """
     form = FindUserForm()
     if form.validate():
-        return restful.success(data=User.make_pagination(form))
+        if form.detail.data:  # 获取用户详情列表
+            return restful.success(data=User.make_pagination(form))
+        return restful.success(data={"data": [user.to_dict(filter_list=['id', 'name']) for user in User.get_all()]})
     return restful.fail(form.get_error())
 
 

@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/11/17 15:13
-# @Author : ZhongYeHai
-# @Site : 
-# @File : job.py
-# @Software: PyCharm
+
 import os
 import json
 import traceback
@@ -37,25 +32,22 @@ scheduler.init_app(job)
 scheduler.start()
 
 
-def aps_test(case_ids, task, user_id=None, task_type='api'):
+def async_run_test(case_ids, task, user_id=None, task_type='api'):
     """ 运行定时任务, 并发送测试报告 """
     user = User.get_first(id=user_id)
     run_fun = RunApiCase if task_type == 'api' else RunUiCase
-    runner = run_fun(
-        project_id=task.project_id,
-        run_name=task.name,
-        case_id=case_ids,
-        task=task.to_dict(),
-        performer=user.name,
-        create_user=user.id,
-        is_async=task.is_async
-    )
-    runner.run_case()
-
-
-def async_run_test(*args):
-    """ 多线程执行定时任务 """
-    Thread(target=aps_test, args=args).start()
+    Thread(
+        target=run_fun(
+            project_id=task.project_id,
+            run_name=task.name,
+            case_id=case_ids,
+            task=task.to_dict(),
+            performer=user.name,
+            create_user=user.id,
+            is_async=task.is_async,
+            env=task.env
+        ).run_case
+    ).start()
 
 
 class JobStatus(MethodView):
@@ -64,22 +56,22 @@ class JobStatus(MethodView):
     def post(self):
         """ 添加定时任务 """
         user_id, task_id, task_type = request.json.get('userId'), request.json.get('taskId'), request.json.get('type')
-        if task_type == 'api':
-            task = ApiTask.get_first(id=task_id)
-            cases_id = ApiSet.get_case_id(task.project_id, json.loads(task.set_id), json.loads(task.case_id))
-        elif task_type == 'ui':
-            task = UiTask.get_first(id=task_id)
-            cases_id = UiCaeSet.get_case_id(task.project_id, json.loads(task.set_id), json.loads(task.case_id))
+        task_model, case_set_model = (ApiTask, ApiSet) if task_type == 'api' else (UiTask, UiCaeSet)
+
+        task = task_model.get_first(id=task_id)
+        cases_id = case_set_model.get_case_id(task.project_id, json.loads(task.set_id), json.loads(task.case_id))
         try:
             # 把定时任务添加到apscheduler_jobs表中
-            scheduler.add_job(func=async_run_test,  # 异步执行任务
-                              trigger='cron',
-                              misfire_grace_time=60,
-                              coalesce=False,
-                              args=[cases_id, task, user_id, task_type],
-                              id=f'{task_type}_{str(task.id)}',
-                              **parse_cron(task.cron))
-            task.status = '启用中'
+            scheduler.add_job(
+                func=async_run_test,  # 异步执行任务
+                trigger='cron',
+                misfire_grace_time=60,
+                coalesce=False,
+                kwargs={"case_ids": cases_id, "task": task, "user_id": user_id, "task_type": task_type},
+                id=f'{task_type}_{str(task.id)}',
+                **parse_cron(task.cron)
+            )
+            task.status = 1
             db.session.commit()
             return restful.success(f'定时任务 {task.name} 启动成功')
         except Exception as error:
@@ -87,10 +79,10 @@ class JobStatus(MethodView):
 
     def delete(self):
         """ 删除定时任务 """
-        task_type = request.json.get('type')
-        task = ApiTask.get_first(id=request.json.get('taskId')) if task_type == 'api' else UiTask.get_first(id=request.json.get('taskId'))
+        task_type, task_id = request.json.get('type'), request.json.get('taskId')
+        task = ApiTask.get_first(id=task_id) if task_type == 'api' else UiTask.get_first(id=task_id)
         with db.auto_commit():
-            task.status = '禁用中'
+            task.status = 0
             scheduler.remove_job(f'{task_type}_{str(task.id)}')  # 移除任务
         return restful.success(f'任务 {task.name} 禁用成功')
 

@@ -17,6 +17,7 @@ from app.test_work.kym import views
 from app.test_work.swagger import views
 from app.test_work.yapi import views
 from app.test_work.file import views
+from app.test_work.errorRecord import views
 
 
 @test_work.before_request

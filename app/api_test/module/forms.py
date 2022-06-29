@@ -18,18 +18,19 @@ class AddModelForm(BaseForm):
 
     def validate_project_id(self, field):
         """ 服务id合法 """
-        project = ApiProject.get_first(id=field.data)
-        if not project:
-            raise ValidationError(f'id为【{field.data}】的服务不存在，请先创建')
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在，请先创建', ApiProject, id=field.data)
         setattr(self, 'project', project)
 
     def validate_name(self, field):
         """ 模块名不重复 """
-        old_module = ApiModule.get_first(
-            project_id=self.project_id.data, level=self.level.data, name=field.data, parent=self.parent.data
+        self.validate_data_is_not_exist(
+            f'当前服务中已存在名为【{field.data}】的模块',
+            ApiModule,
+            project_id=self.project_id.data,
+            level=self.level.data,
+            name=field.data,
+            parent=self.parent.data
         )
-        if old_module:
-            raise ValidationError(f'当前服务中已存在名为【{field.data}】的模块')
 
 
 class FindModelForm(BaseForm):
@@ -45,9 +46,7 @@ class GetModelForm(BaseForm):
     id = IntegerField(validators=[DataRequired('模块id必传')])
 
     def validate_id(self, field):
-        module = ApiModule.get_first(id=field.data)
-        if not module:
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', ApiModule, id=field.data)
         setattr(self, 'module', module)
 
 
@@ -56,9 +55,7 @@ class ModuleIdForm(BaseForm):
     id = IntegerField(validators=[DataRequired('模块id必传')])
 
     def validate_id(self, field):
-        module = ApiModule.get_first(id=field.data)
-        if not module:
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', ApiModule, id=field.data)
         setattr(self, 'module', module)
 
 
@@ -66,16 +63,10 @@ class DeleteModelForm(ModuleIdForm):
     """ 删除模块 """
 
     def validate_id(self, field):
-        module = ApiModule.get_first(id=field.data)
-        if not module:
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
-        if not ApiProject.is_can_delete(module.project_id, module):
-            raise ValidationError('不能删除别人服务下的模块')
-        if module.apis:
-            raise ValidationError('请先删除模块下的接口')
-        if ApiModule.get_first(parent=module.id):
-            raise ValidationError('请先删除当前模块下的子模块')
-
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', ApiModule, id=field.data)
+        self.validate_data_is_true('不能删除别人服务下的模块', ApiProject.is_can_delete(module.project_id, module))
+        self.validate_data_is_false('请先删除模块下的接口', module.apis)
+        self.validate_data_is_false('请先删除当前模块下的子模块', ApiModule.get_first(parent=module.id))
         setattr(self, 'module', module)
 
 
@@ -84,18 +75,20 @@ class EditModelForm(ModuleIdForm, AddModelForm):
 
     def validate_id(self, field):
         """ 模块必须存在 """
-        old_module = ApiModule.get_first(id=field.data)
-        if not old_module:
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
-        setattr(self, 'old_module', old_module)
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', ApiModule, id=field.data)
+        setattr(self, 'old_module', module)
 
     def validate_name(self, field):
         """ 同一个服务下，模块名不重复 """
-        old_module = ApiModule.get_first(
-            project_id=self.project_id.data, level=self.level.data, name=field.data, parent=self.parent.data
+        self.validate_data_is_not_repeat(
+            f'id为【{self.project_id.data}】的服务下已存在名为【{field.data}】的模块',
+            ApiModule,
+            self.id.data,
+            project_id=self.project_id.data,
+            level=self.level.data,
+            name=field.data,
+            parent=self.parent.data
         )
-        if old_module and old_module.id != self.id.data:
-            raise ValidationError(f'id为【{self.project_id.data}】的服务下已存在名为【{field.data}】的模块')
 
 
 class StickModuleForm(BaseForm):

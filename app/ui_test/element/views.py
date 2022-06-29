@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : views.py
-# @Software: PyCharm
+
 from flask import request
 
 from app.utils import restful
@@ -50,16 +45,16 @@ class UiElementView(BaseMethodView):
     def get(self):
         form = GetElementById()
         if form.validate():
-            return restful.success(data=form.api.to_dict())
+            return restful.success(data=form.element.to_dict())
         return restful.fail(form.get_error())
 
     def post(self):
         form = AddElementForm()
         if form.validate():
             form.num.data = UiElement.get_insert_num(module_id=form.module_id.data)
-            new_api = UiElement().create(form.data)
+            new_element = UiElement().create(form.data)
             form.update_page_addr()
-            return restful.success(f'元素【{form.name.data}】新建成功', data=new_api.to_dict())
+            return restful.success(f'元素【{form.name.data}】新建成功', data=new_element.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):
@@ -73,8 +68,8 @@ class UiElementView(BaseMethodView):
     def delete(self):
         form = DeleteElementForm()
         if form.validate():
-            form.api.delete()
-            return restful.success(f'元素【{form.api.name}】删除成功')
+            form.element.delete()
+            return restful.success(f'元素【{form.element.name}】删除成功')
         return restful.fail(form.get_error())
 
 

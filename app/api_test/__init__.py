@@ -19,7 +19,6 @@ from app.api_test.step import views
 from app.api_test.task import views
 from app.api_test.report import views
 from app.api_test.func import views
-from app.api_test.errorRecord import views
 from app.api_test.home import views
 
 

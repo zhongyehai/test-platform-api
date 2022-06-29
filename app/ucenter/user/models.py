@@ -1,21 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : models.py
-# @Software: PyCharm
+
 from werkzeug.security import check_password_hash, generate_password_hash
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from functools import wraps
 
 from flask_login import UserMixin, current_user
-from flask import current_app, request
+from flask import request
 
 from app import login_manager
 from app.baseModel import BaseModel, db
 from app.utils import restful
-from config.config import conf
 
 # 角色 与 权限映射表
 roles_permissions = db.Table(
@@ -81,7 +74,7 @@ class User(UserMixin, BaseModel):
             order_by=cls.created_time.desc())
 
     def to_dict(self, *args, **kwargs):
-        return super(User, self).to_dict(pop_list=['password_hash'])
+        return super(User, self).to_dict(pop_list=['password_hash'], filter_list=kwargs.get('filter_list', []))
 
     def can(self, permission_name):
         """ 判断当前用户是否有当前请求的权限 """

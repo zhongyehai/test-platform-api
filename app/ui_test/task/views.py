@@ -17,18 +17,6 @@ from .models import UiTask
 from .forms import RunTaskForm, AddTaskForm, EditTaskForm, HasTaskIdForm, DeleteTaskIdForm, GetTaskListForm
 
 
-def run_task(project_id, report_id, report_name, task, set_id, case_id):
-    runner = RunCase(
-        project_id=project_id,
-        run_name=report_name,
-        case_id=UiCaeSet.get_case_id(project_id, set_id, case_id),
-        task=task,
-        report_id=report_id,
-        is_async=task.get('is_async', 0)
-    )
-    runner.run_case()
-
-
 @ui_test.route('/task/run', methods=['POST'])
 @login_required
 def ui_run_task_view():
@@ -41,8 +29,15 @@ def ui_run_task_view():
 
         # 新起线程运行任务
         Thread(
-            target=run_task,
-            args=[project_id, report.id, report.name, task.to_dict(), task.loads(task.set_id), task.loads(task.case_id)]
+            target=RunCase(
+                project_id=project_id,
+                report_id=report.id,
+                run_name=report.name,
+                task=task.to_dict(),
+                case_id=UiCaeSet.get_case_id(project_id, task.loads(task.set_id), task.loads(task.case_id)),
+                is_async=form.is_async.data,
+                env=form.env.data
+            ).run_case
         ).start()
         return restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
     return restful.fail(form.get_error())
@@ -77,7 +72,7 @@ def ui_task_copy():
             new_task = UiTask()
             new_task.create(old_task.to_dict(), 'set_id', 'case_id')
             new_task.name = old_task.name + '_copy'
-            new_task.status = '禁用中'
+            new_task.status = 0
             new_task.num = UiTask.get_insert_num(project_id=old_task.project_id)
             db.session.add(new_task)
         return restful.success(msg='复制成功', data=new_task.to_dict())
@@ -98,7 +93,7 @@ class UiTaskView(BaseMethodView):
         if form.validate():
             form.num.data = UiTask.get_insert_num(project_id=form.project_id.data)
             new_task = UiTask().create(form.data, 'set_id', 'case_id')
-            return restful.success(f'定时任务【{form.name.data}】新建成功', new_task.to_dict())
+            return restful.success(f'任务【{form.name.data}】新建成功', new_task.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):
@@ -106,7 +101,7 @@ class UiTaskView(BaseMethodView):
         if form.validate():
             form.num.data = UiTask.get_insert_num(project_id=form.project_id.data)
             form.task.update(form.data, 'set_id', 'case_id')
-            return restful.success(f'定时任务【{form.name.data}】修改成功', form.task.to_dict())
+            return restful.success(f'任务【{form.name.data}】修改成功', form.task.to_dict())
         return restful.fail(form.get_error())
 
     def delete(self):
@@ -131,18 +126,18 @@ class UiTaskStatus(BaseMethodView):
                     json={'userId': current_user.id, 'taskId': task.id, 'type': 'ui'}
                 ).json()
                 if res["status"] == 200:
-                    return restful.success(f'定时任务【{form.task.name}】启用成功', data=res)
+                    return restful.success(f'任务【{form.task.name}】启用成功', data=res)
                 else:
-                    return restful.fail(f'定时任务【{form.task.name}】启用失败', data=res)
+                    return restful.fail(f'任务【{form.task.name}】启用失败', data=res)
             except Exception as error:
-                return restful.fail(f'定时任务【{form.task.name}】启用失败', data=error)
+                return restful.fail(f'任务【{form.task.name}】启用失败', data=error)
         return restful.fail(form.get_error())
 
     def delete(self):
         """ 禁用任务 """
         form = HasTaskIdForm()
         if form.validate():
-            if form.task.status != '启用中':
+            if form.task.status != 1:
                 return restful.fail(f'任务【{form.task.name}】的状态不为启用中')
             try:
                 res = requests.delete(
@@ -150,11 +145,11 @@ class UiTaskStatus(BaseMethodView):
                     json={'taskId': form.task.id, 'type': 'ui'}
                 ).json()
                 if res["status"] == 200:
-                    return restful.success(f'定时任务【{form.task.name}】禁用成功', data=res)
+                    return restful.success(f'任务【{form.task.name}】禁用成功', data=res)
                 else:
-                    return restful.fail(f'定时任务【{form.task.name}】禁用失败', data=res)
+                    return restful.fail(f'任务【{form.task.name}】禁用失败', data=res)
             except Exception as error:
-                return restful.fail(f'定时任务【{form.task.name}】禁用失败', data=error)
+                return restful.fail(f'任务【{form.task.name}】禁用失败', data=error)
         return restful.fail(form.get_error())
 
 

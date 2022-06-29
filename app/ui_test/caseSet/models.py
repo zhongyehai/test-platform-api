@@ -1,22 +1,14 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : models.py
-# @Software: PyCharm
+
 from ..case.models import UiCase
-from app.baseModel import BaseModel, db
+from app.baseModel import BaseCaseSet, db
 
 
-class UiCaeSet(BaseModel):
+class UiCaeSet(BaseCaseSet):
     """ 用例集表 """
-    __tablename__ = 'ui_test_case_set'
+    __abstract__ = False
 
-    name = db.Column(db.String(255), nullable=True, comment='用例集名称')
-    num = db.Column(db.Integer(), nullable=True, comment='用例集在对应服务下的序号')
-    level = db.Column(db.Integer(), nullable=True, default=2, comment='用例集级数')
-    parent = db.Column(db.Integer(), nullable=True, default=None, comment='上一级用例集id')
+    __tablename__ = 'ui_test_case_set'
 
     project_id = db.Column(db.Integer, db.ForeignKey('ui_test_project.id'), comment='所属的服务id')
     project = db.relationship('UiProject', backref='case_sets')  # 一对多
@@ -46,18 +38,3 @@ class UiCaeSet(BaseModel):
             ).order_by(UiCase.num.asc()).all() if case and case.is_run
         ]
         return case_ids
-
-    @classmethod
-    def make_pagination(cls, form):
-        """ 解析分页条件 """
-        filters = []
-        if form.projectId.data:
-            filters.append(cls.project_id == form.projectId.data)
-        if form.name.data:
-            filters.append(cls.name == form.name.data)
-        return cls.pagination(
-            page_num=form.pageNum.data,
-            page_size=form.pageSize.data,
-            filters=filters,
-            order_by=cls.num.asc()
-        )

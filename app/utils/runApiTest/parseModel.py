@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/3/17 9:51
-# @Author : ZhongYeHai
-# @Site :
-# @File : parseModel.py
-# @Software: PyCharm
+
 import os
 
 from app.utils.globalVariable import CASE_FILE_ADDRESS, CONTENT_TYPE
@@ -186,7 +181,7 @@ class ApiFormatModel(Base):
         self.desc = kwargs.get('desc')
         self.up_func = kwargs.get('up_func')
         self.down_func = kwargs.get('down_func')
-        self.choice_host = kwargs.get('choice_host')
+        self.env = kwargs.get('env')
         self.method = kwargs.get('method')
         self.addr = kwargs.get('addr')
         self.headers = self.parse_headers(kwargs.get('headers', {}))
@@ -210,7 +205,7 @@ class CaseFormatModel(Base):
         self.num = kwargs.get('num')
         self.name = kwargs.get('name')
         self.desc = kwargs.get('desc')
-        self.choice_host = kwargs.get('choice_host')
+        self.env = kwargs.get('env')
         self.func_files = kwargs.get('func_files')
         self.headers = self.parse_headers(kwargs.get('headers', {}))
         self.variables = self.parse_variables(kwargs.get('variables', {}))

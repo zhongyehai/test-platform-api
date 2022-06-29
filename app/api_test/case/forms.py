@@ -13,11 +13,19 @@ from ..task.models import ApiTask
 from .models import ApiCase
 
 
+class GetCaseForm(BaseForm):
+    """ 获取用例信息 """
+    id = IntegerField(validators=[DataRequired('用例id必传')])
+
+    def validate_id(self, field):
+        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', ApiCase, id=field.data)
+        setattr(self, 'case', case)
+
+
 class AddCaseForm(BaseForm):
     """ 添加用例的校验 """
     set_id = IntegerField(validators=[DataRequired('请选择用例集')])
     name = StringField(validators=[DataRequired('用例名称不能为空')])
-    choice_host = StringField(validators=[DataRequired('请选择要运行的环境')])
     func_files = StringField()
     variables = StringField()
     headers = StringField()
@@ -33,10 +41,9 @@ class AddCaseForm(BaseForm):
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """
-        if not ApiSet.get_first(id=field.data):
-            raise ValidationError(f'id为【{field.data}】的用例集不存在')
+        self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', ApiSet, id=field.data)
         self.project = ApiProject.get_first(id=ApiSet.get_first(id=self.set_id.data).project_id)
-        self.project_env = ApiProjectEnv.get_first(project_id=self.project.id, env=self.choice_host.data).to_dict()
+        self.project_env = ApiProjectEnv.get_first(project_id=self.project.id).to_dict()
 
     def validate_func_files(self, field):
         """ 合并项目选择的自定义函数和用例选择的自定义函数文件 """
@@ -80,26 +87,21 @@ class AddCaseForm(BaseForm):
 
     def validate_name(self, field):
         """ 用例名不重复 """
-        if ApiCase.get_first(name=field.data, set_id=self.set_id.data):
-            raise ValidationError(f'用例名【{field.data}】已存在')
+        self.validate_data_is_not_exist(f'用例名【{field.data}】已存在', ApiCase, name=field.data, set_id=self.set_id.data)
 
 
-class EditCaseForm(AddCaseForm):
+class EditCaseForm(GetCaseForm, AddCaseForm):
     """ 修改用例 """
-    id = IntegerField(validators=[DataRequired('用例id必传')])
-
-    def validate_id(self, field):
-        """ 校验用例id已存在 """
-        old_data = ApiCase.get_first(id=field.data)
-        if not old_data:
-            raise ValidationError(f'id为【{field.data}】的用例不存在')
-        setattr(self, 'old_data', old_data)
 
     def validate_name(self, field):
         """ 同一用例集下用例名不重复 """
-        old_data = ApiCase.get_first(name=field.data, set_id=self.set_id.data)
-        if old_data and old_data.id != self.id.data:
-            raise ValidationError(f'用例名【{field.data}】已存在')
+        self.validate_data_is_not_repeat(
+            f'用例名【{field.data}】已存在',
+            ApiCase,
+            self.id.data,
+            name=field.data,
+            set_id=self.set_id.data
+        )
 
 
 class FindCaseForm(BaseForm):
@@ -121,17 +123,16 @@ class DeleteCaseForm(BaseForm):
     id = IntegerField(validators=[DataRequired('用例id必传')])
 
     def validate_id(self, field):
-        case = ApiCase.get_first(id=field.data)
-        if not case:
-            raise ValidationError(f'没有该用例')
+        case = self.validate_data_is_exist('用例不存在', ApiCase, id=field.data)
 
-        if not ApiProject.is_can_delete(ApiSet.get_first(id=case.set_id).project_id, case):
-            raise ValidationError(f'不能删除别人的用例')
+        self.validate_data_is_true(
+            f'不能删除别人的用例',
+            ApiProject.is_can_delete(ApiSet.get_first(id=case.set_id).project_id, case)
+        )
 
         # 校验是否有定时任务已引用此用例
         for task in ApiTask.query.filter(ApiTask.case_id.like(f'%{field.data}%')).all():
-            if field.data in json.loads(task.case_id):
-                raise ValidationError(f'定时任务【{task.name}】已引用此用例，请先解除引用')
+            self.validate_data_is_false(f'定时任务【{task.name}】已引用此用例，请先解除引用', field.data in json.loads(task.case_id))
 
         # 校验是否有其他用例已引用此用例
         step = Step.get_first(quote_case=field.data)
@@ -141,24 +142,16 @@ class DeleteCaseForm(BaseForm):
         setattr(self, 'case', case)
 
 
-class GetCaseForm(BaseForm):
-    """ 获取用例信息 """
-    id = IntegerField(validators=[DataRequired('用例id必传')])
-
-    def validate_id(self, field):
-        case = ApiCase.get_first(id=field.data)
-        if not case:
-            raise ValidationError(f'id为【{field.data}】的用例不存在')
-        setattr(self, 'case', case)
-
-
 class RunCaseForm(BaseForm):
     """ 运行用例 """
     caseId = StringField(validators=[DataRequired('请选择用例')])
+    env = StringField(validators=[DataRequired('请选择运行环境')])
 
     def validate_caseId(self, field):
         """ 校验用例id存在 """
-        case = ApiCase.get_first(id=field.data)
-        if not case:
-            raise ValidationError(f'id为【{field.data}】的用例不存在')
-        setattr(self, 'case', case)
+        self.validate_data_is_true('用例id必传', self.caseId.data)
+
+        case_list = []
+        for case_id in self.caseId.data:
+            case_list.append(self.validate_data_is_exist(f'id为【{case_id}】的用例不存在', ApiCase, id=case_id))
+        setattr(self, 'case_list', case_list)

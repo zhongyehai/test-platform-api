@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/2/4 10:50
-# @Author : ZhongYeHai
-# @Site : 
-# @File : json_event.py
-# @Software: PyCharm
+
 import json
 
 

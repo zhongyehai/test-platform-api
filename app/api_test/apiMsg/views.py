@@ -17,7 +17,7 @@ from app.baseView import BaseMethodView
 from app.baseModel import db
 from ..apiMsg.models import ApiMsg
 from ...config.models import Config
-from .forms import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiById, ApiBelongToForm
+from .forms import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, ApiBelongToForm
 from config.config import assert_mapping_list
 
 
@@ -97,14 +97,17 @@ def api_run_api_msg():
     """ 跑接口信息 """
     form = RunApiMsgForm()
     if form.validate():
-        run_api = form.api
-        project_id = run_api.project_id
-        report = Report.get_new_report(run_api.name, 'api', current_user.name, current_user.id, project_id)
+        api, api_list = form.api_list[0], form.api_list
+        report = Report.get_new_report(api.name, 'api', current_user.name, current_user.id, form.projectId.data)
 
         # 新起线程运行接口
         Thread(
             target=RunApi(
-                project_id=form.projectId.data, run_name=report.name, api_ids=form.apis.data, report_id=report.id
+                project_id=form.projectId.data,
+                run_name=report.name,
+                api_ids=api_list,
+                report_id=report.id,
+                env=form.env.data
             ).run_case
         ).start()
         return restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
@@ -123,7 +126,7 @@ class ApiMsgView(BaseMethodView):
     """ 接口信息 """
 
     def get(self):
-        form = GetApiById()
+        form = GetApiByIdForm()
         if form.validate():
             return restful.success(data=form.api.to_dict())
         return restful.fail(form.get_error())
@@ -139,8 +142,8 @@ class ApiMsgView(BaseMethodView):
     def put(self):
         form = EditApiForm()
         if form.validate():
-            form.old.update(form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates')
-            return restful.success(f'接口【{form.name.data}】修改成功', form.old.to_dict())
+            form.api.update(form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates')
+            return restful.success(f'接口【{form.name.data}】修改成功', form.api.to_dict())
         return restful.fail(form.get_error())
 
     def delete(self):

@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : parse.py
-# @Software: PyCharm
+
 import ast
 import importlib
 import json
@@ -28,6 +23,7 @@ def get_dict_data(content):
 
 
 def parse_list_to_dict(data_list: list):
+    """ list转字典，如果列表中有多个相同的key，则以最后一个为准 """
     result = {}
     for data in data_list:
         if data['key']:
@@ -62,6 +58,14 @@ def parse_dict_to_list(data_dict: dict):
         'remark': None,
     })
     return result
+
+
+def update_dict_to_list(from_dict: dict, to_list: list):
+    """ 更新列表中的字典，返回更新后的列表 """
+    variables = parse_list_to_dict(to_list)
+    for key, value in from_dict.items():
+        variables.setdefault(key, value)
+    return parse_dict_to_list(variables)
 
 
 def extract_functions(content):

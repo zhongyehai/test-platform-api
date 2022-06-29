@@ -17,22 +17,23 @@ class AddProjectForm(BaseForm):
 
     def validate_name(self, field):
         """ 校验服务名不重复 """
-        if ApiProject.get_first(name=field.data):
-            raise ValidationError(f'服务名【{field.data}】已存在')
+        self.validate_data_is_not_exist(f'服务名【{field.data}】已存在', ApiProject, name=field.data)
 
     def validate_manager(self, field):
         """ 校验服务负责人是否存在 """
-        if not User.get_first(id=field.data):
-            raise ValidationError(f'id为【{field.data}】的用户不存在')
+        self.validate_data_is_exist(f'id为【{field.data}】的用户不存在', User, id=field.data)
 
     def validate_swagger(self, field):
         """ 校验swagger地址是否正确 """
         if field.data:
-            if 'swagger-ui.htm' in field.data:
-                raise ValidationError(f'swagger地址不正确，请输入获取swagger数据的地址，不要输入swagger-ui地址')
-
-            elif validators.url(field.data) is not True:
-                raise ValidationError(f'swagger地址不正确，请输入正确地址')
+            self.validate_data_is_true(
+                f'swagger地址不正确，请输入正确地址',
+                validators.url(field.data) is True
+            )
+            self.validate_data_is_true(
+                f'swagger地址不正确，请输入获取swagger数据的地址，不要输入swagger-ui地址',
+                'swagger-ui.htm' not in field.data
+            )
 
 
 class FindProjectForm(BaseForm):
@@ -50,9 +51,7 @@ class GetProjectByIdForm(BaseForm):
     id = IntegerField(validators=[DataRequired('服务id必传')])
 
     def validate_id(self, field):
-        project = ApiProject.get_first(id=field.data)
-        if not project:
-            raise ValidationError(f'id为【{field.data}】的服务不存在')
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
         setattr(self, 'project', project)
 
 
@@ -60,14 +59,9 @@ class DeleteProjectForm(GetProjectByIdForm):
     """ 删除服务 """
 
     def validate_id(self, field):
-        project = ApiProject.get_first(id=field.data)
-        if not project:
-            raise ValidationError(f'id为【{field.data}】的服务不存在')
-        else:
-            if not ApiProject.is_can_delete(project.id, project):
-                raise ValidationError(f'不能删除别人负责的服务')
-            if project.modules:
-                raise ValidationError('请先去 接口管理 删除服务下的接口模块')
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        self.validate_data_is_true('不能删除别人负责的服务', ApiProject.is_can_delete(project.id, project))
+        self.validate_data_is_false('请先去【接口管理】删除服务下的接口模块', project.modules)
         setattr(self, 'project', project)
 
 
@@ -76,9 +70,15 @@ class EditProjectForm(GetProjectByIdForm, AddProjectForm):
 
     def validate_name(self, field):
         """ 校验服务名不重复 """
-        old_project = ApiProject.get_first(name=field.data)
-        if old_project and old_project.name == field.data and old_project.id != self.id.data:
-            raise ValidationError(f'服务名【{field.data}】已存在')
+        self.validate_data_is_not_repeat(
+            f'服务名【{field.data}】已存在',
+            ApiProject,
+            self.id.data,
+            name=field.data
+        )
+        # old_project = ApiProject.get_first(name=field.data)
+        # if old_project and old_project.name == field.data and old_project.id != self.id.data:
+        #     raise ValidationError(f'服务名【{field.data}】已存在')
 
 
 class AddEnv(BaseForm):
@@ -93,9 +93,7 @@ class AddEnv(BaseForm):
     all_variables = {}
 
     def validate_project_id(self, field):
-        project = ApiProject.get_first(id=field.data)
-        if not project:
-            raise ValidationError(f'id为【{field.data}】的服务不存在')
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
         setattr(self, 'project', project)
 
     def validate_host(self, field):
@@ -138,9 +136,12 @@ class EditEnv(AddEnv):
     id = IntegerField(validators=[DataRequired('环境id必传')])
 
     def validate_env(self, field):
-        env_data = ApiProjectEnv.get_first(project_id=self.project_id.data, env=field.data)
-        if not env_data:
-            raise ValidationError(f'当前环境不存在')
+        env_data = self.validate_data_is_exist(
+            '当前环境不存在',
+            ApiProjectEnv,
+            project_id=self.project_id.data,
+            env=field.data
+        )
         setattr(self, 'env_data', env_data)
 
 
@@ -164,7 +165,5 @@ class SynchronizationEnvForm(BaseForm):
     envTo = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
 
     def validate_projectId(self, field):
-        project = ApiProject.get_first(id=field.data)
-        if not project:
-            raise ValidationError(f'id为【{field.data}】的服务不存在')
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
         setattr(self, 'project', project)

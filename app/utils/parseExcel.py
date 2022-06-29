@@ -1,10 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/3/11 16:58
-# @Author : ZhongYeHai
-# @Site : 
-# @File : parseExcel.py
-# @Software: PyCharm
+
 import xlrd
 
 

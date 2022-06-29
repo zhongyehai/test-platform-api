@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/6/28 10:06
-# @Author : ZhongYeHai
-# @Site : 
-# @File : fileView.py
-# @Software: PyCharm
+
 import os
 import time
 

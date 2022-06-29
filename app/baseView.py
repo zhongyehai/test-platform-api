@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/10/26 9:19
-# @Author : ZhongYeHai
-# @Site : 
-# @File : baseView.py
-# @Software: PyCharm
+
 from flask import views
 
 from .utils.required import login_required, admin_required

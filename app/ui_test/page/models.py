@@ -1,20 +1,15 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : models.py
-# @Software: PyCharm
-from app.baseModel import BaseModel, db
+
+from app.baseModel import BaseApi, db
 
 
-class UiPage(BaseModel):
+class UiPage(BaseApi):
     """ 页面表 """
+    __abstract__ = False
+
     __tablename__ = 'ui_test_page'
-    num = db.Column(db.Integer(), nullable=True, comment='页面序号')
-    name = db.Column(db.String(255), nullable=True, comment='页面名称')
-    addr = db.Column(db.String(255), nullable=True, comment='页面地址')
-    desc = db.Column(db.Text(), default='', nullable=True, comment='页面描述')
+
+    addr = db.Column(db.String(255), nullable=True, comment='地址')
 
     module_id = db.Column(db.Integer(), db.ForeignKey('ui_test_module.id'), comment='所属的模块id')
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的项目id')

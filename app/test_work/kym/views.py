@@ -1,10 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/11/2 14:02
-# @Author : ZhongYeHai
-# @Site :
-# @File : views.py
-# @Software: PyCharm
+
 import json
 import os
 

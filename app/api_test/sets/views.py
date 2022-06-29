@@ -12,7 +12,7 @@ from app.utils.runApiTest.runHttpRunner import RunCase
 from app.api_test import api_test
 from app.baseView import BaseMethodView
 from .models import ApiSet
-from .forms import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, DeleteCaseSetForm, GetCaseSetForm, RunCaseForm
+from .forms import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, DeleteCaseSetForm, GetCaseSetForm, RunCaseSetForm
 
 
 @api_test.route('/caseSet/list', methods=['GET'])
@@ -29,7 +29,7 @@ def api_get_set_list():
 @login_required
 def api_run_case_set():
     """ 运行用例集下的用例 """
-    form = RunCaseForm()
+    form = RunCaseSetForm()
     if form.validate():
         project_id = form.set.project_id
         report = Report.get_new_report(form.set.name, 'set', current_user.name, current_user.id, project_id)
@@ -42,7 +42,8 @@ def api_run_case_set():
                 case_id=[case.id for case in Case.query.filter_by(set_id=form.set.id).order_by(Case.num.asc()).all()
                          if case.is_run],
                 report_id=report.id,
-                is_async=form.is_async.data
+                is_async=form.is_async.data,
+                env=form.env.data
             ).run_case
         ).start()
         return restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
@@ -74,7 +75,7 @@ class ApiCaseSetView(BaseMethodView):
         if form.validate():
             form.num.data = ApiSet.get_insert_num(project_id=form.project_id.data)
             new_set = ApiSet().create(form.data)
-            return restful.success(f'名为【{form.name.data}】的用例集创建成功', new_set.to_dict())
+            return restful.success(f'用例集【{form.name.data}】创建成功', new_set.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):

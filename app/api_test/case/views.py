@@ -31,6 +31,7 @@ def create_step(index, case_id, step):
         params=Step.dumps(step['params']),
         data_form=Step.dumps(step['data_form']),
         data_json=Step.dumps(step['data_json']),
+        data_xml=Step.dumps(step['data_xml']),
         extracts=Step.dumps(step['extracts']),
         validates=Step.dumps(step['validates']),
         project_id=step['project_id'],
@@ -57,7 +58,8 @@ def api_get_case_name():
     """ 根据用例id获取用例名 """
     # caseId: '1,4,12'
     case_ids: list = request.args.to_dict().get('caseId').split(',')
-    return restful.success(data=[{'id': int(case_id), 'name': ApiCase.get_first(id=case_id).name} for case_id in case_ids])
+    return restful.success(
+        data=[{'id': int(case_id), 'name': ApiCase.get_first(id=case_id).name} for case_id in case_ids])
 
 
 @api_test.route('/case/quote', methods=['put'])
@@ -85,8 +87,9 @@ def api_run_case():
     """ 运行测试用例，并生成报告 """
     form = RunCaseForm()
     if form.validate():
-        case = form.case
+        case, case_list = form.case_list[0], form.case_list
         project_id = ApiSet.get_first(id=case.set_id).project_id
+
         report = Report.get_new_report(case.name, 'case', current_user.name, current_user.id, project_id)
 
         # 新起线程运行用例
@@ -96,7 +99,8 @@ def api_run_case():
                 run_name=report.name,
                 case_id=form.caseId.data,
                 report_id=report.id,
-                is_async=False
+                is_async=False,
+                env=form.env.data
             ).run_case
         ).start()
         return restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
@@ -117,12 +121,14 @@ def api_change_case_status():
 def api_copy_case():
     """ 复制用例，返回复制的用例和步骤 """
     # 复制用例
-    old_case = ApiCase.get_first(id=request.args.get('id'))
+    case = ApiCase.get_first(id=request.args.get('id'))
     with db.auto_commit():
+        old_case = case.to_dict()
+        old_case['create_user'] = old_case['update_user'] = current_user.id
         new_case = ApiCase()
-        new_case.create(old_case.to_dict(), 'func_files', 'variables', 'headers')
-        new_case.name = old_case.name + '_copy'
-        new_case.num = ApiCase.get_insert_num(set_id=old_case.set_id)
+        new_case.create(old_case, 'func_files', 'variables', 'headers')
+        new_case.name = old_case['name'] + '_copy'
+        new_case.num = ApiCase.get_insert_num(set_id=old_case['set_id'])
         db.session.add(new_case)
 
     # 复制步骤
@@ -130,8 +136,14 @@ def api_copy_case():
     with db.auto_commit():
         for old_step in old_step_list:
             db.session.add(create_step(old_step.num, new_case.id, old_step.to_dict()))
-    return restful.success(f'复制成功', data={'case': new_case.to_dict(),
-                                          'steps': [step.to_dict() for step in Step.get_all(case_id=new_case.id)]})
+
+    return restful.success(
+        '复制成功',
+        data={
+            'case': new_case.to_dict(),
+            'steps': [step.to_dict() for step in Step.get_all(case_id=new_case.id)]
+        }
+    )
 
 
 class ApiCaseView(BaseMethodView):
@@ -154,8 +166,8 @@ class ApiCaseView(BaseMethodView):
     def put(self):
         form = EditCaseForm()
         if form.validate():
-            form.old_data.update(form.data, 'func_files', 'variables', 'headers')
-            return restful.success(msg=f'用例【{form.old_data.name}】修改成功', data=form.old_data.to_dict())
+            form.case.update(form.data, 'func_files', 'variables', 'headers')
+            return restful.success(msg=f'用例【{form.case.name}】修改成功', data=form.case.to_dict())
         return restful.fail(form.get_error())
 
     def delete(self):

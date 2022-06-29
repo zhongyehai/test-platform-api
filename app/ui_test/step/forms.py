@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/4/16 9:42
-# @Author : ZhongYeHai
-# @Site : 
-# @File : forms.py
-# @Software: PyCharm
+
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, DataRequired, Length
 
@@ -21,9 +16,7 @@ class GetStepListForm(BaseForm):
     caseId = IntegerField(validators=[DataRequired('用例id必传')])
 
     def validate_caseId(self, field):
-        case = UiCase.get_first(id=field.data)
-        if not case:
-            raise ValidationError(f'id为 {field.data} 的用例不存在')
+        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', UiCase, id=field.data)
         setattr(self, 'case', case)
 
 
@@ -32,9 +25,7 @@ class GetStepForm(BaseForm):
     id = IntegerField(validators=[DataRequired('步骤id必传')])
 
     def validate_id(self, field):
-        step = UiStep.get_first(id=field.data)
-        if not step:
-            raise ValidationError(f'id为 {field.data} 的步骤不存在')
+        step = self.validate_data_is_exist(f'id为 {field.data} 的步骤不存在', UiStep, id=field.data)
         setattr(self, 'step', step)
 
 
@@ -63,28 +54,22 @@ class AddStepForm(BaseForm):
     def validate_project_id(self, field):
         """ 校验服务id """
         if not self.quote_case.data:
-            project = UiProject.get_first(id=field.data)
-            if not project:
-                raise ValidationError(f'id为【{field.data}】的服务不存在')
+            project = self.validate_data_is_exist(f'id为 {field.data} 的项目不存在', UiProject, id=field.data)
             setattr(self, 'project', project)
 
     def validate_case_id(self, field):
         """ 校验用例存在 """
-        case = UiCase.get_first(id=field.data)
-        if not case:
-            raise ValidationError(f'id为【{field.data}】的用例不存在')
+        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', UiCase, id=field.data)
         setattr(self, 'case', case)
 
     def validate_element_id(self, field):
         """ 校验元素存在 """
         if not self.quote_case.data:
-            if not UiElement.get_first(id=field.data):
-                raise ValidationError(f'id为【{field.data}】的接口不存在')
+            self.validate_data_is_exist(f'id为 {field.data} 的元素不存在', UiElement, id=field.data)
 
     def validate_quote_case(self, field):
         """ 不能自己引用自己 """
-        if field.data and field.data == self.case_id:
-            raise ValidationError(f'不能自己引用自己')
+        self.validate_data_is_false('不能自己引用自己', field.data and field.data == self.case_id)
 
     def validate_execute_type(self, field):
         """ 如果不是引用用例，则执行方式不能为空 """
@@ -95,7 +80,7 @@ class AddStepForm(BaseForm):
         """ 校验数据提取信息 """
         # 获取项目配置的函数
         if not self.quote_case.data:
-            env = UiProjectEnv.get_first(project_id=self.project.id, env=self.case.choice_host)
+            env = UiProjectEnv.get_first(project_id=self.project.id)
             self.func_file_container = self.loads(env.func_files)
 
         # 获取用例配置的函数
@@ -137,7 +122,5 @@ class EditStepForm(AddStepForm):
 
     def validate_id(self, field):
         """ 校验步骤id已存在 """
-        step = UiStep.get_first(id=field.data)
-        if not step:
-            raise ValidationError(f'id为【{field.data}】的步骤不存在')
+        step = self.validate_data_is_exist(f'id为【{field.data}】的步骤不存在', UiStep, id=field.data)
         setattr(self, 'step', step)

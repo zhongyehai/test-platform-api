@@ -66,6 +66,13 @@ def conf_list():
     return restful.error(form.get_error())
 
 
+@config.route('/runModel', methods=['GET'])
+@login_required
+def get_run_model():
+    """ 获取执行模式 """
+    return restful.success(data={0: "串行执行", 1: "并行执行"})
+
+
 @config.route('/configByName', methods=['GET'])
 # @login_required
 def get_conf_by_name():

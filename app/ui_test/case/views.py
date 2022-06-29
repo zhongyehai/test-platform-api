@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : views.py
-# @Software: PyCharm
+
 import json
 from threading import Thread
 
@@ -42,7 +37,8 @@ def create_step(index, case_id, step):
         element_id=step['element_id'],
         page_id=step['page_id'],
         quote_case=step['quote_case'],
-        create_user=current_user.id
+        create_user=current_user.id,
+        update_user=current_user.id
     )
 
 
@@ -100,7 +96,8 @@ def ui_run_case():
                 project_id=project_id,
                 run_name=report.name,
                 case_id=form.caseId.data,
-                report_id=report.id
+                report_id=report.id,
+                env=form.env.data
             ).run_case
         ).start()
         return restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
@@ -121,12 +118,14 @@ def ui_change_case_status():
 def ui_copy_case():
     """ 复制用例，返回复制的用例和步骤 """
     # 复制用例
-    old_case = UiCase.get_first(id=request.args.get('id'))
+    case = UiCase.get_first(id=request.args.get('id'))
     with db.auto_commit():
+        old_case = case.to_dict()
+        old_case['create_user'] = old_case['update_user'] = current_user.id
         new_case = UiCase()
-        new_case.create(old_case.to_dict(), 'func_files', 'variables', 'headers')
-        new_case.name = old_case.name + '_copy'
-        new_case.num = UiCase.get_insert_num(set_id=old_case.set_id)
+        new_case.create(old_case, 'func_files', 'variables', 'headers')
+        new_case.name = old_case['name'] + '_copy'
+        new_case.num = UiCase.get_insert_num(set_id=old_case['set_id'])
         db.session.add(new_case)
 
     # 复制步骤
@@ -134,8 +133,14 @@ def ui_copy_case():
     with db.auto_commit():
         for old_step in old_step_list:
             db.session.add(create_step(old_step.num, new_case.id, old_step.to_dict()))
-    return restful.success(f'复制成功', data={'case': new_case.to_dict(),
-                                          'steps': [step.to_dict() for step in UiStep.get_all(case_id=new_case.id)]})
+
+    return restful.success(
+        '复制成功',
+        data={
+            'case': new_case.to_dict(),
+            'steps': [step.to_dict() for step in UiStep.get_all(case_id=new_case.id)]
+        }
+    )
 
 
 class UiCaseView(BaseMethodView):

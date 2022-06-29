@@ -1,10 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/10/19 14:51
-# @Author : ZhongYeHai
-# @Site :
-# @File : makeUser.py
-# @Software: PyCharm
+
 import json
 
 from faker import Faker

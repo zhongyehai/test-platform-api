@@ -1,10 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:10
-# @Author : ZhongYeHai
-# @Site :
-# @File : forms.py
-# @Software: PyCharm
+
 import json
 import os
 
@@ -22,12 +17,9 @@ class DownloadReportForm(BaseForm):
 
     def validate_id(self, field):
         """ 校验报告是否存在 """
-        report = Report.get_first(id=field.data)
-        if not report:
-            raise ValidationError('报告还未生成, 请联系管理员处理')
+        report = self.validate_data_is_exist('报告不存在', Report, id=field.data)
         report_path = os.path.join(UI_REPORT_ADDRESS, f'{report.id}.txt')
-        if not os.path.exists(report_path):
-            raise ValidationError('报告文件不存在, 可能是未生成，请联系管理员处理')
+        self.validate_data_is_true('报告文件不存在', os.path.exists(report_path))
         with open(report_path, 'r') as file:
             report_content = json.load(file)
         setattr(self, 'report', report)
@@ -44,12 +36,9 @@ class DeleteReportForm(BaseForm):
     id = IntegerField(validators=[DataRequired('请选择报告')])
 
     def validate_id(self, field):
-        report = Report.get_first(id=field.data)
-        if not report:
-            raise ValidationError('报告不存在')
+        report = self.validate_data_is_exist('报告不存在', Report, id=field.data)
         report_path = os.path.join(UI_REPORT_ADDRESS, f'{report.id}.txt')
-        if not report_path:
-            raise ValidationError('报告文件不存在, 请联系管理员处理')
+        self.validate_data_is_true('报告文件不存在', os.path.exists(report_path))
         setattr(self, 'report', report)
         setattr(self, 'report_path', report_path)
 

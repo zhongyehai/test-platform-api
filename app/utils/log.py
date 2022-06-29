@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/10/14 16:14
-# @Author : ZhongYeHai
-# @Site : 
-# @File : log.py
-# @Software: PyCharm
+
 
 """
     封装python logging日志，命名为log_config.py

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from app.utils import restful
-from app.api_test import api_test
+from app.test_work import test_work
 from .models import ErrorRecord
 from .forms import FindErrorForm
 
 
-@api_test.route('/errorRecord/list', methods=['GET'])
+@test_work.route('/errorRecord/list', methods=['GET'])
 # @login_required
 def error_record_list():
     """ 错误列表 """

@@ -1,14 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : report.py
-# @Software: PyCharm
+
 
 import io
 import os
-from flask import render_template
+
 from jinja2 import Template
 
 

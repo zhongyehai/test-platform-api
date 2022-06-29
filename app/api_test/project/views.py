@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from app.utils import restful
-from app.utils.parse import parse_list_to_dict, parse_dict_to_list
 from app.utils.required import login_required
 from app.api_test import api_test
 from app.baseView import BaseMethodView
@@ -43,7 +42,7 @@ class ApiProjectView(BaseMethodView):
         form = AddProjectForm()
         if form.validate():
             project = ApiProject().create(form.data, 'variables', 'headers', 'func_files')
-            project.create_env()  # 新增服务的时候，一并把环境设置齐全
+            ApiProjectEnv.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
             return restful.success(f'服务【{form.name.data}】新建成功', project.to_dict())
         return restful.fail(msg=form.get_error())
 
@@ -74,33 +73,7 @@ def api_project_env_synchronization():
     form = SynchronizationEnvForm()
     if form.validate():
         from_env = ApiProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
-        from_env_variable = parse_list_to_dict(form.loads(from_env.variables))
-        from_env_headers = parse_list_to_dict(form.loads(from_env.headers))
-        from_env_func_files = form.loads(from_env.func_files)
-        synchronization_result = {}
-        for to_env in form.envTo.data:
-            to_env_data = ApiProjectEnv.get_first(project_id=form.projectId.data, env=to_env)
-
-            # 变量
-            variables = parse_list_to_dict(to_env_data.loads(to_env_data.variables))
-            for key, value in from_env_variable.items():
-                variables.setdefault(key, value)
-
-            # 头部信息
-            headers = parse_list_to_dict(to_env_data.loads(to_env_data.headers))
-            for key, value in from_env_headers.items():
-                headers.setdefault(key, value)
-
-            # 函数文件
-            func_files = to_env_data.loads(to_env_data.func_files)
-            func_files.extend(from_env_func_files)
-
-            to_env_data.update({
-                'variables': form.dumps(parse_dict_to_list(variables)),
-                'headers': form.dumps(parse_dict_to_list(headers)),
-                'func_files': form.dumps(func_files),
-            })
-            synchronization_result[to_env] = to_env_data.to_dict()
+        synchronization_result = ApiProjectEnv.synchronization(from_env, form.envTo.data)
         return restful.success('同步成功', data=synchronization_result)
     return restful.fail(form.get_error())
 
@@ -128,9 +101,16 @@ class ApiProjectEnvView(BaseMethodView):
         form = EditEnv()
         if form.validate():
             form.env_data.update(form.data, 'variables', 'headers', 'func_files')
+
             # 修改环境的时候，如果是测试环境，一并把服务的测试环境地址更新
             if form.env_data.env == 'test':
                 form.project.update({'test': form.env_data.host})
+
+            # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
+            env_list = [
+                env.env for env in ApiProjectEnv.get_all(project_id=form.project_id.data) if env.env != form.env_data.env
+            ]
+            ApiProjectEnv.synchronization(form.env_data, env_list)
             return restful.success(f'环境修改成功', form.env_data.to_dict())
         return restful.fail(msg=form.get_error())
 

@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseModel, db
+from app.baseModel import BaseApi, db
 
 
-class ApiMsg(BaseModel):
+class ApiMsg(BaseApi):
     """ 接口表 """
+    __abstract__ = False
+
     __tablename__ = 'api_test_api'
-    num = db.Column(db.Integer(), nullable=True, comment='接口序号')
-    name = db.Column(db.String(255), nullable=True, comment='接口名称')
-    desc = db.Column(db.Text(), default='', nullable=True, comment='接口描述')
+
+    addr = db.Column(db.String(255), nullable=True, comment='地址')
     up_func = db.Column(db.Text(), default='', comment='接口执行前的函数')
     down_func = db.Column(db.Text(), default='', comment='接口执行后的函数')
-
     method = db.Column(db.String(10), nullable=True, comment='请求方式')
-    choice_host = db.Column(db.String(10), default='test', comment='选择的环境')
-    addr = db.Column(db.Text(), nullable=True, comment='接口地址')
     headers = db.Column(db.Text(), default='[{"key": null, "remark": null, "value": null}]', comment='头部信息')
     params = db.Column(db.Text(), default='[{"key": null, "value": null}]', comment='url参数')
     data_type = db.Column(db.String(10), nullable=True, default='json', comment='参数类型，json、form-data、xml')

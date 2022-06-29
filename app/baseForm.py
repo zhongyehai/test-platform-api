@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : baseForm.py
-# @Software: PyCharm
+
 import re
 
 from flask import request
@@ -141,3 +136,31 @@ class BaseForm(Form, JsonUtil):
                 # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
                 if data_source == 'regexp' and not self.validate_is_regexp(value):
                     raise ValidationError(f'{row}正则表达式【{value}】错误')
+
+    def validate_data_is_exist(self, error_msg, model, **kwargs):
+        """ 校验数据已存在，存在则返回数据模型 """
+        data = model.get_first(**kwargs)
+        if data:
+            return data
+        raise ValidationError(error_msg)
+
+    def validate_data_is_not_exist(self, error_msg, model, **kwargs):
+        """ 校验数据不存在 """
+        if model.get_first(**kwargs):
+            raise ValidationError(error_msg)
+
+    def validate_data_is_not_repeat(self, error_msg, model, current_data_id, **kwargs):
+        """ 校验数据不重复 """
+        data = model.get_first(**kwargs)
+        if data and data.id != current_data_id:
+            raise ValidationError(error_msg)
+
+    def validate_data_is_true(self, error_msg, data):
+        """ 校验数据为真 """
+        if not data:
+            raise ValidationError(error_msg)
+
+    def validate_data_is_false(self, error_msg, data):
+        """ 校验数据为假 """
+        if data:
+            raise ValidationError(error_msg)

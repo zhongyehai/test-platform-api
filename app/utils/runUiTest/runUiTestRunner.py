@@ -38,18 +38,13 @@ class RunCase:
                  report_id=None,
                  performer=None,
                  create_user=None,
-                 is_async=True):
+                 is_async=True,
+                 env=None):
 
         self.project_id = project_id
         self.run_name = run_name
-
-        # 环境，如果是定时任务就取定时任务设置的环境，否则取用例选择的环境
         self.task = task
-        if self.task:
-            self.environment = task.get('choice_host') if isinstance(task, dict) else task.choice_host
-        else:
-            self.environment = Case.get_first(id=case_id[0]).choice_host
-
+        self.environment = env
         self.parsed_project_dict = {}
         self.parsed_page_dict = {}
         self.parsed_element_dict = {}
@@ -113,31 +108,6 @@ class RunCase:
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
 
-    # def parse_api(self, project, api):
-    #     """ 把解析后的接口对象 解析为httpRunner的数据结构 """
-    #     return {
-    #         'name': api.name,  # 接口名
-    #         'setup_hooks': [up.strip() for up in api.up_func.split(';') if up] if api.up_func else [],
-    #         'teardown_hooks': [func.strip() for func in api.down_func.split(';') if func] if api.down_func else [],
-    #         'skip': '',  # 无条件跳过当前测试
-    #         'skipIf': '',  # 如果条件为真，则跳过当前测试
-    #         'skipUnless': '',  # 除非条件为真，否则跳过当前测试
-    #         'times': 1,  # 运行次数
-    #         'extract': api.extracts,  # 接口要提取的信息
-    #         'validate': api.validates,  # 接口断言信息
-    #         'base_url': project.host,
-    #         'data_type': api.data_type,
-    #         'request': {
-    #             'method': api.method,
-    #             'url': api.addr,
-    #             'headers': api.headers,  # 接口头部信息
-    #             'params': api.params,  # 接口查询字符串参数
-    #             'json': api.data_json,
-    #             'data': api.data_form['string'] if api.data_type.upper() == 'DATA' else api.data_xml,
-    #             'files': api.data_form['files'] if api.data_form else {},
-    #         }
-    #     }
-
     def build_report(self, json_result):
         """ 写入测试报告到数据库, 并把数据写入到文本中 """
         result = json.loads(json_result)
@@ -180,6 +150,7 @@ class RunCase:
         summary = runner.summary
         summary['time']['start_at'] = datetime.fromtimestamp(summary['time']['start_at']).strftime("%Y-%m-%d %H:%M:%S")
         summary['run_type'] = self.DataTemplate.get('is_async', 0)
+        summary['run_env'] = self.environment
         jump_res = json.dumps(summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
         self.build_report(jump_res)
 
@@ -192,6 +163,7 @@ class RunCase:
         if all(run_dict.values()):  # 全都执行完毕
             all_summary = run_dict[0]
             all_summary['run_type'] = self.DataTemplate.get('is_async', 0)
+            summary['run_env'] = self.environment
             all_summary['time']['start_at'] = datetime.fromtimestamp(all_summary['time']['start_at']).strftime(
                 "%Y-%m-%d %H:%M:%S")
             for index, res in enumerate(run_dict.values()):
@@ -248,7 +220,8 @@ class RunCase:
                 'execute_name': step.execute_name,
                 "action": step.execute_type,
                 "by_type": element.by,
-                "element": project.host + element.element if element.by == 'url' else element.element,  # 如果是打开页面，则设置为项目域名+页面地址
+                "element": project.host + element.element if element.by == 'url' else element.element,
+                # 如果是打开页面，则设置为项目域名+页面地址
                 "text": step.send_keys
             }
         }
@@ -276,7 +249,7 @@ class RunCase:
         """
         parsed_list = []
         for extract in extracts:
-            if extract['extract_type'] == 'func':    # 自定义函数提取
+            if extract['extract_type'] == 'func':  # 自定义函数提取
                 parsed_list.append({
                     "type": "func",
                     "key": extract.get('key'),
@@ -345,10 +318,6 @@ class RunCase:
             current_case = Case.get_first(id=case_id)
             current_project = self.get_formated_project(Set.get_first(id=current_case.set_id).project_id)
 
-            # 选择运行环境
-            if not self.task:
-                self.environment = current_case.choice_host
-
             # 用例格式模板, # 火狐：geckodriver
             case_template = {
                 'config': {
@@ -356,7 +325,8 @@ class RunCase:
                     'headers': {},
                     'name': current_case.name,
                     "browser_type": "chrome",
-                    "browser_path": os.path.join(BROWSER_DRIVER_ADDRESS, f"chromedriver{'.exe' if 'Windows' in platform.platform() else ''}"),
+                    "browser_path": os.path.join(BROWSER_DRIVER_ADDRESS,
+                                                 f"chromedriver{'.exe' if 'Windows' in platform.platform() else ''}"),
                     "web_driver_time_out": 5,  # 浏览器等待元素超时时间
                 },
                 'teststeps': []

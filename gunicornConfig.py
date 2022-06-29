@@ -1,10 +1,4 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : gunicornConfig.py
-# @Software: PyCharm
 
 import gevent.monkey
 import multiprocessing

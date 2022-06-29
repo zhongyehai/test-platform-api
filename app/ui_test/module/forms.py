@@ -1,10 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:10
-# @Author : ZhongYeHai
-# @Site :
-# @File : forms.py
-# @Software: PyCharm
+
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, Length, DataRequired
 
@@ -25,18 +20,19 @@ class AddModelForm(BaseForm):
 
     def validate_project_id(self, field):
         """ 项目id合法 """
-        project = UiProject.get_first(id=field.data)
-        if not project:
-            raise ValidationError(f'id为【{field.data}】的项目不存在，请先创建')
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
         setattr(self, 'project', project)
 
     def validate_name(self, field):
         """ 模块名不重复 """
-        old_module = UiModule.get_first(
-            project_id=self.project_id.data, level=self.level.data, name=field.data, parent=self.parent.data
+        self.validate_data_is_not_exist(
+            f'当前模块下已存在名为【{field.data}】的模块',
+            UiModule,
+            project_id=self.project_id.data,
+            level=self.level.data,
+            name=field.data,
+            parent=self.parent.data
         )
-        if old_module:
-            raise ValidationError(f'当前项目中已存在名为【{field.data}】的模块')
 
 
 class FindModelForm(BaseForm):
@@ -52,9 +48,7 @@ class GetModelForm(BaseForm):
     id = IntegerField(validators=[DataRequired('模块id必传')])
 
     def validate_id(self, field):
-        module = UiModule.get_first(id=field.data)
-        if not module:
-            raise ValidationError(f'id为【{field.data}的模块不存在')
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
         setattr(self, 'module', module)
 
 
@@ -63,9 +57,7 @@ class ModuleIdForm(BaseForm):
     id = IntegerField(validators=[DataRequired('模块id必传')])
 
     def validate_id(self, field):
-        module = UiModule.get_first(id=field.data)
-        if not module:
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
         setattr(self, 'module', module)
 
 
@@ -73,16 +65,10 @@ class DeleteModelForm(ModuleIdForm):
     """ 删除模块 """
 
     def validate_id(self, field):
-        module = UiModule.get_first(id=field.data)
-        if not module:
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
-        if not UiProject.is_can_delete(module.project_id, module):
-            raise ValidationError('不能删除别人项目下的模块')
-        if UiPage.get_first(module_id=module.id):
-            raise ValidationError('请先删除模块下的页面')
-        if UiModule.get_first(parent=module.id):
-            raise ValidationError('请先删除当前模块下的子模块')
-
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
+        self.validate_data_is_true('不能删除别人项目下的模块', UiProject.is_can_delete(module.project_id, module))
+        self.validate_data_is_not_exist('请先删除模块下的页面', UiPage, module_id=module.id)
+        self.validate_data_is_not_exist('请先删除当前模块下的子模块', UiModule, parent=module.id)
         setattr(self, 'module', module)
 
 
@@ -91,21 +77,17 @@ class EditModelForm(ModuleIdForm, AddModelForm):
 
     def validate_id(self, field):
         """ 模块必须存在 """
-        old_module = UiModule.get_first(id=field.data)
-        if not old_module:
-            raise ValidationError(f'id为【{field.data}】的模块不存在')
+        old_module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
         setattr(self, 'old_module', old_module)
 
     def validate_name(self, field):
         """ 同一个项目下，模块名不重复 """
-        old_module = UiModule.get_first(
-            project_id=self.project_id.data, level=self.level.data, name=field.data, parent=self.parent.data
+        self.validate_data_is_not_repeat(
+            f'id为【{self.project_id.data}】的项目下已存在名为【{field.data}】的模块',
+            UiModule,
+            self.id.data,
+            project_id=self.project_id.data,
+            level=self.level.data,
+            name=field.data,
+            parent=self.parent.data
         )
-        if old_module and old_module.id != self.id.data:
-            raise ValidationError(f'id为【{self.project_id.data}】的项目下已存在名为【{field.data}】的模块')
-
-
-class StickModuleForm(BaseForm):
-    """ 置顶模块 """
-    project_id = IntegerField(validators=[DataRequired('项目id必传')])
-    id = IntegerField(validators=[DataRequired('模块id必传')])

@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/8/28 14:56
-# @Author : ZhongYeHai
-# @Site : 
-# @File : makeUserTools.py
-# @Software: PyCharm
+
 from random import randint, choice
 
 

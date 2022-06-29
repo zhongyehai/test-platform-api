@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/12/31 11:32
-# @Author : ZhongYeHai
-# @Site : 
-# @File : swagger.py
-# @Software: PyCharm
+
 import json
 import os.path
 

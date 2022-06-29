@@ -12,7 +12,7 @@ from ..project.models import UiProject
 def validate_email(email_server, email_from, email_pwd, email_to):
     """ 发件邮箱、发件人、收件人、密码 """
     if not email_server:
-        raise ValidationError('选择了要邮件接收，则发件邮箱服务器必填')
+        raise ValidationError('选择了要邮件接收，则发件邮箱项目器必填')
 
     if not email_to or not email_from or not email_pwd:
         raise ValidationError('选择了要邮件接收，则发件人、收件人、密码3个必须有值')
@@ -39,10 +39,10 @@ def validate_webhook(we_chat=None, ding_ding=None):
 
 class AddTaskForm(BaseForm):
     """ 添加定时任务的校验 """
-    project_id = IntegerField(validators=[DataRequired('请选择服务')])
+    project_id = IntegerField(validators=[DataRequired('请选择项目')])
     set_id = StringField()
     case_id = StringField()
-    choice_host = StringField(validators=[DataRequired('请选择要运行的环境')])
+    env = StringField(validators=[DataRequired('请选择要运行的环境')])
     name = StringField(validators=[DataRequired('任务名不能为空')])
     we_chat = StringField()
     ding_ding = StringField()
@@ -80,8 +80,12 @@ class AddTaskForm(BaseForm):
 
     def validate_name(self, field):
         """ 校验任务名不重复 """
-        if UiTask.get_first(project_id=self.project_id.data, name=field.data):
-            raise ValidationError(f'当前服务中，任务名【{field.data}】已存在')
+        self.validate_data_is_not_exist(
+            f'当前项目中，任务名【{field.data}】已存在',
+            UiTask,
+            project_id=self.project_id.data,
+            name=field.data
+        )
 
 
 class HasTaskIdForm(BaseForm):
@@ -90,14 +94,14 @@ class HasTaskIdForm(BaseForm):
 
     def validate_id(self, field):
         """ 校验id存在 """
-        task = UiTask.get_first(id=field.data)
-        if not task:
-            raise ValidationError(f'任务id【{field.data}】不存在')
+        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', UiTask, id=field.data)
         setattr(self, 'task', task)
 
 
 class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
+    env = StringField(validators=[DataRequired('请选择运行环境')])
+    is_async = IntegerField()
 
 
 class EditTaskForm(AddTaskForm, HasTaskIdForm):
@@ -105,30 +109,31 @@ class EditTaskForm(AddTaskForm, HasTaskIdForm):
 
     def validate_id(self, field):
         """ 校验id存在 """
-        task = UiTask.get_first(id=field.data)
-        if not task:
-            raise ValidationError(f'任务id【{field.data}】不存在')
-        elif task.status != '禁用中':
-            return ValidationError(f'任务【{task.name.data}】的状态不为禁用中，请先禁用再修改')
+        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', UiTask, id=field.data)
+        self.validate_data_is_true(f'任务【{task.name}】的状态不为禁用中，请先禁用再修改', task.status == 0)
         setattr(self, 'task', task)
 
     def validate_name(self, field):
         """ 校验任务名不重复 """
-        old = UiTask.get_first(project_id=self.project_id.data, name=field.data)
-        if old and old.id != self.id.data:
-            raise ValidationError(f'当前服务中，任务名【{field.data}】已存在')
+        self.validate_data_is_not_repeat(
+            f'当前项目中，任务名【{field.data}】已存在',
+            UiTask,
+            self.id.data,
+            project_id=self.project_id.data,
+            name=field.data
+        )
 
 
 class GetTaskListForm(BaseForm):
     """ 获取任务列表 """
-    projectId = IntegerField(validators=[DataRequired('服务id必传')])
+    projectId = IntegerField(validators=[DataRequired('项目id必传')])
     pageNum = IntegerField()
     pageSize = IntegerField()
 
 
 class FindTaskForm(BaseForm):
     """ 查找任务信息 """
-    projectId = IntegerField(validators=[DataRequired('服务id必传')])
+    projectId = IntegerField(validators=[DataRequired('项目id必传')])
     taskName = StringField()
     page = IntegerField()
     sizePage = IntegerField()
@@ -138,8 +143,7 @@ class FindTaskForm(BaseForm):
         task_select = UiTask.query.filter_by(project_id=self.projectId.data)
         if field.data:
             task_select = task_select.filter(UiTask.name.like('%{}%'.format(field.data)))
-            if not task_select:
-                raise ValidationError(f'名为【{field.data}】的任务不存在')
+            self.validate_data_is_true(f'名为【{field.data}】的任务不存在', task_select)
         setattr(self, 'task_filter', task_select)
 
 
@@ -148,11 +152,7 @@ class DeleteTaskIdForm(HasTaskIdForm):
 
     def validate_id(self, field):
         """ 校验id存在 """
-        task = UiTask.get_first(id=field.data)
-        if not task:
-            raise ValidationError(f'任务id【{field.data}】不存在')
-        if task.status != '禁用中':
-            raise ValidationError(f'请先禁用任务【{task.name}】')
-        if not UiProject.is_can_delete(task.project_id, task):
-            raise ValidationError(f'不能删除别人的数据【{task.name}】')
+        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', UiTask, id=field.data)
+        self.validate_data_is_true(f'请先禁用任务【{task.name}】', task.status == 0)
+        self.validate_data_is_true(f'不能删除别人的数据【{task.name}】', UiProject.is_can_delete(task.project_id, task))
         setattr(self, 'task', task)

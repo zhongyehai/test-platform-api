@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/2/25 17:39
-# @Author : ZhongYeHai
-# @Site : 
-# @File : parseCron.py
-# @Software: PyCharm
+
 
 def parse_cron(expression):
     """ 解析定时任务的时间

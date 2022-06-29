@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/12/16 17:23
-# @Author : ZhongYeHai
-# @Site : 
-# @File : makeXmind.py
-# @Software: PyCharm
+
 import xmind
 
 

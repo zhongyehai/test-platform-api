@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/4/16 9:42
-# @Author : ZhongYeHai
-# @Site : 
-# @File : views.py
-# @Software: PyCharm
+
 from flask import request
 
 from app.ui_test import ui_test
@@ -12,10 +7,7 @@ from app.utils import restful
 from app.utils.required import login_required
 from app.baseView import BaseMethodView
 from app.baseModel import db
-from config.config import (
-    ui_action_mapping, ui_action_mapping_list,
-    ui_assert_mapping, ui_assert_mapping_list, ui_extract_mapping_list
-)
+from config.config import (ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list)
 from .models import UiStep
 from .forms import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
 

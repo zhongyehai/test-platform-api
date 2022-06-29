@@ -60,7 +60,7 @@ class ApiModuleView(BaseMethodView):
         form = DeleteModelForm()
         if form.validate():
             form.module.delete()
-            return restful.success(f'名为【{form.module.name}】的模块删除成功')
+            return restful.success(f'模块【{form.module.name}】删除成功')
         return restful.fail(form.get_error())
 
 

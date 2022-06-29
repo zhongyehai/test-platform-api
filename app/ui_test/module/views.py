@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : views.py
-# @Software: PyCharm
+
 from flask import request
 
 from app.utils import restful
@@ -52,7 +47,7 @@ class UiModuleView(BaseMethodView):
             form.num.data = UiModule.get_insert_num(project_id=form.project_id.data)
             new_model = UiModule().create(form.data)
             setattr(new_model, 'children', [])
-            return restful.success(f'名为【{form.name.data}】的模块创建成功', new_model.to_dict())
+            return restful.success(f'模块【{form.name.data}】创建成功', new_model.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):
@@ -66,7 +61,7 @@ class UiModuleView(BaseMethodView):
         form = DeleteModelForm()
         if form.validate():
             form.module.delete()
-            return restful.success(f'名为【{form.module.name}】的模块删除成功')
+            return restful.success(f'模块【{form.module.name}】删除成功')
         return restful.fail(form.get_error())
 
 

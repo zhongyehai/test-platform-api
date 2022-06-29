@@ -172,7 +172,7 @@ class CaseFormatModel(Base):
         self.num = kwargs.get('num')
         self.name = kwargs.get('name')
         self.desc = kwargs.get('desc')
-        self.choice_host = kwargs.get('choice_host')
+        self.env = kwargs.get('env')
         self.func_files = kwargs.get('func_files')
         self.headers = self.parse_headers(kwargs.get('headers', {}))
         self.variables = self.parse_variables(kwargs.get('variables', {}))

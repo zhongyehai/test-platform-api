@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : baseModel.py
-# @Software: PyCharm
+
 from datetime import datetime
 from werkzeug.exceptions import abort
 
@@ -15,6 +10,7 @@ from contextlib import contextmanager
 
 from config.config import conf
 from .utils.jsonUtil import JsonUtil
+from .utils.parse import parse_list_to_dict, update_dict_to_list
 
 
 class SQLAlchemy(_SQLAlchemy):
@@ -176,20 +172,41 @@ class BaseModel(db.Model, JsonUtil):
         """ 返回 model 表中**kwargs筛选条件下的已存在编号num的最大值 + 1 """
         return cls.get_max_num(**kwargs) + 1
 
-    def to_dict(self, to_dict: list = [], pop_list: list = []):
-        """ 自定义序列化器，把模型的每个字段转为key，方便返回给前端 """
+    def to_dict(self, to_dict: list = [], pop_list: list = [], filter_list: list = []):
+        """ 自定义序列化器，把模型的每个字段转为key，方便返回给前端
+        to_dict: 要转为字典的字段
+        pop_list: 序列化时忽略的字段
+        filter_list: 仅要序列化的字段
+        当 pop_list 与 filter_list 同时包含同一个字段时，以 filter_list 为准
+        """
         dict_data = {}
         for column in self.__table__.columns:
-            if column.name not in pop_list:
-                if column.name == 'created_time':
-                    dict_data['created_time'] = self.str_created_time
-                elif column.name == 'update_time':
-                    dict_data['update_time'] = self.str_update_time
-                else:
-                    data = getattr(self, column.name)
-                    # 字段在要转json的列表里面，且字段有值，就转为json
-                    dict_data[column.name] = data if column.name not in to_dict or not data else self.loads(data)
+            if filter_list:
+                if column.name in filter_list:
+                    dict_data[column.name] = self.serialization_data(column.name, to_dict)
+            else:
+                if column.name not in pop_list:
+                    dict_data[column.name] = self.serialization_data(column.name, to_dict)
+            # if (column.name in filter_list) or (column.name not in pop_list):
+            #     if column.name == 'created_time':
+            #         dict_data['created_time'] = self.str_created_time
+            #     elif column.name == 'update_time':
+            #         dict_data['update_time'] = self.str_update_time
+            #     else:
+            #         data = getattr(self, column.name)
+            #         # 字段在要转json的列表里面，且字段有值，就转为json
+            #         dict_data[column.name] = data if column.name not in to_dict or not data else self.loads(data)
         return dict_data
+
+    def serialization_data(self, column_name, to_dict_list):
+        if column_name == 'created_time':
+            return self.str_created_time
+        elif column_name == 'update_time':
+            return self.str_update_time
+        else:
+            data = getattr(self, column_name)
+            # 字段在要转json的列表里面，且字段有值，就转为json
+            return self.loads(data) if data and column_name in to_dict_list else data
 
     @classmethod
     def pagination(cls, page_num, page_size, filters: list = [], order_by=None):
@@ -213,3 +230,292 @@ class ApschedulerJobs(BaseModel):
     id = db.Column(db.String(191), primary_key=True, nullable=False)
     next_run_time = db.Column(db.String(128), comment='任务下一次运行时间')
     job_state = db.Column(db.LargeBinary(length=(2 ** 32) - 1), comment='任务详情')
+
+
+class BaseProject(BaseModel):
+    """ 服务基类表 """
+    __abstract__ = True
+
+    name = db.Column(db.String(255), nullable=True, comment='服务名称')
+    manager = db.Column(db.Integer(), nullable=True, default=1, comment='服务管理员id，默认为admin')
+    test = db.Column(db.String(255), default='', comment='测试环境域名')
+
+    def is_not_manager(self):
+        """ 判断用户非服务负责人 """
+        return current_user.id != self.manager
+
+    @classmethod
+    def is_not_manager_id(cls, project_id):
+        """ 判断当前用户非当前数据的负责人 """
+        return cls.get_first(id=project_id).manager != current_user.id
+
+    @classmethod
+    def is_manager_id(cls, project_id):
+        """ 判断当前用户为当前数据的负责人 """
+        return cls.get_first(id=project_id).manager == current_user.id
+
+    @classmethod
+    def is_admin(cls):
+        """ 角色为2，为管理员 """
+        return current_user.role_id == 2
+
+    @classmethod
+    def is_not_admin(cls):
+        """ 角色不为2，非管理员 """
+        return not cls.is_admin()
+
+    @classmethod
+    def is_can_delete(cls, project_id, obj):
+        """
+        判断是否有权限删除，
+        可删除条件（或）：
+        1.当前用户为系统管理员
+        2.当前用户为当前数据的创建者
+        3.当前用户为当前要删除服务的负责人
+        """
+        return cls.is_manager_id(project_id) or cls.is_admin() or obj.is_create_user(current_user.id)
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.name.data:
+            filters.append(cls.name.like(f'%{form.name.data}%'))
+        if form.projectId.data:
+            filters.append(cls.id == form.projectId.data)
+        if form.manager.data:
+            filters.append(cls.manager == form.manager.data)
+        if form.create_user.data:
+            filters.append(cls.create_user == form.create_user.data)
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.created_time.desc())
+
+
+class BaseProjectEnv(BaseModel):
+    """ 服务环境基类表 """
+    __abstract__ = True
+
+    env = db.Column(db.String(10), nullable=True, comment='所属环境')
+    host = db.Column(db.String(255), default='', comment='域名')
+    func_files = db.Column(db.Text(), nullable=True, default='[]', comment='引用的函数文件')
+    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共变量')
+    headers = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共头部信息')
+    project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
+
+    def to_dict(self, *args, **kwargs):
+        """ 自定义序列化器，把模型的每个字段转为字典，方便返回给前端 """
+        return super(BaseProjectEnv, self).to_dict(to_dict=["variables", "headers", "func_files"])
+
+    @classmethod
+    def synchronization(cls, from_env, to_env_list: list):
+        """ 把当前环境同步到其他环境 """
+        from_env_variable = parse_list_to_dict(cls.loads(from_env.variables))
+        from_env_headers = parse_list_to_dict(cls.loads(from_env.headers))
+        from_env_func_files = cls.loads(from_env.func_files)
+        synchronization_result = {}
+        for to_env in to_env_list:
+            to_env_data = cls.get_first(project_id=from_env.project_id, env=to_env)
+            variables = update_dict_to_list(from_env_variable, cls.loads(to_env_data.variables))  # 同步变量
+            headers = update_dict_to_list(from_env_headers, cls.loads(to_env_data.headers))  # 同步头部信息
+            func_files = list(set(cls.loads(to_env_data.func_files) + from_env_func_files))  # 同步函数文件
+
+            to_env_data.update({
+                'variables': cls.dumps(variables),
+                'headers': cls.dumps(headers),
+                'func_files': cls.dumps(func_files)
+            })
+            synchronization_result[to_env] = to_env_data.to_dict()
+        return synchronization_result
+
+
+class BaseModule(BaseModel):
+    """ 模块基类表 """
+    __abstract__ = True
+
+    name = db.Column(db.String(255), nullable=True, comment='模块名')
+    num = db.Column(db.Integer(), nullable=True, comment='模块在对应服务下的序号')
+    level = db.Column(db.Integer(), nullable=True, default=2, comment='模块级数')
+    parent = db.Column(db.Integer(), nullable=True, default=None, comment='上一级模块id')
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.projectId.data:
+            filters.append(cls.project_id == form.projectId.data)
+        if form.name.data:
+            filters.append(cls.name.like(f'%{form.name.data}%'))
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.num.asc()
+        )
+
+
+class BaseApi(BaseModel):
+    """ 页面表 """
+    __abstract__ = True
+
+    num = db.Column(db.Integer(), nullable=True, comment='序号')
+    name = db.Column(db.String(255), nullable=True, comment='名称')
+    desc = db.Column(db.Text(), default='', nullable=True, comment='描述')
+
+
+class BaseCaseSet(BaseModel):
+    """ 用例集基类表 """
+    __abstract__ = True
+
+    name = db.Column(db.String(255), nullable=True, comment='用例集名称')
+    num = db.Column(db.Integer(), nullable=True, comment='用例集在对应服务下的序号')
+    level = db.Column(db.Integer(), nullable=True, default=2, comment='用例集级数')
+    parent = db.Column(db.Integer(), nullable=True, default=None, comment='上一级用例集id')
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.projectId.data:
+            filters.append(cls.project_id == form.projectId.data)
+        if form.name.data:
+            filters.append(cls.name == form.name.data)
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.num.asc()
+        )
+
+
+class BaseCase(BaseModel):
+    """ 用例基类表 """
+
+    __abstract__ = True
+
+    num = db.Column(db.Integer(), nullable=True, comment='用例序号')
+    name = db.Column(db.String(255), nullable=True, comment='用例名称')
+    desc = db.Column(db.Text(), comment='用例描述')
+    is_run = db.Column(db.Boolean(), default=True, comment='是否执行此用例，True执行，False不执行，默认执行')
+    run_times = db.Column(db.Integer(), default=1, comment='执行次数，默认执行1次')
+    func_files = db.Column(db.Text(), comment='用例需要引用的函数list')
+    variables = db.Column(db.Text(), comment='用例级的公共参数')
+    headers = db.Column(db.Text(), comment='用例级的头部信息')
+
+    def to_dict(self, *args, **kwargs):
+        return super(BaseCase, self).to_dict(to_dict=['func_files', 'variables', 'headers'])
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.setId.data:
+            filters.append(cls.set_id == form.setId.data)
+        if form.name.data:
+            filters.append(cls.name.like(f'%{form.name.data}%'))
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.num.asc()
+        )
+
+
+class BaseStep(BaseModel):
+    """ 测试步骤基类表 """
+
+    __abstract__ = True
+
+    num = db.Column(db.Integer(), nullable=True, comment='步骤序号，执行顺序按序号来')
+    is_run = db.Column(db.Boolean(), default=True, comment='是否执行此步骤，True执行，False不执行，默认执行')
+    run_times = db.Column(db.Integer(), default=1, comment='执行次数，默认执行1次')
+
+    name = db.Column(db.String(255), comment='步骤名称')
+    up_func = db.Column(db.Text(), default='', comment='步骤执行前的函数')
+    down_func = db.Column(db.Text(), default='', comment='步骤执行后的函数')
+
+    data_driver = db.Column(db.Text(), default='[]', comment='数据驱动，若此字段有值，则走数据驱动的解析')
+    quote_case = db.Column(db.String(5), default='', comment='引用用例的id')
+
+    def to_dict(self, *args, **kwargs):
+        return super(BaseStep, self).to_dict(
+            to_dict=["headers", "params", "data_form", "data_json", "extracts", "validates", "data_driver"]
+        )
+
+
+class BaseTask(BaseModel):
+    """ 定时任务基类表 """
+    __abstract__ = True
+
+    num = db.Column(db.Integer(), comment='任务序号')
+    name = db.Column(db.String(255), comment='任务名称')
+    env = db.Column(db.String(10), default='test', comment='运行环境')
+    case_id = db.Column(db.Text(), comment='用例id')
+    task_type = db.Column(db.String(10), default='cron', comment='定时类型')
+    cron = db.Column(db.String(255), nullable=True, comment='cron表达式')
+    is_send = db.Column(db.String(10), comment='是否发送报告，1.不发送、2.始终发送、3.仅用例不通过时发送')
+    send_type = db.Column(db.String(10), default='webhook', comment='测试报告发送类型，webhook，email，all')
+    we_chat = db.Column(db.Text(), comment='企业微信机器人地址')
+    ding_ding = db.Column(db.Text(), comment='钉钉机器人地址')
+    email_server = db.Column(db.String(255), comment='发件邮箱服务器')
+    email_from = db.Column(db.String(255), comment='发件人邮箱')
+    email_pwd = db.Column(db.String(255), comment='发件人邮箱密码')
+    email_to = db.Column(db.Text(), comment='收件人邮箱')
+    status = db.Column(db.Integer(), default=0, comment='任务的运行状态，0：禁用中、1：启用中，默认0')
+    is_async = db.Column(db.Integer(), default=1, comment='任务的运行机制，0：单线程，1：多线程，默认1')
+    set_id = db.Column(db.Text(), comment='用例集id')
+
+    def to_dict(self, *args, **kwargs):
+        return super(BaseTask, self).to_dict(to_dict=['set_id', 'case_id'])
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.projectId.data:
+            filters.append(cls.project_id == form.projectId.data)
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.num.asc()
+        )
+
+
+class BaseReport(BaseModel):
+    """ 测试报告基类表 """
+    __abstract__ = True
+
+    name = db.Column(db.String(128), nullable=True, comment='测试报告名称')
+    status = db.Column(db.String(10), nullable=True, default='未读', comment='阅读状态，已读、未读')
+    is_passed = db.Column(db.Integer, default=1, comment='是否全部通过，1全部通过，0有报错')
+    performer = db.Column(db.String(16), nullable=True, comment='执行者')
+    run_type = db.Column(db.String(10), default='task', nullable=True, comment='报告类型，task/case/api')
+    is_done = db.Column(db.Integer, default=0, comment='是否执行完毕，1执行完毕，0执行中')
+
+    @classmethod
+    def get_new_report(cls, name, run_type, performer, create_user, project_id):
+        with db.auto_commit():
+            report = cls()
+            report.name = name
+            report.run_type = run_type
+            report.performer = performer
+            report.create_user = create_user
+            report.project_id = project_id
+            db.session.add(report)
+        return report
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.projectId.data:
+            filters.append(cls.project_id == form.projectId.data)
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.created_time.desc()
+        )

@@ -1,16 +1,11 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:13
-# @Author : ZhongYeHai
-# @Site :
-# @File : dbMigration.py
-# @Software: PyCharm
-import json
+
 from collections import OrderedDict
 
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 
+from app.utils.jsonUtil import JsonUtil
 from app.baseModel import db
 from app.ucenter.user.models import User, Permission, Role
 from app.config.models import Config, ConfigType
@@ -156,6 +151,9 @@ find_element_option = [
     {"label": "页面地址", "value": "url"}
 ]
 
+# 环境配置，可根据实际需求自行修改，但环境不可重复
+env_dict = {"dev": "开发环境", "test": "测试环境", "uat": "uat环境", "production": "生产环境"}
+
 
 @manager.command
 def init_role():
@@ -226,14 +224,15 @@ def init_config():
 
         '系统配置': [
             {'name': 'platform_name', 'value': '极测平台', 'desc': '测试平台名字'},
-            {'name': 'make_user_info_mapping', 'value': json.dumps(make_user_info_mapping, ensure_ascii=False), 'desc': '生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）'},
-            {'name': 'data_type_mapping', 'value': json.dumps(data_type_mapping, ensure_ascii=False), 'desc': 'python数据类型映射'},
+            {'name': 'run_test_env', 'value': JsonUtil.dumps(env_dict), 'desc': '测试平台支持的环境'},
+            {'name': 'make_user_info_mapping', 'value': JsonUtil.dumps(make_user_info_mapping), 'desc': '生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）'},
+            {'name': 'data_type_mapping', 'value': JsonUtil.dumps(data_type_mapping), 'desc': 'python数据类型映射'},
             {'name': 'yapi_host', 'value': '', 'desc': 'yapi域名'},
             {'name': 'yapi_account', 'value': '', 'desc': 'yapi账号'},
             {'name': 'yapi_password', 'value': '', 'desc': 'yapi密码'},
             {'name': 'ignore_keyword_for_group', 'value': '[]', 'desc': '不需要从yapi同步的分组关键字'},
             {'name': 'ignore_keyword_for_project', 'value': '[]', 'desc': '不需要从yapi同步的服务关键字'},
-            {'name': 'kym', 'value': json.dumps(kym_keword, ensure_ascii=False, indent=4), 'desc': 'KYM分析项'},
+            {'name': 'kym', 'value': JsonUtil.dumps(kym_keword), 'desc': 'KYM分析项'},
             {'name': 'default_diff_message_send_addr', 'value': '', 'desc': 'yapi接口监控报告默认发送钉钉机器人地址'},
             {'name': 'run_time_out', 'value': '45', 'desc': '前端运行测试时，等待的超时时间，秒'},
             {'name': 'call_back_response', 'value': '', 'desc': '回调接口的响应信息，若没有设置值，则回调代码里面的默认响应'},
@@ -242,12 +241,12 @@ def init_config():
 
         '接口自动化': [
             {'name': 'http_methods', 'value': 'GET,POST,PUT,DELETE', 'desc': 'http请求方式，以英文的 "," 隔开'},
-            {'name': 'response_data_source_mapping', 'value': json.dumps(response_data_source_mapping, ensure_ascii=False), 'desc': '响应对象数据源映射'},
+            {'name': 'response_data_source_mapping', 'value': JsonUtil.dumps(response_data_source_mapping), 'desc': '响应对象数据源映射'},
             {'name': 'run_time_error_message_send_addr', 'value': '', 'desc': '运行测试用例时，有错误信息实时通知地址'},
         ],
 
         'ui自动化': [
-            {'name': 'find_element_option', 'value': json.dumps(find_element_option, ensure_ascii=False, indent=4), 'desc': 'ui自动化定位元素方式'},
+            {'name': 'find_element_option', 'value': JsonUtil.dumps(find_element_option), 'desc': 'ui自动化定位元素方式'},
         ]
     }
     for conf_type, conf_list in conf_dict.items():

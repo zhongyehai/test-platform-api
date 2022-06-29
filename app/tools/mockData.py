@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/12/17 15:35
-# @Author : ZhongYeHai
-# @Site : 
-# @File : mockData.py
-# @Software: PyCharm
+
 import io
 import json
 import os

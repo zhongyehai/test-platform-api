@@ -1,10 +1,5 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2020/9/25 17:10
-# @Author : ZhongYeHai
-# @Site :
-# @File : forms.py
-# @Software: PyCharm
+
 from flask_login import current_user
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, Length, DataRequired
@@ -72,10 +67,16 @@ class FindUserForm(BaseForm):
     """ 查找用户参数校验 """
     name = StringField()
     account = StringField()
+    detail = StringField()
     status = IntegerField()
     role_id = IntegerField()
     pageNum = IntegerField()
     pageSize = IntegerField()
+
+    def validate_detail(self, field):
+        """ 如果要获取详情，需有管理员权限 """
+        if field.data:
+            self.validate_data_is_true('当前角色无权限', self.is_admin())
 
 
 class GetUserEditForm(BaseForm):

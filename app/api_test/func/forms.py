@@ -9,7 +9,7 @@ from flask_login import current_user
 
 from app.baseForm import BaseForm
 from app.api_test.case.models import ApiCase
-from app.api_test.project.models import ApiProject
+from app.api_test.project.models import ApiProject, ApiProjectEnv
 from .models import Func
 from ...utils.globalVariable import FUNC_ADDRESS
 
@@ -26,9 +26,7 @@ class HasFuncForm(BaseForm):
 
     def validate_id(self, field):
         """ 校验自定义函数文件需存在 """
-        func = Func.get_first(id=field.data)
-        if not func:
-            raise ValidationError(f'id为 【{field.data}】 的函数文件不存在')
+        func = self.validate_data_is_exist(f'id为 【{field.data}】 的函数文件不存在', Func, id=field.data)
         setattr(self, 'func', func)
 
 
@@ -61,8 +59,7 @@ class CreatFuncForm(BaseForm):
 
     def validate_name(self, field):
         """ 校验Python函数文件 """
-        if Func.get_first(name=field.data):
-            raise ValidationError(f'函数文件【{field.data}】已经存在')
+        self.validate_data_is_not_exist(f'函数文件【{field.data}】已经存在', Func, name=field.data)
 
 
 class EditFuncForm(HasFuncForm):
@@ -72,9 +69,12 @@ class EditFuncForm(HasFuncForm):
 
     def validate_name(self, field):
         """ 校验Python函数文件 """
-        old = Func.get_first(name=field.data)
-        if old and old.id != self.id.data:
-            raise ValidationError(f'函数文件【{field.data}】已经存在')
+        self.validate_data_is_not_repeat(
+            f'函数文件【{field.data}】已经存在',
+            Func,
+            self.id.data,
+            name=field.data
+        )
 
 
 class DebuggerFuncForm(HasFuncForm):
@@ -97,19 +97,21 @@ class DeleteFuncForm(BaseForm):
         2.校验是否有引用
         3.校验当前用户是否为管理员或者创建者
         """
-        func = Func.get_first(name=field.data)
-        if not func:
-            raise ValidationError(f'函数文件【{field.data}】不存在')
-        else:
-            # 服务引用
-            project = ApiProject.query.filter(ApiProject.func_files.like(f'%{field.data}%')).first()
-            if project:
-                raise ValidationError(f'服务【{project.name}】已引用此函数文件，请先解除依赖再删除')
-            # 用例引用
-            case = ApiCase.query.filter(ApiCase.func_files.like(f'%{field.data}%')).first()
-            if case:
-                raise ValidationError(f'用例【{case.name}】已引用此函数文件，请先解除依赖再删除')
-            # 用户是管理员或者创建者
-            if self.is_not_admin() and not func.is_create_user(current_user.id):
-                raise ValidationError('函数文件仅【管理员】或【当前函数文件的创建者】可删除')
+        func = self.validate_data_is_exist(f'函数文件【{field.data}】不存在', Func, name=field.data)
+
+        # 服务引用
+        project_env = ApiProjectEnv.query.filter(ApiProjectEnv.func_files.like(f'%{field.data}%')).first()
+        if project_env:
+            raise ValidationError(f'服务【{ApiProject.get_first(id=project_env).name}】已引用此函数文件，请先解除依赖再删除')
+
+        # 用例引用
+        case = ApiCase.query.filter(ApiCase.func_files.like(f'%{field.data}%')).first()
+        if case:
+            raise ValidationError(f'用例【{case.name}】已引用此函数文件，请先解除依赖再删除')
+
+        # 用户是管理员或者创建者
+        self.validate_data_is_true(
+            '函数文件仅【管理员】或【当前函数文件的创建者】可删除',
+            self.is_admin() or func.is_create_user(current_user.id)
+        )
         setattr(self, 'func', func)

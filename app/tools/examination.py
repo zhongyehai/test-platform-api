@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Time : 2021/12/17 15:34
-# @Author : ZhongYeHai
-# @Site : 
-# @File : examination.py
-# @Software: PyCharm
+
 import json
 import os
 
