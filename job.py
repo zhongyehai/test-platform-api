@@ -48,6 +48,7 @@ def async_run_test(case_ids, task, user_id=None, task_type='api'):
             env=task.env
         ).run_case
     ).start()
+    db.session.rollback()  # 把连接放回连接池，不放回去会报错
 
 
 class JobStatus(MethodView):

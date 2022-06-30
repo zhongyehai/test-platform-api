@@ -16,7 +16,7 @@ class ApiStep(BaseStep):
                           default='[{"data_type": null, "key": null, "remark": null, "value": null}]',
                           comment='form-data参数')
     data_json = db.Column(db.Text(), default='{}', comment='json参数')
-    data_xml = db.Column(db.Text(), default='', comment='xml参数')
+    data_xml = db.Column(db.Text(), default=None, comment='xml参数')
     extracts = db.Column(
         db.Text(),
         default='[{"key": null, "data_source": null, "value": null, "remark": null}]',

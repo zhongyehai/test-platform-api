@@ -31,7 +31,7 @@ def create_step(index, case_id, step):
         params=Step.dumps(step['params']),
         data_form=Step.dumps(step['data_form']),
         data_json=Step.dumps(step['data_json']),
-        data_xml=Step.dumps(step['data_xml']),
+        data_xml=Step.dumps(step['data_xml']) if step['data_xml'] else None,
         extracts=Step.dumps(step['extracts']),
         validates=Step.dumps(step['validates']),
         project_id=step['project_id'],
