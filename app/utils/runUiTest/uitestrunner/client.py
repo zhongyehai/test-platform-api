@@ -1,3 +1,4 @@
+import copy
 import time
 
 from selenium.common.exceptions import SessionNotCreatedException, InvalidArgumentException

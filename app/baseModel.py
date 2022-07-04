@@ -187,15 +187,6 @@ class BaseModel(db.Model, JsonUtil):
             else:
                 if column.name not in pop_list:
                     dict_data[column.name] = self.serialization_data(column.name, to_dict)
-            # if (column.name in filter_list) or (column.name not in pop_list):
-            #     if column.name == 'created_time':
-            #         dict_data['created_time'] = self.str_created_time
-            #     elif column.name == 'update_time':
-            #         dict_data['update_time'] = self.str_update_time
-            #     else:
-            #         data = getattr(self, column.name)
-            #         # 字段在要转json的列表里面，且字段有值，就转为json
-            #         dict_data[column.name] = data if column.name not in to_dict or not data else self.loads(data)
         return dict_data
 
     def serialization_data(self, column_name, to_dict_list):
@@ -205,7 +196,7 @@ class BaseModel(db.Model, JsonUtil):
             return self.str_update_time
         else:
             data = getattr(self, column_name)
-            # 字段在要转json的列表里面，且字段有值，就转为json
+            # 字段有值且在要转json的列表里面，就转为json
             return self.loads(data) if data and column_name in to_dict_list else data
 
     @classmethod
@@ -302,32 +293,43 @@ class BaseProjectEnv(BaseModel):
     host = db.Column(db.String(255), default='', comment='域名')
     func_files = db.Column(db.Text(), nullable=True, default='[]', comment='引用的函数文件')
     variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共变量')
-    headers = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共头部信息')
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
 
     def to_dict(self, *args, **kwargs):
         """ 自定义序列化器，把模型的每个字段转为字典，方便返回给前端 """
-        return super(BaseProjectEnv, self).to_dict(to_dict=["variables", "headers", "func_files"])
+        return super(BaseProjectEnv, self).to_dict(
+            to_dict=["variables", "headers", "func_files", 'cookies', 'session_storage', 'local_storage']
+        )
 
     @classmethod
-    def synchronization(cls, from_env, to_env_list: list):
-        """ 把当前环境同步到其他环境 """
-        from_env_variable = parse_list_to_dict(cls.loads(from_env.variables))
-        from_env_headers = parse_list_to_dict(cls.loads(from_env.headers))
-        from_env_func_files = cls.loads(from_env.func_files)
+    def synchronization(cls, from_env, to_env_list: list, filed_list: list):
+        """ 把当前环境同步到其他环境
+        from_env: 从哪个环境
+        to_env_list: 同步到哪些环境
+        filed_list: 指定要同步的字段列表
+        """
+
+        # 同步数据来源解析
+        from_env_dict = {}
+        for filed in filed_list:
+            filed_data = cls.loads(getattr(from_env, filed))
+            from_env_dict[filed] = parse_list_to_dict(filed_data) if filed != 'func_files' else filed_data
+
+        # 已同步数据的容器
         synchronization_result = {}
+
+        # 同步至指定环境
         for to_env in to_env_list:
             to_env_data = cls.get_first(project_id=from_env.project_id, env=to_env)
-            variables = update_dict_to_list(from_env_variable, cls.loads(to_env_data.variables))  # 同步变量
-            headers = update_dict_to_list(from_env_headers, cls.loads(to_env_data.headers))  # 同步头部信息
-            func_files = list(set(cls.loads(to_env_data.func_files) + from_env_func_files))  # 同步函数文件
+            new_env_data = {}
+            for filed in filed_list:
+                from_data, to_data = from_env_dict[filed], cls.loads(getattr(to_env_data, filed))
+                new_env_data[filed] = cls.dumps(
+                    update_dict_to_list(from_data, to_data) if filed != 'func_files' else list(set(to_data + from_data))
+                )
 
-            to_env_data.update({
-                'variables': cls.dumps(variables),
-                'headers': cls.dumps(headers),
-                'func_files': cls.dumps(func_files)
-            })
-            synchronization_result[to_env] = to_env_data.to_dict()
+            to_env_data.update(new_env_data)  # 同步环境
+            synchronization_result[to_env] = to_env_data.to_dict()  # 保存已同步的环境数据
         return synchronization_result
 
 
@@ -402,10 +404,9 @@ class BaseCase(BaseModel):
     run_times = db.Column(db.Integer(), default=1, comment='执行次数，默认执行1次')
     func_files = db.Column(db.Text(), comment='用例需要引用的函数list')
     variables = db.Column(db.Text(), comment='用例级的公共参数')
-    headers = db.Column(db.Text(), comment='用例级的头部信息')
 
     def to_dict(self, *args, **kwargs):
-        return super(BaseCase, self).to_dict(to_dict=['func_files', 'variables', 'headers'])
+        return super(BaseCase, self).to_dict(to_dict=['func_files', 'variables', 'headers', 'cookies', 'session_storage', 'local_storage'])
 
     @classmethod
     def make_pagination(cls, form):

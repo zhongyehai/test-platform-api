@@ -9,15 +9,10 @@ from app.utils.log import logger
 test_work = Blueprint('test_work', __name__)
 test_work.logger = logger
 
-from app.test_work.account import views
-from app.test_work.dataPool import views
-from app.test_work.dataBase import views
+from app.test_work.views import account, dataBase, dataPool, errorRecord, file, kym, swagger, yapi
+
+
 # from app.test_work.frontDiff import views
-from app.test_work.kym import views
-from app.test_work.swagger import views
-from app.test_work.yapi import views
-from app.test_work.file import views
-from app.test_work.errorRecord import views
 
 
 @test_work.before_request

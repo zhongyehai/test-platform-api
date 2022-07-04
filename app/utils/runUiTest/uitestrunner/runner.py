@@ -43,8 +43,14 @@ class Runner(object):
                 {
                     "name": "ABC",
                     "variables": {},
-                    "setup_hooks", [],
-                    "teardown_hooks", []
+                    "setup_hooks": [],
+                    "teardown_hooks": [],
+                    "cookies": {},
+                    "session_storage": {},
+                    "local_storage": {},
+                    "browser_type": "chrome",
+                    "browser_path": browser_path,
+                    "web_driver_time_out": 5,  # 浏览器等待元素超时时间
                 }
 
             web_driver_client_session (instance): requests.Session(), or locust.client.Session() instance.
@@ -60,7 +66,14 @@ class Runner(object):
         self.web_driver_client_session = WebDriverSession()
 
         # 每一次执行用例时会先实例化Runner，此时实例化driver
-        self.driver = Driver(config.get('browser_path'), config.get('browser_type'), config.get('web_driver_time_out'))
+        self.driver = Driver(
+            browser_driver_path=config.get('browser_path'),
+            browser_name=config.get('browser_type'),
+            timeout=config.get('web_driver_time_out'),
+            cookies=config.get('cookies'),
+            session_storage=config.get('session_storage'),
+            local_storage=config.get('local_storage')
+        )
 
         self.session_context = SessionContext(self.functions)
 

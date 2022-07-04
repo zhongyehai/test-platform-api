@@ -9,15 +9,7 @@ from app.utils.log import logger
 ui_test = Blueprint('uiTest', __name__)
 ui_test.logger = logger
 
-from app.ui_test.project import views
-from app.ui_test.module import views
-from app.ui_test.page import views
-from app.ui_test.element import views
-from app.ui_test.caseSet import views
-from app.ui_test.case import views
-from app.ui_test.step import views
-from app.ui_test.task import views
-from app.ui_test.report import views
+from app.ui_test.views import case, caseSet, element, module, page, project, report, step, task
 
 
 @ui_test.before_request

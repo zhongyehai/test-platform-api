@@ -11,18 +11,17 @@ from threading import Thread
 from flask.json import JSONEncoder
 
 from app.utils.log import logger
-from app.utils.parse import encode_object
-from app.utils.globalVariable import UI_REPORT_ADDRESS, BROWSER_DRIVER_ADDRESS, run_ui_test_log
+from app.utils.parse import encode_object, list_to_dict
+from app.utils.globalVariable import UI_REPORT_ADDRESS, BROWSER_DRIVER_ADDRESS
 from app.utils.runUiTest.parseModel import ProjectFormatModel, ElementFormatModel, CaseFormatModel, StepFormatModel
 from app.utils.runUiTest.uitestrunner.api import UiTestRunner
-from app.baseModel import db
-from app.api_test.func.models import Func
-from app.ui_test.project.models import UiProject as Project, UiProjectEnv as ProjectEnv
-from app.ui_test.element.models import UiElement as Element
-from app.ui_test.caseSet.models import UiCaeSet as Set
-from app.ui_test.case.models import UiCase as Case
-from app.ui_test.step.models import UiStep as Step
-from app.ui_test.report.models import UiReport as Report
+from app.api_test.models.func import Func
+from app.ui_test.models.project import UiProject as Project, UiProjectEnv as ProjectEnv
+from app.ui_test.models.element import UiElement as Element
+from app.ui_test.models.caseSet import UiCaeSet as Set
+from app.ui_test.models.case import UiCase as Case
+from app.ui_test.models.step import UiStep as Step
+from app.ui_test.models.report import UiReport as Report
 from app.utils.sendReport import async_send_report
 from config.config import ui_action_mapping_reverse
 
@@ -186,26 +185,13 @@ class RunCase:
                 if key != 'project':
                     source1['stat'][field][key] += source2['stat'][field][key]
 
-    def parse_step(self, current_project, project, case, element, step):
+    def parse_step(self, project, element, step):
         """ 解析测试步骤
-        current_project: 当前用例所在的服务(解析后的)
-        project: 当前步骤对应接口所在的服务(解析后的)
-        case: 解析后的case
+        project: 当前步骤对应元素所在的项目(解析后的)
         element: 解析后的element
         step: 原始step
         返回解析后的步骤 {}
         """
-        # 解析头部信息，继承
-        headers = {}
-        headers.update(current_project.headers)
-        headers.update(project.headers)
-        # headers.update(api['request']['headers'])
-        headers.update(case.headers)
-
-        # 如果是打开页面，则设置为项目域名+页面地址
-        # if element.by == 'url':
-        #     element.element = project.host + element.element
-
         return {
             'name': step.name,
             'setup_hooks': [up.strip() for up in step.up_func.split(';') if up] if step.up_func else [],
@@ -220,8 +206,8 @@ class RunCase:
                 'execute_name': step.execute_name,
                 "action": step.execute_type,
                 "by_type": element.by,
-                "element": project.host + element.element if element.by == 'url' else element.element,
                 # 如果是打开页面，则设置为项目域名+页面地址
+                "element": project.host + element.element if element.by == 'url' else element.element,
                 "text": step.send_keys
             }
         }
@@ -299,13 +285,19 @@ class RunCase:
         else:  # python数据类型
             return eval(f'{data_type}({value})')
 
-    def get_all_steps(self, case_id: int):
+    def get_all_steps(self, case_id: int, case_container):
         """ 解析引用的用例 """
         case = self.get_formated_case(case_id)
+
+        # 保留用例设置的浏览器信息
+        case_container['cookies'].append(case.cookies)
+        case_container['session_storage'].append(case.session_storage)
+        case_container['local_storage'].append(case.local_storage)
+
         steps = Step.query.filter_by(case_id=case.id, is_run=True).order_by(Step.num.asc()).all()
         for step in steps:
             if step.quote_case:
-                self.get_all_steps(step.quote_case)
+                self.get_all_steps(step.quote_case, case_container)
             else:
                 self.all_case_steps.append(step)
 
@@ -315,25 +307,32 @@ class RunCase:
         # 遍历要运行的用例
         for case_id in self.case_id_list:
 
+            case_container = {'cookies': [], 'session_storage': [], 'local_storage': []}  # 用例数据的容器
+            project_container = {'cookies': [], 'session_storage': [], 'local_storage': []}  # 项目数据的容器
+
             current_case = Case.get_first(id=case_id)
             current_project = self.get_formated_project(Set.get_first(id=current_case.set_id).project_id)
 
             # 用例格式模板, # 火狐：geckodriver
+            browser_path = os.path.join(
+                BROWSER_DRIVER_ADDRESS, f"chromedriver{'.exe' if 'Windows' in platform.platform() else ''}"
+            )
             case_template = {
                 'config': {
                     'variables': {},
-                    'headers': {},
+                    'cookies': {},
+                    'session_storage': {},
+                    'local_storage': {},
                     'name': current_case.name,
                     "browser_type": "chrome",
-                    "browser_path": os.path.join(BROWSER_DRIVER_ADDRESS,
-                                                 f"chromedriver{'.exe' if 'Windows' in platform.platform() else ''}"),
+                    "browser_path": browser_path,
                     "web_driver_time_out": 5,  # 浏览器等待元素超时时间
                 },
                 'teststeps': []
             }
 
             # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
-            self.get_all_steps(case_id)
+            self.get_all_steps(case_id, case_container)
             print(f'最后解析出的步骤为：{self.all_case_steps}')
 
             # 循环解析测试步骤
@@ -345,7 +344,12 @@ class RunCase:
                 step.execute_name = ui_action_mapping_reverse[step.execute_type]  # 执行方式的别名，用于展示测试报告
                 step.extracts = self.parse_extracts(step.extracts)  # 解析数据提取
                 step.validates = self.parse_validates(step.validates)  # 解析断言
-                project = self.get_formated_project(element.project_id)
+                project = self.get_formated_project(element.project_id)  # 元素所在的项目
+
+                # 保留项目设置的浏览器信息
+                project_container['cookies'].append(project.cookies)
+                project_container['session_storage'].append(project.session_storage)
+                project_container['local_storage'].append(project.local_storage)
 
                 if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动
                     """
@@ -359,21 +363,28 @@ class RunCase:
                         # 数据驱动的 comment 字段，用于做标识
                         step.name += driver_data.get('comment', '')
                         step.params = step.params = step.data_json = step.data_form = driver_data.get('data', {})
-                        case_template['teststeps'].append(
-                            self.parse_step(current_project, project, case, element, step))
+                        case_template['teststeps'].append(self.parse_step(project, element, step))
                 else:
-                    case_template['teststeps'].append(self.parse_step(current_project, project, case, element, step))
+                    case_template['teststeps'].append(self.parse_step(project, element, step))
 
                 # 把服务和用例的的自定义变量留下来
                 all_variables.update(project.variables)
                 all_variables.update(case.variables)
 
             # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
-            # current_project_variables = current_project.variables
-            # current_project_variables.update(all_variables)
             all_variables.update(current_project.variables)
             all_variables.update(self.get_formated_case(current_case.id).variables)
-            case_template['config']['variables'].update(all_variables)  # = all_variables
+            case_template['config']['variables'].update(all_variables)
+
+            # 合并预设的浏览器信息，当项目设置与用例设置的重复时，以用例设置的为准
+            project_container['cookies'].extend(case_container['cookies'])
+            project_container['session_storage'].extend(case_container['session_storage'])
+            project_container['local_storage'].extend(case_container['local_storage'])
+
+            # 更新预设的浏览器信息
+            case_template['config']['cookies'] = list_to_dict(project_container['cookies'])
+            case_template['config']['session_storage'] = list_to_dict(project_container['session_storage'])
+            case_template['config']['local_storage'] = list_to_dict(project_container['local_storage'])
 
             # 设置的用例执行多少次就加入多少次
             for i in range(current_case.run_times or 1):

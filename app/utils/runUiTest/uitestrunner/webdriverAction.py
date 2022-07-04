@@ -22,17 +22,17 @@ class GetDriver:
         self.browser_driver_path = browser_driver_path
 
     def chrome(self):
-        chrome_options = chromeOptions()
-
-        # 设置配置信息:试了下这个变量还必须是prefs，不然会报错，想不通
-        prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'd:\\'}
-        chrome_options.add_experimental_option('prefs', prefs)
-
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
-        # return webdriver.Chrome(executable_path=self.browser_driver_path)
+        # chrome_options = chromeOptions()
+        #
+        # # 设置配置信息:试了下这个变量还必须是prefs，不然会报错，想不通
+        # prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'd:\\'}
+        # chrome_options.add_experimental_option('prefs', prefs)
+        #
+        # chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--no-sandbox')
+        # chrome_options.add_argument('--disable-dev-shm-usage')
+        # return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
+        return webdriver.Chrome(executable_path=self.browser_driver_path)
 
     def firefox(self):
         firefox_options = firefoxOptions()
@@ -56,13 +56,27 @@ class Driver:
     action_开头的为浏览器页面行为，assert_开头的为元素判断
     """
 
-    def __init__(self, browser_driver_path: str, browser_name: str, timeout: int = 30):
+    def __init__(self,
+                 browser_driver_path: str,
+                 browser_name: str,
+                 timeout: int = 30,
+                 cookies: dict = {},
+                 session_storage: dict = {},
+                 local_storage: dict = {}):
         """ 启动浏览器参数化
         browser_driver_path: 浏览器驱动地址
         browser_name: 要实例化的浏览器类型，用于反射GetDriver获取，详见 GetDriver 的方法
         """
         self.driver = getattr(GetDriver(browser_driver_path), browser_name)()  # 获取浏览器对象
         self.timeout = timeout  # 超时的时间设置
+
+        # 如果有预设浏览器信息，则设置
+        if cookies:
+            self.action_32add_cookie_by_dict_is_input((), cookies)
+        if session_storage:
+            self.action_31set_session_storage_value_by_dict_is_input((), session_storage)
+        if local_storage:
+            self.action_30set_local_storage_value_by_dict_is_input((), local_storage)
 
     @classmethod
     def get_class_property(cls, startswith: str):
@@ -117,6 +131,10 @@ class Driver:
     def action_04click(self, locator: tuple):
         """ 点击元素 """
         self.find_element(locator).click()
+
+    def action_04sleep_is_input(self, locator: tuple, time_seconds: (int, float, str)):
+        """ 等待指定时间 """
+        time.sleep(float(time_seconds) if isinstance(time_seconds, str) else time_seconds)
 
     def action_05clear_and_send_keys_is_input(self, locator: tuple, text: str):
         """ 清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
@@ -241,19 +259,18 @@ class Driver:
         """ 获取元素大小 """
         return self.find_element(locator).size
 
-    def action_30get_local_storage_value_is_input(self, key: str, *args):
+    def action_30get_local_storage_value_is_input(self, locator: tuple, key: str, *args):
         """ 根据key从localStorage中获取数据 """
-        return self.driver.execute_script(f"window.localStorage.getItem({key});")
+        return self.driver.execute_script(f"window.localStorage.getItem('{key}');")
 
-    def action_30set_local_storage_value_is_input(self, data: dict, *args):
+    def action_30set_local_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args):
         """ 以字典的形式在localStorage中设置数据 """
-        data = get_dict_data(data)
-        for key, value in data.items():
-            self.driver.execute_script(f"window.localStorage.setItem({key}, {value});")
+        for key, value in get_dict_data(data).items():
+            self.driver.execute_script(f"window.localStorage.setItem('{key}', '{value}');")
 
-    def action_30remove_local_storage_value_is_input(self, key: str, *args):
+    def action_30remove_local_storage_value_is_input(self, locator: tuple, key: str, *args):
         """ 根据key在localStorage中删除数据 """
-        return self.driver.execute_script(f"window.localStorage.removeItem({key});")
+        return self.driver.execute_script(f"window.localStorage.removeItem('{key}');")
 
     def action_30clear_local_storage_value(self, *args):
         """ 清空localStorage中的所有数据 """
@@ -261,17 +278,16 @@ class Driver:
 
     def action_31get_session_storage_value_is_input(self, key: str, *args):
         """ 根据key从sessionStorage中获取数据 """
-        return self.driver.execute_script(f"window.sessionStorage.getItem({key});")
+        return self.driver.execute_script(f"window.sessionStorage.getItem('{key}');")
 
-    def action_31set_session_storage_value_is_input(self, data: dict, *args):
+    def action_31set_session_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args):
         """ 以字典的形式在sessionStorage中设置数据 """
-        data = get_dict_data(data)
-        for key, value in data.items():
-            self.driver.execute_script(f"window.sessionStorage.setItem({key}, {value});")
+        for key, value in get_dict_data(data).items():
+            self.driver.execute_script(f"window.sessionStorage.setItem('{key}', '{value}');")
 
-    def action_31remove_session_storage_value_is_input(self, key: str, *args):
+    def action_31remove_session_storage_value_is_input(self, locator: tuple, key: str, *args):
         """ 根据key在sessionStorage中删除数据 """
-        return self.driver.execute_script(f"window.sessionStorage.removeItem({key});")
+        return self.driver.execute_script(f"window.sessionStorage.removeItem('{key}');")
 
     def action_31clear_session_storage_value(self, *args):
         """ 清空sessionStorage中的所有数据 """
@@ -281,16 +297,16 @@ class Driver:
         """ 获取cookie中的所有数据 """
         return self.driver.get_cookies()
 
-    def action_32get_cookie_is_input(self, name: str, *args):
+    def action_32get_cookie_is_input(self, locator: tuple, name: str, *args):
         """ 根据key获取cookie中的指定数据 """
         return self.driver.get_cookie(name)
 
-    def action_32add_cookie_is_input(self, cookie: dict, *args):
+    def action_32add_cookie_by_dict_is_input(self, locator: tuple, cookie, *args):
         """ 以字典形式添加cookie """
-        cookie = get_dict_data(cookie)
-        return self.driver.add_cookie(cookie)
+        for key, value in get_dict_data(cookie).items():
+            self.driver.add_cookie({"name": key, "value": value})
 
-    def action_32delete_cookie_is_input(self, name: str, *args):
+    def action_32delete_cookie_is_input(self, locator: tuple, name: str, *args):
         """ 根据key删除cookie中的指定数据 """
         return self.driver.delete_cookie(name)
 

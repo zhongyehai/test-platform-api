@@ -10,12 +10,12 @@ from flask import request
 from flask.views import MethodView
 from flask_apscheduler import APScheduler
 
-from app.ui_test.task.models import UiTask
-from app.ui_test.caseSet.models import UiCaeSet
+from app.ui_test.models.task import UiTask
+from app.ui_test.models.caseSet import UiCaeSet
 from app.utils import restful
 from app.utils.parseCron import parse_cron
-from app.api_test.sets.models import ApiSet, db
-from app.api_test.task.models import ApiTask
+from app.api_test.models.caseSet import ApiSet, db
+from app.api_test.models.task import ApiTask
 from app.ucenter.user.models import User
 from app import create_app
 from app.utils.runApiTest.runHttpRunner import RunCase as RunApiCase

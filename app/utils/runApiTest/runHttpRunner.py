@@ -10,14 +10,14 @@ from datetime import datetime
 from flask.json import JSONEncoder
 
 from app.utils.runApiTest.httprunner.api import HttpRunner
-from app.api_test.sets.models import ApiSet as Set
+from app.api_test.models.caseSet import ApiSet as Set
 from app.utils.log import logger
-from app.api_test.apiMsg.models import ApiMsg
-from app.api_test.case.models import ApiCase as Case
-from app.api_test.step.models import ApiStep as Step
-from app.api_test.func.models import Func
-from app.api_test.project.models import ApiProject as Project, ApiProjectEnv as ProjectEnv
-from app.api_test.report.models import ApiReport as Report
+from app.api_test.models.api import ApiMsg
+from app.api_test.models.case import ApiCase as Case
+from app.api_test.models.step import ApiStep as Step
+from app.api_test.models.func import Func
+from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
+from app.api_test.models.report import ApiReport as Report
 from app.utils.globalVariable import API_REPORT_ADDRESS
 from app.utils.parse import encode_object
 from app.utils.runApiTest.parseModel import ProjectFormatModel, ApiFormatModel, CaseFormatModel, StepFormatModel

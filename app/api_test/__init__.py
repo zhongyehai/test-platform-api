@@ -10,16 +10,7 @@ from app.utils.log import logger
 api_test = Blueprint('apiTest', __name__)
 api_test.logger = logger
 
-from app.api_test.project import views
-from app.api_test.module import views
-from app.api_test.apiMsg import views
-from app.api_test.sets import views
-from app.api_test.case import views
-from app.api_test.step import views
-from app.api_test.task import views
-from app.api_test.report import views
-from app.api_test.func import views
-from app.api_test.home import views
+from app.api_test.views import api, case, func, home, module, project, report, caseSet, step, task
 
 
 @api_test.before_request

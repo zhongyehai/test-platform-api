@@ -68,6 +68,16 @@ def update_dict_to_list(from_dict: dict, to_list: list):
     return parse_dict_to_list(variables)
 
 
+def list_to_dict(data: list):
+    """ [{}] => {} """
+    # res = {}
+    # for item in data:
+    #     for key, value in item.items():
+    #         res[key] = value
+    # return res
+    return {key: value for item in data for key, value in item.items()}
+
+
 def extract_functions(content):
     """ 从字符串内容中提取所有自定义函数，格式为${fun()}
     @param (str) content
