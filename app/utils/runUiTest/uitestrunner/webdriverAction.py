@@ -22,17 +22,17 @@ class GetDriver:
         self.browser_driver_path = browser_driver_path
 
     def chrome(self):
-        # chrome_options = chromeOptions()
-        #
-        # # 设置配置信息:试了下这个变量还必须是prefs，不然会报错，想不通
-        # prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'd:\\'}
-        # chrome_options.add_experimental_option('prefs', prefs)
-        #
-        # chrome_options.add_argument('--headless')
-        # chrome_options.add_argument('--no-sandbox')
-        # chrome_options.add_argument('--disable-dev-shm-usage')
-        # return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
-        return webdriver.Chrome(executable_path=self.browser_driver_path)
+        chrome_options = chromeOptions()
+
+        # 设置配置信息:试了下这个变量还必须是prefs，不然会报错，想不通
+        prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'd:\\'}
+        chrome_options.add_experimental_option('prefs', prefs)
+
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
+        # return webdriver.Chrome(executable_path=self.browser_driver_path)
 
     def firefox(self):
         firefox_options = firefoxOptions()
