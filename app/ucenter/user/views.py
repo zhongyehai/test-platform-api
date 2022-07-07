@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
-from flask_login import login_user, logout_user, current_user
+from flask import g
 
 from app.utils import restful
-from app.utils.required import admin_required, login_required, generate_reset_token
+from app.utils.required import admin_required, login_required
 from app.ucenter import ucenter
 from app.baseView import AdminMethodView
 from app.baseModel import db
@@ -37,9 +36,8 @@ def login():
     form = LoginForm()
     if form.validate():
         user = form.user
-        login_user(user, remember=True)
-        user_info, token = user.to_dict(), generate_reset_token(user)
-        user_info['token'] = token
+        user_info = user.to_dict()
+        user_info['token'] = user.generate_reset_token()
         return restful.success('登录成功', user_info)
     return restful.fail(msg=form.get_error())
 
@@ -48,7 +46,6 @@ def login():
 # @login_required
 def logout():
     """ 登出 """
-    logout_user()
     return restful.success(msg='登出成功')
 
 
@@ -58,15 +55,14 @@ def user_password():
     """ 修改密码 """
     form = ChangePasswordForm()
     if form.validate():
-        with db.auto_commit():
-            current_user.password = form.newPassword.data
+        form.user.update({'password': form.newPassword.data})
         return restful.success(f'密码已修改为 {form.newPassword.data}')
     return restful.fail(msg=form.get_error())
 
 
 @ucenter.route('/status', methods=['PUT'])
-@admin_required
 @login_required
+@admin_required
 def user_status():
     """ 改变用户状态 """
     form = ChangeStatusUserForm()

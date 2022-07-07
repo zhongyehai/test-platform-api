@@ -2,8 +2,7 @@
 from threading import Thread
 
 import requests
-from flask import request
-from flask_login import current_user
+from flask import request, g
 
 from app.api_test.models.report import ApiReport
 from app.api_test.models.caseSet import ApiSet
@@ -25,7 +24,7 @@ def api_run_task_view():
     if form.validate():
         task = form.task
         project_id = task.project_id
-        report = ApiReport.get_new_report(task.name, 'task', current_user.name, current_user.id, project_id)
+        report = ApiReport.get_new_report(task.name, 'task', g.user_name, g.user_id, project_id)
 
         # 新起线程运行任务
         Thread(
@@ -123,7 +122,7 @@ class ApiTaskStatus(BaseMethodView):
             try:
                 res = requests.post(
                     url='http://localhost:8025/api/job/status',
-                    json={'userId': current_user.id, 'taskId': task.id, 'type': 'api'}
+                    json={'userId': g.user_id, 'taskId': task.id, 'type': 'api'}
                 ).json()
                 if res["status"] == 200:
                     return restful.success(f'任务【{form.task.name}】启用成功', data=res)

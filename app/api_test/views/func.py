@@ -3,8 +3,7 @@ import importlib
 import types
 import traceback
 
-from flask import current_app
-from flask_login import current_user
+from flask import current_app as app, g
 
 from app.utils import restful
 from app.utils.required import login_required
@@ -50,7 +49,7 @@ def debug_func():
             result = module_functions_dict[func['func_name']](*func['args'], **func['kwargs'])
             return restful.success(msg='执行成功，请查看执行结果', result=result)
         except Exception as e:
-            current_app.logger.info(str(e))
+            app.logger.info(str(e))
             error_data = '\n'.join('{}'.format(traceback.format_exc()).split('↵'))
             return restful.fail(msg='语法错误，请检查', result=error_data)
     return restful.fail(msg=form.get_error())
@@ -77,7 +76,7 @@ class FuncView(BaseMethodView):
     def post(self):
         form = CreatFuncForm()
         if form.validate():
-            Func().create(dict(name=form.name.data, create_user=current_user.id, update_user=current_user.id))
+            Func().create(dict(name=form.name.data, create_user=g.user_id, update_user=g.user_id))
             return restful.success(f'函数文件 {form.name.data} 创建成功')
         return restful.fail(form.get_error())
 

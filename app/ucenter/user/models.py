@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from werkzeug.security import check_password_hash, generate_password_hash
-from functools import wraps
 
-from flask_login import UserMixin, current_user
-from flask import request
+from flask import current_app as app
 
-from app import login_manager
 from app.baseModel import BaseModel, db
-from app.utils import restful
 
 # 角色 与 权限映射表
 roles_permissions = db.Table(
@@ -32,7 +29,7 @@ class Permission(BaseModel):
     role = db.relationship('Role', secondary=roles_permissions, back_populates='permission')
 
 
-class User(UserMixin, BaseModel):
+class User(BaseModel):
     """ 用户表 """
     __tablename__ = 'users'
     account = db.Column(db.String(50), unique=True, index=True, comment='账号')
@@ -54,6 +51,13 @@ class User(UserMixin, BaseModel):
     def verify_password(self, password):
         """ 校验密码 """
         return check_password_hash(self.password_hash, password)
+
+    def generate_reset_token(self, expiration=None):
+        """ 生成token，默认有效期为系统配置的时长 """
+        return Serializer(
+            app.config['SECRET_KEY'],
+            expiration or app.conf['token_time_out']
+        ).dumps({'id': self.id, 'name': self.name, 'role': self.role_id}).decode('utf-8')
 
     @classmethod
     def make_pagination(cls, form):
@@ -80,37 +84,3 @@ class User(UserMixin, BaseModel):
         """ 判断当前用户是否有当前请求的权限 """
         permission = Permission.query.filter_by(name=permission_name).first()
         return permission is not None and self.role is not None and permission in self.role.permission
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-
-def login_required(func):
-    """ 校验用户的登录状态 token"""
-
-    @wraps(func)
-    def decorated_view(*args, **kwargs):
-        # 前端拦截器检测到响应为 '登录超时,请重新登录' ，自动跳转到登录页
-        return func(*args, **kwargs) if User.parse_token(request.headers.get('X-Token')) else restful.fail('登录超时,请重新登录')
-
-    return decorated_view
-
-
-def permission_required(permission_name):
-    """ 校验当前用户是否有访问当前接口的权限 """
-
-    def decorator(func):
-        @wraps(func)
-        def decorated_function(*args, **kwargs):
-            return restful.forbidden('没有该权限') if not current_user.can(permission_name) else func(*args, **kwargs)
-
-        return decorated_function
-
-    return decorator
-
-
-def admin_required(func):
-    """ 校验是否为管理员权限 """
-    return permission_required('ADMINISTER')(func)

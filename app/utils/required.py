@@ -3,24 +3,18 @@
 from functools import wraps
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
-from flask import current_app, request
-from flask_login import current_user
+from flask import current_app as app, request, g
 
 from app.utils import restful
-from config.config import conf
-
-
-def generate_reset_token(user, expiration=conf['token_time_out']):
-    """ 生成token，默认有效期一个小时 """
-    return Serializer(current_app.config['SECRET_KEY'], expiration).dumps(
-        {'id': user.id, 'name': user.name}).decode('utf-8')
 
 
 def parse_token(token):
     """ 校验token是否过期，或者是否合法 """
     try:
-        data = Serializer(current_app.config['SECRET_KEY']).loads(token.encode('utf-8'))
-        return data
+        from app.ucenter.user.models import User
+        data = Serializer(app.config['SECRET_KEY']).loads(token.encode('utf-8'))
+        g.user_id, g.user_name, g.user_role = data['id'], data['name'], data['role']  # 把用户数据存到g对象，方便后面使用
+        return True
     except:
         return False
 
@@ -42,7 +36,9 @@ def permission_required(permission_name):
     def decorator(func):
         @wraps(func)
         def decorated_function(*args, **kwargs):
-            return restful.forbidden('没有该权限') if not current_user.can(permission_name) else func(*args, **kwargs)
+            from app.ucenter.user.models import User
+            user = User.get_first(id=g.user_id)
+            return restful.forbidden('没有该权限') if not user.can(permission_name) else func(*args, **kwargs)
 
         return decorated_function
 

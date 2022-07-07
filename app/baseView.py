@@ -13,4 +13,4 @@ class BaseMethodView(views.MethodView, JsonUtil):
 
 class AdminMethodView(BaseMethodView):
     """ 管理员权限校验 """
-    decorators = [login_required, admin_required]
+    decorators = [admin_required, login_required]  # 后面的装饰器先执行

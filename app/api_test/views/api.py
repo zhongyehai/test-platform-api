@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from threading import Thread
 
-from flask import request, send_from_directory
-from flask_login import current_user
+from flask import request, send_from_directory, g
 
 from app.api_test.models.module import ApiModule
 from app.api_test.models.project import ApiProject
@@ -64,7 +63,7 @@ def api_get_api_belong_to():
 @login_required
 def api_api_upload():
     """ 从excel中导入接口 """
-    file, module, user_id = request.files.get('file'), ApiModule.get_first(id=request.form.get('id')), current_user.id
+    file, module, user_id = request.files.get('file'), ApiModule.get_first(id=request.form.get('id')), g.user_id
     if not module:
         return restful.fail('模块不存在')
     if file and file.filename.endswith('xls'):
@@ -98,7 +97,7 @@ def api_run_api_msg():
     form = RunApiMsgForm()
     if form.validate():
         api, api_list = form.api_list[0], form.api_list
-        report = Report.get_new_report(api.name, 'api', current_user.name, current_user.id, form.projectId.data)
+        report = Report.get_new_report(api.name, 'api', g.user_name, g.user_id, form.projectId.data)
 
         # 新起线程运行接口
         Thread(

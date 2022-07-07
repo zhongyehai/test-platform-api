@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from flask_login import current_user
+from flask import g
 from wtforms import StringField, IntegerField
-from wtforms.validators import ValidationError, Length, DataRequired
+from wtforms.validators import Length, DataRequired
 
 from app.baseForm import BaseForm
 from .models import User, Role
@@ -17,18 +17,15 @@ class CreateUserForm(BaseForm):
 
     def validate_name(self, field):
         """ 校验用户名不重复 """
-        if User.get_first(name=field.data):
-            raise ValidationError(f'用户名 {field.data} 已存在')
+        self.validate_data_is_not_exist(f'用户名 {field.data} 已存在', User, name=field.data)
 
     def validate_account(self, field):
         """ 校验账号不重复 """
-        if User.get_first(account=field.data):
-            raise ValidationError(f'账号 {field.data} 已存在')
+        self.validate_data_is_not_exist(f'账号 {field.data} 已存在', User, account=field.data)
 
     def validate_role_id(self, field):
         """ 校验角色存在 """
-        if not Role.get_first(id=field.data):
-            raise ValidationError(f'id为 {field.data} 的角色不存在')
+        self.validate_data_is_exist(f'id为 {field.data} 的角色不存在', Role, id=field.data)
 
 
 class ChangePasswordForm(BaseForm):
@@ -39,13 +36,13 @@ class ChangePasswordForm(BaseForm):
 
     def validate_oldPassword(self, field):
         """ 校验旧密码是否正确 """
-        if not current_user.verify_password(field.data):
-            raise ValidationError(f'旧密码 {field.data} 错误')
+        user = User.get_first(id=g.user_id)
+        self.validate_data_is_true(f'旧密码 {field.data} 错误', user.verify_password(field.data))
+        setattr(self, 'user', user)
 
     def validate_surePassword(self, field):
         """ 校验两次密码是否一致 """
-        if self.newPassword.data != field.data:
-            raise ValidationError(f'新密码 {self.newPassword} 与确认密码 {field.data} 不一致')
+        self.validate_data_is_true('新密码与确认密码不一致', self.newPassword.data == field.data)
 
 
 class LoginForm(BaseForm):
@@ -55,11 +52,9 @@ class LoginForm(BaseForm):
 
     def validate_account(self, field):
         """ 校验账号 """
-        user = User.get_first(account=field.data)
-        if user is None or not user.verify_password(self.password.data):
-            raise ValidationError(f'账号或密码错误')
-        if user.status == 0:
-            raise ValidationError(f'账号 {field.data} 为冻结状态，请联系管理员')
+        user = self.validate_data_is_exist('账号或密码错误', User, account=field.data)
+        self.validate_data_is_true('账号或密码错误', user.verify_password(self.password.data))
+        self.validate_data_is_true(f'账号 {field.data} 为冻结状态，请联系管理员', user.status != 0)
         setattr(self, 'user', user)
 
 
@@ -84,9 +79,7 @@ class GetUserEditForm(BaseForm):
     id = IntegerField(validators=[DataRequired('用户id必传')])
 
     def validate_id(self, field):
-        user = User.get_first(id=field.data)
-        if not user:
-            raise ValidationError(f'没有id为 {field.data} 的用户')
+        user = self.validate_data_is_exist(f'没有id为 {field.data} 的用户', User, id=field.data)
         setattr(self, 'user', user)
 
 
@@ -94,11 +87,8 @@ class DeleteUserForm(GetUserEditForm):
     """ 删除用户 """
 
     def validate_id(self, field):
-        user = User.get_first(id=field.data)
-        if not user:
-            raise ValidationError(f'没有id为 {field.data} 的用户')
-        if user.id == current_user.id:
-            raise ValidationError('不能自己删自己')
+        user = self.validate_data_is_exist(f'没有id为 {field.data} 的用户', User, id=field.data)
+        self.validate_data_is_false('不能自己删自己', user.id == g.user_id)
         setattr(self, 'user', user)
 
 
@@ -106,9 +96,7 @@ class ChangeStatusUserForm(GetUserEditForm):
     """ 改变用户状态 """
 
     def validate_id(self, field):
-        user = User.get_first(id=field.data)
-        if not user:
-            raise ValidationError(f'没有id为 {field.data} 的用户')
+        user = self.validate_data_is_exist(f'没有id为 {field.data} 的用户', User, id=field.data)
         setattr(self, 'user', user)
 
 
@@ -118,19 +106,23 @@ class EditUserForm(GetUserEditForm, CreateUserForm):
 
     def validate_id(self, field):
         """ 校验id需存在 """
-        user = User.get_first(id=field.data)
-        if not user:
-            raise ValidationError(f'id为 {field.data} 的用户不存在')
+        user = self.validate_data_is_exist(f'没有id为 {field.data} 的用户', User, id=field.data)
         setattr(self, 'user', user)
 
     def validate_name(self, field):
         """ 校验用户名不重复 """
-        old_data = User.get_first(name=field.data)
-        if old_data and old_data.name == field.data and old_data.id != self.id.data:
-            raise ValidationError(f'用户名 {field.data} 已存在')
+        self.validate_data_is_not_repeat(
+            f'用户名 {field.data} 已存在',
+            User,
+            self.id.data,
+            name=field.data
+        )
 
     def validate_account(self, field):
         """ 校验账号不重复 """
-        old_data = User.get_first(account=field.data)
-        if old_data and old_data.account == field.data and old_data.id != self.id.data:
-            raise ValidationError(f'账号 {field.data} 已存在')
+        self.validate_data_is_not_repeat(
+            f'账号 {field.data} 已存在',
+            User,
+            self.id.data,
+            account=field.data
+        )

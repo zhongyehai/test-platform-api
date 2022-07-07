@@ -2,8 +2,7 @@
 import json
 from threading import Thread
 
-from flask import request
-from flask_login import current_user
+from flask import request, g
 
 from app.api_test import api_test
 from app.utils import restful
@@ -38,7 +37,7 @@ def create_step(index, case_id, step):
         case_id=case_id,
         api_id=step['api_id'],
         quote_case=step['quote_case'],
-        create_user=current_user.id
+        create_user=g.user_id
     )
 
 
@@ -90,7 +89,7 @@ def api_run_case():
         case, case_list = form.case_list[0], form.case_list
         project_id = ApiSet.get_first(id=case.set_id).project_id
 
-        report = Report.get_new_report(case.name, 'case', current_user.name, current_user.id, project_id)
+        report = Report.get_new_report(case.name, 'case', g.user_name, g.user_id, project_id)
 
         # 新起线程运行用例
         Thread(
@@ -124,7 +123,7 @@ def api_copy_case():
     case = ApiCase.get_first(id=request.args.get('id'))
     with db.auto_commit():
         old_case = case.to_dict()
-        old_case['create_user'] = old_case['update_user'] = current_user.id
+        old_case['create_user'] = old_case['update_user'] = g.user_id
         new_case = ApiCase()
         new_case.create(old_case, 'func_files', 'variables', 'headers')
         new_case.name = old_case['name'] + '_copy'

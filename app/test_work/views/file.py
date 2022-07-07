@@ -3,9 +3,8 @@
 import os
 import time
 
-from flask import request, send_from_directory
+from flask import request, send_from_directory, current_app as app
 
-from config.config import conf
 from app.test_work import test_work
 from app.utils import restful
 from app.utils.globalVariable import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, UI_CASE_FILE_ADDRESS
@@ -59,8 +58,8 @@ def make_pagination(data_list, pag_size, page_num):
 @login_required
 def get_file_list():
     """ 文件列表 """
-    pag_size = request.args.get('pageSize') or conf['page']['pageSize']
-    page_num = request.args.get('pageNum') or conf['page']['pageNum']
+    pag_size = request.args.get('pageSize') or app.conf['page']['pageSize']
+    page_num = request.args.get('pageNum') or app.conf['page']['pageNum']
     addr = folders.get(request.args.get('fileType'), 'case')
     file_list = os.listdir(addr)
 

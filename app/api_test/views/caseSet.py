@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from threading import Thread
 
-from flask import request
-from flask_login import current_user
+from flask import request, g
 
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.report import ApiReport as Report
@@ -32,7 +31,7 @@ def api_run_case_set():
     form = RunCaseSetForm()
     if form.validate():
         project_id = form.set.project_id
-        report = Report.get_new_report(form.set.name, 'set', current_user.name, current_user.id, project_id)
+        report = Report.get_new_report(form.set.name, 'set', g.user_name, g.user_id, project_id)
 
         # 新起线程运行任务
         Thread(

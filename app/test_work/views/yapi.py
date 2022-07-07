@@ -5,12 +5,11 @@ import os
 import re
 
 import requests
-from flask import request, send_from_directory
-from flask_login import current_user
+from flask import request, send_from_directory, g
 
 from app.test_work import test_work
 from app.config.models import Config
-from app.api_test.models.project import ApiProject
+from app.api_test.models.project import ApiProject, ApiProjectEnv
 from app.test_work.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiffRecord
 from app.baseModel import db
 from app.api_test.models.module import ApiModule
@@ -160,7 +159,7 @@ def update_project(yapi_project):
             data_type = 'add'
             db.session.add(project)
     if data_type == 'add':
-        project.create_env()  # 创建环境
+        ApiProjectEnv.create_env(project.id, Config.loads(Config.get_first(name='run_test_env').value))  # 创建环境
     test_work.logger.info(f'解析yapi后的服务信息：\n{project.to_dict()}')
     return project
 
@@ -781,7 +780,7 @@ def diff_by_yapi():
         yapi_diff_record.name = title
         yapi_diff_record.is_changed = diff_is_changed
         yapi_diff_record.diff_summary = json.dumps(diff_summary, ensure_ascii=False, indent=4)
-        yapi_diff_record.create_user = current_user.id
+        yapi_diff_record.create_user = g.user_id
         db.session.add(yapi_diff_record)
     with open(os.path.join(DIFF_RESULT, f'{yapi_diff_record.id}.json'), 'w', encoding='utf-8') as fp:
         json.dump(diff_detail, fp, ensure_ascii=False, indent=4)

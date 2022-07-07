@@ -3,14 +3,12 @@
 import os
 
 from flask import Flask
-from flask_login import LoginManager
 
 from app.utils import globalVariable
 from app.utils.log import logger
-from config.config import conf, ProductionConfig  # ,logger
+from config.config import conf, ProductionConfig
 from app.baseModel import db
 
-login_manager = LoginManager()
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -24,7 +22,6 @@ def create_app():
     db.init_app(app)
     db.app = app
     db.create_all()
-    login_manager.init_app(app)
 
     from app.api_test import api_test as api_test_blueprint
     from app.ui_test import ui_test as ui_test_blueprint

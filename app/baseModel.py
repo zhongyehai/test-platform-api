@@ -3,12 +3,11 @@
 from datetime import datetime
 from werkzeug.exceptions import abort
 
-from flask_login import current_user
+from flask import g, current_app as app
 from flask_sqlalchemy import SQLAlchemy as _SQLAlchemy, BaseQuery, Pagination
 from sqlalchemy import MetaData
 from contextlib import contextmanager
 
-from config.config import conf
 from .utils.jsonUtil import JsonUtil
 from .utils.parse import parse_list_to_dict, update_dict_to_list
 
@@ -42,7 +41,7 @@ class Qeury(BaseQuery):
 
     def paginate(self, page=1, per_page=20, error_out=True, max_per_page=None):
         """ 重写分页器，把页码和页数强制转成int，解决服务器吧int识别为str导致分页报错的问题"""
-        page, per_page = int(page) or conf['page']['pageNum'], int(per_page) or conf['page']['pageSize']
+        page, per_page = int(page) or app.conf['page']['pageNum'], int(per_page) or app.conf['page']['pageSize']
         if max_per_page is not None:
             per_page = min(per_page, max_per_page)
         items = self.limit(per_page).offset((page - 1) * per_page).all()
@@ -92,10 +91,10 @@ class BaseModel(db.Model, JsonUtil):
                 if hasattr(self, key) and key != 'id':
                     setattr(self, key, self.dumps(value) if key in args else value)
 
-            # 如果是执行初始化脚本，获取不到current_user，try一下
+            # 如果是执行初始化脚本，获取不到g，try一下
             try:
-                setattr(self, 'create_user', current_user.id)
-                setattr(self, 'update_user', current_user.id)
+                setattr(self, 'create_user', g.user_id)
+                setattr(self, 'update_user', g.user_id)
             except Exception as error:
                 pass
             db.session.add(self)
@@ -103,13 +102,13 @@ class BaseModel(db.Model, JsonUtil):
 
     def update(self, attrs_dict: dict, *args):
         """ 修改数据，若指定了字段，则把该字段的值转为json """
-        # 如果是执行初始化脚本，获取不到current_user，try一下
+        # 如果是执行初始化脚本，获取不到g，try一下
         with db.auto_commit():
             for key, value in attrs_dict.items():
                 if hasattr(self, key) and key not in ['id', 'num']:
                     setattr(self, key, self.dumps(value) if key in args else value)
             try:
-                setattr(self, 'update_user', current_user.id)
+                setattr(self, 'update_user', g.user_id)
             except Exception as error:
                 pass
 
@@ -233,22 +232,22 @@ class BaseProject(BaseModel):
 
     def is_not_manager(self):
         """ 判断用户非服务负责人 """
-        return current_user.id != self.manager
+        return g.user_id != self.manager
 
     @classmethod
     def is_not_manager_id(cls, project_id):
         """ 判断当前用户非当前数据的负责人 """
-        return cls.get_first(id=project_id).manager != current_user.id
+        return cls.get_first(id=project_id).manager != g.user_id
 
     @classmethod
     def is_manager_id(cls, project_id):
         """ 判断当前用户为当前数据的负责人 """
-        return cls.get_first(id=project_id).manager == current_user.id
+        return cls.get_first(id=project_id).manager == g.user_id
 
     @classmethod
-    def is_admin(cls):
+    def is_admin(cls, ):
         """ 角色为2，为管理员 """
-        return current_user.role_id == 2
+        return g.user_role == 2
 
     @classmethod
     def is_not_admin(cls):
@@ -264,7 +263,7 @@ class BaseProject(BaseModel):
         2.当前用户为当前数据的创建者
         3.当前用户为当前要删除服务的负责人
         """
-        return cls.is_manager_id(project_id) or cls.is_admin() or obj.is_create_user(current_user.id)
+        return cls.is_manager_id(project_id) or cls.is_admin() or obj.is_create_user(g.user_id)
 
     @classmethod
     def make_pagination(cls, form):

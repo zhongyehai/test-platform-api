@@ -2,8 +2,7 @@
 
 import re
 
-from flask import request
-from flask_login import current_user
+from flask import request, g
 from wtforms import Form, ValidationError
 
 from .utils.jsonUtil import JsonUtil
@@ -24,7 +23,7 @@ class BaseForm(Form, JsonUtil):
 
     def is_admin(self):
         """ 角色为2，为管理员 """
-        return current_user.role_id == 2
+        return g.user_role == 2
 
     def is_not_admin(self):
         """ 角色不为2，非管理员 """
@@ -38,7 +37,7 @@ class BaseForm(Form, JsonUtil):
         2.当前用户为当前数据的创建者
         3.当前用户为当前要删除服务的负责人
         """
-        return is_manager or self.is_admin() or obj.is_create_user(current_user.id)
+        return is_manager or self.is_admin() or obj.is_create_user(g.user_id)
 
     def set_attr(self, **kwargs):
         """ 根据键值对 对form对应字段的值赋值 """

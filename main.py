@@ -7,7 +7,6 @@ import requests
 from flask import current_app, request
 
 from app.utils import restful
-from config.config import conf
 
 app = create_app()
 
@@ -26,10 +25,10 @@ def error_handler(e):
     try:
         current_app.logger.error(f'系统出错了: {e}')
         requests.post(
-            url=conf['error_push']['url'],
+            url=current_app.conf['error_push']['url'],
             json={
-                'key': conf['error_push']['key'],
-                'head': f'{conf["SECRET_KEY"]}报错了',
+                'key': current_app.conf['error_push']['key'],
+                'head': f'{current_app.conf["SECRET_KEY"]}报错了',
                 'body': f'{error}'
             }
         )

@@ -3,8 +3,7 @@
 import json
 from threading import Thread
 
-from flask import request
-from flask_login import current_user
+from flask import request, g
 
 from app.ui_test import ui_test
 from app.utils import restful
@@ -37,8 +36,8 @@ def create_step(index, case_id, step):
         element_id=step['element_id'],
         page_id=step['page_id'],
         quote_case=step['quote_case'],
-        create_user=current_user.id,
-        update_user=current_user.id
+        create_user=g.user_id,
+        update_user=g.user_id
     )
 
 
@@ -88,7 +87,7 @@ def ui_run_case():
     if form.validate():
         case = form.case
         project_id = UiCaeSet.get_first(id=case.set_id).project_id
-        report = Report.get_new_report(case.name, 'case', current_user.name, current_user.id, project_id)
+        report = Report.get_new_report(case.name, 'case', g.user_name, g.user_id, project_id)
 
         # 新起线程运行用例
         Thread(
@@ -121,7 +120,7 @@ def ui_copy_case():
     case = UiCase.get_first(id=request.args.get('id'))
     with db.auto_commit():
         old_case = case.to_dict()
-        old_case['create_user'] = old_case['update_user'] = current_user.id
+        old_case['create_user'] = old_case['update_user'] = g.user_id
         new_case = UiCase()
         new_case.create(old_case, 'func_files', 'variables', 'cookies', 'session_storage', 'local_storage')
         new_case.name = old_case['name'] + '_copy'
