@@ -6,7 +6,7 @@ from wtforms.validators import Length, DataRequired
 
 from app.baseForm import BaseForm
 from app.ui_test.models.project import UiProject, UiProjectEnv
-from app.ucenter.user.models import User
+from app.ucenter.models.user import User
 from app.ui_test.models.module import UiModule
 
 

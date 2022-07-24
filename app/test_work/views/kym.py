@@ -6,13 +6,13 @@ import os
 from flask import request, send_from_directory
 
 from app.test_work import test_work
-from app.utils.globalVariable import TEMP_FILE_ADDRESS
-from app.utils.makeXmind import make_xmind
+from utils import restful
+from utils.globalVariable import TEMP_FILE_ADDRESS
+from utils.makeXmind import make_xmind
 from app.test_work.models.kym import KYMModule, db
-from app.config.models import Config
-from app.utils import restful
+from app.config.models.config import Config
 from app.baseView import BaseMethodView
-from app.utils.required import login_required
+from utils.required import login_required
 
 
 @test_work.route('/kym/project', methods=['POST'])
@@ -25,7 +25,7 @@ def add_kym_project():
         kym_data = {"nodeData": {"topic": request.json['project'], "root": True, "children": []}}
         kym_data['nodeData']['children'] = json.loads(Config.get_first(name='kym').value)
         kym = KYMModule()
-        kym.create({'project': request.json['project'], 'kym': json.dumps(kym_data, ensure_ascii=False, indent=4)})
+        kym.create({'project': request.json['project'], 'kym': kym_data})
         db.session.add(kym)
     return restful.success('新增成功', data=kym.to_dict())
 

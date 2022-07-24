@@ -3,9 +3,9 @@ import os
 
 from flask import request
 
-from app.utils.report.report import render_html_report
-from app.utils import restful
-from app.utils.required import login_required
+from utils.report.report import render_html_report
+from utils import restful
+from utils.required import login_required
 from app.api_test import api_test
 from app.baseModel import db
 from app.api_test.models.report import ApiReport

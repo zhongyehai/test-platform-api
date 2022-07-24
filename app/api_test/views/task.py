@@ -6,9 +6,9 @@ from flask import request, g
 
 from app.api_test.models.report import ApiReport
 from app.api_test.models.caseSet import ApiSet
-from app.utils import restful
-from app.utils.required import login_required
-from app.utils.runApiTest.runHttpRunner import RunCase
+from utils import restful
+from utils.required import login_required
+from utils.client.runApiTest.runHttpRunner import RunCase
 from app.api_test import api_test
 from app.baseView import BaseMethodView
 from app.baseModel import db
@@ -33,7 +33,7 @@ def api_run_task_view():
                 report_id=report.id,
                 run_name=report.name,
                 task=task.to_dict(),
-                case_id=ApiSet.get_case_id(project_id, task.loads(task.set_id), task.loads(task.case_id)),
+                case_id=ApiSet.get_case_id(project_id, task.loads(task.set_ids), task.loads(task.case_ids)),
                 is_async=form.is_async.data,
                 env=form.env.data
             ).run_case
@@ -69,7 +69,7 @@ def api_task_copy():
         old_task = form.task
         with db.auto_commit():
             new_task = ApiTask()
-            new_task.create(old_task.to_dict(), 'set_id', 'case_id')
+            new_task.create(old_task.to_dict())
             new_task.name = old_task.name + '_copy'
             new_task.status = 0
             new_task.num = ApiTask.get_insert_num(project_id=old_task.project_id)
@@ -91,7 +91,7 @@ class ApiTaskView(BaseMethodView):
         form = AddTaskForm()
         if form.validate():
             form.num.data = ApiTask.get_insert_num(project_id=form.project_id.data)
-            new_task = ApiTask().create(form.data, 'set_id', 'case_id')
+            new_task = ApiTask().create(form.data)
             return restful.success(f'任务【{form.name.data}】新建成功', new_task.to_dict())
         return restful.fail(form.get_error())
 
@@ -99,7 +99,7 @@ class ApiTaskView(BaseMethodView):
         form = EditTaskForm()
         if form.validate():
             form.num.data = ApiTask.get_insert_num(project_id=form.project_id.data)
-            form.task.update(form.data, 'set_id', 'case_id')
+            form.task.update(form.data)
             return restful.success(f'任务【{form.name.data}】修改成功', form.task.to_dict())
         return restful.fail(form.get_error())
 

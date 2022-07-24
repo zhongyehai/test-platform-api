@@ -5,9 +5,9 @@ from threading import Thread
 from flask import request, g
 
 from app.api_test import api_test
-from app.utils import restful
-from app.utils.required import login_required
-from app.utils.runApiTest.runHttpRunner import RunCase
+from utils import restful
+from utils.required import login_required
+from utils.client.runApiTest.runHttpRunner import RunCase
 from app.baseView import BaseMethodView
 from app.baseModel import db
 from app.api_test.models.case import ApiCase
@@ -158,14 +158,14 @@ class ApiCaseView(BaseMethodView):
         form = AddCaseForm()
         if form.validate():
             form.num.data = ApiCase.get_insert_num(set_id=form.set_id.data)
-            new_case = ApiCase().create(form.data, 'func_files', 'variables', 'headers')
+            new_case = ApiCase().create(form.data)
             return restful.success(f'用例【{new_case.name}】新建成功', data=new_case.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):
         form = EditCaseForm()
         if form.validate():
-            form.case.update(form.data, 'func_files', 'variables', 'headers')
+            form.case.update(form.data)
             return restful.success(msg=f'用例【{form.case.name}】修改成功', data=form.case.to_dict())
         return restful.fail(form.get_error())
 

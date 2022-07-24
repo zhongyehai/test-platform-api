@@ -10,9 +10,9 @@ from app.api_test.models.api import ApiMsg
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.task import ApiTask as Task
 from app.api_test.models.report import ApiReport as Report
-from app.utils import restful
-from app.utils.required import login_required
-from app.utils.globalVariable import CASE_FILE_ADDRESS
+from utils import restful
+from utils.required import login_required
+from utils.globalVariable import CASE_FILE_ADDRESS
 
 
 @api_test.route('/count/title', methods=['GET'])

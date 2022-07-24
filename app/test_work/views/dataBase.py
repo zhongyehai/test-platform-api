@@ -3,12 +3,12 @@
 import os
 import time
 
-from flask import request
+from flask import request, current_app as app
 
-from app.test_work import test_work, app
-from app.utils.globalVariable import DB_BACK_UP_ADDRESS
-from app.utils import restful
-from app.utils.required import login_required
+from app.test_work import test_work
+from utils import restful
+from utils.globalVariable import DB_BACK_UP_ADDRESS
+from utils.required import login_required
 
 
 def make_pagination(data_list, pag_size, page_num):

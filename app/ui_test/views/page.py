@@ -2,8 +2,8 @@
 
 from flask import request, g
 
-from app.utils import restful
-from app.utils.required import login_required
+from utils import restful
+from utils.required import login_required
 from app.ui_test import ui_test
 from app.baseView import BaseMethodView
 from app.ui_test.models.element import UiElement

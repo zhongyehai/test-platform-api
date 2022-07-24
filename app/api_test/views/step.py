@@ -2,8 +2,8 @@
 from flask import request
 
 from app.api_test import api_test
-from app.utils import restful
-from app.utils.required import login_required
+from utils import restful
+from utils.required import login_required
 from app.baseView import BaseMethodView
 from app.baseModel import db
 from app.api_test.models.step import ApiStep
@@ -58,7 +58,7 @@ def api_copy_step():
     old = ApiStep.get_first(id=request.json.get('id')).to_dict()
     old['name'] = f"{old['name']}_copy"
     old['num'] = ApiStep.get_insert_num(case_id=old['case_id'])
-    step = ApiStep().create(old, "headers", "params", "data_form", "data_json", "extracts", "validates", "data_driver")
+    step = ApiStep().create(old)
     return restful.success(msg='步骤复制成功', data=step.to_dict())
 
 
@@ -76,8 +76,7 @@ class ApiStepMethodView(BaseMethodView):
         form = AddStepForm()
         if form.validate():
             form.num.data = ApiStep.get_insert_num(case_id=form.case_id.data)
-            step = ApiStep().create(
-                form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates', 'data_driver')
+            step = ApiStep().create(form.data)
             return restful.success(f'步骤【{step.name}】新建成功', data=step.to_dict())
         return restful.error(form.get_error())
 
@@ -85,9 +84,7 @@ class ApiStepMethodView(BaseMethodView):
         """ 修改步骤 """
         form = EditStepForm()
         if form.validate():
-            form.step.update(
-                form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates', 'data_driver'
-            )
+            form.step.update(form.data)
             return restful.success(msg=f'步骤【{form.step.name}】修改成功', data=form.step.to_dict())
         return restful.fail(form.get_error())
 

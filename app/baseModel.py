@@ -8,8 +8,8 @@ from flask_sqlalchemy import SQLAlchemy as _SQLAlchemy, BaseQuery, Pagination
 from sqlalchemy import MetaData
 from contextlib import contextmanager
 
-from .utils.jsonUtil import JsonUtil
-from .utils.parse import parse_list_to_dict, update_dict_to_list
+from utils.jsonUtil import JsonUtil
+from utils.parse import parse_list_to_dict, update_dict_to_list
 
 
 class SQLAlchemy(_SQLAlchemy):
@@ -76,6 +76,15 @@ class BaseModel(db.Model, JsonUtil):
     create_user = db.Column(db.Integer(), nullable=True, default=1, comment='创建数据的用户id')
     update_user = db.Column(db.Integer(), nullable=True, default=1, comment='修改数据的用户id')
 
+    # 需要做序列化和反序列化的字段
+    args = [
+        'headers', 'variables', 'func_files',
+        'params', 'data_form', 'data_json', 'extracts', 'validates', "data_driver",
+        'set_ids', 'case_ids',
+        'cookies', 'session_storage', 'local_storage',
+        'kym', 'task_item',
+    ]
+
     @property
     def str_created_time(self):
         return datetime.strftime(self.created_time, "%Y-%m-%d %H:%M:%S")
@@ -86,6 +95,9 @@ class BaseModel(db.Model, JsonUtil):
 
     def create(self, attrs_dict: dict, *args):
         """ 插入数据，若指定了字段，则把该字段的值转为json """
+        if not args:
+            args = self.args
+
         with db.auto_commit():
             for key, value in attrs_dict.items():
                 if hasattr(self, key) and key != 'id':
@@ -103,6 +115,9 @@ class BaseModel(db.Model, JsonUtil):
     def update(self, attrs_dict: dict, *args):
         """ 修改数据，若指定了字段，则把该字段的值转为json """
         # 如果是执行初始化脚本，获取不到g，try一下
+        if not args:
+            args = self.args
+
         with db.auto_commit():
             for key, value in attrs_dict.items():
                 if hasattr(self, key) and key not in ['id', 'num']:
@@ -178,6 +193,9 @@ class BaseModel(db.Model, JsonUtil):
         filter_list: 仅要序列化的字段
         当 pop_list 与 filter_list 同时包含同一个字段时，以 filter_list 为准
         """
+        if not to_dict:
+            to_dict = self.args
+
         dict_data = {}
         for column in self.__table__.columns:
             if filter_list:
@@ -294,12 +312,6 @@ class BaseProjectEnv(BaseModel):
     variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共变量')
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
 
-    def to_dict(self, *args, **kwargs):
-        """ 自定义序列化器，把模型的每个字段转为字典，方便返回给前端 """
-        return super(BaseProjectEnv, self).to_dict(
-            to_dict=["variables", "headers", "func_files", 'cookies', 'session_storage', 'local_storage']
-        )
-
     @classmethod
     def synchronization(cls, from_env, to_env_list: list, filed_list: list):
         """ 把当前环境同步到其他环境
@@ -404,9 +416,6 @@ class BaseCase(BaseModel):
     func_files = db.Column(db.Text(), comment='用例需要引用的函数list')
     variables = db.Column(db.Text(), comment='用例级的公共参数')
 
-    def to_dict(self, *args, **kwargs):
-        return super(BaseCase, self).to_dict(to_dict=['func_files', 'variables', 'headers', 'cookies', 'session_storage', 'local_storage'])
-
     @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """
@@ -439,11 +448,6 @@ class BaseStep(BaseModel):
     data_driver = db.Column(db.Text(), default='[]', comment='数据驱动，若此字段有值，则走数据驱动的解析')
     quote_case = db.Column(db.String(5), default='', comment='引用用例的id')
 
-    def to_dict(self, *args, **kwargs):
-        return super(BaseStep, self).to_dict(
-            to_dict=["headers", "params", "data_form", "data_json", "extracts", "validates", "data_driver"]
-        )
-
 
 class BaseTask(BaseModel):
     """ 定时任务基类表 """
@@ -452,7 +456,7 @@ class BaseTask(BaseModel):
     num = db.Column(db.Integer(), comment='任务序号')
     name = db.Column(db.String(255), comment='任务名称')
     env = db.Column(db.String(10), default='test', comment='运行环境')
-    case_id = db.Column(db.Text(), comment='用例id')
+    case_ids = db.Column(db.Text(), comment='用例id')
     task_type = db.Column(db.String(10), default='cron', comment='定时类型')
     cron = db.Column(db.String(255), nullable=True, comment='cron表达式')
     is_send = db.Column(db.String(10), comment='是否发送报告，1.不发送、2.始终发送、3.仅用例不通过时发送')
@@ -465,10 +469,7 @@ class BaseTask(BaseModel):
     email_to = db.Column(db.Text(), comment='收件人邮箱')
     status = db.Column(db.Integer(), default=0, comment='任务的运行状态，0：禁用中、1：启用中，默认0')
     is_async = db.Column(db.Integer(), default=1, comment='任务的运行机制，0：单线程，1：多线程，默认1')
-    set_id = db.Column(db.Text(), comment='用例集id')
-
-    def to_dict(self, *args, **kwargs):
-        return super(BaseTask, self).to_dict(to_dict=['set_id', 'case_id'])
+    set_ids = db.Column(db.Text(), comment='用例集id')
 
     @classmethod
     def make_pagination(cls, form):

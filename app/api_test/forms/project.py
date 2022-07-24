@@ -5,8 +5,8 @@ from wtforms.validators import ValidationError, Length, DataRequired
 
 from app.baseForm import BaseForm
 from app.api_test.models.project import ApiProject, ApiProjectEnv
-from app.ucenter.user.models import User
-from app.api_test.models.func import Func
+from app.ucenter.models.user import User
+from app.assist.models.func import Func
 
 
 class AddProjectForm(BaseForm):

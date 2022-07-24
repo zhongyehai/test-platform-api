@@ -2,8 +2,8 @@
 
 from flask import views
 
-from .utils.required import login_required, admin_required
-from .utils.jsonUtil import JsonUtil
+from utils.required import login_required, admin_required
+from utils.jsonUtil import JsonUtil
 
 
 class BaseMethodView(views.MethodView, JsonUtil):

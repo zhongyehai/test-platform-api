@@ -1,14 +1,38 @@
 # -*- coding: utf-8 -*-
-
-from app import create_app
+import copy
+import json
 import traceback
 
 import requests
 from flask import current_app, request
 
-from app.utils import restful
+from utils import restful
+from app import create_app
 
 app = create_app()
+
+
+@app.before_request
+def before_request():
+    """ 前置钩子函数， 每个请求进来先经过此函数"""
+    if request.method != 'HEAD':
+        app.logger.info(
+            f'【{request.remote_addr}】【{request.method}】【{request.url}】: \n请求参数：{request.json or request.form.to_dict() or request.args.to_dict()}'
+        )
+
+
+@app.after_request
+def after_request(response_obj):
+    """ 后置钩子函数，每个请求最后都会经过此函数 """
+    if 'download' in request.path:
+        return response_obj
+    result = copy.copy(response_obj.response)
+    if isinstance(result[0], bytes):
+        result[0] = bytes.decode(result[0])
+    # 减少日志数据打印，跑用例的数据均不打印到日志
+    if 'apiMsg/run' not in request.path and 'report/run' not in request.path and 'report/list' not in request.path and request.method != 'HEAD':
+        app.logger.info(f'{request.method}==>{request.url}, 返回数据:{json.loads(result[0])}')
+    return response_obj
 
 
 @app.errorhandler(404)

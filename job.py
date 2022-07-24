@@ -12,14 +12,14 @@ from flask_apscheduler import APScheduler
 
 from app.ui_test.models.task import UiTask
 from app.ui_test.models.caseSet import UiCaeSet
-from app.utils import restful
-from app.utils.parseCron import parse_cron
+from utils import restful
+from utils.parseCron import parse_cron
 from app.api_test.models.caseSet import ApiSet, db
 from app.api_test.models.task import ApiTask
-from app.ucenter.user.models import User
+from app.ucenter.models.user import User
 from app import create_app
-from app.utils.runApiTest.runHttpRunner import RunCase as RunApiCase
-from app.utils.runUiTest.runUiTestRunner import RunCase as RunUiCase
+from utils.client.runApiTest.runHttpRunner import RunCase as RunApiCase
+from utils.client.runUiTest.runUiTestRunner import RunCase as RunUiCase
 from config.config import conf
 
 os.environ['TZ'] = 'Asia/Shanghai'
@@ -60,7 +60,7 @@ class JobStatus(MethodView):
         task_model, case_set_model = (ApiTask, ApiSet) if task_type == 'api' else (UiTask, UiCaeSet)
 
         task = task_model.get_first(id=task_id)
-        cases_id = case_set_model.get_case_id(task.project_id, json.loads(task.set_id), json.loads(task.case_id))
+        cases_id = case_set_model.get_case_id(task.project_id, json.loads(task.set_ids), json.loads(task.case_ids))
         try:
             # 把定时任务添加到apscheduler_jobs表中
             scheduler.add_job(

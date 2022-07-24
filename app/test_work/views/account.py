@@ -4,9 +4,9 @@ from flask import request
 
 from app.test_work import test_work
 from app.test_work.models.account import AccountModel
-from app.utils import restful
+from utils import restful
 from app.baseView import BaseMethodView
-from app.utils.required import login_required
+from utils.required import login_required
 
 
 @test_work.route('/account/project/list')

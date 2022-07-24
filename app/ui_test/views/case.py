@@ -6,9 +6,9 @@ from threading import Thread
 from flask import request, g
 
 from app.ui_test import ui_test
-from app.utils import restful
-from app.utils.required import login_required
-from app.utils.runUiTest.runUiTestRunner import RunCase
+from utils import restful
+from utils.required import login_required
+from utils.client.runUiTest.runUiTestRunner import RunCase
 from app.baseView import BaseMethodView
 from app.baseModel import db
 from app.ui_test.models.case import UiCase
@@ -122,7 +122,7 @@ def ui_copy_case():
         old_case = case.to_dict()
         old_case['create_user'] = old_case['update_user'] = g.user_id
         new_case = UiCase()
-        new_case.create(old_case, 'func_files', 'variables', 'cookies', 'session_storage', 'local_storage')
+        new_case.create(old_case)
         new_case.name = old_case['name'] + '_copy'
         new_case.num = UiCase.get_insert_num(set_id=old_case['set_id'])
         db.session.add(new_case)
@@ -155,14 +155,14 @@ class UiCaseView(BaseMethodView):
         form = AddCaseForm()
         if form.validate():
             form.num.data = UiCase.get_insert_num(set_id=form.set_id.data)
-            new_case = UiCase().create(form.data, 'func_files', 'variables', 'cookies', 'session_storage', 'local_storage')
+            new_case = UiCase().create(form.data)
             return restful.success(f'用例【{new_case.name}】新建成功', data=new_case.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):
         form = EditCaseForm()
         if form.validate():
-            form.old_data.update(form.data, 'func_files', 'variables', 'cookies', 'session_storage', 'local_storage')
+            form.old_data.update(form.data)
             return restful.success(msg=f'用例【{form.old_data.name}】修改成功', data=form.old_data.to_dict())
         return restful.fail(form.get_error())
 

@@ -8,7 +8,7 @@ from app.ui_test.models.case import UiCase
 from app.baseForm import BaseForm
 from app.ui_test.models.project import UiProject, UiProjectEnv
 from app.ui_test.models.step import UiStep
-from app.api_test.models.func import Func
+from app.assist.models.func import Func
 
 
 class GetStepListForm(BaseForm):

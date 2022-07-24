@@ -4,7 +4,7 @@ import json
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, DataRequired
 
-from app.api_test.models.func import Func
+from app.assist.models.func import Func
 from app.api_test.models.project import ApiProject, ApiProjectEnv
 from app.api_test.models.caseSet import ApiSet
 from app.api_test.models.step import ApiStep as Step
@@ -132,7 +132,10 @@ class DeleteCaseForm(BaseForm):
 
         # 校验是否有定时任务已引用此用例
         for task in ApiTask.query.filter(ApiTask.case_id.like(f'%{field.data}%')).all():
-            self.validate_data_is_false(f'定时任务【{task.name}】已引用此用例，请先解除引用', field.data in json.loads(task.case_id))
+            self.validate_data_is_false(
+                f'定时任务【{task.name}】已引用此用例，请先解除引用',
+                field.data in json.loads(task.case_ids)
+            )
 
         # 校验是否有其他用例已引用此用例
         step = Step.get_first(quote_case=field.data)

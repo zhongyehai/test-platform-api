@@ -6,13 +6,14 @@ from flask import request, g
 
 from app.ui_test.models.case import UiCase
 from app.ui_test.models.report import UiReport as Report
-from app.utils import restful
-from app.utils.required import login_required
+from utils import restful
+from utils.required import login_required
 from app.ui_test import ui_test
 from app.baseView import BaseMethodView
 from app.ui_test.models.caseSet import UiCaeSet
-from app.ui_test.forms.caseSet import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, DeleteCaseSetForm, RunCaseSetForm
-from app.utils.runUiTest.runUiTestRunner import RunCase
+from app.ui_test.forms.caseSet import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, \
+    DeleteCaseSetForm, RunCaseSetForm
+from utils.client.runUiTest.runUiTestRunner import RunCase
 
 
 @ui_test.route('/caseSet/list', methods=['GET'])
@@ -39,8 +40,10 @@ def ui_run_case_set():
             target=RunCase(
                 project_id=project_id,
                 run_name=report.name,
-                case_id=[case.id for case in UiCase.query.filter_by(set_id=form.set.id).order_by(UiCase.num.asc()).all()
-                         if case.is_run],
+                case_id=[
+                    case.id for case in UiCase.query.filter_by(set_id=form.set.id).order_by(UiCase.num.asc()).all() if
+                    case.is_run
+                ],
                 report_id=report.id,
                 is_async=form.is_async.data,
                 env=form.env.data

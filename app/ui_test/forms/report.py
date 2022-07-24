@@ -6,7 +6,7 @@ import os
 from wtforms import IntegerField
 from wtforms.validators import DataRequired
 
-from app.utils.globalVariable import UI_REPORT_ADDRESS
+from utils.globalVariable import UI_REPORT_ADDRESS
 from app.baseForm import BaseForm
 from app.ui_test.models.report import UiReport as Report
 

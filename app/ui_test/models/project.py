@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from app.baseModel import BaseProject, BaseProjectEnv, db
-from app.config.models import Config
+from app.config.models.config import Config
 
 
 class UiProject(BaseProject):

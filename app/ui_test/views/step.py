@@ -3,8 +3,8 @@
 from flask import request
 
 from app.ui_test import ui_test
-from app.utils import restful
-from app.utils.required import login_required
+from utils import restful
+from utils.required import login_required
 from app.baseView import BaseMethodView
 from app.baseModel import db
 from config.config import (ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list)
@@ -68,7 +68,7 @@ def ui_copy_step():
     old = UiStep.get_first(id=request.json.get('id')).to_dict()
     old['name'] = f"{old['name']}_copy"
     old['num'] = UiStep.get_insert_num(case_id=old['case_id'])
-    step = UiStep().create(old, "extracts", "validates", "data_driver")
+    step = UiStep().create(old)
     return restful.success(msg='步骤复制成功', data=step.to_dict())
 
 
@@ -86,8 +86,7 @@ class UiStepMethodView(BaseMethodView):
         form = AddStepForm()
         if form.validate():
             form.num.data = UiStep.get_insert_num(case_id=form.case_id.data)
-            step = UiStep().create(
-                form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates', 'data_driver')
+            step = UiStep().create(form.data)
             return restful.success(f'步骤【{step.name}】新建成功', data=step.to_dict())
         return restful.error(form.get_error())
 
@@ -95,9 +94,7 @@ class UiStepMethodView(BaseMethodView):
         """ 修改步骤 """
         form = EditStepForm()
         if form.validate():
-            form.step.update(
-                form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates', 'data_driver'
-            )
+            form.step.update(form.data)
             return restful.success(msg=f'步骤【{form.step.name}】修改成功', data=form.step.to_dict())
         return restful.fail(form.get_error())
 

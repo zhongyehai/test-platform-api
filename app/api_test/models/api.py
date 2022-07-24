@@ -36,10 +36,6 @@ class ApiMsg(BaseApi):
     module_id = db.Column(db.Integer(), db.ForeignKey('api_test_module.id'), comment='所属的接口模块id')
     module = db.relationship('ApiModule', backref='apis')
 
-    def to_dict(self, *args, **kwargs):
-        return super(ApiMsg, self).to_dict(
-            to_dict=['headers', 'params', 'data_form', 'data_json', 'extracts', 'validates']
-        )
 
     @classmethod
     def make_pagination(cls, form):

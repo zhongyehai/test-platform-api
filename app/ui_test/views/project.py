@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from app.utils import restful
-from app.utils.required import login_required
+from utils import restful
+from utils.required import login_required
 from app.ui_test import ui_test
 from app.baseView import BaseMethodView
 from app.ui_test.models.project import UiProject, UiProjectEnv
@@ -42,7 +42,7 @@ class ProjectView(BaseMethodView):
         """ 新增项目 """
         form = AddUiProjectForm()
         if form.validate():
-            project = UiProject().create(form.data, 'variables', 'func_files')
+            project = UiProject().create(form.data)
             UiProjectEnv.create_env(project.id)  # 新增项目的时候，一并把环境设置齐全
             return restful.success(f'项目【{form.name.data}】新建成功', project.to_dict())
         return restful.fail(msg=form.get_error())
@@ -51,7 +51,7 @@ class ProjectView(BaseMethodView):
         """ 修改项目 """
         form = EditUiProjectForm()
         if form.validate():
-            form.project.update(form.data, 'variables', 'func_files')
+            form.project.update(form.data)
             return restful.success(f'项目【{form.name.data}】修改成功', form.project.to_dict())
         return restful.fail(msg=form.get_error())
 
@@ -97,7 +97,7 @@ class ProjectEnvView(BaseMethodView):
         """ 新增项目环境 """
         form = AddEnv()
         if form.validate():
-            env = UiProjectEnv().create(form.data, 'variables', 'func_files', 'cookies', 'session_storage', 'local_storage')
+            env = UiProjectEnv().create(form.data)
             return restful.success(f'环境新建成功', env.to_dict())
         return restful.fail(msg=form.get_error())
 
@@ -105,7 +105,7 @@ class ProjectEnvView(BaseMethodView):
         """ 修改项目环境 """
         form = EditEnv()
         if form.validate():
-            form.env_data.update(form.data, 'variables', 'func_files', 'cookies', 'session_storage', 'local_storage')
+            form.env_data.update(form.data)
 
             # 修改环境的时候，如果是测试环境，一并把服务的测试环境地址更新
             if form.env_data.env == 'test':

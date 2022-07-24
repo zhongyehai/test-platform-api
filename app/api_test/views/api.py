@@ -6,17 +6,18 @@ from flask import request, send_from_directory, g
 from app.api_test.models.module import ApiModule
 from app.api_test.models.project import ApiProject
 from app.api_test.models.report import ApiReport as Report
-from app.utils import restful
-from app.utils.globalVariable import TEMPLATE_ADDRESS
-from app.utils.parseExcel import parse_file_content
-from app.utils.required import login_required
-from app.utils.runApiTest.runHttpRunner import RunApi
+from utils import restful
+from utils.globalVariable import TEMPLATE_ADDRESS
+from utils.parseExcel import parse_file_content
+from utils.required import login_required
+from utils.client.runApiTest.runHttpRunner import RunApi
 from app.api_test import api_test
 from app.baseView import BaseMethodView
 from app.baseModel import db
 from app.api_test.models.api import ApiMsg
-from app.config.models import Config
-from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, ApiBelongToForm
+from app.config.models.config import Config
+from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, \
+    ApiBelongToForm
 from config.config import assert_mapping_list
 
 
@@ -44,6 +45,7 @@ def api_get_api_list():
     form = ApiListForm()
     if form.validate():
         return restful.success(data=ApiMsg.make_pagination(form))
+    return restful.fail(form.get_error())
 
 
 @api_test.route('/apiMsg/belongTo', methods=['GET'])
@@ -134,14 +136,14 @@ class ApiMsgView(BaseMethodView):
         form = AddApiForm()
         if form.validate():
             form.num.data = ApiMsg.get_insert_num(module_id=form.module_id.data)
-            new_api = ApiMsg().create(form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates')
+            new_api = ApiMsg().create(form.data)
             return restful.success(f'接口【{form.name.data}】新建成功', data=new_api.to_dict())
         return restful.fail(form.get_error())
 
     def put(self):
         form = EditApiForm()
         if form.validate():
-            form.api.update(form.data, 'headers', 'params', 'data_form', 'data_json', 'extracts', 'validates')
+            form.api.update(form.data)
             return restful.success(f'接口【{form.name.data}】修改成功', form.api.to_dict())
         return restful.fail(form.get_error())
 

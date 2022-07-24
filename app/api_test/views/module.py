@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from flask import request
 
-from app.utils import restful
-from app.utils.required import login_required
+from utils import restful
+from utils.required import login_required
 from app.api_test import api_test
 from app.baseView import BaseMethodView
 from app.api_test.models.module import ApiModule

@@ -7,9 +7,9 @@ import six
 import urllib3.fields as f
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
-from app.utils.yamlUtil import load
-from app.utils.runApiTest.httprunner import built_in as assert_func_file
-from app.utils.runUiTest.uitestrunner.webdriverAction import Driver
+from utils.yamlUtil import load
+from utils.client.runApiTest.httprunner import built_in as assert_func_file
+from utils.client.runUiTest.uitestrunner.webdriverAction import Driver
 
 # 从 httpRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
 assert_mapping, assert_mapping_list = {}, []
@@ -65,16 +65,12 @@ class ProductionConfig:
                               f'{conf["db"]["host"]}:' \
                               f'{conf["db"]["port"]}/' \
                               f'{conf["db"]["database"]}?charset=utf8mb4'
+
+    # flask_apscheduler 定时任务存储配置
     SCHEDULER_JOBSTORES = {
-        'default': SQLAlchemyJobStore(
-            url=SQLALCHEMY_DATABASE_URI,
-            # engine_options={
-            #     'pool_pre_ping': True,  # 连接时ping一下数据库，连不上则回收一次
-            #     'pool_size': 10,
-            #     'pool_recycle': 120,  # 120秒回收一次数据库连接
-            # }
-        )
+        'default': SQLAlchemyJobStore(url=SQLALCHEMY_DATABASE_URI)
     }
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_POOL_PRE_PING = True  # 每次请求前先预先请求一次数据库，一旦预先请求出错则重新建立数据库连接
     SQLALCHEMY_POOL_SIZE = 1000  # 连接池大小

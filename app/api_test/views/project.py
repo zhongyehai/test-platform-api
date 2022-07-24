@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from app.utils import restful
-from app.utils.required import login_required
+from utils import restful
+from utils.required import login_required
 from app.api_test import api_test
 from app.baseView import BaseMethodView
 from app.api_test.models.project import ApiProject, ApiProjectEnv
@@ -41,7 +41,7 @@ class ApiProjectView(BaseMethodView):
         """ 新增服务 """
         form = AddProjectForm()
         if form.validate():
-            project = ApiProject().create(form.data, 'variables', 'headers', 'func_files')
+            project = ApiProject().create(form.data)
             ApiProjectEnv.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
             return restful.success(f'服务【{form.name.data}】新建成功', project.to_dict())
         return restful.fail(msg=form.get_error())
@@ -50,7 +50,7 @@ class ApiProjectView(BaseMethodView):
         """ 修改服务 """
         form = EditProjectForm()
         if form.validate():
-            form.project.update(form.data, 'variables', 'headers', 'func_files')
+            form.project.update(form.data)
             return restful.success(f'服务【{form.name.data}】修改成功', form.project.to_dict())
         return restful.fail(msg=form.get_error())
 
@@ -94,7 +94,7 @@ class ApiProjectEnvView(BaseMethodView):
         """ 新增服务环境 """
         form = AddEnv()
         if form.validate():
-            env = ApiProjectEnv().create(form.data, 'variables', 'headers', 'func_files')
+            env = ApiProjectEnv().create(form.data)
             return restful.success(f'环境新建成功', env.to_dict())
         return restful.fail(msg=form.get_error())
 
@@ -102,7 +102,7 @@ class ApiProjectEnvView(BaseMethodView):
         """ 修改服务环境 """
         form = EditEnv()
         if form.validate():
-            form.env_data.update(form.data, 'variables', 'headers', 'func_files')
+            form.env_data.update(form.data)
 
             # 修改环境的时候，如果是测试环境，一并把服务的测试环境地址更新
             if form.env_data.env == 'test':

@@ -5,9 +5,9 @@ from flask import request, g
 
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.report import ApiReport as Report
-from app.utils import restful
-from app.utils.required import login_required
-from app.utils.runApiTest.runHttpRunner import RunCase
+from utils import restful
+from utils.required import login_required
+from utils.client.runApiTest.runHttpRunner import RunCase
 from app.api_test import api_test
 from app.baseView import BaseMethodView
 from app.api_test.models.caseSet import ApiSet

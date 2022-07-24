@@ -5,10 +5,10 @@ from collections import OrderedDict
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 
-from app.utils.jsonUtil import JsonUtil
+from utils.jsonUtil import JsonUtil
 from app.baseModel import db
-from app.ucenter.user.models import User, Permission, Role
-from app.config.models import Config, ConfigType
+from app.ucenter.models.user import User, Permission, Role
+from app.config.models.config import Config, ConfigType
 from main import app
 
 manager = Manager(app)
