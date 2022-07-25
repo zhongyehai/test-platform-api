@@ -76,13 +76,15 @@ def weekly_download():
     """ 导出周报 """
     form = GetWeeklyListForm()
     if form.validate():
+        form.pageNum.data = form.pageSize.data = ''
+
         # 获取产品、项目数据
         product_dict = WeeklyConfigModel.get_data_dict()
         user_dict = {user.id: user.name for user in User.get_all()}
 
         if form.download_type.data == 'current':  # 导出本周周报
             data_list = WeeklyModel.make_pagination(form)
-            file_name = make_current_weekly_excel(product_dict, data_list, form, user_dict)  # 生成excel
+            file_name = make_current_weekly_excel(product_dict, data_list, user_dict)  # 生成excel
         else:  # 导出指定时间段的周报
             data_list = WeeklyModel.make_pagination(form)
             file_name = make_weekly_excel(data_list, form, user_dict)
@@ -112,8 +114,8 @@ class WeeklyView(BaseMethodView):
         """ 修改周报 """
         form = ChangeWeeklyForm()
         if form.validate():
-            form.conf.update(form.data)
-            return restful.success('修改成功', data=form.conf.to_dict())
+            form.weekly.update(form.data)
+            return restful.success('修改成功', data=form.weekly.to_dict())
         return restful.fail(form.get_error())
 
     def delete(self):

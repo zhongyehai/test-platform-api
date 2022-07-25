@@ -23,10 +23,16 @@ def merge_cells(sheet, start_c, end_c, start_r, end_r):
     sheet.merge_cells(start_column=start_c, end_column=end_c, start_row=start_r, end_row=end_r)
 
 
-def make_current_weekly_excel(product_dict, weekly_data, form, user_dict):
+def make_current_weekly_excel(product_dict, weekly_data, user_dict):
     """ 生成当前周的周报 """
-    start, end = ''.join(form.start_time.data.split('-')), ''.join(form.end_time.data.split('-'))
-    file_title = f'测试组周报({start}-{end})'
+    start, end = get_week_start_and_end(1)
+    last_start = f'{start.year}' \
+                 f'{start.month if start.month > 10 else f"0{start.month}"}' \
+                 f'{start.day if start.day > 10 else f"0{start.day}"}'
+    last_end = f'{end.year}' \
+               f'{end.month if end.month > 10 else f"0{end.month}"}' \
+               f'{end.day if end.day > 10 else f"0{end.month}"}'
+    file_title = f'测试组周报({last_start}-{last_end})'
     file_name = f'{file_title}_{g.user_id}.xlsx'  # 避免多人导出同一时间段周报时出现死锁问题，每一份文件后都加上用户id
     file_path = os.path.join(TEMP_FILE_ADDRESS, file_name)
     # file_path = os.path.join(TEMP_FILE_ADDRESS, f'{time.time()}.xlsx')
@@ -34,7 +40,7 @@ def make_current_weekly_excel(product_dict, weekly_data, form, user_dict):
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    excel = Excel(file_path)
+    excel = Excel(file_path, is_delete_old=True)
     sheet = excel.get_sheet_obj('会议纪要')
 
     last_week_data, current_week_data = split_week_data(weekly_data)
@@ -135,6 +141,7 @@ def parse_task_version(product_dict, week_data):
                         # 把周报数据放到版本下
                         product_detail['project'][product_id]['version'][version]['items'].append(task_item)
                         product_detail['project'][product_id]['version'][version]['total'] += 1
+                        week_data.pop(index)
                     elif int(task_item.get('project_id')) == project_id:
                         if version not in project_detail['version']:
                             project_detail['version'][version] = {"total": 0, "items": []}
@@ -142,13 +149,14 @@ def parse_task_version(product_dict, week_data):
                         # 把周报数据放到版本下
                         project_detail['version'][version]['items'].append(task_item)
                         project_detail['version'][version]['total'] += 1
+                        week_data.pop(index)
 
     return container
 
 
 def build_task_item(sheet, start_row, product_dict, week_data, user_dict):
     """ 任务详情 """
-    pro_container = parse_task_version(product_dict, week_data)  # 根据版本号归属到项目下
+    pro_container = parse_task_version(product_dict, copy.deepcopy(week_data))  # 根据版本号归属到项目下
     next_product_start, next_project_start, next_version_start, next_item_start = start_row, start_row, start_row, start_row
     for product_id, product_detail in pro_container.items():
         need_merge_product_title = False

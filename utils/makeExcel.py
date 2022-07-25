@@ -8,8 +8,9 @@ from openpyxl.utils import get_column_letter
 class Excel:
     """ Excel操作 """
 
-    def __init__(self, file_name):
+    def __init__(self, file_name, is_delete_old=False):
         self.file_name = file_name
+        self.is_delete_old = is_delete_old
         self.excel = self.get_excel()
 
     def __del__(self):
@@ -18,6 +19,8 @@ class Excel:
 
     def get_excel(self):
         """ 获取EXCEL对象，没有则自动创建 """
+        if self.is_delete_old and os.path.exists(self.file_name):
+            os.remove(self.file_name)
         if not os.path.exists(self.file_name):
             Workbook().save(self.file_name)
         return load_workbook(self.file_name)
