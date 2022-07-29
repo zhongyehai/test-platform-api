@@ -145,14 +145,14 @@ class HttpRunner(object):
 
         return summary
 
-    def run_tests(self, tests_mapping):
+    def run_tests(self, tests_dict):
         """ 运行testcase / testsuite数据 """
         if self.save_tests:
-            utils.dump_tests(tests_mapping, "loaded")
+            utils.dump_tests(tests_dict, "loaded")
 
         # 解析测试数据
         self.exception_stage = "parse tests"
-        parsed_tests_mapping = parser.parse_tests(tests_mapping)
+        parsed_tests_mapping = parser.parse_tests(tests_dict)
 
         if self.save_tests:
             utils.dump_tests(parsed_tests_mapping, "parsed")
@@ -167,14 +167,14 @@ class HttpRunner(object):
 
         # 总体结果
         self.exception_stage = "aggregate results"
-        self._summary = self._aggregate(results, project_name=tests_mapping.get('project'))
+        self._summary = self._aggregate(results, project_name=tests_dict.get('project'))
 
         # 生成html报告
         self.exception_stage = "generate html report"
         report.stringify_summary(self._summary)
 
         if self.save_tests:
-            utils.dump_summary(self._summary, tests_mapping["project_mapping"])
+            utils.dump_summary(self._summary, tests_dict["project_mapping"])
 
         # report_path = report.render_html_report(
         #     self._summary,
@@ -235,19 +235,11 @@ class HttpRunner(object):
 
         return self.run_tests(tests_mapping)
 
-    def run(self, path_or_tests, dot_env_path=None, mapping=None):
+    def run(self, test_dict):
         """ 执行测试的入口，判断是执行测试的数据源是路径还是字典
-        Args:
-            path_or_tests:
-                str: 测试用例/测试套件文件/文件路径
-                dict: 有效的测试用例/测试套件数据
+            test_dict: 有效的测试用例/测试套件数据
         """
-        if validator.is_testcase_path(path_or_tests):
-            return self.run_path(path_or_tests, dot_env_path, mapping)
-        elif validator.is_testcases(path_or_tests):
-            return self.run_tests(path_or_tests)
-        else:
-            raise exceptions.ParamsError("测试数据错误，需为路径或字典: {}".format(path_or_tests))
+        return self.run_tests(test_dict)
 
     @property
     def summary(self):

@@ -22,7 +22,7 @@ class SQLAlchemy(_SQLAlchemy):
             yield
             self.session.commit()  # 提交到数据库，修改数据
         except Exception as error:
-            db.session.rollback()  # 事务如果发生异常，执行回滚
+            self.session.rollback()  # 事务如果发生异常，执行回滚
             raise error
 
     def execute_query_sql(self, sql):
@@ -85,6 +85,16 @@ class BaseModel(db.Model, JsonUtil):
         'kym', 'task_item',
     ]
 
+    def set_attr(self, column_list, value=None):
+        """ 插入属性 """
+        for column in column_list:
+            try:
+                if column in ['create_user', 'update_user']:
+                    value = g.user_id
+                setattr(self, column, value)
+            except Exception as error:
+                pass
+
     @property
     def str_created_time(self):
         return datetime.strftime(self.created_time, "%Y-%m-%d %H:%M:%S")
@@ -103,12 +113,8 @@ class BaseModel(db.Model, JsonUtil):
                 if hasattr(self, key) and key != 'id':
                     setattr(self, key, self.dumps(value) if key in args else value)
 
-            # 如果是执行初始化脚本，获取不到g，try一下
-            try:
-                setattr(self, 'create_user', g.user_id)
-                setattr(self, 'update_user', g.user_id)
-            except Exception as error:
-                pass
+            self.set_attr(['create_user', 'update_user'])
+
             db.session.add(self)
         return self
 
@@ -122,18 +128,8 @@ class BaseModel(db.Model, JsonUtil):
             for key, value in attrs_dict.items():
                 if hasattr(self, key) and key not in ['id', 'num']:
                     setattr(self, key, self.dumps(value) if key in args else value)
-            try:
-                setattr(self, 'update_user', g.user_id)
-            except Exception as error:
-                pass
 
-    def insert_or_update(self, attrs_dict: dict, *args, **kwargs):
-        """ 创建或更新 """
-        old_data = self.get_first(**kwargs)
-        if old_data:
-            old_data.update(attrs_dict, *args)
-            return old_data
-        return self.create(attrs_dict, *args)
+            self.set_attr(['update_user'])
 
     def delete(self):
         """ 删除单条数据 """
@@ -235,7 +231,7 @@ class BaseModel(db.Model, JsonUtil):
 class ApschedulerJobs(BaseModel):
     """ apscheduler任务表，防止执行数据库迁移的时候，把定时任务删除了 """
     __tablename__ = 'apscheduler_jobs'
-    id = db.Column(db.String(191), primary_key=True, nullable=False)
+    id = db.Column(db.String(64), primary_key=True, nullable=False)
     next_run_time = db.Column(db.String(128), comment='任务下一次运行时间')
     job_state = db.Column(db.LargeBinary(length=(2 ** 32) - 1), comment='任务详情')
 
@@ -335,9 +331,7 @@ class BaseProjectEnv(BaseModel):
             new_env_data = {}
             for filed in filed_list:
                 from_data, to_data = from_env_dict[filed], cls.loads(getattr(to_env_data, filed))
-                new_env_data[filed] = cls.dumps(
-                    update_dict_to_list(from_data, to_data) if filed != 'func_files' else list(set(to_data + from_data))
-                )
+                new_env_data[filed] = update_dict_to_list(from_data, to_data) if filed != 'func_files' else list(set(to_data + from_data))
 
             to_env_data.update(new_env_data)  # 同步环境
             synchronization_result[to_env] = to_env_data.to_dict()  # 保存已同步的环境数据

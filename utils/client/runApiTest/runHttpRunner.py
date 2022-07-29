@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import copy
 import json
 import os
 import types
@@ -47,7 +47,9 @@ class BaseParse:
                 'functions': {},
                 'variables': {}
             },
-            'testcases': []
+            'testsuites': [],  # 用例集
+            'testcases': [],  # 用例
+            'apis': [],  # 接口
         }
 
     def get_formated_project(self, project_id):
@@ -376,8 +378,10 @@ class RunCase(BaseParse):
             case_template['config']['variables'].update(all_variables)  # = all_variables
 
             # 设置的用例执行多少次就加入多少次
-            for i in range(current_case.run_times or 1):
-                self.DataTemplate['testcases'].append(case_template)
+            name = case_template['config']['name']
+            for index in range(current_case.run_times or 1):
+                case_template['config']['name'] = f"{name}_{index + 1}" if current_case.run_times > 1 else name
+                self.DataTemplate['testcases'].append(copy.deepcopy(case_template))
 
             # 完整的解析完一条用例后，去除对应的解析信息
             self.all_case_steps = []

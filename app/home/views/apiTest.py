@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 
-from app.api_test import api_test
+from flask import current_app as app
+
+from app.home import home
 from app.api_test.models.step import ApiStep as Step
 from app.baseModel import db
 from app.api_test.models.project import ApiProject as Project
@@ -10,48 +12,44 @@ from app.api_test.models.api import ApiMsg
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.task import ApiTask as Task
 from app.api_test.models.report import ApiReport as Report
-from utils import restful
-from utils.required import login_required
 from utils.globalVariable import CASE_FILE_ADDRESS
 
 
-@api_test.route('/count/title', methods=['GET'])
-@login_required
+@home.route('/count/title', methods=['GET'])
 def count_title():
-    return restful.success('获取成功', data={
-        'project': len(Project.get_all()),
-        'module': len(Module.get_all()),
-        'api': len(ApiMsg.get_all()),
-        'file': len(os.listdir(CASE_FILE_ADDRESS)),
-        'case': len(Case.get_all()),
-        'step': len(Step.get_all()),
-        'task': len(Task.get_all()),
-        'report': len(Report.get_all())
-    })
+    return app.restful.success(
+        '获取成功',
+        data={
+            'project': len(Project.get_all()),
+            'module': len(Module.get_all()),
+            'api': len(ApiMsg.get_all()),
+            'file': len(os.listdir(CASE_FILE_ADDRESS)),
+            'case': len(Case.get_all()),
+            'step': len(Step.get_all()),
+            'task': len(Task.get_all()),
+            'report': len(Report.get_all())
+        })
 
 
-@api_test.route('/count/project', methods=['GET'])
-@login_required
+@home.route('/count/project', methods=['GET'])
 def count_project():
-    return restful.success(data={
+    return app.restful.success(data={
         'title': '服务',
         'options': ['总数'],
         'data': [len(Project.get_all())],
     })
 
 
-@api_test.route('/count/module', methods=['GET'])
-@login_required
+@home.route('/count/module', methods=['GET'])
 def count_module():
-    return restful.success(data={
+    return app.restful.success(data={
         'title': '模块',
         'options': ['总数'],
         'data': [len(Module.get_all())],
     })
 
 
-@api_test.route('/count/api', methods=['GET'])
-@login_required
+@home.route('/count/api', methods=['GET'])
 def count_api():
     data = db.execute_query_sql("""
         select methods, count(*) as totle
@@ -65,55 +63,51 @@ def count_api():
                  ) as t
             group by methods
         """)
-    return restful.success(data={
+    return app.restful.success(data={
         'title': '接口',
         'options': ['总数', 'GET请求', 'POST请求', 'PUT请求', 'DELETE请求'],
         'data': [sum(data.values()), data.get('GET', 0), data.get('POST', 0), data.get('PUT', 0), data.get('DELETE', 0)]
     })
 
 
-@api_test.route('/count/file', methods=['GET'])
-@login_required
+@home.route('/count/file', methods=['GET'])
 def count_file():
-    return restful.success(data={
+    return app.restful.success(data={
         'title': '测试文件',
         'options': ['总数'],
         'data': [len(os.listdir(CASE_FILE_ADDRESS))],
     })
 
 
-@api_test.route('/count/case', methods=['GET'])
-@login_required
+@home.route('/count/case', methods=['GET'])
 def count_case():
     data = db.execute_query_sql("""
         select is_run, count(*) as totle
             from (select IF(is_run = 0, 'not_run', 'is_run') as is_run from `api_test_case`) as t
             group by is_run;
         """)
-    return restful.success('获取成功', data={
+    return app.restful.success('获取成功', data={
         'title': '用例',
         'options': ['总数', '要执行的用例', '不执行的用例'],
         'data': [sum(data.values()), data.get('is_run', 0), data.get('not_run', 0)],
     })
 
 
-@api_test.route('/count/step', methods=['GET'])
-@login_required
+@home.route('/count/step', methods=['GET'])
 def count_step():
     data = db.execute_query_sql("""
         select is_run, count(*) as totle
             from (select IF(is_run = 0, 'not_run', 'is_run') as is_run from `api_test_step`) as t
             group by is_run;
         """)
-    return restful.success('获取成功', data={
+    return app.restful.success('获取成功', data={
         'title': '测试步骤',
         'options': ['总数', '要执行的步骤', '不执行的步骤'],
         'data': [sum(data.values()), data.get('is_run', 0), data.get('not_run', 0)],
     })
 
 
-@api_test.route('/count/task', methods=['GET'])
-@login_required
+@home.route('/count/task', methods=['GET'])
 def count_task():
     status = db.execute_query_sql("""
         select status, count(*) as totle
@@ -143,7 +137,7 @@ def count_task():
                  ) as t
             group by send_type
         """)
-    return restful.success('获取成功', data={
+    return app.restful.success('获取成功', data={
         'title': '定时任务',
         'options': [
             '总数', '启用中', '禁用中',
@@ -160,8 +154,7 @@ def count_task():
     })
 
 
-@api_test.route('/count/report', methods=['GET'])
-@login_required
+@home.route('/count/report', methods=['GET'])
 def count_report():
     status = db.execute_query_sql("""
         select status, count(*) as totle
@@ -185,7 +178,7 @@ def count_report():
             group by run_type
         """)
 
-    return restful.success('获取成功', data={
+    return app.restful.success('获取成功', data={
         'title': '测试报告',
         'options': [
             '总数', '已读', '未读', '通过数', '失败数',

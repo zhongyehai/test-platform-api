@@ -38,7 +38,7 @@ def actions(action):
 
 
 @tool.route('/mockData/autoTest', methods=['GET', 'POST'])
-def return_auto_test_mock_data():
+def return_auto_test_mock_data_not_login_required():
     """ 自动化测试模拟数据源
     1.json参数接收什么就返回什么
     2.args.action：查询字符串传参（非必传），在需要指定场景时使用，error、time_out、空
@@ -80,7 +80,7 @@ def return_auto_test_mock_data():
 
 
 @tool.route('/mockData/common', methods=['GET', 'POST'])
-def return_mock_data():
+def return_mock_data_not_login_required():
     """ 模拟数据源
     1.json参数接收什么就返回什么
     2.args.action：查询字符串传参（非必传），在需要指定场景时使用，error、time_out、空
@@ -124,7 +124,7 @@ def return_mock_data():
 
 
 @tool.route('/callBack', methods=['GET', 'POST'])
-def call_back():
+def call_back_not_login_required():
     """ 回调接口 """
     params, json_data, form_data = request.args.to_dict(), request.get_json(silent=True), request.form.to_dict()
 
@@ -147,7 +147,7 @@ def call_back():
 
 
 @tool.route('/mock', methods=['GET', 'POST'])
-def mock_api():
+def mock_api_not_login_required():
     """ mock_api， 收到什么就返回什么 """
     params, json_data, form_data = request.args.to_dict(), request.get_json(silent=True), request.form.to_dict()
     return jsonify({

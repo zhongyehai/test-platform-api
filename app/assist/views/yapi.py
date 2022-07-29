@@ -5,7 +5,7 @@ import os
 import re
 
 import requests
-from flask import request, send_from_directory, g
+from flask import request, send_from_directory, g, current_app as app
 
 from app.assist import assist
 from app.config.models.config import Config
@@ -14,9 +14,7 @@ from app.assist.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiff
 from app.baseModel import db
 from app.api_test.models.module import ApiModule
 from app.api_test.models.api import ApiMsg
-from utils import restful
 from utils.globalVariable import DIFF_RESULT
-from utils.required import login_required
 from utils.sendReport import send_diff_api_message
 from utils.makeXmind import make_xmind
 
@@ -148,7 +146,7 @@ def update_project(yapi_project):
         original_yapi_project.yapi_data = json.dumps(yapi_project, ensure_ascii=False, indent=4)  # 把原始服务信息存下来
         if not original_yapi_project.id:
             db.session.add(original_yapi_project)
-        assist.logger.info(f'原始yapi服务信息: \n{yapi_project}')
+        app.logger.info(f'原始yapi服务信息: \n{yapi_project}')
 
         # 存解析后服务数据
         project = ApiProject.get_first(yapi_id=yapi_project['_id']) or ApiProject()
@@ -160,7 +158,7 @@ def update_project(yapi_project):
             db.session.add(project)
     if data_type == 'add':
         ApiProjectEnv.create_env(project.id, Config.loads(Config.get_first(name='run_test_env').value))  # 创建环境
-    assist.logger.info(f'解析yapi后的服务信息：\n{project.to_dict()}')
+    app.logger.info(f'解析yapi后的服务信息：\n{project.to_dict()}')
     return project
 
 
@@ -176,7 +174,7 @@ def update_module(project, yapi_module):
         original_yapi_module.yapi_data = json.dumps(yapi_module, ensure_ascii=False, indent=4)
         if not original_yapi_module.id:
             db.session.add(original_yapi_module)
-        assist.logger.info(f'原始yapi模块信息: \n{yapi_module}')
+        app.logger.info(f'原始yapi模块信息: \n{yapi_module}')
 
         # 存解析后的模块数据
         module = ApiModule.get_first(yapi_id=yapi_module['_id']) or ApiModule()
@@ -186,7 +184,7 @@ def update_module(project, yapi_module):
         if not module.id:
             module.num = module.get_insert_num(project_id=project.id)
             db.session.add(module)
-    assist.logger.info(f'解析yapi后的模块信息：\n{module.to_dict()}')
+    app.logger.info(f'解析yapi后的模块信息：\n{module.to_dict()}')
     return module
 
 
@@ -196,7 +194,7 @@ def update_api(project, module_and_api):
     with db.auto_commit():
         for api_index, yapi_api in enumerate(module_and_api.get('list', [])):
             if assert_coding_format(yapi_api['title']):
-                assist.logger.info(f'原始yapi接口信息: \n{yapi_api}')
+                app.logger.info(f'原始yapi接口信息: \n{yapi_api}')
                 # 存原始信息
                 original_yapi_api = YapiApiMsg.get_first(yapi_id=yapi_api['_id']) or YapiApiMsg()
                 original_yapi_api.yapi_project = yapi_api['project_id']
@@ -252,14 +250,14 @@ def get_group_list(host, headers, ignore_group):
     }
     """
     group_list = requests.get(f'{host}/api/group/list', headers=headers).json()['data']
-    assist.logger.info(f'获取到的分组列表：\n{group_list}')
+    app.logger.info(f'获取到的分组列表：\n{group_list}')
     return pop_ignore(group_list, ignore_group, 'group_name')
 
 
 def get_group(host, group_id, headers):
     """ 根据 yapi 的分组id，获取分组信息 """
     group = requests.get(f'{host}/api/group/get?id={group_id}', headers=headers).json()['data']
-    assist.logger.info(f'根据分组id {group_id} 获取到的分组：\n{group}')
+    app.logger.info(f'根据分组id {group_id} 获取到的分组：\n{group}')
     return {'id': group['_id'], 'name': group['group_name']}
 
 
@@ -282,7 +280,7 @@ def get_yapi_project_list(host, group_id, headers, ignore_project):
         f'{host}/api/project/list?group_id={group_id}&page=1&limit=1000',
         headers=headers,
     ).json()['data']['list']
-    assist.logger.info(f'根据分组 {group_id} 获取到的服务：\n{project_list}')
+    app.logger.info(f'根据分组 {group_id} 获取到的服务：\n{project_list}')
     return pop_ignore(project_list, ignore_project, 'name')
 
 
@@ -304,7 +302,7 @@ def get_module_list(host, project_id, headers):
     res = requests.get(
         f'{host}/api/project/get?id={project_id}', headers=headers
     ).json()
-    assist.logger.info(f'根据服务id {project_id} 获取到的分类：\n{res.get("data", {}).get("cat", [])}')
+    app.logger.info(f'根据服务id {project_id} 获取到的分类：\n{res.get("data", {}).get("cat", [])}')
     return res.get('data', {}).get('cat', [])
 
 
@@ -347,7 +345,7 @@ def get_module_and_api(host, project_id, headers):
         f'{host}/api/plugin/export?type=json&pid={project_id}&status=all&isWiki=false',
         headers=headers
     ).json()
-    assist.logger.info(f'根据服务id {project_id} 获取到的数据：\n{data}')
+    app.logger.info(f'根据服务id {project_id} 获取到的数据：\n{data}')
     return data
 
 
@@ -384,7 +382,6 @@ def get_is_update_project_list(yapi_host, headers, project_id, group, ignore_pro
 
 
 @assist.route('/yapi/pull/all', methods=['POST'])
-@login_required
 def yapi_pull_all():
     """ 拉取yapi的所有数据
     id: 指定服务在测试平台的id
@@ -411,7 +408,7 @@ def yapi_pull_all():
         for yapi_project in project_list:
 
             # 更新服务
-            assist.logger.info(f'服务：{yapi_project}')
+            app.logger.info(f'服务：{yapi_project}')
             if assert_coding_format(yapi_project.get('name')):
 
                 # 更新服务
@@ -419,7 +416,7 @@ def yapi_pull_all():
 
                 # 更新模块
                 for yapi_module in get_module_list(conf.get('yapi_host'), yapi_project['_id'], headers):
-                    assist.logger.info(f'模块：{yapi_module}')
+                    app.logger.info(f'模块：{yapi_module}')
                     if assert_coding_format(yapi_module['name']):
                         update_module(api_test_project, yapi_module)
 
@@ -427,11 +424,10 @@ def yapi_pull_all():
                 for module_and_api in get_module_and_api(conf.get('yapi_host'), yapi_project['_id'], headers):
                     update_api(api_test_project, module_and_api)
 
-    return restful.success('数据更新完成')
+    return app.restful.success('数据更新完成')
 
 
 @assist.route('/yapi/pull/project', methods=['POST'])
-@login_required
 def yapi_pull_project():
     """ 拉取yapi的服务数据，同步到测试平台
     id: 指定服务在测试平台的id
@@ -458,15 +454,14 @@ def yapi_pull_project():
         for yapi_project in project_list:
 
             # 更新服务
-            assist.logger.info(f'服务：{yapi_project}')
+            app.logger.info(f'服务：{yapi_project}')
             if assert_coding_format(yapi_project.get('name')):
                 update_project(yapi_project)
 
-    return restful.success('数据更新完成')
+    return app.restful.success('数据更新完成')
 
 
 @assist.route('/yapi/diff/byApi', methods=['POST'])
-@login_required
 def diff_by_yapi():
     """ 接口对比，用于监控swagger接口是否有改动
     is_disable_ignore：是否使用配置的忽略项
@@ -792,18 +787,16 @@ def diff_by_yapi():
             report_id=yapi_diff_record.id,
             addr=request.json.get('addr') or Config.get_first(name='default_diff_message_send_addr').value
         )
-    return restful.success('对比完成', data=yapi_diff_record.to_dict())
+    return app.restful.success('对比完成', data=yapi_diff_record.to_dict())
 
 
 @assist.route('/project/diff/byFront', methods=['POST'])
-@login_required
 def diff_by_front():
     """ 接口对比，用于监控前端使用的接口与swagger是否一致 """
-    return restful.success('对比完成')
+    return app.restful.success('对比完成')
 
 
 @assist.route('/yapi/diff/download', methods=['GET'])
-@login_required
 def export_diff_record_as_xmind():
     """ 导出为xmind """
     with open(os.path.join(DIFF_RESULT, f'{request.args.get("id")}.json'), 'r', encoding='utf-8') as fp:
@@ -819,7 +812,7 @@ def export_diff_record_as_xmind():
 @assist.route('/diffRecord/list')
 def get_diff_record_list():
     """ 接口对比结果列表 """
-    return restful.success('获取成功', data=YapiDiffRecord.make_pagination({
+    return app.restful.success('获取成功', data=YapiDiffRecord.make_pagination({
         'pageNum': request.args.get('pageNum'),
         'pageSize': request.args.get('pageSize'),
         'create_user': request.args.get('create_user'),
@@ -831,7 +824,7 @@ def get_diff_record_list():
 def get_diff_record_project():
     """ 获取有对比结果的服务列表 """
     project_list = YapiDiffRecord.query.with_entities(YapiDiffRecord.name).distinct().all()
-    return restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
+    return app.restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
 
 
 @assist.route('/diffRecord/show')
@@ -839,10 +832,10 @@ def show_diff_record():
     """ 展示对比结果详情 """
     data_id = request.args.get("id")
     if not data_id:
-        return restful.fail('比对id必传')
+        return app.restful.fail('比对id必传')
     with open(os.path.join(DIFF_RESULT, f'{data_id}.json'), 'r', encoding='utf-8') as fp:
         data = json.load(fp)
-    return restful.success('获取成功', data=data)
+    return app.restful.success('获取成功', data=data)
 
 # class DiffRecordView(BaseMethodView):
 #     """ 接口对比结果 """
@@ -850,10 +843,10 @@ def show_diff_record():
 #     def get(self):
 #         data_id = request.args.get("id")
 #         if not data_id:
-#             return restful.fail('比对id必传')
+#             return app.restful.fail('比对id必传')
 #         with open(os.path.join(DIFF_RESULT, f'{data_id}.json'), 'r', encoding='utf-8') as fp:
 #             data = json.load(fp)
-#         return restful.success('获取成功', data=data)
+#         return app.restful.success('获取成功', data=data)
 #
 #
 # api.add_url_rule('/diffRecord', view_func=DiffRecordView.as_view('diffRecord'))

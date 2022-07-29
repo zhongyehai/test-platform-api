@@ -699,7 +699,7 @@ CONTENT_TYPE = {
 # 各模块的路径
 LOG_ADDRESS = os.path.abspath(os.path.join(basedir, '..' + r'/logs/'))  # 日志路径
 RUN_LOG_ADDRESS = os.path.abspath(os.path.join(basedir, '..' + r'/run_logs/'))  # 日志路径
-TEMPLATE_ADDRESS = os.path.abspath(os.path.join(basedir, r'template'))  # 导入模板存放路径
+STATIC_ADDRESS = os.path.abspath(os.path.join(basedir, r'static'))  # 导入模板存放路径
 FUNC_ADDRESS = os.path.abspath(os.path.join(basedir, '.' + r'/func_list'))  # 自定义函数文件存放地址
 API_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r'/reports_api/'))  # api测试报告文件存放地址
 UI_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r'/reports_ui/'))  # ui测试报告文件存放地址

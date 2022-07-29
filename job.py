@@ -2,10 +2,8 @@
 
 import os
 import json
-import traceback
 from threading import Thread
 
-import requests
 from flask import request
 from flask.views import MethodView
 from flask_apscheduler import APScheduler
@@ -20,7 +18,6 @@ from app.ucenter.models.user import User
 from app import create_app
 from utils.client.runApiTest.runHttpRunner import RunCase as RunApiCase
 from utils.client.runUiTest.runUiTestRunner import RunCase as RunUiCase
-from config.config import conf
 
 os.environ['TZ'] = 'Asia/Shanghai'
 
@@ -48,6 +45,7 @@ def async_run_test(case_ids, task, user_id=None, task_type='api'):
             env=task.env
         ).run_case
     ).start()
+
     db.session.rollback()  # 把连接放回连接池，不放回去会报错
 
 
@@ -61,8 +59,7 @@ class JobStatus(MethodView):
 
         task = task_model.get_first(id=task_id)
         cases_id = case_set_model.get_case_id(task.project_id, json.loads(task.set_ids), json.loads(task.case_ids))
-        try:
-            # 把定时任务添加到apscheduler_jobs表中
+        with db.auto_commit():
             scheduler.add_job(
                 func=async_run_test,  # 异步执行任务
                 trigger='cron',
@@ -73,10 +70,7 @@ class JobStatus(MethodView):
                 **parse_cron(task.cron)
             )
             task.status = 1
-            db.session.commit()
-            return restful.success(f'定时任务 {task.name} 启动成功')
-        except Exception as error:
-            return restful.error(f'定时任务启动失败', data=error)
+        return restful.success(f'定时任务 {task.name} 启动成功')
 
     def delete(self):
         """ 删除定时任务 """
@@ -89,31 +83,6 @@ class JobStatus(MethodView):
 
 
 job.add_url_rule('/api/job/status', view_func=JobStatus.as_view('jobStatus'))
-
-
-@job.errorhandler(404)
-def page_not_found(e):
-    """ 捕获404的所有异常 """
-    return restful.url_not_find(msg=f'接口 {request.path} 不存在')
-
-
-@job.errorhandler(Exception)
-def error_handler(e):
-    """ 捕获所有服务器内部的异常，把错误发送到 即时达推送 的 系统错误 通道 """
-    error = traceback.format_exc()
-    try:
-        requests.post(
-            url=conf['error_push']['url'],
-            json={
-                'key': conf['error_push']['key'],
-                'head': f'{conf["SECRET_KEY"]}报错了',
-                'body': f'{error}'
-            }
-        )
-    except:
-        pass
-    return restful.error(f'服务器异常: {e}')
-
 
 if __name__ == '__main__':
     job.run(host='0.0.0.0', port=8025)

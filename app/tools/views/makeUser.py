@@ -3,10 +3,9 @@
 import json
 
 from faker import Faker
-from flask import request
+from flask import request, current_app as app
 
 from app.tools import tool
-from utils import restful
 from utils import makeUserTools
 from app.config.models.config import Config
 
@@ -14,13 +13,13 @@ fake = Faker('zh_CN')
 
 
 @tool.route('/makeUserMapping', methods=['GET'])
-def get_make_user_info_mapping():
+def get_make_user_info_mapping_not_login_required():
     """ 获取生成用户信息可选项映射关系 """
-    return restful.success('获取成功', data=Config.get_first(name='make_user_info_mapping').value)
+    return app.restful.success('获取成功', data=Config.get_first(name='make_user_info_mapping').value)
 
 
 @tool.route('/makeUser', methods=['GET'])
-def make_user_info():
+def make_user_info_not_login_required():
     """ 生成用户信息 """
     args = request.args.to_dict()
     count, options, all_data = int(args.get('count')), json.loads(args.get('options')), []
@@ -36,4 +35,4 @@ def make_user_info():
                     temp_data.append(data)
                     i += 1
         all_data.append(temp_data)
-    return restful.success('获取成功', data=[dict(zip(options, data)) for data in zip(*all_data)])
+    return app.restful.success('获取成功', data=[dict(zip(options, data)) for data in zip(*all_data)])

@@ -4,15 +4,13 @@ import json
 import os.path
 
 import requests
-from flask import request
+from flask import request, current_app as app
 
 from app.assist import assist
 from app.api_test.models.project import ApiProject
 from app.api_test.models.module import ApiModule
 from app.api_test.models.api import ApiMsg
-from utils import restful
 from utils.globalVariable import SWAGGER_FILE_ADDRESS
-from utils.required import login_required
 from app.baseModel import db
 
 
@@ -175,7 +173,6 @@ def parse_openapi3_args(api_msg, api_detail, models):
 
 
 @assist.route('/swagger/pull', methods=['POST'])
-@login_required
 def swagger_pull():
     """ 根据指定服务的swagger拉取所有数据 """
     project, module_list = ApiProject.get_first(id=request.json.get('id')), {}
@@ -183,8 +180,8 @@ def swagger_pull():
     try:
         swagger_data = get_swagger_data(project.swagger)  # swagger数据
     except Exception as error:
-        assist.logger.error(error)
-        return restful.error('数据拉取失败，详见日志')
+        app.logger.error(error)
+        return app.restful.error('数据拉取失败，详见日志')
 
     with db.auto_commit():
         add_list = []
@@ -192,8 +189,8 @@ def swagger_pull():
             for api_method, api_detail in api_data.items():
                 tags = api_detail.get('tags')[0] if api_detail.get('tags') else '默认分组'
                 module = get_parsed_module(module_list, project.id, tags)
-                assist.logger.info(f'解析接口地址：{api_addr}')
-                assist.logger.info(f'解析接口数据：{api_detail}')
+                app.logger.info(f'解析接口地址：{api_addr}')
+                app.logger.info(f'解析接口数据：{api_detail}')
                 api_name = api_detail.get('summary', '接口未命名')
                 format_data = {
                     'project_id': project.id,
@@ -249,4 +246,4 @@ def swagger_pull():
         with open(swagger_file, 'w', encoding='utf8') as fp:
             json.dump(swagger_data, fp, ensure_ascii=False, indent=4)
 
-    return restful.success('数据拉取并更新完成')
+    return app.restful.success('数据拉取并更新完成')

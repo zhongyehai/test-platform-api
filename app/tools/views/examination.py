@@ -3,8 +3,9 @@
 import json
 import os
 
+from flask import current_app as app
+
 from app.tools import tool
-from utils import restful
 
 # 获取征信从业资格考试题目
 with open(os.path.join(os.path.dirname(__file__), '../zhengXinTest.json'), encoding='utf8') as file:
@@ -12,6 +13,6 @@ with open(os.path.join(os.path.dirname(__file__), '../zhengXinTest.json'), encod
 
 
 @tool.route('/examination', methods=['GET'])
-def get_test_data():
+def get_test_data_not_login_required():
     """ 征信考试 """
-    return restful.success('获取成功', data=zheng_xin_test_data)
+    return app.restful.success('获取成功', data=zheng_xin_test_data)

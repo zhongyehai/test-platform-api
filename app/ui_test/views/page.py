@@ -1,27 +1,22 @@
 # -*- coding: utf-8 -*-
 
-from flask import request, g
+from flask import request, g, views, current_app as app
 
-from utils import restful
-from utils.required import login_required
 from app.ui_test import ui_test
-from app.baseView import BaseMethodView
 from app.ui_test.models.element import UiElement
 from app.ui_test.models.page import UiPage, db
 from app.ui_test.forms.page import AddPageForm, EditPageForm, DeletePageForm, PageListForm, GetPageById
 
 
 @ui_test.route('/page/list', methods=['GET'])
-@login_required
 def get_page_list():
     """ 根据模块查接口list """
     form = PageListForm()
     if form.validate():
-        return restful.success(data=UiPage.make_pagination(form))
+        return app.restful.success(data=UiPage.make_pagination(form))
 
 
 @ui_test.route('/page/copy', methods=['post'])
-@login_required
 def copy_page():
     """ 复制页面 """
     form = GetPageById()
@@ -55,51 +50,50 @@ def copy_page():
                     update_user=g.user_id
                 ))
 
-        return restful.success(msg='复制成功', data={
+        return app.restful.success(msg='复制成功', data={
             "page": new_page.to_dict(),
             "element": [element.to_dict() for element in UiElement.get_all(page_id=new_page.id)]
         })
-    return restful.fail(form.get_error())
+    return app.restful.fail(form.get_error())
 
 
 @ui_test.route('/page/sort', methods=['put'])
-@login_required
 def change_page_sort():
     """ 更新接口的排序 """
     UiPage.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
-    return restful.success(msg='修改排序成功')
+    return app.restful.success(msg='修改排序成功')
 
 
-class UiPageView(BaseMethodView):
+class UiPageView(views.MethodView):
     """ 接口信息 """
 
     def get(self):
         form = GetPageById()
         if form.validate():
-            return restful.success(data=form.page.to_dict())
-        return restful.fail(form.get_error())
+            return app.restful.success(data=form.page.to_dict())
+        return app.restful.fail(form.get_error())
 
     def post(self):
         form = AddPageForm()
         if form.validate():
             form.num.data = UiPage.get_insert_num(module_id=form.module_id.data)
             new_page = UiPage().create(form.data)
-            return restful.success(f'页面【{form.name.data}】新建成功', data=new_page.to_dict())
-        return restful.fail(form.get_error())
+            return app.restful.success(f'页面【{form.name.data}】新建成功', data=new_page.to_dict())
+        return app.restful.fail(form.get_error())
 
     def put(self):
         form = EditPageForm()
         if form.validate():
             form.old.update(form.data)
-            return restful.success(f'页面【{form.name.data}】修改成功', form.old.to_dict())
-        return restful.fail(form.get_error())
+            return app.restful.success(f'页面【{form.name.data}】修改成功', form.old.to_dict())
+        return app.restful.fail(form.get_error())
 
     def delete(self):
         form = DeletePageForm()
         if form.validate():
             form.page.delete()
-            return restful.success(f'页面【{form.page.name}】删除成功')
-        return restful.fail(form.get_error())
+            return app.restful.success(f'页面【{form.page.name}】删除成功')
+        return app.restful.fail(form.get_error())
 
 
 ui_test.add_url_rule('/page', view_func=UiPageView.as_view('ui_page'))

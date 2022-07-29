@@ -39,7 +39,10 @@ class AutoTestPolyFactoring(BaseModel):
     enable_flag = db.Column(db.String(10), nullable=True, default='1', comment='是否可用（0：不可用；1：可用）')
 
 
-class AutoTestUserBase:
+class AutoTestUser(BaseModel):
+    """ 自动化测试用户表 """
+    __tablename__ = 'auto_test_user'
+
     mobile = db.Column(db.String(11), nullable=True, default='', comment='手机号')
     company_name = db.Column(db.String(128), nullable=True, default='', comment='公司名')
     u_token = db.Column(db.Text, nullable=True, default='', comment='token')
@@ -48,23 +51,4 @@ class AutoTestUserBase:
     password = db.Column(db.String(128), nullable=True, default='', comment='密码')
     role = db.Column(db.String(128), nullable=True, default='', comment='角色,平台方admin；核心企业core；供应商supplier；资金方capital')
     comment = db.Column(db.String(256), nullable=True, default='', comment='备注')
-
-
-class AutoTestUserDev(AutoTestUserBase, BaseModel):
-    """ 自动化测试用户表 """
-    __tablename__ = 'auto_test_user_dev'
-
-
-class AutoTestUserTest(AutoTestUserBase, BaseModel):
-    """ 自动化测试用户表 """
-    __tablename__ = 'auto_test_user_test'
-
-
-class AutoTestUserUat(AutoTestUserBase, BaseModel):
-    """ 自动化测试用户表 """
-    __tablename__ = 'auto_test_user_uat'
-
-
-class AutoTestUserProduction(AutoTestUserBase, BaseModel):
-    """ 自动化测试用户表 """
-    __tablename__ = 'auto_test_user_production'
+    env = db.Column(db.String(64), nullable=True, default='', comment='数据对应的环境')

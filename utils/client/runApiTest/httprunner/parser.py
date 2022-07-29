@@ -392,37 +392,27 @@ def parse_string_functions(content, variables_mapping, functions_mapping):
         args = parse_data(args, variables_mapping, functions_mapping)
         kwargs = parse_data(kwargs, variables_mapping, functions_mapping)
 
-        if func_name in ["parameterize", "P"]:
-            if len(args) != 1 or kwargs:
-                raise exceptions.ParamsError("P() should only pass in one argument!")
-            from . import loader
-            eval_value = loader.load_csv_file(args[0])
-        elif func_name in ["environ", "ENV"]:
-            if len(args) != 1 or kwargs:
-                raise exceptions.ParamsError("ENV() should only pass in one argument!")
-            eval_value = utils.get_os_environ(args[0])
-        else:
-            func = get_mapping_function(func_name, functions_mapping)
-            # eval_value = func(*args, **kwargs)
-            # 执行自定义函数，有可能会报错
-            try:
-                eval_value = func(*args, **kwargs)
-            except Exception as error:
-                # 记录错误信息
-                ErrorRecord().create({
-                    'name': '执行自定义函数错误',
-                    'detail': f'执行自定义函数【{func_name}】报错了 \n  args参数: {args} \n  kwargs参数: {kwargs} \n\n  '
-                              f'错误信息: \n{traceback.format_exc()}'
-                })
+        func = get_mapping_function(func_name, functions_mapping)
+        # eval_value = func(*args, **kwargs)
+        # 执行自定义函数，有可能会报错
+        try:
+            eval_value = func(*args, **kwargs)
+        except Exception as error:
+            # 记录错误信息
+            ErrorRecord().create({
+                'name': '执行自定义函数错误',
+                'detail': f'执行自定义函数【{func_name}】报错了 \n  args参数: {args} \n  kwargs参数: {kwargs} \n\n  '
+                          f'错误信息: \n{traceback.format_exc()}'
+            })
 
-                # 发送自定义函数执行错误的信息
-                async_send_run_time_error_message(content={
-                    "title": "执行自定义函数错误",
-                    "detail": f'### {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
-                              f'### 执行自定义函数【{func_name}】报错了 \n  args参数: {args} \n  kwargs参数: {kwargs} \n  '
-                              f'### 错误信息: {traceback.format_exc()} \n> '
-                }, addr=Config.get_first(name='run_time_error_message_send_addr').value)
-                raise
+            # 发送自定义函数执行错误的信息
+            async_send_run_time_error_message(content={
+                "title": "执行自定义函数错误",
+                "detail": f'### {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
+                          f'### 执行自定义函数【{func_name}】报错了 \n  args参数: {args} \n  kwargs参数: {kwargs} \n  '
+                          f'### 错误信息: {traceback.format_exc()} \n> '
+            }, addr=Config.get_first(name='run_time_error_message_send_addr').value)
+            raise
 
         func_content = "${" + func_content + "}"
         if func_content == content:
@@ -1014,12 +1004,12 @@ def _parse_testsuite(testsuite, project_mapping):
     return parsed_testcase_list
 
 
-def parse_tests(tests_mapping):
+def parse_tests(tests_dict):
     """ 解析测试数据并加载到解析的测试用例
         测试数据包括api、测试用例和测试套件
 
     Args:
-        tests_mapping (dict): project info and testcases list.
+        tests_dict (dict): project info and testcases list.
 
             {
                 "project_mapping": {
@@ -1079,31 +1069,31 @@ def parse_tests(tests_mapping):
             }
 
     """
-    project_mapping = tests_mapping.get("project_mapping", {})
+    project_mapping = tests_dict.get("project_mapping", {})
     parsed_tests_mapping = {
-        "project": tests_mapping.get("project", {}),
+        "project": tests_dict.get("project", {}),
         "project_mapping": project_mapping,
         "testcases": []
     }
 
-    for test_type in tests_mapping:
+    for tests_dict_key in tests_dict:
 
-        if test_type == "testsuites":
+        if tests_dict_key == "testsuites":
             # load testcases of testsuite
-            testsuites = tests_mapping["testsuites"]
+            testsuites = tests_dict["testsuites"]
             for testsuite in testsuites:
                 parsed_testcases = _parse_testsuite(testsuite, project_mapping)
                 for parsed_testcase in parsed_testcases:
                     parsed_tests_mapping["testcases"].append(parsed_testcase)
 
-        elif test_type == "testcases":
-            for testcase in tests_mapping["testcases"]:
+        elif tests_dict_key == "testcases":
+            for testcase in tests_dict["testcases"]:
                 _parse_testcase(testcase, project_mapping)
                 parsed_tests_mapping["testcases"].append(testcase)
 
-        elif test_type == "apis":
+        elif tests_dict_key == "apis":
             # encapsulate api as a testcase
-            for api_content in tests_mapping["apis"]:
+            for api_content in tests_dict["apis"]:
                 testcase = {
                     "teststeps": [api_content]
                 }
