@@ -13,6 +13,8 @@ class AccountModel(BaseModel):
     password = db.Column(db.String(255), comment='登录密码')
     desc = db.Column(db.Text(), comment='备注')
     event = db.Column(db.String(50), comment='环境')
+    role = db.Column(db.String(50), comment='角色')
+    permission = db.Column(db.String(50), comment='权限')
 
     @classmethod
     def make_pagination(cls, filter):

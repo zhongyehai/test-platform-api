@@ -36,6 +36,8 @@ class AddAccountForm(BaseForm):
     account = StringField(validators=[DataRequired('请输入登录账号')])
     password = StringField(validators=[DataRequired('请输入登录密码')])
     event = StringField(validators=[DataRequired('请输入环境')])
+    role = StringField(validators=[DataRequired('请输入角色')])
+    permission = StringField(validators=[DataRequired('请输入权限')])
     desc = StringField()
 
     def validate_account(self, field):

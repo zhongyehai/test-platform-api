@@ -100,7 +100,7 @@ class HasTaskIdForm(BaseForm):
 
 class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
-    env = StringField(validators=[DataRequired('请选择运行环境')])
+    env = StringField()
     is_async = IntegerField()
 
 

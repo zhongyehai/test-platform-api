@@ -88,7 +88,7 @@ class ProductionConfig:
     SQLALCHEMY_POOL_SIZE = 1000  # 数据库连接池的大小。默认是数据库引擎的默认值 （通常是 5）。
     SQLALCHEMY_POOL_TIMEOUT = 1200  # 指定数据库连接池的超时时间。默认是 10。
     SQLALCHEMY_POOL_RECYCLE = 100  # 空闲时间超过100秒则重新连接数据库，这个值实测设大了会失效（即使小于mysql的time—waite也会报错）
-    SQLALCHEMY_ECHO = True  # 输出SQL语句
+    # SQLALCHEMY_ECHO = True  # 输出SQL语句
     SQLALCHEMY_MAX_OVERFLOW = 5  # 控制在连接池达到最大值后可以创建的连接数。当这些额外的 连接回收到连接池后将会被断开和抛弃。
 
     SECRET_KEY = conf['SECRET_KEY']
@@ -96,10 +96,6 @@ class ProductionConfig:
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     CSRF_ENABLED = True
     UPLOAD_FOLDER = '/upload'
-
-    @staticmethod
-    def init_app(app):
-        pass
 
 
 if __name__ == '__main__':

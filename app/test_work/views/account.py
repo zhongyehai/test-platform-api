@@ -8,11 +8,26 @@ from app.test_work.forms.account import GetAccountListForm, GetAccountForm, Dele
 from app.test_work.models.account import AccountModel
 
 
-@test_work.route('/account/project/list')
-def get_account_project_list():
-    """ 获取账号项目列表 """
+# @test_work.route('/account/project/list')
+# def get_account_project_list():
+#     """ 获取账号项目列表 """
+#     project_list = AccountModel.query.with_entities(AccountModel.project).distinct().all()
+#     return app.restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
+
+
+@test_work.route('/account/item/list')
+def get_account_item_list():
+    """ 获取账号项目列表、角色列表、权限列表 """
     project_list = AccountModel.query.with_entities(AccountModel.project).distinct().all()
-    return app.restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
+    role_list = AccountModel.query.with_entities(AccountModel.role).distinct().all()
+    permission_list = AccountModel.query.with_entities(AccountModel.permission).distinct().all()
+    return app.restful.success(
+        '获取成功',
+        data={
+            'project_list': [{'key': project[0], 'value': project[0]} for project in project_list],
+            'role_list': [{'key': role[0], 'value': role[0]} for role in role_list],
+            'permission_list': [{'key': permission[0], 'value': permission[0]} for permission in permission_list]
+        })
 
 
 @test_work.route('/account/list')

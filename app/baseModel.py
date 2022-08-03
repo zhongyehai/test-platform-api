@@ -24,6 +24,8 @@ class SQLAlchemy(_SQLAlchemy):
         except Exception as error:
             self.session.rollback()  # 事务如果发生异常，执行回滚
             raise error
+        finally:
+            self.session.rollback()
 
     def execute_query_sql(self, sql):
         """ 执行原生查询sql，并返回字典 """
@@ -147,22 +149,30 @@ class BaseModel(db.Model, JsonUtil):
     @classmethod
     def get_first(cls, **kwargs):
         """ 获取第一条数据 """
-        return cls.query.filter_by(**kwargs).first()
+        with db.auto_commit():
+            data = cls.query.filter_by(**kwargs).first()
+        return data
 
     @classmethod
     def get_all(cls, **kwargs):
         """ 获取全部数据 """
-        return cls.query.filter_by(**kwargs).all()
+        with db.auto_commit():
+            data = cls.query.filter_by(**kwargs).all()
+        return data
 
     @classmethod
     def get_filter_by(cls, **kwargs):
         """ 获取filter_by对象 """
-        return cls.query.filter_by(**kwargs)
+        with db.auto_commit():
+            data = cls.query.filter_by(**kwargs)
+        return data
 
     @classmethod
     def get_filter(cls, **kwargs):
         """ 获取filter对象 """
-        return cls.query.filter(**kwargs)
+        with db.auto_commit():
+            data = cls.query.filter(**kwargs)
+        return data
 
     @classmethod
     def change_sort(cls, id_list, page_num, page_size):

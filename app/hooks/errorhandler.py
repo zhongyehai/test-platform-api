@@ -39,6 +39,7 @@ def register_errorhandler_hook(app):
             error_record = SystemErrorRecord().create({
                 "url": request.path,
                 "method": request.method,
+                "headers": request.headers or {},
                 "params": request.args or {},
                 "data_form": request.form or {},
                 "data_json": request.json or {},

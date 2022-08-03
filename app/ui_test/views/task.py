@@ -31,7 +31,7 @@ def ui_run_task_view():
                 task=task.to_dict(),
                 case_id=UiCaeSet.get_case_id(project_id, task.loads(task.set_ids), task.loads(task.case_ids)),
                 is_async=form.is_async.data,
-                env=form.env.data
+                env=form.env.data or task.env
             ).run_case
         ).start()
         return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
