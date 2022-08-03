@@ -9,7 +9,7 @@ from datetime import datetime
 
 from flask.json import JSONEncoder
 
-from app.api_test.models.caseSet import ApiSet as Set
+from app.api_test.models.caseSet import ApiSet as Set, db
 from app.api_test.models.api import ApiMsg
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.step import ApiStep as Step
@@ -26,11 +26,19 @@ from utils.sendReport import async_send_report
 
 class BaseParse:
 
-    def __init__(self, project_id=None, name=None, report_id=None, performer=None, create_user=None, env=None):
+    def __init__(self,
+                 project_id=None,
+                 name=None,
+                 report_id=None,
+                 performer=None,
+                 create_user=None,
+                 env=None,
+                 is_rollback=False):
 
         self.environment = env  # 运行环境
         self.project_id = project_id
         self.run_name = name
+        self.is_rollback = is_rollback
 
         self.report_id = report_id or Report.get_new_report(self.run_name, 'task', performer, create_user, project_id).id
         self.parsed_project_dict = {}
@@ -125,6 +133,10 @@ class BaseParse:
         with open(os.path.join(API_REPORT_ADDRESS, f'{report.id}.txt'), 'w') as f:
             f.write(json_result)
 
+        # 定时任务需要把连接放回连接池，不放回去会报错
+        if self.is_rollback:
+            db.session.rollback()
+
     def run_case(self):
         """ 调 HttpRunner().run() 执行测试 """
 
@@ -162,9 +174,6 @@ class BaseParse:
         self.build_report(jump_res)
         self.send_report(jump_res)
 
-        # if self.task:  # 多线程发送测试报告
-        #     async_send_report(content=json.loads(jump_res), **self.task, report_id=self.report_id)
-
     def update_run_case_status(self, run_dict, run_index, summary):
         """ 每条用例执行完了都更新对应的运行状态，如果更新后的结果是用例全都运行了，则生成测试报告"""
         run_dict[run_index] = summary
@@ -184,9 +193,6 @@ class BaseParse:
             jump_res = json.dumps(all_summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
             self.build_report(jump_res)
             self.send_report(jump_res)
-
-            # if self.task:  # 多线程发送测试报告
-            #     async_send_report(content=json.loads(jump_res), **self.task, report_id=self.report_id)
 
     def send_report(self, res):
         """ 发送测试报告 """
@@ -250,10 +256,25 @@ class RunApi(BaseParse):
 class RunCase(BaseParse):
     """ 运行测试用例 """
 
-    def __init__(self, project_id=None, run_name=None, case_id=[], task={}, report_id=None, performer=None,
-                 create_user=None, is_async=True, env='test'):
-        super().__init__(project_id=project_id, name=run_name, report_id=report_id, performer=performer,
-                         create_user=create_user, env=env)
+    def __init__(self,
+                 project_id=None,
+                 run_name=None,
+                 case_id=[],
+                 task={},
+                 report_id=None,
+                 performer=None,
+                 create_user=None,
+                 is_async=True,
+                 env='test',
+                 is_rollback=False):
+        super().__init__(
+            project_id=project_id,
+            name=run_name,
+            report_id=report_id,
+            performer=performer,
+            create_user=create_user,
+            env=env,
+            is_rollback=is_rollback)
 
         self.task = task
         self.DataTemplate['is_async'] = is_async

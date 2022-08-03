@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 import json
 from threading import Thread
 
@@ -18,8 +17,6 @@ from app.ucenter.models.user import User
 from app import create_app
 from utils.client.runApiTest.runHttpRunner import RunCase as RunApiCase
 from utils.client.runUiTest.runUiTestRunner import RunCase as RunUiCase
-
-os.environ['TZ'] = 'Asia/Shanghai'
 
 job = create_app()
 
@@ -42,11 +39,10 @@ def async_run_test(case_ids, task, user_id=None, task_type='api'):
             performer=user.name,
             create_user=user.id,
             is_async=task.is_async,
-            env=task.env
+            env=task.env,
+            is_rollback=True
         ).run_case
     ).start()
-
-    db.session.rollback()  # 把连接放回连接池，不放回去会报错
 
 
 class JobStatus(MethodView):

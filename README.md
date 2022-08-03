@@ -8,7 +8,10 @@
 
 ### 1.安装依赖包：sudo pip install -i https://pypi.douban.com/simple/ -r requirements.txt
 
-### 2.创建MySQL数据库，数据库名自己取，编码选择utf8mb4，对应config.yaml下db配置为当前数据库信息即可
+### 2.创建MySQL数据库
+    数据库名自己取，编码选择utf8mb4，对应config.yaml下db配置为当前数据库信息即可
+    查看最大连接数 show variables like 'max_connections';
+    设置最大连接数 set global max_connections=16384;
 
 ### 3.初始化数据库表结构（项目根目录下依次执行下面3条命令）：
     sudo python dbMigration.py db init

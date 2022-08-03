@@ -77,7 +77,7 @@ class BaseModel(db.Model, JsonUtil):
     update_user = db.Column(db.Integer(), nullable=True, default=1, comment='修改数据的用户id')
 
     # 需要做序列化和反序列化的字段
-    args = [
+    serialization_file_list = [
         'headers', 'variables', 'func_files',
         'params', 'data_form', 'data_json', 'extracts', 'validates', "data_driver",
         'set_ids', 'case_ids',
@@ -106,7 +106,7 @@ class BaseModel(db.Model, JsonUtil):
     def create(self, attrs_dict: dict, *args):
         """ 插入数据，若指定了字段，则把该字段的值转为json """
         if not args:
-            args = self.args
+            args = self.serialization_file_list
 
         with db.auto_commit():
             for key, value in attrs_dict.items():
@@ -122,7 +122,7 @@ class BaseModel(db.Model, JsonUtil):
         """ 修改数据，若指定了字段，则把该字段的值转为json """
         # 如果是执行初始化脚本，获取不到g，try一下
         if not args:
-            args = self.args
+            args = self.serialization_file_list
 
         with db.auto_commit():
             for key, value in attrs_dict.items():
@@ -190,7 +190,7 @@ class BaseModel(db.Model, JsonUtil):
         当 pop_list 与 filter_list 同时包含同一个字段时，以 filter_list 为准
         """
         if not to_dict:
-            to_dict = self.args
+            to_dict = self.serialization_file_list
 
         dict_data = {}
         for column in self.__table__.columns:

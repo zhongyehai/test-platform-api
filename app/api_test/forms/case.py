@@ -131,7 +131,7 @@ class DeleteCaseForm(BaseForm):
         )
 
         # 校验是否有定时任务已引用此用例
-        for task in ApiTask.query.filter(ApiTask.case_id.like(f'%{field.data}%')).all():
+        for task in ApiTask.query.filter(ApiTask.case_ids.like(f'%{field.data}%')).all():
             self.validate_data_is_false(
                 f'定时任务【{task.name}】已引用此用例，请先解除引用',
                 field.data in json.loads(task.case_ids)
