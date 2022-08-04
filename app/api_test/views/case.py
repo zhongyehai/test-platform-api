@@ -14,28 +14,11 @@ from app.api_test.models.caseSet import ApiSet
 from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm
 
 
-def create_step(index, case_id, step):
+def create_step(index, case_id, old_step):
     """ 插入步骤 """
-    return Step(
-        num=index,
-        is_run=step['is_run'],
-        run_times=step['run_times'],
-        name=step['name'],
-        up_func=step['up_func'],
-        down_func=step['down_func'],
-        headers=Step.dumps(step['headers']),
-        params=Step.dumps(step['params']),
-        data_form=Step.dumps(step['data_form']),
-        data_json=Step.dumps(step['data_json']),
-        data_xml=Step.dumps(step['data_xml']) if step['data_xml'] else None,
-        extracts=Step.dumps(step['extracts']),
-        validates=Step.dumps(step['validates']),
-        project_id=step['project_id'],
-        case_id=case_id,
-        api_id=step['api_id'],
-        quote_case=step['quote_case'],
-        create_user=g.user_id
-    )
+    old_step["num"] = index
+    old_step["case_id"] = case_id
+    return Step().create(old_step)
 
 
 @api_test.route('/case/list', methods=['get'])

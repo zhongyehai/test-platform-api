@@ -116,9 +116,14 @@ class UiTaskStatus(views.MethodView):
                 res = requests.post(
                     url='http://localhost:8025/api/job/status',
                     headers=request.headers,
-                    json={'userId': g.user_id, 'taskId': task.id, 'type': 'ui'}
+                    json={
+                        'userId': g.user_id,
+                        'task': task.to_dict(),
+                        'type': 'ui'
+                    }
                 ).json()
                 if res["status"] == 200:
+                    task.enable()
                     return app.restful.success(f'任务【{form.task.name}】启用成功', data=res)
                 else:
                     return app.restful.fail(f'任务【{form.task.name}】启用失败', data=res)
@@ -130,15 +135,19 @@ class UiTaskStatus(views.MethodView):
         """ 禁用任务 """
         form = HasTaskIdForm()
         if form.validate():
-            if form.task.status != 1:
+            if form.task.is_disable:
                 return app.restful.fail(f'任务【{form.task.name}】的状态不为启用中')
             try:
                 res = requests.delete(
                     url='http://localhost:8025/api/job/status',
                     headers=request.headers,
-                    json={'taskId': form.task.id, 'type': 'ui'}
+                    json={
+                        'taskId': form.task.id,
+                        'type': 'ui'
+                    }
                 ).json()
                 if res["status"] == 200:
+                    form.task.disable()
                     return app.restful.success(f'任务【{form.task.name}】禁用成功', data=res)
                 else:
                     return app.restful.fail(f'任务【{form.task.name}】禁用失败', data=res)

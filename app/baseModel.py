@@ -341,7 +341,8 @@ class BaseProjectEnv(BaseModel):
             new_env_data = {}
             for filed in filed_list:
                 from_data, to_data = from_env_dict[filed], cls.loads(getattr(to_env_data, filed))
-                new_env_data[filed] = update_dict_to_list(from_data, to_data) if filed != 'func_files' else list(set(to_data + from_data))
+                new_env_data[filed] = update_dict_to_list(from_data, to_data) if filed != 'func_files' else list(
+                    set(to_data + from_data))
 
             to_env_data.update(new_env_data)  # 同步环境
             synchronization_result[to_env] = to_env_data.to_dict()  # 保存已同步的环境数据
@@ -474,6 +475,24 @@ class BaseTask(BaseModel):
     status = db.Column(db.Integer(), default=0, comment='任务的运行状态，0：禁用中、1：启用中，默认0')
     is_async = db.Column(db.Integer(), default=1, comment='任务的运行机制，0：单线程，1：多线程，默认1')
     set_ids = db.Column(db.Text(), comment='用例集id')
+
+    def is_enable(self):
+        """ 判断任务是否为启用状态 """
+        return self.status == 1
+
+    def is_disable(self):
+        """ 判断任务是否为禁用状态 """
+        return self.status == 0
+
+    def enable(self):
+        """ 启用任务 """
+        with db.auto_commit():
+            self.status = 1
+
+    def disable(self):
+        """ 禁用任务 """
+        with db.auto_commit():
+            self.status = 0
 
     @classmethod
     def make_pagination(cls, form):

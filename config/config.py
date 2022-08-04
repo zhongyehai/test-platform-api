@@ -58,13 +58,48 @@ f.format_header_param = my_format_header_param
 
 
 class ProductionConfig:
-    """ 生产环境数据库 """
+    """ 生产环境配置 """
+
+    SECRET_KEY = conf['SECRET_KEY']
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    CSRF_ENABLED = True
+    UPLOAD_FOLDER = '/upload'
+
+    # 数据库链接
     SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://' \
                               f'{conf["db"]["user"]}:' \
                               f'{conf["db"]["password"]}@' \
                               f'{conf["db"]["host"]}:' \
                               f'{conf["db"]["port"]}/' \
                               f'{conf["db"]["database"]}?charset=utf8mb4&autocommit=true'
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
+
+    # 每次连接从池中检查，如果有错误，监测为断开的状态，连接将被立即回收。
+    SQLALCHEMY_POOL_PRE_PING = True
+
+    # 数据库连接池的大小。默认是数据库引擎的默认值默认是5
+    SQLALCHEMY_POOL_SIZE = 200
+
+    # 当连接池达到最大值后可以创建的连接数。当这些额外的连接处理完回收后，若没有在等待进程获取连接，这个连接将会被立即释放。
+    SQLALCHEMY_MAX_OVERFLOW = 1000
+
+    # 从连接池里获取连接
+    # 如果此时无空闲的连接，且连接数已经到达了pool_size+max_overflow。此时获取连接的进程会等待pool_timeout秒。
+    # 如果超过这个时间，还没有获得将会抛出异常。
+    # 默认是30秒
+    SQLALCHEMY_POOL_TIMEOUT = 30
+
+    # 一个数据库连接的生存时间。
+    #     例如pool_recycle=3600。也就是当这个连接产生1小时后，再获得这个连接时，会丢弃这个连接，重新创建一个新的连接。
+    #
+    # 当pool_recycle设置为-1时，也就是连接池不会主动丢弃这个连接。永久可用。但是有可能数据库server设置了连接超时时间。
+    #     例如mysql，设置的有wait_timeout默认为28800，8小时。当连接空闲8小时时会自动断开。8小时后再用这个连接也会被重置。
+    SQLALCHEMY_POOL_RECYCLE = 3600  # 1个小时
+
+    # 输出SQL语句
+    # SQLALCHEMY_ECHO = True
 
     # flask_apscheduler 定时任务存储配置
     SCHEDULER_JOBSTORES = {
@@ -82,20 +117,6 @@ class ProductionConfig:
     SCHEDULER_TIMEZONE = 'Asia/Shanghai'  # 时区
     SCHEDULER_API_ENABLED = True  # 开启API访问功能
     SCHEDULER_API_PREFIX = '/api/scheduler'  # api前缀（默认是/scheduler）
-
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_POOL_PRE_PING = True  # 每次请求前先预先请求一次数据库，一旦预先请求出错则重新建立数据库连接
-    SQLALCHEMY_POOL_SIZE = 1000  # 数据库连接池的大小。默认是数据库引擎的默认值 （通常是 5）。
-    SQLALCHEMY_POOL_TIMEOUT = 1200  # 指定数据库连接池的超时时间。默认是 10。
-    SQLALCHEMY_POOL_RECYCLE = 100  # 空闲时间超过100秒则重新连接数据库，这个值实测设大了会失效（即使小于mysql的time—waite也会报错）
-    # SQLALCHEMY_ECHO = True  # 输出SQL语句
-    SQLALCHEMY_MAX_OVERFLOW = 5  # 控制在连接池达到最大值后可以创建的连接数。当这些额外的 连接回收到连接池后将会被断开和抛弃。
-
-    SECRET_KEY = conf['SECRET_KEY']
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
-    CSRF_ENABLED = True
-    UPLOAD_FOLDER = '/upload'
 
 
 if __name__ == '__main__':

@@ -20,6 +20,7 @@ def create_app():
     app.conf = conf
     app.config.from_object(ProductionConfig)
     app.logger = logger
+    app.db = db
 
     app.restful = restful  # 方便视图返回restful风格，不用每个视图都导包
 

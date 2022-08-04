@@ -15,27 +15,11 @@ from app.ui_test.models.caseSet import UiCaeSet
 from app.ui_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm
 
 
-def create_step(index, case_id, step):
+def create_step(index, case_id, old_step):
     """ 插入步骤 """
-    return UiStep(
-        num=index,
-        is_run=step['is_run'],
-        run_times=step['run_times'],
-        name=step['name'],
-        up_func=step['up_func'],
-        down_func=step['down_func'],
-        execute_type=step['execute_type'],
-        send_keys=step['send_keys'],
-        extracts=UiStep.dumps(step['extracts']),
-        validates=UiStep.dumps(step['validates']),
-        project_id=step['project_id'],
-        case_id=case_id,
-        element_id=step['element_id'],
-        page_id=step['page_id'],
-        quote_case=step['quote_case'],
-        create_user=g.user_id,
-        update_user=g.user_id
-    )
+    old_step["num"] = index
+    old_step["case_id"] = case_id
+    return UiStep().create(old_step)
 
 
 @ui_test.route('/case/list', methods=['get'])
@@ -52,7 +36,8 @@ def ui_get_case_name():
     """ 根据用例id获取用例名 """
     # caseId: '1,4,12'
     case_ids: list = request.args.to_dict().get('caseId').split(',')
-    return app.restful.success(data=[{'id': int(case_id), 'name': UiCase.get_first(id=case_id).name} for case_id in case_ids])
+    return app.restful.success(
+        data=[{'id': int(case_id), 'name': UiCase.get_first(id=case_id).name} for case_id in case_ids])
 
 
 @ui_test.route('/case/quote', methods=['put'])

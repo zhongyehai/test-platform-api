@@ -110,7 +110,7 @@ class EditTaskForm(AddTaskForm, HasTaskIdForm):
     def validate_id(self, field):
         """ 校验id存在 """
         task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', UiTask, id=field.data)
-        self.validate_data_is_true(f'任务【{task.name}】的状态不为禁用中，请先禁用再修改', task.status == 0)
+        self.validate_data_is_true(f'任务【{task.name}】的状态不为禁用中，请先禁用再修改', task.is_disable())
         setattr(self, 'task', task)
 
     def validate_name(self, field):
@@ -153,6 +153,6 @@ class DeleteTaskIdForm(HasTaskIdForm):
     def validate_id(self, field):
         """ 校验id存在 """
         task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', UiTask, id=field.data)
-        self.validate_data_is_true(f'请先禁用任务【{task.name}】', task.status == 0)
+        self.validate_data_is_true(f'请先禁用任务【{task.name}】', task.is_disable())
         self.validate_data_is_true(f'不能删除别人的数据【{task.name}】', UiProject.is_can_delete(task.project_id, task))
         setattr(self, 'task', task)
