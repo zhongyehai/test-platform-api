@@ -118,8 +118,8 @@ class BaseParse:
                 'headers': api.headers,  # 接口头部信息
                 'params': api.params,  # 接口查询字符串参数
                 'json': api.data_json,
-                'data': api.data_form['string'] if api.data_type.upper() == 'DATA' else api.data_xml,
-                'files': api.data_form['files'] if api.data_form else {},
+                'data': api.data_form,
+                'files': api.data_file
             }
         }
 
@@ -142,15 +142,15 @@ class BaseParse:
 
         logger.info(f'请求数据：\n{self.DataTemplate}')
 
-        if self.DataTemplate.get('is_async', 0):  # 串行执行
-            # 遍历case，以case为维度多线程执行，测试报告按顺序排列
+        if self.DataTemplate.get('is_async', 0):
+            # 并行执行, 遍历case，以case为维度多线程执行，测试报告按顺序排列
             run_case_dict = {}
             for index, case in enumerate(self.DataTemplate['testcases']):
                 run_case_dict[index] = False  # 用例运行标识，索引：是否运行完成
                 temp_case = self.DataTemplate
                 temp_case['testcases'] = [case]
                 self._async_run_case(temp_case, run_case_dict, index)
-        else:  # 并行执行
+        else:  # 串行执行
             self.sync_run_case()
 
     def _run_case(self, case, run_case_dict, index):
@@ -326,8 +326,8 @@ class RunCase(BaseParse):
                 'headers': headers,  # 接口头部信息
                 'params': step.params,  # 接口查询字符串参数
                 'json': step.data_json,
-                'data': step.data_form.get('string', {}) if api['data_type'] in ('DATA', 'FORM') else step.data_xml,
-                'files': step.data_form.get('files', {}),
+                'data': step.data_form,
+                'files': step.data_file,
             }
         }
 
@@ -402,6 +402,7 @@ class RunCase(BaseParse):
             name = case_template['config']['name']
             for index in range(current_case.run_times or 1):
                 case_template['config']['name'] = f"{name}_{index + 1}" if current_case.run_times > 1 else name
+                # self.DataTemplate['testcases'].append(copy.copy(case_template))
                 self.DataTemplate['testcases'].append(copy.deepcopy(case_template))
 
             # 完整的解析完一条用例后，去除对应的解析信息

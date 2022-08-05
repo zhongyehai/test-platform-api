@@ -49,7 +49,7 @@ def get_request_data_type(content_type):
     elif 'data' in content_type:
         return 'form'
     else:
-        return 'xml'
+        return 'text'
 
 
 def assert_is_update(api_msg):

@@ -4,6 +4,8 @@ from datetime import datetime
 
 import requests
 import urllib3
+
+from utils.build_request_file import build_request_file
 from . import logger
 from .utils import build_url, lower_dict_keys, omit_long_data
 from requests import Request, Response
@@ -139,6 +141,9 @@ class HttpSession(requests.Session):
 
         # 构建请求的url
         url = build_url(self.base_url, url)
+
+        # 构建文件请求对象
+        kwargs["files"] = build_request_file(kwargs["files"])
 
         # 记录开始请求时间
         request_timestamp = time.time()

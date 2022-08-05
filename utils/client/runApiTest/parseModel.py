@@ -10,10 +10,6 @@ from utils.parse import extract_functions, parse_function, extract_variables
 
 class Base(JsonUtil):
 
-    def build_file_path(self, filename):
-        """ 拼装要上传文件的路径 """
-        return os.path.join(CASE_FILE_ADDRESS, filename)
-
     def parse_headers(self, headers_list):
         """ 解析头部信息
         headers_list:
@@ -144,16 +140,11 @@ class Base(JsonUtil):
                 if data['data_type'] == 'string':
                     string.update({data['key']: data['value']})
 
-                # 上传文件
+                # 上传文件，防止内存中有大对象，先把名字存下来，真正发请求的时候再读取文件
                 elif data['data_type'] == 'file':
-                    files.update({
-                        data['key']: (
-                            data['value'].split('/')[-1],  # 文件名
-                            open(self.build_file_path(data['value']), 'rb'),  # 文件流
-                            CONTENT_TYPE['.{}'.format(data['value'].split('.')[-1])]  # content-type，根据文件后缀取
-                        )
-                    })
-        return {'string': string, 'files': files}
+                    files.update({data['key']: data['value']})
+
+        return string, files
 
 
 class ProjectFormatModel(Base):
@@ -185,16 +176,26 @@ class ApiFormatModel(Base):
         self.method = kwargs.get('method')
         self.addr = kwargs.get('addr')
         self.headers = self.parse_headers(kwargs.get('headers', {}))
-        self.data_type = kwargs.get('data_type', 'json').upper()
         self.params = self.parse_params(kwargs.get('params', {}))
-        self.data_json = kwargs.get('data_json') if self.data_type == 'JSON' else {}
-        self.data_form = self.parse_form_data(kwargs.get('data_form')) if self.data_type == 'DATA' else {}
-        self.data_xml = kwargs.get('data_xml', '')
         self.extracts = self.parse_extracts(kwargs.get('extracts', []))
         self.validates = self.parse_validates(kwargs.get('validates', {}))
         self.module_id = kwargs.get('module_id')
         self.project_id = kwargs.get('project_id')
         self.create_user = kwargs.get('create_user')
+
+        # 根据数据类型解析请求体
+        self.data_type = kwargs.get('data_type', 'json')
+        self.data_json, self.data_form, self.data_file = {}, {}, {}
+        self.parse_body(kwargs)
+
+    def parse_body(self, kwargs):
+        """ 根据请求体数据类型解析请求体 """
+        if self.data_type in ['json', 'raw']:
+            self.data_json = kwargs.get('data_json', {})
+        elif self.data_type in ['form', 'data']:
+            self.data_form, self.data_file = self.parse_form_data(kwargs.get('data_form', {}))
+        elif self.data_type in ['xml', 'text']:
+            self.data_form = kwargs.get('data_text', '')
 
 
 class CaseFormatModel(Base):
@@ -229,9 +230,6 @@ class StepFormatModel(Base):
         self.replace_host = kwargs.get('replace_host')
         self.headers = self.parse_headers(kwargs.get('headers', {}))
         self.params = self.parse_params(kwargs.get('params', {}))
-        self.data_json = kwargs.get('data_json', {})
-        self.data_form = self.parse_form_data(kwargs.get('data_form', {}))
-        self.data_xml = kwargs.get('data_xml', '')
         self.extracts = self.parse_extracts(kwargs.get('extracts', []))
         self.validates = self.parse_validates(kwargs.get('validates', {}))
         self.data_driver = kwargs.get('data_driver', {})
@@ -240,3 +238,17 @@ class StepFormatModel(Base):
         self.api_id = kwargs.get('api_id')
         self.project_id = kwargs.get('project_id')
         self.create_user = kwargs.get('create_user')
+
+        # 根据数据类型解析请求体
+        self.data_type = kwargs.get('data_type', 'json')
+        self.data_json, self.data_form, self.data_file = {}, {}, {}
+        self.parse_body(kwargs)
+
+    def parse_body(self, kwargs):
+        """ 根据请求体数据类型解析请求体 """
+        if self.data_type == 'json':
+            self.data_json = kwargs.get('data_json', {})
+        elif self.data_type == 'form':
+            self.data_form, self.data_file = self.parse_form_data(kwargs.get('data_form', {}))
+        elif self.data_type == 'text':
+            self.data_form = kwargs.get('data_text', '')
