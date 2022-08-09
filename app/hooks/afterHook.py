@@ -5,7 +5,7 @@ import json
 from flask import request
 
 
-def save_log(app, result):
+def save_response_log(app, result):
     """ 判断是否打日志 """
     if request.method == 'HEAD':
         return
@@ -28,5 +28,5 @@ def register_after_hook(app):
         result = copy.copy(response_obj.response)
         if isinstance(result[0], bytes):
             result[0] = bytes.decode(result[0])
-        save_log(app, result)
+        save_response_log(app, result)
         return response_obj
