@@ -11,7 +11,7 @@ class UiElement(BaseApi):
 
     by = db.Column(db.String(255), nullable=True, comment='定位方式')
     element = db.Column(db.Text(), default='', nullable=True, comment='元素值')
-
+    wait_time_out = db.Column(db.Integer(), default=10, nullable=True, comment='等待元素出现的时间，默认10秒')
     page_id = db.Column(db.Integer(), db.ForeignKey('ui_test_page.id'), comment='所属的页面id')
     module_id = db.Column(db.Integer(), db.ForeignKey('ui_test_module.id'), comment='所属的模块id')
     project_id = db.Column(db.Integer(), db.ForeignKey('ui_test_project.id'), nullable=True, comment='所属的项目id')

@@ -21,6 +21,7 @@ class AddElementForm(BaseForm):
     element = StringField(validators=[DataRequired('定位元素表达式必传'), Length(1, 255, '定位元素表达式长度为1~255位')])
     desc = StringField()
     num = StringField()
+    wait_time_out = IntegerField()
 
     def validate_project_id(self, field):
         """ 校验项目id """

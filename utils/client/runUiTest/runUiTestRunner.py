@@ -10,6 +10,7 @@ from threading import Thread
 
 from flask.json import JSONEncoder
 
+from app.config.models.config import Config
 from utils.log import logger
 from utils.parse import encode_object, list_to_dict
 from utils.globalVariable import UI_REPORT_ADDRESS, BROWSER_DRIVER_ADDRESS
@@ -52,6 +53,7 @@ class RunCase:
 
         self.case_id_list = case_id  # 要执行的用例id_list
         self.all_case_steps = []  # 所有测试步骤
+        self.wait_time_out = Config.get_first(name='wait_time_out').value
 
         if not report_id:
             self.report = Report.get_new_report(self.run_name, 'task', performer, create_user, project_id)
@@ -142,6 +144,11 @@ class RunCase:
         """ 多线程运行用例 """
         Thread(target=self._run_case, args=[case, run_case_dict, index]).start()
 
+    def send_report(self, res):
+        """ 发送测试报告 """
+        if self.task:
+            async_send_report(content=json.loads(res), **self.task, report_id=self.report_id)
+
     def sync_run_case(self):
         """ 单线程运行用例 """
         runner = UiTestRunner()
@@ -152,9 +159,7 @@ class RunCase:
         summary['run_env'] = self.environment
         jump_res = json.dumps(summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
         self.build_report(jump_res)
-
-        if self.task:  # 多线程发送测试报告
-            async_send_report(content=json.loads(jump_res), **self.task, report_id=self.report_id)
+        self.send_report(jump_res)
 
     def update_run_case_status(self, run_dict, run_index, summary):
         """ 每条用例执行完了都更新对应的运行状态，如果更新后的结果是用例全都运行了，则生成测试报告"""
@@ -174,9 +179,7 @@ class RunCase:
 
             jump_res = json.dumps(all_summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
             self.build_report(jump_res)
-
-            if self.task:  # 多线程发送测试报告
-                async_send_report(content=json.loads(jump_res), **self.task, report_id=self.report_id)
+            self.send_report(jump_res)
 
     def build_summary(self, source1, source2, fields):
         """ 合并测试报告统计 """
@@ -208,7 +211,8 @@ class RunCase:
                 "by_type": element.by,
                 # 如果是打开页面，则设置为项目域名+页面地址
                 "element": build_url(project.host, element.element) if element.by == 'url' else element.element,
-                "text": step.send_keys
+                "text": step.send_keys,
+                "wait_time_out": float(step.wait_time_out or element.wait_time_out or self.wait_time_out)
             }
         }
 
@@ -325,8 +329,7 @@ class RunCase:
                     'local_storage': {},
                     'name': current_case.name,
                     "browser_type": "chrome",
-                    "browser_path": browser_path,
-                    "web_driver_time_out": 5,  # 浏览器等待元素超时时间
+                    "browser_path": browser_path
                 },
                 'teststeps': []
             }

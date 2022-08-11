@@ -9,6 +9,7 @@ class ApiStep(BaseStep):
 
     __tablename__ = 'api_test_step'
 
+    time_out = db.Column(db.Integer(), default=60, nullable=True, comment='request超时时间，默认60秒')
     replace_host = db.Column(db.Boolean(), default=False, comment='是否使用用例所在项目的域名，True使用用例所在服务的域名，False使用步骤对应接口所在服务的域名')
     headers = db.Column(db.Text(), default='[{"key": null, "remark": null, "value": null}]', comment='头部信息')
     params = db.Column(db.Text(), default='[{"key": null, "value": null}]', comment='url参数')

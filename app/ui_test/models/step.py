@@ -9,6 +9,7 @@ class UiStep(BaseStep):
 
     __tablename__ = 'ui_test_step'
 
+    wait_time_out = db.Column(db.Integer(), default=10, nullable=True, comment='等待元素出现的时间，默认10秒')
     execute_type = db.Column(db.String(255), comment='执行方式')
     send_keys = db.Column(db.String(255), comment='要输入的文本内容')
     extracts = db.Column(

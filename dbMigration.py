@@ -243,10 +243,12 @@ def init_config():
             {'name': 'http_methods', 'value': 'GET,POST,PUT,DELETE', 'desc': 'http请求方式，以英文的 "," 隔开'},
             {'name': 'response_data_source_mapping', 'value': JsonUtil.dumps(response_data_source_mapping), 'desc': '响应对象数据源映射'},
             {'name': 'run_time_error_message_send_addr', 'value': '', 'desc': '运行测试用例时，有错误信息实时通知地址'},
+            {'name': 'request_time_out', 'value': 60, 'desc': '运行测试步骤时，request超时时间'},
         ],
 
         'ui自动化': [
             {'name': 'find_element_option', 'value': JsonUtil.dumps(find_element_option), 'desc': 'ui自动化定位元素方式'},
+            {'name': 'wait_time_out', 'value': 10, 'desc': '等待元素出现时间'},
         ]
     }
     for conf_type, conf_list in conf_dict.items():

@@ -50,6 +50,7 @@ class AddStepForm(BaseForm):
     validates = StringField()
     data_driver = StringField()
     num = StringField()
+    time_out = IntegerField()
 
     def validate_project_id(self, field):
         """ 校验服务id """

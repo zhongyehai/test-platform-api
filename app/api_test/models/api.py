@@ -8,6 +8,7 @@ class ApiMsg(BaseApi):
 
     __tablename__ = 'api_test_api'
 
+    time_out = db.Column(db.Integer(), default=60, nullable=True, comment='request超时时间，默认60秒')
     addr = db.Column(db.String(255), nullable=True, comment='地址')
     up_func = db.Column(db.Text(), default='', comment='接口执行前的函数')
     down_func = db.Column(db.Text(), default='', comment='接口执行后的函数')

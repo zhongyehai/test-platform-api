@@ -40,6 +40,7 @@ class AddApiForm(BaseForm):
     extracts = StringField()
     validates = StringField()
     num = StringField()
+    time_out = IntegerField()
 
     def validate_project_id(self, field):
         """ 校验服务id """

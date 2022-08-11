@@ -16,6 +16,7 @@ from app.api_test.models.step import ApiStep as Step
 from app.assist.models.func import Func
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
 from app.api_test.models.report import ApiReport as Report
+from app.config.models.config import Config
 from utils.client.runApiTest.httprunner.api import HttpRunner
 from utils.log import logger
 from utils.globalVariable import API_REPORT_ADDRESS
@@ -39,6 +40,7 @@ class BaseParse:
         self.project_id = project_id
         self.run_name = name
         self.is_rollback = is_rollback
+        self.time_out = Config.get_first(name='request_time_out').value
 
         self.report_id = report_id or Report.get_new_report(self.run_name, 'task', performer, create_user, project_id).id
         self.parsed_project_dict = {}
@@ -115,6 +117,7 @@ class BaseParse:
             'request': {
                 'method': api.method,
                 'url': api.addr,
+                'timeout': api.time_out,
                 'headers': api.headers,  # 接口头部信息
                 'params': api.params,  # 接口查询字符串参数
                 'json': api.data_json,
@@ -323,6 +326,7 @@ class RunCase(BaseParse):
             'request': {
                 'method': api['request']['method'],
                 'url': api['request']['url'],
+                'timeout': step.time_out or api['request']['timeout'] or self.time_out,
                 'headers': headers,  # 接口头部信息
                 'params': step.params,  # 接口查询字符串参数
                 'json': step.data_json,
