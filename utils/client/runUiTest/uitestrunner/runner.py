@@ -50,7 +50,7 @@ class Runner(object):
                     "local_storage": {},
                     "browser_type": "chrome",
                     "browser_path": browser_path,
-                    "web_driver_time_out": 5,  # 浏览器等待元素超时时间
+                    "wait_time_out": 5,  # 浏览器等待元素超时时间
                 }
 
             web_driver_client_session (instance): requests.Session(), or locust.client.Session() instance.
@@ -69,7 +69,6 @@ class Runner(object):
         self.driver = Driver(
             browser_driver_path=config.get('browser_path'),
             browser_name=config.get('browser_type'),
-            timeout=config.get('web_driver_time_out'),
             cookies=config.get('cookies'),
             session_storage=config.get('session_storage'),
             local_storage=config.get('local_storage')

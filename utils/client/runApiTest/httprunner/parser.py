@@ -411,7 +411,7 @@ def parse_string_functions(content, variables_mapping, functions_mapping):
                 "detail": f'### {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
                           f'### 执行自定义函数【{func_name}】报错了 \n  args参数: {args} \n  kwargs参数: {kwargs} \n  '
                           f'### 错误信息: {traceback.format_exc()} \n> '
-            }, addr=Config.get_first(name='run_time_error_message_send_addr').value)
+            }, addr=Config.get_run_time_error_message_send_addr())
             raise
 
         func_content = "${" + func_content + "}"

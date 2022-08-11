@@ -135,7 +135,6 @@ class HttpSession(requests.Session):
         # 记录原始的请求信息
         self.meta_data["data"][0]["request"]["method"] = method
         self.meta_data["data"][0]["request"]["url"] = url
-        kwargs.setdefault("timeout", 300)
         kwargs.setdefault("allow_redirects", False)
         self.meta_data["data"][0]["request"].update(kwargs)
 

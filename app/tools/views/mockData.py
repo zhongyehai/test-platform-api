@@ -24,7 +24,7 @@ def send_msg_by_webhook(msg_type, msg):
     }
     try:
         print(
-            f'{msg_type}发送企业微信：{requests.post(Config.get_first(name="callback_webhook").value, json=msg_format).json()}')
+            f'{msg_type}发送企业微信：{requests.post(Config.get_callback_webhook(), json=msg_format).json()}')
     except Exception as error:
         print(f'向企业微信发送{msg_type}失败，错误信息：\n{error}')
 
@@ -60,8 +60,8 @@ def return_auto_test_mock_data_not_login_required():
         try:
             # 发送异步回调
             res = requests.post(
-                url=datas.get('addr', Config.get_first(name='data_source_callback_addr').value),
-                headers={'x-auth-token': datas.get('token', Config.get_first(name='data_source_callback_token').value)},
+                url=datas.get('addr', Config.get_data_source_callback_addr()),
+                headers={'x-auth-token': datas.get('token', Config.get_data_source_callback_token())},
                 json={
                     "applyType": 1,
                     "code": 200,
@@ -102,8 +102,8 @@ def return_mock_data_not_login_required():
         try:
             # 发送异步回调
             res = requests.post(
-                url=Config.get_first(name='data_source_callback_addr').value,
-                headers={'x-auth-token': Config.get_first(name='data_source_callback_token').value},
+                url=Config.get_data_source_callback_addr(),
+                headers={'x-auth-token': Config.get_data_source_callback_token()},
                 json={
                     "applyType": 1,
                     "code": 200,
@@ -135,7 +135,7 @@ def call_back_not_login_required():
     send_msg_by_webhook('回调结果', f'已收到回调数据，保存文件名：{name}')
 
     # 如果有配置返回数据，则返回回调数据，否则返回默认数据
-    response = Config.get_first(name='call_back_response')
+    response = Config.get_call_back_response()
     if response:
         return jsonify(json.loads(response.value))
 

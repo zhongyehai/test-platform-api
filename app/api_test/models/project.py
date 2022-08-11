@@ -25,6 +25,6 @@ class ApiProjectEnv(BaseProjectEnv):
     @classmethod
     def create_env(cls, project_id, env_list=None):
         """ 根据配置的环境列表设置环境 """
-        env_list = env_list or cls.loads(Config.get_first(name='run_test_env').value).keys()
+        env_list = env_list or Config.get_run_test_env().keys()
         for env in env_list:
             cls().create({"env": env, "project_id": project_id})

@@ -612,7 +612,6 @@ def __parse_steps(steps: list, case_config: dict, project_mapping: dict):
             }]
     """
     # 用例中配置的浏览器信息
-    web_driver_time_out = case_config.get("web_driver_time_out", '')
     browser_type, browser_path = case_config.get("browser_type", ''), case_config.get("browser_path", '')
 
     # 用例中配置变量、自定义函数
@@ -626,7 +625,6 @@ def __parse_steps(steps: list, case_config: dict, project_mapping: dict):
         # 把浏览器相关信息加到步骤中
         step.setdefault("browser_type", browser_type)
         step.setdefault("browser_path", browser_path)
-        step.setdefault("web_driver_time_out", web_driver_time_out)
 
         # 处理变量本身，有变量本身就有引用变量的情况
         for key in step["variables"]:

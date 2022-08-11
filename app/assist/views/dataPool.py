@@ -27,4 +27,4 @@ def auto_test_user_list():
 @assist.route('/env/list')
 def get_env_list():
     """ 获取环境列表 """
-    return app.restful.success('获取成功', data=Config.loads(Config.get_first(name='run_test_env').value))
+    return app.restful.success('获取成功', data=Config.get_run_test_env())

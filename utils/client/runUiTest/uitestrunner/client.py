@@ -82,10 +82,10 @@ class WebDriverSession:
                 return action_func()
 
             elif any(key in action_name for key in ['click']):  # 需要定位元素、不需要输入数据的方法
-                return action_func((kwargs.get('by_type'), kwargs.get('element')))
+                return action_func((kwargs.get('by_type'), kwargs.get('element')), wait_time_out=kwargs.get('wait_time_out'))
 
             else:  # 需要定位元素、需要输入数据的方法
-                return action_func((kwargs.get('by_type'), kwargs.get('element')), kwargs.get('text'))
+                return action_func((kwargs.get('by_type'), kwargs.get('element')), kwargs.get('text'), wait_time_out=kwargs.get('wait_time_out'))
 
         except TimeoutException:
             raise RunTimeException('浏览器等待元素超时')

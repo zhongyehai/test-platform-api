@@ -15,7 +15,7 @@ fake = Faker('zh_CN')
 @tool.route('/makeUserMapping', methods=['GET'])
 def get_make_user_info_mapping_not_login_required():
     """ 获取生成用户信息可选项映射关系 """
-    return app.restful.success('获取成功', data=Config.get_first(name='make_user_info_mapping').value)
+    return app.restful.success('获取成功', data=Config.get_make_user_info_mapping())
 
 
 @tool.route('/makeUser', methods=['GET'])

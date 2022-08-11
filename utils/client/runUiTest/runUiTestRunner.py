@@ -53,7 +53,7 @@ class RunCase:
 
         self.case_id_list = case_id  # 要执行的用例id_list
         self.all_case_steps = []  # 所有测试步骤
-        self.wait_time_out = Config.get_first(name='wait_time_out').value
+        self.wait_time_out = Config.get_wait_time_out()
 
         if not report_id:
             self.report = Report.get_new_report(self.run_name, 'task', performer, create_user, project_id)

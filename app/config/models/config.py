@@ -44,3 +44,56 @@ class Config(BaseModel):
             filters=filters,
             order_by=cls.id.asc()
         )
+
+    @classmethod
+    def get_kym(cls):
+        """ 获取kym配置项 """
+        return cls.loads(cls.get_first(name='kym').value)
+
+    @classmethod
+    def get_run_test_env(cls):
+        """ 获取运行环境配置项 """
+        return cls.loads(cls.get_first(name='run_test_env').value)
+
+    @classmethod
+    def get_http_methods(cls):
+        """ 配置的http请求方法 """
+        return cls.get_first(name='http_methods').value
+
+    @classmethod
+    def get_default_diff_message_send_addr(cls):
+        """ 配置的对比结果通知地址 """
+        return cls.get_first(name='default_diff_message_send_addr').value
+
+    @classmethod
+    def get_make_user_info_mapping(cls):
+        return cls.get_first(name='make_user_info_mapping').value
+
+    @classmethod
+    def get_callback_webhook(cls):
+        return cls.get_first(name='callback_webhook').value
+
+    @classmethod
+    def get_call_back_response(cls):
+        return cls.get_first(name='call_back_response').value
+
+    @classmethod
+    def get_data_source_callback_addr(cls):
+        return cls.get_first(name='data_source_callback_addr').value
+
+    @classmethod
+    def get_data_source_callback_token(cls):
+        return cls.get_first(name='data_source_callback_token').value
+
+    @classmethod
+    def get_run_time_error_message_send_addr(cls):
+        return cls.get_first(name='run_time_error_message_send_addr').value
+
+    @classmethod
+    def get_request_time_out(cls):
+        return cls.get_first(name='request_time_out').value
+
+    @classmethod
+    def get_wait_time_out(cls):
+        return cls.get_first(name='wait_time_out').value
+

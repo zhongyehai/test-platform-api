@@ -29,7 +29,7 @@ def api_methods_mapping():
     """ 获取配置的请求方法列表 """
     return app.restful.success(
         '获取成功',
-        data=[{'value': method} for method in Config.get_first(name='http_methods').value.split(',')]
+        data=[{'value': method} for method in Config.get_http_methods().split(',')]
     )
 
 

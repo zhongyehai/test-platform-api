@@ -40,7 +40,7 @@ class BaseParse:
         self.project_id = project_id
         self.run_name = name
         self.is_rollback = is_rollback
-        self.time_out = Config.get_first(name='request_time_out').value
+        self.time_out = Config.get_request_time_out()
 
         self.report_id = report_id or Report.get_new_report(self.run_name, 'task', performer, create_user, project_id).id
         self.parsed_project_dict = {}

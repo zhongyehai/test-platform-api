@@ -157,7 +157,7 @@ def update_project(yapi_project):
             data_type = 'add'
             db.session.add(project)
     if data_type == 'add':
-        ApiProjectEnv.create_env(project.id, Config.loads(Config.get_first(name='run_test_env').value))  # 创建环境
+        ApiProjectEnv.create_env(project.id, Config.get_run_test_env())  # 创建环境
     app.logger.info(f'解析yapi后的服务信息：\n{project.to_dict()}')
     return project
 
@@ -785,7 +785,7 @@ def diff_by_yapi():
         send_diff_api_message(
             content=diff_summary,
             report_id=yapi_diff_record.id,
-            addr=request.json.get('addr') or Config.get_first(name='default_diff_message_send_addr').value
+            addr=request.json.get('addr') or Config.get_default_diff_message_send_addr()
         )
     return app.restful.success('对比完成', data=yapi_diff_record.to_dict())
 

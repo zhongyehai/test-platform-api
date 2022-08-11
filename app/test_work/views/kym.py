@@ -19,7 +19,7 @@ def add_kym_project():
         return app.restful.fail(f"服务 {request.json['project']} 已存在")
     with db.auto_commit():
         kym_data = {"nodeData": {"topic": request.json['project'], "root": True, "children": []}}
-        kym_data['nodeData']['children'] = json.loads(Config.get_first(name='kym').value)
+        kym_data['nodeData']['children'] = Config.get_kym()
         kym = KYMModule()
         kym.create({'project': request.json['project'], 'kym': kym_data})
         db.session.add(kym)

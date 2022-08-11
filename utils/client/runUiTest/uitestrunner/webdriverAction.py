@@ -59,7 +59,6 @@ class Driver:
     def __init__(self,
                  browser_driver_path: str,
                  browser_name: str,
-                 timeout: int = 30,
                  cookies: dict = {},
                  session_storage: dict = {},
                  local_storage: dict = {}):
@@ -68,7 +67,7 @@ class Driver:
         browser_name: 要实例化的浏览器类型，用于反射GetDriver获取，详见 GetDriver 的方法
         """
         self.driver = getattr(GetDriver(browser_driver_path), browser_name)()  # 获取浏览器对象
-        self.timeout = timeout  # 超时的时间设置
+        self.timeout = 30  # 默认超时的时间设置
 
         # 如果有预设浏览器信息，则设置
         if cookies:
@@ -104,17 +103,17 @@ class Driver:
         """ 获取浏览器提取数据事件 """
         return cls.get_class_property('extract_')
 
-    def web_driver_wait_until(self, *args):
+    def web_driver_wait_until(self, *args, **kwargs):
         """ 基于 WebDriverWait().until()封装base方法 """
-        return WebDriverWait(self.driver, self.timeout, 1).until(*args)
+        return WebDriverWait(self.driver, kwargs.get('wait_time_out', self.timeout), 1).until(*args)
 
-    def find_element(self, locator: tuple):
+    def find_element(self, locator: tuple, wait_time_out=None):
         """ 定位一个元素，参数locator是元祖类型，(定位方式, 定位元素)，如('id', 'username')，详见By的用法 """
-        return self.web_driver_wait_until(ec.presence_of_element_located(locator))
+        return self.web_driver_wait_until(ec.presence_of_element_located(locator), wait_time_out=wait_time_out)
 
-    def find_elements(self, locator: tuple):
+    def find_elements(self, locator: tuple, wait_time_out=None):
         """ 定位一组元素 """
-        return self.web_driver_wait_until(ec.presence_of_all_elements_located(locator))
+        return self.web_driver_wait_until(ec.presence_of_all_elements_located(locator), wait_time_out=wait_time_out)
 
     def action_01open(self, url: str):
         """ 打开url """
@@ -128,36 +127,36 @@ class Driver:
         """ 关闭窗口 """
         self.driver.quit()
 
-    def action_04click(self, locator: tuple):
+    def action_04click(self, locator: tuple, wait_time_out=None):
         """ 点击元素 """
-        self.find_element(locator).click()
+        self.find_element(locator, wait_time_out=wait_time_out).click()
 
     def action_04sleep_is_input(self, locator: tuple, time_seconds: (int, float, str)):
         """ 等待指定时间 """
         time.sleep(float(time_seconds) if isinstance(time_seconds, str) else time_seconds)
 
-    def action_05clear_and_send_keys_is_input(self, locator: tuple, text: str):
+    def action_05clear_and_send_keys_is_input(self, locator: tuple, text: str, wait_time_out=None):
         """ 清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
-        element = self.find_element(locator)
+        element = self.find_element(locator, wait_time_out=wait_time_out)
         element.clear()
         element.send_keys(text)
 
-    def action_06send_keys_is_input(self, locator: tuple, text: str):
+    def action_06send_keys_is_input(self, locator: tuple, text: str, wait_time_out=None):
         """ 追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
-        element = self.find_element(locator)
+        element = self.find_element(locator, wait_time_out=wait_time_out)
         element.send_keys(text)
 
-    def action_07move_to_element(self, locator: tuple):
+    def action_07move_to_element(self, locator: tuple, wait_time_out=None):
         """ 鼠标悬停 """
-        ActionChains(self.driver).move_to_element(self.find_element(locator)).perform()
+        ActionChains(self.driver).move_to_element(self.find_element(locator, wait_time_out=wait_time_out)).perform()
 
     def action_11js_execute_is_input(self, js: str):
         """ 执行js， is_input标识为输入内容 """
         self.driver.execute_script(js)
 
-    def action_12js_focus_element(self, locator: tuple):
+    def action_12js_focus_element(self, locator: tuple, wait_time_out=None):
         """ 聚焦元素 """
-        self.driver.execute_script("arguments[0].scrollIntoView();", self.find_element(locator))
+        self.driver.execute_script("arguments[0].scrollIntoView();", self.find_element(locator, wait_time_out=wait_time_out))
 
     def action_13js_scroll_top(self):
         """ 滚动到顶部 """
@@ -167,31 +166,31 @@ class Driver:
         """ 滚动到底部 """
         self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
 
-    def action_15select_by_index_is_input(self, locator: tuple, index: int = 0):
+    def action_15select_by_index_is_input(self, locator: tuple, index: int = 0, wait_time_out=None):
         """ 通过索引选中，index是索引第几个，从0开始，默认选第一个， is_input标识为输入内容 """
-        element = self.find_element(locator)
+        element = self.find_element(locator, wait_time_out=wait_time_out)
         Select(element).select_by_index(index)
         element.click()
 
-    def action_16select_by_value_is_input(self, locator: tuple, value: str):
+    def action_16select_by_value_is_input(self, locator: tuple, value: str, wait_time_out=None):
         """ 通过value选中， is_input标识为输入内容 """
-        Select(self.find_element(locator)).select_by_value(value)
+        Select(self.find_element(locator, wait_time_out=wait_time_out)).select_by_value(value)
 
-    def action_17select_by_text_is_input(self, locator: tuple, text: str):
+    def action_17select_by_text_is_input(self, locator: tuple, text: str, wait_time_out=None):
         """ 通过文本值选中 """
-        Select(self.find_element(locator)).select_by_visible_text(text)
+        Select(self.find_element(locator, wait_time_out=wait_time_out)).select_by_visible_text(text)
 
-    def action_18deselect_by_index_is_input(self, locator: tuple, index: int):
+    def action_18deselect_by_index_is_input(self, locator: tuple, index: int, wait_time_out=None):
         """ 通过index索引定位， is_input标识为输入内容 """
-        Select(self.find_element(locator)).deselect_by_index(index)
+        Select(self.find_element(locator, wait_time_out=wait_time_out)).deselect_by_index(index)
 
-    def action_19select_first(self, locator: tuple):
+    def action_19select_first(self, locator: tuple, wait_time_out=None):
         """ 选中第一个 """
-        Select(self.find_element(locator)).first_selected_option()
+        Select(self.find_element(locator, wait_time_out=wait_time_out)).first_selected_option()
 
-    def action_20select_all(self, locator: tuple):
+    def action_20select_all(self, locator: tuple, wait_time_out=None):
         """ 全选 """
-        Select(self.find_element(locator)).all_selected_options()
+        Select(self.find_element(locator, wait_time_out=wait_time_out)).all_selected_options()
 
     def action_20get_alert_text(self):
         """ 获取alert文本 """
@@ -213,19 +212,19 @@ class Driver:
         """ 切换到最后一个窗口 """
         self.driver.switch_to.window(self.driver.window_handles[-1])
 
-    def action_20upload_file_by_input_is_upload(self, locator, file_path, *args):
+    def action_20upload_file_by_input_is_upload(self, locator, file_path, *args, wait_time_out=None):
         """ 通过input上传文件， is_upload标识为文件上传 """
-        self.find_element(locator).send_keys(file_path)
+        self.find_element(locator, wait_time_out=wait_time_out).send_keys(file_path)
 
-    def action_20upload_file_by_perform_is_upload(self, locator, file_path, *args):
+    def action_20upload_file_by_perform_is_upload(self, locator, file_path, *args, wait_time_out=None):
         """ 通过对话框上传文件， is_upload标识为文件上传 """
-        ActionChains(driver).click(self.find_element(locator)).perform()
+        ActionChains(driver).click(self.find_element(locator, wait_time_out=wait_time_out)).perform()
         # https://blog.csdn.net/looker53/article/details/123962960
         # https://blog.csdn.net/qq_39314932/article/details/124233302
 
-    def action_21deselect_all(self, locator: tuple):
+    def action_21deselect_all(self, locator: tuple, wait_time_out=None):
         """ 清除所有的选项 """
-        Select(self.find_element(locator)).deselect_all()
+        Select(self.find_element(locator, wait_time_out=wait_time_out)).deselect_all()
 
     def action_22max_window(self):
         """ 窗口最大化 """
@@ -255,9 +254,9 @@ class Driver:
         """ 获取浏览器名称 """
         return self.driver.name
 
-    def action_29get_size(self, locator: tuple):
+    def action_29get_size(self, locator: tuple, wait_time_out=None):
         """ 获取元素大小 """
-        return self.find_element(locator).size
+        return self.find_element(locator, wait_time_out=wait_time_out).size
 
     def action_30get_local_storage_value_is_input(self, locator: tuple, key: str, *args):
         """ 根据key从localStorage中获取数据 """
@@ -318,17 +317,17 @@ class Driver:
         """ 获取title """
         return self.driver.title
 
-    def extract_09_text(self, locator: tuple, *args):
+    def extract_09_text(self, locator: tuple, *args, wait_time_out=None):
         """ 获取文本 """
-        return self.find_element(locator).text
+        return self.find_element(locator, wait_time_out=wait_time_out).text
 
-    def extract_09_value(self, locator: tuple, *args):
+    def extract_09_value(self, locator: tuple, *args, wait_time_out=None):
         """ 获取value值 """
-        return self.find_element(locator).get_attribute('value')
+        return self.find_element(locator, wait_time_out=wait_time_out).get_attribute('value')
 
-    def extract_10_attribute_is_input(self, locator: tuple, name: str, *args):
+    def extract_10_attribute_is_input(self, locator: tuple, name: str, *args, wait_time_out=None):
         """ 获取指定属性 """
-        return self.find_element(locator).get_attribute(name)
+        return self.find_element(locator, wait_time_out=wait_time_out).get_attribute(name)
 
     def assert_50is_exists(self, locator: tuple, *args):
         """ 元素存在 """
