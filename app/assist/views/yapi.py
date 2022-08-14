@@ -7,16 +7,16 @@ import re
 import requests
 from flask import request, send_from_directory, g, current_app as app
 
-from app.assist import assist
-from app.config.models.config import Config
+from app.api_test.models.api import ApiMsg
+from app.api_test.models.module import ApiModule
 from app.api_test.models.project import ApiProject, ApiProjectEnv
+from app.assist import assist
 from app.assist.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiffRecord
 from app.baseModel import db
-from app.api_test.models.module import ApiModule
-from app.api_test.models.api import ApiMsg
+from app.config.models.config import Config
 from utils.globalVariable import DIFF_RESULT
-from utils.sendReport import send_diff_api_message
 from utils.makeXmind import make_xmind
+from utils.sendReport import send_diff_api_message
 
 
 def assert_coding_format(data):
@@ -228,14 +228,17 @@ def update_api(project, module_and_api):
 
 def get_yapi_header(host, account, password):
     """ 登录yapi，获取set-cookie """
-    login_res = requests.post(
-        f'{host}/api/user/login',
-        json={"email": account, "password": password}
-    ).headers['Set-Cookie']
-    return {
-        'Cookie': '_yapi_token=' + re.findall('_yapi_token=(.+?); ', login_res)[0] + '; ' +
-                  '_yapi_uid=' + re.findall('_yapi_uid=(.+?); ', login_res)[0],
-    }
+    try:
+        login_res = requests.post(
+            f'{host}/api/user/login',
+            json={"email": account, "password": password}
+        ).headers['Set-Cookie']
+        return {
+            'Cookie': '_yapi_token=' + re.findall('_yapi_token=(.+?); ', login_res)[0] + '; ' +
+                      '_yapi_uid=' + re.findall('_yapi_uid=(.+?); ', login_res)[0],
+        }
+    except Exception as error:
+        raise Exception('yapi登录失败，请检查配置的地址、账号、密码是否正确')
 
 
 def get_group_list(host, headers, ignore_group):
