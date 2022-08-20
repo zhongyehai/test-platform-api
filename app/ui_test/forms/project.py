@@ -4,6 +4,7 @@ import validators
 from wtforms import StringField, IntegerField
 from wtforms.validators import Length, DataRequired
 
+from app.assist.models.func import Func
 from app.baseForm import BaseForm
 from app.ui_test.models.project import UiProject, UiProjectEnv
 from app.ucenter.models.user import User
@@ -15,6 +16,7 @@ class AddUiProjectForm(BaseForm):
     name = StringField(validators=[DataRequired('项目名称不能为空'), Length(1, 255, message='项目名长度不可超过255位')])
     manager = StringField(validators=[DataRequired('请选择负责人')])
     swagger = StringField()
+    func_files = StringField()
 
     def validate_name(self, field):
         """ 校验项目名不重复 """
@@ -83,12 +85,12 @@ class AddEnv(BaseForm):
     cookies = StringField()
     session_storage = StringField()
     local_storage = StringField()
-    func_files = StringField()
     all_func_name = {}
     all_variables = {}
 
     def validate_project_id(self, field):
         project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files))
         setattr(self, 'project', project)
 
     def validate_host(self, field):
@@ -104,7 +106,7 @@ class AddEnv(BaseForm):
     def validate_variables(self, field):
         """ 校验公共变量 """
         self.validate_variable_and_header_format(field.data, '自定义变量设置，，第【', '】行，要设置自定义变量，则key和value都需设置')
-        self.validate_func(self.all_func_name, self.func_files.data, self.dumps(field.data))  # 自定义函数
+        self.validate_func(self.all_func_name, self.dumps(field.data))  # 自定义函数
         self.validate_variable(self.all_variables, field.data, self.dumps(field.data))  # 公共变量
 
 

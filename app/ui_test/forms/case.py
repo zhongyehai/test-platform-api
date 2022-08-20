@@ -3,6 +3,7 @@
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, DataRequired
 
+from app.assist.models.func import Func
 from app.ui_test.models.project import UiProject, UiProjectEnv
 from app.ui_test.models.caseSet import UiCaeSet
 from app.ui_test.models.step import UiStep
@@ -41,34 +42,16 @@ class AddCaseForm(BaseForm):
         setattr(self, 'project_env', env)
 
         # 自定义函数
-        func_files = env['func_files']
+        func_files = self.loads(self.project.func_files)
         func_files.extend(self.func_files.data)
-        self.validate_func(self.all_func_name, func_files, self.dumps(field.data))
+        self.all_func_name = Func.get_func_by_func_file_name(func_files)
+        self.validate_func(self.all_func_name, self.dumps(field.data))
 
         # 公共变量
         variables = env['variables']
         variables.extend(field.data)
         self.validate_variable_and_header_format(field.data, '自定义变量设置，，第【', '】行，要设置自定义变量，则key和value都需设置')
         self.validate_variable(self.all_variables, variables, self.dumps(field.data))
-
-    # def validate_headers(self, field):
-    #     """ 头部参数的校验
-    #     1.校验是否存在引用了自定义函数但是没有引用自定义函数文件的情况
-    #     2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
-    #     """
-    #     if not self.project:
-    #         self.project = UiProject.get_first(id=UiCaeSet.get_first(id=self.set_id.data).project_id)
-    #
-    #     # 自定义函数
-    #     func_files = self.project_env['func_files']
-    #     func_files.extend(self.func_files.data)
-    #     self.validate_func(self.all_func_name, func_files, self.dumps(field.data))
-    #
-    #     # 公共变量
-    #     variables = self.project_env['variables']
-    #     variables.extend(self.variables.data)
-    #     self.validate_variable_and_header_format(field.data, '头部信息设置，第【', '】行，要设置头部信息，则key和value都需设置')
-    #     self.validate_variable(self.all_variables, variables, self.dumps(field.data))
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """

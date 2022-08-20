@@ -147,45 +147,6 @@ def extract_variables(content):
         return []
 
 
-def check_case(case_data, func_address):
-    module_functions_dict = {}
-    if func_address:
-        for f in json.loads(func_address):
-            import_path = 'func_list.{}'.format(f.replace('.py', ''))
-            func_list = importlib.reload(importlib.import_module(import_path))
-            module_functions_dict.update({name: item for name, item in vars(func_list).items() if
-                                          isinstance(item, types.FunctionType)})
-            # module_functions_dict = dict(filter(is_function, vars(func_list).items()))
-
-    if isinstance(case_data, list):
-        for c in case_data:
-            json_c = json.dumps(c)
-            num = json_c.count('$')
-            variable_num = len(extract_variables(json_c))
-            func_num = len(extract_functions(json_c))
-            if not c['case_name']:
-                return '存在没有命名的用例，请检查'
-            if num != (variable_num + func_num):
-                return '‘{}’用例存在格式错误的引用参数或函数'.format(c['case_name'])
-            if func_address:
-                for func in extract_functions(json_c):
-                    func = func.split('(')[0]
-                    if func not in module_functions_dict:
-                        return '{}用例中的函数“{}”在文件引用中没有定义'.format(c['case_name'], func)
-
-    else:
-        num = case_data.count('$')
-        variable_num = len(extract_variables(case_data))
-        func_num = len(extract_functions(case_data))
-        if num != (variable_num + func_num):
-            return '‘业务变量’存在格式错误的引用参数或函数'
-        if func_address:
-            for func in extract_functions(case_data):
-                func = func.split('(')[0]
-                if func not in module_functions_dict:
-                    return '函数“{}”在文件引用中没有定义'.format(func)
-
-
 def convert(variable):
     """ 同层次参数中，存在引用关系就先赋值
     eg:

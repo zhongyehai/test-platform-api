@@ -144,15 +144,8 @@ class UiCaseView(views.MethodView):
     def delete(self):
         form = DeleteCaseForm()
         if form.validate():
-            case_name, case, steps = form.case.name, form.case, UiStep.get_all(case_id=form.id.data)
-
-            # 数据有依赖关系，先删除步骤，再删除用例
-            with db.auto_commit():
-                if steps:
-                    for step in steps:
-                        db.session.delete(step)
-            db.session.delete(case)
-            return app.restful.success(f'用例【{case_name}】删除成功')
+            form.case.delete_current_and_step()
+            return app.restful.success(f'用例【{form.case.name}】删除成功')
         return app.restful.fail(form.get_error())
 
 

@@ -14,6 +14,7 @@ class AddProjectForm(BaseForm):
     name = StringField(validators=[DataRequired('服务名称不能为空'), Length(1, 255, message='服务名长度不可超过255位')])
     manager = StringField(validators=[DataRequired('请选择负责人')])
     swagger = StringField()
+    func_files = StringField()
 
     def validate_name(self, field):
         """ 校验服务名不重复 """
@@ -86,7 +87,6 @@ class AddEnv(BaseForm):
     project_id = IntegerField(validators=[DataRequired('服务id必传')])
     env = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
     host = StringField(validators=[DataRequired('域名必传'), Length(2, 255, message='域名长度为1~255位')])
-    func_files = StringField()
     variables = StringField()
     headers = StringField()
     all_func_name = {}
@@ -94,16 +94,13 @@ class AddEnv(BaseForm):
 
     def validate_project_id(self, field):
         project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files))
         setattr(self, 'project', project)
 
     def validate_host(self, field):
         """ 校验地址是否正确 """
         if field.data and validators.url(field.data) is not True:
             raise ValidationError(f'环境地址【{field.data}】不正确')
-
-    def validate_func_files(self, field):
-        """ 自定义函数文件 """
-        self.all_func_name = Func.get_func_by_func_file_name(field.data)
 
     def validate_variables(self, field):
         """ 校验公共变量 """

@@ -36,18 +36,18 @@ class AddCaseForm(BaseForm):
 
     all_func_name = {}
     all_variables = {}
-    project = None
-    project_env = None
+    project = {}
+    project_env = {}
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """
         self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', ApiSet, id=field.data)
-        self.project = ApiProject.get_first(id=ApiSet.get_first(id=self.set_id.data).project_id)
-        self.project_env = ApiProjectEnv.get_first(project_id=self.project.id).to_dict()
+        self.project = ApiProject.get_first(id=ApiSet.get_first(id=self.set_id.data).project_id).to_dict()
+        self.project_env = ApiProjectEnv.get_first(project_id=self.project['id']).to_dict()
 
     def validate_func_files(self, field):
         """ 合并项目选择的自定义函数和用例选择的自定义函数文件 """
-        func_files = self.project_env['func_files']
+        func_files = self.project['func_files']
         func_files.extend(field.data)
         self.all_func_name = Func.get_func_by_func_file_name(func_files)
 

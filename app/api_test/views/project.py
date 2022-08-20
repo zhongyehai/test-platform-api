@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import views, current_app as app
 
+from app import db
 from app.api_test import api_test
 from app.api_test.models.project import ApiProject, ApiProjectEnv
 from app.api_test.forms.project import (
@@ -55,10 +56,7 @@ class ApiProjectView(views.MethodView):
         """ 删除服务 """
         form = DeleteProjectForm()
         if form.validate():
-            form.project.delete()
-            # 删除服务的时候把环境也删掉
-            for env in ApiProjectEnv.get_all(project_id=form.project.id):
-                env.delete()
+            form.project.delete_current_and_env()
             return app.restful.success(msg=f'服务【{form.project.name}】删除成功')
         return app.restful.fail(form.get_error())
 
@@ -69,9 +67,7 @@ def api_project_env_synchronization():
     form = SynchronizationEnvForm()
     if form.validate():
         from_env = ApiProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
-        synchronization_result = ApiProjectEnv.synchronization(
-            from_env, form.envTo.data, ['variables', 'headers', 'func_files']
-        )
+        synchronization_result = ApiProjectEnv.synchronization(from_env, form.envTo.data, ['variables', 'headers'])
         return app.restful.success('同步成功', data=synchronization_result)
     return app.restful.fail(form.get_error())
 
@@ -108,7 +104,7 @@ class ApiProjectEnvView(views.MethodView):
             env_list = [
                 env.env for env in ApiProjectEnv.get_all(project_id=form.project_id.data) if env.env != form.env_data.env
             ]
-            ApiProjectEnv.synchronization(form.env_data, env_list, ['variables', 'headers', 'func_files'])
+            ApiProjectEnv.synchronization(form.env_data, env_list, ['variables', 'headers'])
             return app.restful.success(f'环境修改成功', form.env_data.to_dict())
         return app.restful.fail(msg=form.get_error())
 

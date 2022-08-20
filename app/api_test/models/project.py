@@ -13,6 +13,10 @@ class ApiProject(BaseProject):
     swagger = db.Column(db.String(255), default='', comment='服务对应的swagger地址')
     yapi_id = db.Column(db.Integer(), default=None, comment='对应YapiProject表里面的原始数据在yapi平台的id')
 
+    def delete_current_and_env(self):
+        """ 删除服务及服务下的环境 """
+        return self.delete_current_and_children(ApiProjectEnv, 'project_id')
+
 
 class ApiProjectEnv(BaseProjectEnv):
     """ 服务环境表 """

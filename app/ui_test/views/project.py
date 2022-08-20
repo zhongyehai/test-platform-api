@@ -55,10 +55,7 @@ class ProjectView(views.MethodView):
         """ 删除项目 """
         form = DeleteUiProjectForm()
         if form.validate():
-            form.project.delete()
-            # 删除项目的时候把环境也删掉
-            for env in UiProjectEnv.get_all(project_id=form.project.id):
-                env.delete()
+            form.project.delete_current_and_env()
             return app.restful.success(msg=f'项目【{form.project.name}】删除成功')
         return app.restful.fail(form.get_error())
 
@@ -72,7 +69,7 @@ def project_env_synchronization():
         synchronization_result = UiProjectEnv.synchronization(
             from_env,
             form.envTo.data,
-            ["variables", "func_files", 'cookies', 'session_storage', 'local_storage']
+            ["variables", 'cookies', 'session_storage', 'local_storage']
         )
         return app.restful.success('同步成功', data=synchronization_result)
     return app.restful.fail(form.get_error())
@@ -113,7 +110,7 @@ class ProjectEnvView(views.MethodView):
             UiProjectEnv.synchronization(
                 form.env_data,
                 env_list,
-                ["variables", "func_files", 'cookies', 'session_storage', 'local_storage']
+                ["variables", 'cookies', 'session_storage', 'local_storage']
             )
             return app.restful.success(f'环境保存成功', form.env_data.to_dict())
         return app.restful.fail(msg=form.get_error())

@@ -47,8 +47,9 @@ class BaseForm(Form, JsonUtil):
 
     def validate_func(self, func_container: dict, content: str, message=''):
 
-        # 使用了自定义函数，但是没有引用函数文件的情况
         functions = extract_functions(content)
+
+        # 使用了自定义函数，但是没有引用函数文件的情况
         if functions and not func_container:
             raise ValidationError(f'{message}要使用自定义函数则需引用对应的函数文件')
 

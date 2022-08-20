@@ -138,6 +138,12 @@ class BaseModel(db.Model, JsonUtil):
         with db.auto_commit():
             db.session.delete(self)
 
+    def delete_current_and_children(self, child_model, filter_field):
+        """ 删除当前数据，并且删除下游数据 """
+        with db.auto_commit():
+            child_model.query.filter(getattr(child_model, filter_field) == self.id).delete(synchronize_session=False)
+            db.session.delete(self)
+
     # def delete(self):
     #     """ 软删除 """
     #     self.is_delete = 1
@@ -253,6 +259,7 @@ class BaseProject(BaseModel):
     name = db.Column(db.String(255), nullable=True, comment='服务名称')
     manager = db.Column(db.Integer(), nullable=True, default=1, comment='服务管理员id，默认为admin')
     test = db.Column(db.String(255), default='', comment='测试环境域名')
+    func_files = db.Column(db.Text(), nullable=True, default='[]', comment='引用的函数文件')
 
     def is_not_manager(self):
         """ 判断用户非服务负责人 """
@@ -314,7 +321,6 @@ class BaseProjectEnv(BaseModel):
 
     env = db.Column(db.String(10), nullable=True, comment='所属环境')
     host = db.Column(db.String(255), default='', comment='域名')
-    func_files = db.Column(db.Text(), nullable=True, default='[]', comment='引用的函数文件')
     variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共变量')
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
 
@@ -329,8 +335,7 @@ class BaseProjectEnv(BaseModel):
         # 同步数据来源解析
         from_env_dict = {}
         for filed in filed_list:
-            filed_data = cls.loads(getattr(from_env, filed))
-            from_env_dict[filed] = parse_list_to_dict(filed_data) if filed != 'func_files' else filed_data
+            from_env_dict[filed] = parse_list_to_dict(cls.loads(getattr(from_env, filed)))
 
         # 已同步数据的容器
         synchronization_result = {}
@@ -341,12 +346,16 @@ class BaseProjectEnv(BaseModel):
             new_env_data = {}
             for filed in filed_list:
                 from_data, to_data = from_env_dict[filed], cls.loads(getattr(to_env_data, filed))
-                new_env_data[filed] = update_dict_to_list(from_data, to_data) if filed != 'func_files' else list(
-                    set(to_data + from_data))
+                new_env_data[filed] = update_dict_to_list(from_data, to_data)
 
             to_env_data.update(new_env_data)  # 同步环境
             synchronization_result[to_env] = to_env_data.to_dict()  # 保存已同步的环境数据
         return synchronization_result
+
+    @classmethod
+    def delete_by_project_id(cls, project_id):
+        """ 根据服务/项目id删除环境 """
+        cls.query.filter(cls.project_id == project_id).delete(synchronize_session=False)
 
 
 class BaseModule(BaseModel):
@@ -452,6 +461,11 @@ class BaseStep(BaseModel):
 
     data_driver = db.Column(db.Text(), default='[]', comment='数据驱动，若此字段有值，则走数据驱动的解析')
     quote_case = db.Column(db.String(5), default='', comment='引用用例的id')
+
+    @classmethod
+    def delete_by_case_id(cls, case_id):
+        """ 根据用例id删除步骤 """
+        cls.query.filter(cls.case_id == case_id).delete(synchronize_session=False)
 
 
 class BaseTask(BaseModel):

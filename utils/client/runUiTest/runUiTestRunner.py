@@ -79,8 +79,9 @@ class RunCase:
         """ 从已解析的服务字典中取指定id的服务，如果没有，则取出来解析后放进去 """
         if project_id not in self.parsed_project_dict:
             project = Project.get_first(id=project_id).to_dict()
+            self.parse_functions(project['func_files'])
+
             env = ProjectEnv.get_first(env=self.environment, project_id=project['id']).to_dict()
-            self.parse_functions(env['func_files'])
             env.update(project)
             self.parsed_project_dict.update({project_id: ProjectFormatModel(**env)})
         return self.parsed_project_dict[project_id]
