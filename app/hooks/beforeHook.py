@@ -18,7 +18,7 @@ def register_before_hook(app):
         """ 打日志 """
         if request.method != 'HEAD':
             request_data = request.json or request.form.to_dict() or request.args.to_dict()
-            app.logger.info(f'【{g.user_ip}】【{request.method}】【{request.url}】: \n请求参数：{request_data}')
+            app.logger.info(f'【{g.user_ip}】【{request.method}】【{request.url}】: \n请求参数：{request_data}\n')
 
     @app.before_request
     def request_endpoint_is_exist():

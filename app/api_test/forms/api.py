@@ -41,11 +41,12 @@ class AddApiForm(BaseForm):
     validates = StringField()
     num = StringField()
     time_out = IntegerField()
+    project = None
 
     def validate_project_id(self, field):
         """ 校验服务id """
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
-        setattr(self, 'project', project)
+        self.project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        setattr(self, 'project', self.project)
 
     def validate_module_id(self, field):
         """ 校验模块id """
@@ -70,8 +71,7 @@ class AddApiForm(BaseForm):
 
     def validate_validates(self, field):
         """ 校验断言表达式 """
-        env = self.validate_data_is_exist('当前服务未设置环境', ApiProjectEnv, project_id=self.project.id)
-        func_container = Func.get_func_by_func_file_name(self.loads(env.func_files))
+        func_container = Func.get_func_by_func_file_name(self.loads(self.project.func_files))
         self.validate_base_validates(field.data, func_container)
 
 

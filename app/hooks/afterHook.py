@@ -14,7 +14,7 @@ def save_response_log(app, result):
     elif 'run' in request.path:
         return
     else:
-        app.logger.info(f'【{g.user_ip}】【{request.method}】【{request.url}】, \n响应数据:{json.loads(result[0])}')
+        app.logger.info(f'【{g.user_ip}】【{request.method}】【{request.url}】, \n响应数据:{json.loads(result[0])}\n')
 
 
 def register_after_hook(app):
