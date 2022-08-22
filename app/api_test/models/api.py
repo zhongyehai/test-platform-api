@@ -31,12 +31,23 @@ class ApiMsg(BaseApi):
         default='[{"data_source": null, "key": null, "validate_type": null, "data_type": null, "value": null, "remark": null}]',
         comment='断言信息')
 
+    quote_count = db.Column(db.Integer(), nullable=True, default=0, comment='被引用次数，即多少条用例使用到了此接口')
+
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
     yapi_id = db.Column(db.Integer(), comment='当前接口在yapi平台的id')
 
     module_id = db.Column(db.Integer(), db.ForeignKey('api_test_module.id'), comment='所属的接口模块id')
     module = db.relationship('ApiModule', backref='apis')
 
+    def add_quote_count(self):
+        """ 被引用次数+1 """
+        with db.auto_commit():
+            self.quote_count = 1 if self.quote_count is None else self.quote_count + 1
+
+    def subtract_quote_count(self):
+        """ 被引用次数-1 """
+        with db.auto_commit():
+            self.quote_count = 0 if self.quote_count is None else self.quote_count - 1
 
     @classmethod
     def make_pagination(cls, form):

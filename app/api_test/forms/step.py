@@ -66,7 +66,8 @@ class AddStepForm(BaseForm):
     def validate_api_id(self, field):
         """ 校验接口存在 """
         if not self.quote_case.data:
-            self.validate_data_is_exist(f'id为【{field.data}】的接口不存在', ApiMsg, id=field.data)
+            api = self.validate_data_is_exist(f'id为【{field.data}】的接口不存在', ApiMsg, id=field.data)
+            setattr(self, 'api', api)
 
     def validate_quote_case(self, field):
         """ 不能自己引用自己 """
@@ -81,8 +82,7 @@ class AddStepForm(BaseForm):
     def validate_validates(self, field):
         """ 校验断言信息 """
         if not self.quote_case.data:
-            func_files = self.loads(ApiProjectEnv.get_first(project_id=self.project.id).func_files)
-            func_container = Func.get_func_by_func_file_name(func_files)
+            func_container = Func.get_func_by_func_file_name(self.loads(self.project.func_files))
             self.validate_base_validates(field.data, func_container)
 
 

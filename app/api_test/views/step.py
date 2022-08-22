@@ -2,6 +2,7 @@
 from flask import current_app as app, request, views
 
 from app.api_test import api_test
+from app.api_test.models.api import ApiMsg
 from app.baseModel import db
 from app.api_test.models.step import ApiStep
 from app.api_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
@@ -51,6 +52,7 @@ def api_copy_step():
     old['name'] = f"{old['name']}_copy"
     old['num'] = ApiStep.get_insert_num(case_id=old['case_id'])
     step = ApiStep().create(old)
+    step.add_api_quote_count()
     return app.restful.success(msg='步骤复制成功', data=step.to_dict())
 
 
@@ -69,6 +71,7 @@ class ApiStepMethodView(views.MethodView):
         if form.validate():
             form.num.data = ApiStep.get_insert_num(case_id=form.case_id.data)
             step = ApiStep().create(form.data)
+            step.add_api_quote_count()
             return app.restful.success(f'步骤【{step.name}】新建成功', data=step.to_dict())
         return app.restful.error(form.get_error())
 
@@ -85,6 +88,7 @@ class ApiStepMethodView(views.MethodView):
         form = GetStepForm()
         if form.validate():
             form.step.delete()
+            form.step.subtract_api_quote_count()
             return app.restful.success(f'步骤【{form.step.name}】删除成功')
         return app.restful.error(form.get_error())
 

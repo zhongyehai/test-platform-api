@@ -14,4 +14,8 @@ class ApiCase(BaseCase):
     set_id = db.Column(db.Integer, db.ForeignKey('api_test_case_set.id'), comment='所属的用例集id')
 
     def delete_current_and_step(self):
-        return self.delete_current_and_children(ApiStep, 'case_id')
+        for step in ApiStep.get_all(case_id=self.id):
+            step.delete()
+            step.subtract_api_quote_count()
+        self.delete()
+        # return self.delete_current_and_children(ApiStep, 'case_id')

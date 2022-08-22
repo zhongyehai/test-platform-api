@@ -5,6 +5,7 @@ from threading import Thread
 from flask import current_app as app, request, g, views
 
 from app.api_test import api_test
+from app.api_test.models.api import ApiMsg
 from utils.client.runApiTest.runHttpRunner import RunCase
 from app.baseModel import db
 from app.api_test.models.case import ApiCase
@@ -12,13 +13,6 @@ from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.models.caseSet import ApiSet
 from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm
-
-
-def create_step(index, case_id, old_step):
-    """ 插入步骤 """
-    old_step["num"] = index
-    old_step["case_id"] = case_id
-    return Step().create(old_step)
 
 
 @api_test.route('/case/list', methods=['get'])
@@ -105,9 +99,12 @@ def api_copy_case():
 
     # 复制步骤
     old_step_list = Step.query.filter_by(case_id=request.args.get('id')).order_by(Step.num.asc()).all()
-    with db.auto_commit():
-        for old_step in old_step_list:
-            db.session.add(create_step(old_step.num, new_case.id, old_step.to_dict()))
+    for index, old_step in enumerate(old_step_list):
+        step = old_step.to_dict()
+        step['num'] = index
+        step['case_id'] = new_case.id
+        new_step = Step().create(step)
+        new_step.add_api_quote_count()
 
     return app.restful.success(
         '复制成功',

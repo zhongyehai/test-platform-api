@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from app.api_test.models.api import ApiMsg
 from app.baseModel import BaseStep, db
 
 
@@ -36,3 +36,17 @@ class ApiStep(BaseStep):
 
     api_id = db.Column(db.Integer, db.ForeignKey('api_test_api.id'), comment='步骤所引用的接口的id')
     api = db.relationship('ApiMsg', backref='apis')
+
+    def add_api_quote_count(self, api=None):
+        """ 步骤对应的接口被引用次数+1 """
+        if not self.quote_case:
+            if not api:
+                api = ApiMsg.get_first(id=self.api_id)
+            api.add_quote_count()
+
+    def subtract_api_quote_count(self, api=None):
+        """ 步骤对应的被引用次数-1 """
+        if not self.quote_case:
+            if not api:
+                api = ApiMsg.get_first(id=self.api_id)
+            api.subtract_quote_count()
