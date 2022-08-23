@@ -135,7 +135,7 @@ class ApiTaskStatus(views.MethodView):
         """ 禁用任务 """
         form = HasTaskIdForm()
         if form.validate():
-            if form.task.status != 1:
+            if form.task.is_disable():
                 return app.restful.fail(f'任务【{form.task.name}】的状态不为启用中')
             try:
                 res = requests.delete(

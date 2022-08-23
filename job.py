@@ -40,7 +40,7 @@ def run_task(task_id):
         }
     )
     job.logger.info(f'{"*" * 20} 定时任务触发完毕 {"*" * 20}')
-    job.logger.info(f'{"*" * 20} 测试报告id为：{re.json()["data"]["report_id"]} {"*" * 20}')
+    job.logger.info(f'{"*" * 20} 触发响应为：{re.json()} {"*" * 20}')
 
 
 class JobStatus(MethodView):
