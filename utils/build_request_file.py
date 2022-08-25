@@ -16,6 +16,6 @@ def build_request_file(file_dict):
         request_file[key] = (
             value,  # 文件名
             open(build_file_path(value), 'rb'),  # 文件流
-            CONTENT_TYPE[f".{value.split('.')[-1]}"]  # content-type，根据文件后缀取
+            CONTENT_TYPE.get(f'.{value.split(".")[-1]}', "text/html")  # content-type，根据文件后缀取，如果没有预设此项，则默认取text
         )
     return request_file
