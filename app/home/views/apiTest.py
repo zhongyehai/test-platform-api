@@ -63,10 +63,23 @@ def count_api():
                  ) as t
             group by methods
         """)
+    usage = db.execute_query_sql("""
+        select item, count(*) as totle
+            from (select IF(quote_count = 0, 'not_used', 'is_used') as item from `api_test_api`) as t
+            group by item
+    """)
     return app.restful.success(data={
         'title': '接口',
-        'options': ['总数', 'GET请求', 'POST请求', 'PUT请求', 'DELETE请求'],
-        'data': [sum(data.values()), data.get('GET', 0), data.get('POST', 0), data.get('PUT', 0), data.get('DELETE', 0)]
+        'options': [
+            '总数',
+            'GET请求', 'POST请求', 'PUT请求', 'DELETE请求', '其他请求',
+            '已使用数', '未使用数'
+        ],
+        'data': [
+            sum(data.values()),
+            data.get('GET', 0), data.get('POST', 0), data.get('PUT', 0), data.get('DELETE', 0), data.get('Other', 0),
+            usage.get('is_used', 0), usage.get('not_used', 0)
+        ]
     })
 
 
