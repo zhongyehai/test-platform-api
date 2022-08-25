@@ -30,10 +30,10 @@ def login():
     return {"X-Token": response.json()['data']['token']}
 
 
-def run_task(task_id):
+def run_task(task_id, task_type):
     job.logger.info(f'{"*" * 20} 开始触发执行定时任务 {"*" * 20}')
     re = requests.post(
-        url=f"{host}/api/apiTest/task/run",
+        url=f'{host}/api/{task_type}Test/task/run',
         headers=login(),
         json={
             "id": task_id
@@ -56,7 +56,7 @@ class JobStatus(MethodView):
                 trigger='cron',
                 misfire_grace_time=60,
                 coalesce=False,
-                kwargs={"task_id": task["id"]},
+                kwargs={"task_id": task["id"], "task_type": task_type},
                 id=f'{task_type}_{str(task["id"])}',
                 **parse_cron(task["cron"])
             )
