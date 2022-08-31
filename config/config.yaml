@@ -1,4 +1,4 @@
-SECRET_KEY: ''
+SECRET_KEY: ''  # 任意字符串即可
 
 # 数据库信息
 db:
@@ -15,11 +15,6 @@ token_time_out: 36000
 page:
   pageNum: 1
   pageSize: 20
-
-# 即时通讯消息里面映射的前端地址
-report_addr: 'http://xxx.xxx.xxx.xxx/#/apiTest/reportShow?id='  # 展示测试报告页面的前端地址
-diff_addr: 'http://xxx.xxx.xxx.xxx/#/assist/diffRecordShow?id='  # 展示监控报告页面的前端地址
-error_addr: 'http://xxx.xxx.xxx.xxx/#/assist/errorRecord'  # 展示自定义函数错误记录的前端地址
 
 # 即时达推送 的 系统错误通道
 error_push:

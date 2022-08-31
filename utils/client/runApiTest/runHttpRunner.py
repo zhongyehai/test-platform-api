@@ -201,7 +201,12 @@ class BaseParse:
     def send_report(self, res):
         """ 发送测试报告 """
         if self.task:
-            async_send_report(content=json.loads(res), **self.task, report_id=self.report_id)
+            async_send_report(
+                content=json.loads(res),
+                **self.task,
+                report_id=self.report_id,
+                report_addr=Config.get_api_report_addr()
+            )
 
     def build_summary(self, source1, source2, fields):
         """ 合并测试报告统计 """

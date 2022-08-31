@@ -236,7 +236,8 @@ def init_config():
             {'name': 'default_diff_message_send_addr', 'value': '', 'desc': 'yapi接口监控报告默认发送钉钉机器人地址'},
             {'name': 'run_time_out', 'value': '45', 'desc': '前端运行测试时，等待的超时时间，秒'},
             {'name': 'call_back_response', 'value': '', 'desc': '回调接口的响应信息，若没有设置值，则回调代码里面的默认响应'},
-            {'name': 'callback_webhook', 'value': '', 'desc': '接口收到回调请求后即时通讯通知的地址'}
+            {'name': 'callback_webhook', 'value': '', 'desc': '接口收到回调请求后即时通讯通知的地址'},
+            {'name': 'func_error_addr', 'value': 'http://localhost/#/assist/errorRecord', 'desc': '展示自定义函数错误记录的前端地址（用于即时通讯通知）'}
         ],
 
         '接口自动化': [
@@ -244,11 +245,14 @@ def init_config():
             {'name': 'response_data_source_mapping', 'value': JsonUtil.dumps(response_data_source_mapping), 'desc': '响应对象数据源映射'},
             {'name': 'run_time_error_message_send_addr', 'value': '', 'desc': '运行测试用例时，有错误信息实时通知地址'},
             {'name': 'request_time_out', 'value': 60, 'desc': '运行测试步骤时，request超时时间'},
+            {'name': 'api_report_addr', 'value': 'http://localhost/#/apiTest/reportShow?id=', 'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'},
+            {'name': 'diff_api_addr', 'value': 'http://localhost/#/assist/diffRecordShow?id=', 'desc': '展示yapi监控报告页面的前端地址（用于即时通讯通知）'}
         ],
 
         'ui自动化': [
             {'name': 'find_element_option', 'value': JsonUtil.dumps(find_element_option), 'desc': 'ui自动化定位元素方式'},
             {'name': 'wait_time_out', 'value': 10, 'desc': '等待元素出现时间'},
+            {'name': 'ui_report_addr', 'value': 'http://localhost/#/uiTest/reportShow?id=', 'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'}
         ]
     }
     for conf_type, conf_list in conf_dict.items():

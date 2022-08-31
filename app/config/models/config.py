@@ -97,3 +97,18 @@ class Config(BaseModel):
     def get_wait_time_out(cls):
         return cls.get_first(name='wait_time_out').value
 
+    @classmethod
+    def get_func_error_addr(cls):
+        return cls.get_first(name='func_error_addr').value
+
+    @classmethod
+    def get_diff_api_addr(cls):
+        return cls.get_first(name='diff_api_addr').value
+
+    @classmethod
+    def get_api_report_addr(cls):
+        return cls.get_first(name='api_report_addr').value
+
+    @classmethod
+    def get_ui_report_addr(cls):
+        return cls.get_first(name='ui_report_addr').value

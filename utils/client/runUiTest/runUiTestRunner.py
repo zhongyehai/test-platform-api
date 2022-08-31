@@ -148,7 +148,12 @@ class RunCase:
     def send_report(self, res):
         """ 发送测试报告 """
         if self.task:
-            async_send_report(content=json.loads(res), **self.task, report_id=self.report_id)
+            async_send_report(
+                content=json.loads(res),
+                **self.task,
+                report_id=self.report_id,
+                report_addr=Config.get_ui_report_addr()
+            )
 
     def sync_run_case(self):
         """ 单线程运行用例 """
