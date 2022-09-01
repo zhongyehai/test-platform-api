@@ -233,7 +233,8 @@ class GetLogger:
         self.logs_level = logs_level  # 日志级别
         # 日志的输出格式
         self.log_formatter = logging.Formatter(
-            '%(asctime)s [%(filename)s] [%(funcName)s] [%(levelname)s] [%(lineno)d] %(message)s')
+            '%(asctime)s [%(process)d_%(thread)d] [%(filename)s] [%(funcName)s] [%(levelname)s] [%(lineno)d] %(message)s'
+        )
 
     def get_logger(self):
         """在logger中添加日志句柄并返回，如果logger已有句柄，则直接返回"""

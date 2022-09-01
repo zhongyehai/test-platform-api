@@ -8,7 +8,7 @@ from datetime import datetime
 from . import exceptions, utils
 from .compat import basestring, builtin_str, numeric_types, str
 
-from app.assist.models.errorRecord import ErrorRecord
+from app.assist.models.errorRecord import FuncErrorRecord
 from utils.sendReport import async_send_run_time_error_message
 from utils.regexp import variable_regexp, function_regexp, function_regexp_compile
 from app.config.models.config import Config
@@ -399,7 +399,7 @@ def parse_string_functions(content, variables_mapping, functions_mapping):
             eval_value = func(*args, **kwargs)
         except Exception as error:
             # 记录错误信息
-            ErrorRecord().create({
+            FuncErrorRecord().create({
                 'name': '执行自定义函数错误',
                 'detail': f'执行自定义函数【{func_name}】报错了 \n  args参数: {args} \n  kwargs参数: {kwargs} \n\n  '
                           f'错误信息: \n{traceback.format_exc()}'

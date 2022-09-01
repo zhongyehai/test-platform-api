@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os.path
 from collections import OrderedDict
 
 from flask_script import Manager
@@ -9,6 +9,7 @@ from utils.jsonUtil import JsonUtil
 from app.baseModel import db
 from app.ucenter.models.user import User, Permission, Role
 from app.config.models.config import Config, ConfigType
+from app.assist.models.func import Func
 from main import app
 
 manager = Manager(app)
@@ -265,6 +266,25 @@ def init_config():
 
 
 @manager.command
+def init_func_files():
+    """ 初始化函数文件模板 """
+    print(f'{"=" * 15} 开始创建函数文件模板 {"=" * 15}')
+    func_file_list = [
+        {'name': 'base_template', 'desc': '自定义函数文件使用规范说明'},
+        {'name': 'utils_template', 'desc': '工具类自定义函数操作模板'},
+        {'name': 'database_template', 'desc': '数据库操作类型的自定义函数文件模板'}
+    ]
+    for data in func_file_list:
+        if Func.get_first(name=data["name"]) is None:
+            with open(os.path.join('static', f'{data["name"]}.py'), 'r', encoding='utf-8') as fp:
+                func_data = fp.read()
+            data["func_data"] = func_data
+            Func().create(data)
+            print(f'{"=" * 15} 函数文件 {data["name"]} 创建成功 {"=" * 15}')
+    print(f'{"=" * 15} 函数文件模板创建完成 {"=" * 15}')
+
+
+@manager.command
 def init():
     """ 初始化 权限、角色、管理员 """
     print(f'{"=" * 15} 正在初始化数据 {"=" * 15}')
@@ -272,6 +292,7 @@ def init():
     init_user()
     init_config_type()
     init_config()
+    init_func_files()
     print(f'{"=" * 15} 数据初始化完毕 {"=" * 15}')
 
 

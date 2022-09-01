@@ -93,7 +93,6 @@ class UserView(views.MethodView):
     def put(self):
         form = EditUserForm()
         if form.validate():
-            form.password.data = form.password.data or form.user.password  # 若密码字段有值则修改密码，否则不修改密码
             form.user.update(form.data)
             return app.restful.success(f'用户 {form.user.name} 修改成功', form.user.to_dict())
         return app.restful.fail(msg=form.get_error())

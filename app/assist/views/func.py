@@ -71,14 +71,14 @@ class FuncView(views.MethodView):
     def post(self):
         form = CreatFuncForm()
         if form.validate():
-            Func().create(dict(name=form.name.data, create_user=g.user_id, update_user=g.user_id))
+            Func().create(form.data)
             return app.restful.success(f'函数文件 {form.name.data} 创建成功')
         return app.restful.fail(form.get_error())
 
     def put(self):
         form = EditFuncForm()
         if form.validate():
-            form.func.update({'name': form.name.data, 'desc': form.desc.data})
+            form.func.update(form.data)
             return app.restful.success(f'函数文件 {form.name.data} 修改成功', data=form.func.to_dict())
         return app.restful.fail(form.get_error())
 

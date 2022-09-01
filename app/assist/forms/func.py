@@ -62,10 +62,8 @@ class CreatFuncForm(BaseForm):
         self.validate_data_is_not_exist(f'函数文件【{field.data}】已经存在', Func, name=field.data)
 
 
-class EditFuncForm(HasFuncForm):
+class EditFuncForm(HasFuncForm, CreatFuncForm):
     """ 修改自定义函数文件 """
-    name = StringField(validators=[DataRequired('请输入函数文件名')])
-    desc = StringField()
 
     def validate_name(self, field):
         """ 校验Python函数文件 """

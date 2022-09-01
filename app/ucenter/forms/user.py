@@ -126,3 +126,8 @@ class EditUserForm(GetUserEditForm, CreateUserForm):
             self.id.data,
             account=field.data
         )
+
+    def validate_password(self, field):
+        """ 如果密码字段没有值，则去掉此属性 """
+        if not field.data:
+            delattr(self, 'password')
