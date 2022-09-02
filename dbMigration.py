@@ -17,6 +17,23 @@ manager = Manager(app)
 Migrate(app, db)
 manager.add_command('db', MigrateCommand)
 
+
+def print_start_delimiter(content):
+    print(f'{"*" * 20} {content} {"*" * 20}')
+
+
+def print_type_delimiter(content):
+    print(f'    {"=" * 16} {content} {"=" * 16}')
+
+
+def print_item_delimiter(content):
+    print(f'        {"=" * 12} {content} {"=" * 12}')
+
+
+def print_detail_delimiter(content):
+    print(f'            {"=" * 8} {content} {"=" * 8}')
+
+
 make_user_info_mapping = {
     "姓名": "name",
     "身份证号": "ssn",
@@ -159,7 +176,7 @@ env_dict = {"dev": "开发环境", "test": "测试环境", "uat": "uat环境", "
 @manager.command
 def init_role():
     """ 初始化权限、角色 """
-    print(f'{"=" * 15} 开始创建角色 {"=" * 15}')
+    print_type_delimiter("开始创建角色")
     roles_permissions_map = OrderedDict()
     roles_permissions_map[u'测试人员'] = ['COMMON']
     roles_permissions_map[u'管理员'] = ['COMMON', 'ADMINISTER']
@@ -176,13 +193,13 @@ def init_role():
                 db.session.add(permission)
             role.permission.append(permission)
             db.session.commit()
-    print(f'{"=" * 15} 角色创建成功 {"=" * 15}')
+    print_type_delimiter("角色创建成功")
 
 
 @manager.command
 def init_user():
     """ 初始化用户 """
-    print(f'{"=" * 15} 开始创建管理员用户 {"=" * 15}')
+    print_type_delimiter("开始创建用户")
     user_list = [
         {'account': 'admin', 'password': '123456', 'name': '管理员', 'status': 1, 'role_id': 2},
         {'account': 'common', 'password': 'common', 'name': '公用账号', 'status': 1, 'role_id': 1}
@@ -190,14 +207,14 @@ def init_user():
     for user_info in user_list:
         if User.get_first(account=user_info['account']) is None:
             User().create(user_info)
-            print(f'{"=" * 15} 用户 {user_info["name"]} 创建成功 {"=" * 15}')
-    print(f'{"=" * 15} 用户创建完成 {"=" * 15}')
+            print_item_delimiter(f'用户【{user_info["name"]}】创建成功')
+    print_type_delimiter("用户创建完成")
 
 
 @manager.command
 def init_config_type():
     """ 初始化配置类型 """
-    print(f'{"=" * 15} 开始创建配置类型 {"=" * 15}')
+    print_type_delimiter("开始创建配置类型")
     config_type_list = [
         {'name': '系统配置', 'desc': '全局配置'},
         {'name': '邮箱', 'desc': '邮箱服务器'},
@@ -207,8 +224,8 @@ def init_config_type():
     for data in config_type_list:
         if ConfigType.get_first(name=data["name"]) is None:
             ConfigType().create(data)
-            print(f'{"=" * 15} 配置类型 {data["name"]} 创建成功 {"=" * 15}')
-    print(f'{"=" * 15} 配置类型创建完成 {"=" * 15}')
+            print_item_delimiter(f'配置类型【{data["name"]}】创建成功')
+    print_type_delimiter("配置类型创建完成")
 
 
 @manager.command
@@ -216,8 +233,7 @@ def init_config():
     """ 初始化配置 """
 
     type_dict = {config_type.name: config_type.id for config_type in ConfigType.get_all()}  # 所有配置类型
-
-    print(f'{"=" * 15} 开始创建配置 {"=" * 15}')
+    print_type_delimiter("开始创建配置")
     conf_dict = {
         '邮箱': [
             {'name': 'QQ邮箱', 'value': 'smtp.qq.com', 'desc': 'QQ邮箱服务器'}
@@ -226,7 +242,8 @@ def init_config():
         '系统配置': [
             {'name': 'platform_name', 'value': '极测平台', 'desc': '测试平台名字'},
             {'name': 'run_test_env', 'value': JsonUtil.dumps(env_dict), 'desc': '测试平台支持的环境'},
-            {'name': 'make_user_info_mapping', 'value': JsonUtil.dumps(make_user_info_mapping), 'desc': '生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）'},
+            {'name': 'make_user_info_mapping', 'value': JsonUtil.dumps(make_user_info_mapping),
+             'desc': '生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）'},
             {'name': 'data_type_mapping', 'value': JsonUtil.dumps(data_type_mapping), 'desc': 'python数据类型映射'},
             {'name': 'yapi_host', 'value': '', 'desc': 'yapi域名'},
             {'name': 'yapi_account', 'value': '', 'desc': 'yapi账号'},
@@ -238,22 +255,27 @@ def init_config():
             {'name': 'run_time_out', 'value': '45', 'desc': '前端运行测试时，等待的超时时间，秒'},
             {'name': 'call_back_response', 'value': '', 'desc': '回调接口的响应信息，若没有设置值，则回调代码里面的默认响应'},
             {'name': 'callback_webhook', 'value': '', 'desc': '接口收到回调请求后即时通讯通知的地址'},
-            {'name': 'func_error_addr', 'value': 'http://localhost/#/assist/errorRecord', 'desc': '展示自定义函数错误记录的前端地址（用于即时通讯通知）'}
+            {'name': 'func_error_addr', 'value': 'http://localhost/#/assist/errorRecord',
+             'desc': '展示自定义函数错误记录的前端地址（用于即时通讯通知）'}
         ],
 
         '接口自动化': [
             {'name': 'http_methods', 'value': 'GET,POST,PUT,DELETE', 'desc': 'http请求方式，以英文的 "," 隔开'},
-            {'name': 'response_data_source_mapping', 'value': JsonUtil.dumps(response_data_source_mapping), 'desc': '响应对象数据源映射'},
+            {'name': 'response_data_source_mapping', 'value': JsonUtil.dumps(response_data_source_mapping),
+             'desc': '响应对象数据源映射'},
             {'name': 'run_time_error_message_send_addr', 'value': '', 'desc': '运行测试用例时，有错误信息实时通知地址'},
             {'name': 'request_time_out', 'value': 60, 'desc': '运行测试步骤时，request超时时间'},
-            {'name': 'api_report_addr', 'value': 'http://localhost/#/apiTest/reportShow?id=', 'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'},
-            {'name': 'diff_api_addr', 'value': 'http://localhost/#/assist/diffRecordShow?id=', 'desc': '展示yapi监控报告页面的前端地址（用于即时通讯通知）'}
+            {'name': 'api_report_addr', 'value': 'http://localhost/#/apiTest/reportShow?id=',
+             'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'},
+            {'name': 'diff_api_addr', 'value': 'http://localhost/#/assist/diffRecordShow?id=',
+             'desc': '展示yapi监控报告页面的前端地址（用于即时通讯通知）'}
         ],
 
         'ui自动化': [
             {'name': 'find_element_option', 'value': JsonUtil.dumps(find_element_option), 'desc': 'ui自动化定位元素方式'},
             {'name': 'wait_time_out', 'value': 10, 'desc': '等待元素出现时间'},
-            {'name': 'ui_report_addr', 'value': 'http://localhost/#/uiTest/reportShow?id=', 'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'}
+            {'name': 'ui_report_addr', 'value': 'http://localhost/#/uiTest/reportShow?id=',
+             'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'}
         ]
     }
     for conf_type, conf_list in conf_dict.items():
@@ -261,14 +283,14 @@ def init_config():
             if Config.get_first(name=conf["name"]) is None:
                 conf['type'] = type_dict[conf_type]
                 Config().create(conf)
-                print(f'{"=" * 15} 配置 {conf["name"]} 创建成功 {"=" * 15}')
-    print(f'{"=" * 15} 配置创建完成 {"=" * 15}')
+                print_item_delimiter(f'配置【{conf["name"]}】创建成功')
+    print_type_delimiter("配置创建完成")
 
 
 @manager.command
 def init_func_files():
     """ 初始化函数文件模板 """
-    print(f'{"=" * 15} 开始创建函数文件模板 {"=" * 15}')
+    print_type_delimiter("开始创建函数文件模板")
     func_file_list = [
         {'name': 'base_template', 'desc': '自定义函数文件使用规范说明'},
         {'name': 'utils_template', 'desc': '工具类自定义函数操作模板'},
@@ -280,20 +302,20 @@ def init_func_files():
                 func_data = fp.read()
             data["func_data"] = func_data
             Func().create(data)
-            print(f'{"=" * 15} 函数文件 {data["name"]} 创建成功 {"=" * 15}')
-    print(f'{"=" * 15} 函数文件模板创建完成 {"=" * 15}')
+            print_item_delimiter(f'函数文件【{data["name"]}】创建成功')
+    print_type_delimiter("函数文件模板创建完成")
 
 
 @manager.command
 def init():
     """ 初始化 权限、角色、管理员 """
-    print(f'{"=" * 15} 正在初始化数据 {"=" * 15}')
+    print_start_delimiter("开始初始化数据")
     init_role()
     init_user()
     init_config_type()
     init_config()
     init_func_files()
-    print(f'{"=" * 15} 数据初始化完毕 {"=" * 15}')
+    print_start_delimiter("数据初始化完毕")
 
 
 """

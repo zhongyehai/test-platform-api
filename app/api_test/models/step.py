@@ -16,6 +16,7 @@ class ApiStep(BaseStep):
     data_form = db.Column(db.Text(),
                           default='[{"data_type": null, "key": null, "remark": null, "value": null}]',
                           comment='form-data参数')
+    data_urlencoded = db.Column(db.Text(), default='{}', comment='form_urlencoded参数')
     data_json = db.Column(db.Text(), default='{}', comment='json参数')
     data_text = db.Column(db.Text(), default=None, comment='文本参数')
     data_type = db.Column(db.String(10), default='json', comment='请求体参数类型')

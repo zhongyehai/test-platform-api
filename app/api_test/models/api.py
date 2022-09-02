@@ -13,14 +13,16 @@ class ApiMsg(BaseApi):
     up_func = db.Column(db.Text(), default='', comment='接口执行前的函数')
     down_func = db.Column(db.Text(), default='', comment='接口执行后的函数')
     method = db.Column(db.String(10), nullable=True, comment='请求方式')
-    headers = db.Column(db.Text(), default='[{"key": null, "remark": null, "value": null}]', comment='头部信息')
-    params = db.Column(db.Text(), default='[{"key": null, "value": null}]', comment='url参数')
+    headers = db.Column(db.Text(), default='[{"key": null, "value": null, "remark": null}]', comment='头部信息')
+    params = db.Column(db.Text(), default='[{"key": null, "value": null, "remark": null}]', comment='url参数')
     data_type = db.Column(db.String(10), nullable=True, default='json', comment='参数类型，json、form-data、xml')
     data_form = db.Column(db.Text(),
                           default='[{"data_type": null, "key": null, "remark": null, "value": null}]',
                           comment='form-data参数')
+    data_urlencoded = db.Column(db.Text(), default='{}', comment='form_urlencoded参数')
     data_json = db.Column(db.Text(), default='{}', comment='json参数')
     data_text = db.Column(db.Text(), default='', comment='文本参数')
+    response = db.Column(db.Text(), default='{}', comment='响应对象')
     extracts = db.Column(
         db.Text(),
         default='[{"key": null, "data_source": null, "value": null, "remark": null}]',

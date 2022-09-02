@@ -81,7 +81,7 @@ class BaseModel(db.Model, JsonUtil):
     # 需要做序列化和反序列化的字段
     serialization_file_list = [
         'headers', 'variables', 'func_files',
-        'params', 'data_form', 'data_json', 'extracts', 'validates', "data_driver",
+        'params', 'data_form', 'data_json', 'data_urlencoded', 'extracts', 'validates', "data_driver",
         'set_ids', 'case_ids',
         'cookies', 'session_storage', 'local_storage',
         'kym', 'task_item',

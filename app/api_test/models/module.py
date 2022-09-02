@@ -9,6 +9,7 @@ class ApiModule(BaseModule):
 
     __tablename__ = 'api_test_module'
 
+    controller = db.Column(db.String(255), comment='当前模块在swagger上的controller名字')
     yapi_id = db.Column(db.Integer(), comment='当前模块在yapi平台对应的模块id')
 
     project_id = db.Column(db.Integer, db.ForeignKey('api_test_project.id'), comment='所属的服务id')

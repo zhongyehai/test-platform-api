@@ -1,6 +1,7 @@
 # encoding: utf-8
 import time
 from datetime import datetime
+from urllib import parse
 
 import requests
 import urllib3
@@ -140,6 +141,10 @@ class HttpSession(requests.Session):
 
         # 构建请求的url
         url = build_url(self.base_url, url)
+
+        # 如果是 x-www-form-urlencoded 则进行转码
+        if kwargs.get("headers", {}).get("Content-Type", None) == 'application/x-www-form-urlencoded':
+            kwargs["data"] = parse.urlencode(kwargs["data"])
 
         # 构建文件请求对象
         kwargs["files"] = build_request_file(kwargs["files"])

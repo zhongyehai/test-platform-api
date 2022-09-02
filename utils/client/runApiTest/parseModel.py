@@ -195,6 +195,9 @@ class ApiFormatModel(Base):
             self.data_json = kwargs.get('data_json', {})
         elif self.data_type in ['form', 'data']:
             self.data_form, self.data_file = self.parse_form_data(kwargs.get('data_form', {}))
+        elif self.data_type == 'urlencoded':
+            self.data_form = kwargs.get('data_urlencoded', {})
+            self.headers["Content-Type"] = 'application/x-www-form-urlencoded'
         elif self.data_type in ['xml', 'text']:
             self.data_form = kwargs.get('data_text', '')
 
@@ -252,5 +255,8 @@ class StepFormatModel(Base):
             self.data_json = kwargs.get('data_json', {})
         elif self.data_type == 'form':
             self.data_form, self.data_file = self.parse_form_data(kwargs.get('data_form', {}))
+        elif self.data_type == 'urlencoded':
+            self.data_form = kwargs.get('data_urlencoded', {})
+            self.headers["Content-Type"] = 'application/x-www-form-urlencoded'
         elif self.data_type == 'text':
             self.data_form = kwargs.get('data_text', '')
