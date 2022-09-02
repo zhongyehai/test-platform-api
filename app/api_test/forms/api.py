@@ -36,6 +36,7 @@ class AddApiForm(BaseForm):
     data_type = StringField()
     data_form = StringField()
     data_json = StringField()
+    data_urlencoded = StringField()
     data_text = StringField()
     extracts = StringField()
     validates = StringField()
