@@ -7,6 +7,7 @@ import requests
 from flask import request, current_app as app
 
 from app.assist import assist
+from app.config.models.config import Config
 from app.api_test.models.project import ApiProject
 from app.api_test.models.module import ApiModule
 from app.api_test.models.api import ApiMsg
@@ -118,7 +119,7 @@ def parse_swagger2_args(api_msg, api_detail, swagger_data):
     update_obj(api_msg, 'data_form', form_data, data_form_update)
 
 
-def parse_openapi3_parameters(parameters):
+def parse_openapi3_parameters(parameters, is_parse_headers):
     """ 解析 openapi3 parameters字段 """
     headers, querys = {}, {}
     for arg_dict in parameters:
@@ -126,7 +127,8 @@ def parse_openapi3_parameters(parameters):
         arg_value = f"{arg_dict.get('description', '')} {arg_dict.get('schema', {}).get('type')} {required}"
 
         if arg_dict['in'] == 'header':  # 头部参数
-            headers[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
+            if is_parse_headers == '1':
+                headers[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
         elif arg_dict['in'] == 'query':  # 查询字符串参数
             querys[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
     return headers, querys
@@ -254,11 +256,11 @@ def list_to_dict(data: list):
     return {} if data is None else {item["key"]: item for item in data if item["key"] is not None}
 
 
-def parse_openapi3_args(db_api, swagger_api, data_models):
+def parse_openapi3_args(db_api, swagger_api, data_models, is_parse_headers):
     """ 解析 openapi3 的参数 """
 
     # 请求头和查询字符串参数
-    swagger_headers_dict, swagger_query_dict = parse_openapi3_parameters(swagger_api.get('parameters', []))
+    swagger_headers_dict, swagger_query_dict = parse_openapi3_parameters(swagger_api.get('parameters', []), is_parse_headers)
     headers = dict_to_list(merge_dict(list_to_dict(db_api.headers), swagger_headers_dict))
     query = dict_to_list(merge_dict(list_to_dict(db_api.params), swagger_query_dict))
 
@@ -289,7 +291,10 @@ def swagger_pull():
         app.logger.error(error)
         return app.restful.error('swagger数据拉取失败，详见日志')
 
-    controller_tags = {tag["name"]: tag["description"] for tag in swagger_data.get("tags", [])}  # 解析已有的controller描述
+    is_parse_headers = Config.get_is_parse_headers_by_swagger()
+
+    # 解析已有的controller描述
+    controller_tags = {tag["name"]: tag.get("description", tag["name"]) for tag in swagger_data.get("tags", [])}
 
     with db.auto_commit():
 
@@ -336,7 +341,7 @@ def swagger_pull():
                     content_types = swagger_api.get('requestBody', {}).get('content', {'application/json': ''})
                     content_type = list(content_types.keys())[0]
                     data_models = swagger_data.get('components', {}).get('schemas', {})
-                    parse_openapi3_args(db_api, swagger_api, data_models)  # 处理参数
+                    parse_openapi3_args(db_api, swagger_api, data_models, is_parse_headers)  # 处理参数
 
                 # 处理请求参数类型
                 api_template['data_type'] = get_request_data_type(content_type)

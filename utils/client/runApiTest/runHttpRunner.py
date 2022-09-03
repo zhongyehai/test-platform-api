@@ -134,7 +134,7 @@ class BaseParse:
         report.update({'is_passed': 1 if result['success'] else 0, 'is_done': 1})
 
         # 测试报告写入到文本文件
-        with open(os.path.join(API_REPORT_ADDRESS, f'{report.id}.txt'), 'w') as f:
+        with open(os.path.join(API_REPORT_ADDRESS, f'{report.id}.txt'), 'w', encoding='utf-8') as f:
             f.write(json_result)
 
         # 定时任务需要把连接放回连接池，不放回去会报错

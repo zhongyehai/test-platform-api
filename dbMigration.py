@@ -265,6 +265,7 @@ def init_config():
              'desc': '响应对象数据源映射'},
             {'name': 'run_time_error_message_send_addr', 'value': '', 'desc': '运行测试用例时，有错误信息实时通知地址'},
             {'name': 'request_time_out', 'value': 60, 'desc': '运行测试步骤时，request超时时间'},
+            {'name': 'is_parse_headers_by_swagger', 'value': "1", 'desc': '从swagger拉取数据时，是否解析头部参数, "1"为要同步'},
             {'name': 'api_report_addr', 'value': 'http://localhost/#/apiTest/reportShow?id=',
              'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'},
             {'name': 'diff_api_addr', 'value': 'http://localhost/#/assist/diffRecordShow?id=',

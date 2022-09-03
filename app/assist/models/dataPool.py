@@ -45,7 +45,8 @@ class AutoTestUser(BaseModel):
 
     mobile = db.Column(db.String(11), nullable=True, default='', comment='手机号')
     company_name = db.Column(db.String(128), nullable=True, default='', comment='公司名')
-    u_token = db.Column(db.Text, nullable=True, default='', comment='token')
+    access_token = db.Column(db.Text, nullable=True, default='', comment='access_token')
+    refresh_token = db.Column(db.Text, nullable=True, default='', comment='refresh_token')
     user_id = db.Column(db.String(128), nullable=True, default='', comment='用户id')
     company_id = db.Column(db.String(128), nullable=True, default='', comment='公司id')
     password = db.Column(db.String(128), nullable=True, default='', comment='密码')
