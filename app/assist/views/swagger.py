@@ -139,11 +139,21 @@ def parse_openapi3_request_body(request_body, data_models):
     json_data, form_data = {}, {}
     for content_type, content_detail in request_body.items():
         if content_type == 'application/json':  # json 参数
-            data_model = content_detail.get('schema', {}).get('$ref', '').split('/')[-1]  # 数据模型
+            schema = content_detail.get('schema', {})
+            if schema.get("type") == "array":  # 参数为数组
+                data_model = schema.get('items', {}).get('$ref', '').split('/')[-1]  # 数据模型
+            else:
+                data_model = schema.get('$ref', '').split('/')[-1]  # 数据模型
             required_list = data_models.get(data_model, {}).get('required', [])
             model_data = data_models.get(data_model, {}).get('properties', {})
-            for key, value in model_data.items():
-                json_data[key] = f"{value.get('description', '')} {value.get('type', '')} {'必填' if key in required_list else '非必填'}"
+            if schema.get("type") == "array":  # 参数为数组
+                json_data = [
+                    {key: f"{value.get('description', '')} {value.get('type', '')} {'必填' if key in required_list else '非必填'}" for key, value in model_data.items()}
+                ]
+            else:
+                json_data = {key: f"{value.get('description', '')} {value.get('type', '')} {'必填' if key in required_list else '非必填'}" for key, value in model_data.items()}
+                # for key, value in model_data.items():
+                #     json_data[key] = f"{value.get('description', '')} {value.get('type', '')} {'必填' if key in required_list else '非必填'}"
 
         elif content_type == 'multipart/form-data':  # form-data 参数
             required_list = content_detail.get('schema', {}).get('required', [])  # 必传参数
@@ -210,6 +220,31 @@ def merge_dict(old_dict: dict, new_dict: dict):
     return new_dict
 
 
+def merge_data_json(old_dict: dict, new_dict: dict):
+    """
+    合并请求体
+        如果都是字典，则合并
+        如果都是列表，则返回原来的请求体
+        如果数据类型不一致，则返回新的请求体
+    """
+    if isinstance(old_dict, str):
+        old_dict = json.loads(old_dict)
+
+    if isinstance(new_dict, str):
+        new_dict = json.loads(new_dict)
+
+    # 都是字典
+    if isinstance(old_dict, dict) and isinstance(new_dict, dict):
+        return merge_dict(old_dict, new_dict)
+
+    # 都是列表，则不处理
+    elif isinstance(old_dict, list) and isinstance(new_dict, list):
+        return old_dict
+
+    else:  # 新旧数据类型不一致，直接覆盖
+        return new_dict
+
+
 def dict_to_list(data: dict):
     """
     入参：
@@ -253,6 +288,8 @@ def list_to_dict(data: list):
     """
     if isinstance(data, str):
         data = json.loads(data)
+    if isinstance(data, dict):
+        return data
     return {} if data is None else {item["key"]: item for item in data if item["key"] is not None}
 
 
@@ -260,14 +297,16 @@ def parse_openapi3_args(db_api, swagger_api, data_models, is_parse_headers):
     """ 解析 openapi3 的参数 """
 
     # 请求头和查询字符串参数
-    swagger_headers_dict, swagger_query_dict = parse_openapi3_parameters(swagger_api.get('parameters', []), is_parse_headers)
+    swagger_headers_dict, swagger_query_dict = parse_openapi3_parameters(
+        swagger_api.get('parameters', []), is_parse_headers
+    )
     headers = dict_to_list(merge_dict(list_to_dict(db_api.headers), swagger_headers_dict))
     query = dict_to_list(merge_dict(list_to_dict(db_api.params), swagger_query_dict))
 
     # 请求体
     swagger_request_body_content = swagger_api.get('requestBody', {}).get('content', {})
     swagger_json_data, swagger_form_data = parse_openapi3_request_body(swagger_request_body_content, data_models)
-    json_data = merge_dict(db_api.data_json, swagger_json_data)
+    json_data = merge_data_json(db_api.data_json, swagger_json_data)
     form_data = dict_to_list(merge_dict(list_to_dict(db_api.data_form), swagger_form_data))
 
     # 响应
@@ -287,6 +326,8 @@ def swagger_pull():
 
     try:
         swagger_data = get_swagger_data(project.swagger)  # swagger数据
+        if swagger_data.get("status") == 500:
+            raise
     except Exception as error:
         app.logger.error(error)
         return app.restful.error('swagger数据拉取失败，详见日志')
