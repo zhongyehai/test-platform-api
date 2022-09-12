@@ -1,41 +1,52 @@
 # -*- coding: utf-8 -*-
-from flask import current_app as app, request, views
+from flask import current_app as app, request
 
 from app.api_test import api_test
 from app.api_test.models.module import ApiModule
 from app.api_test.forms.module import AddModelForm, EditModelForm, FindModelForm, DeleteModelForm, GetModelForm
+from app.baseView import LoginRequiredView
+
+ns = api_test.namespace("module", description="模块管理相关接口")
 
 
-@api_test.route('/module/list', methods=['GET'])
-def api_get_module_list():
-    """ 模块列表 """
-    form = FindModelForm()
-    if form.validate():
-        return app.restful.get_success(data=ApiModule.make_pagination(form))
-    return app.restful.fail(form.get_error())
+@ns.route('/list/')
+class ApiModuleListView(LoginRequiredView):
+
+    def get(self):
+        """ 模块列表 """
+        form = FindModelForm()
+        if form.validate():
+            return app.restful.get_success(data=ApiModule.make_pagination(form))
+        return app.restful.fail(form.get_error())
 
 
-@api_test.route('/module/tree', methods=['GET'])
-def api_module_tree():
-    """ 获取当前服务下的模块树 """
-    project_id = int(request.args.get('project_id'))
-    module_list = [
-        module.to_dict() for module in ApiModule.query.filter_by(
-            project_id=project_id).order_by(ApiModule.parent.asc()).all()
-    ]
-    return app.restful.success(data=module_list)
+@ns.route('/tree/')
+class ApiModuleTreeView(LoginRequiredView):
+
+    def get(self):
+        """ 获取当前服务下的模块树 """
+        project_id = int(request.args.get('project_id'))
+        module_list = [
+            module.to_dict() for module in ApiModule.query.filter_by(
+                project_id=project_id).order_by(ApiModule.parent.asc()).all()
+        ]
+        return app.restful.success(data=module_list)
 
 
-class ApiModuleView(views.MethodView):
+@ns.route('/')
+@api_test.doc(title='模块管理', description='模块管理接口')
+class ApiModuleView(LoginRequiredView):
     """ 模块管理 """
 
     def get(self):
+        """ 获取模块 """
         form = GetModelForm()
         if form.validate():
             return app.restful.get_success(data=form.module.to_dict())
         return app.restful.fail(form.get_error())
 
     def post(self):
+        """ 新增模块 """
         form = AddModelForm()
         if form.validate():
             form.num.data = ApiModule.get_insert_num(project_id=form.project_id.data)
@@ -45,6 +56,7 @@ class ApiModuleView(views.MethodView):
         return app.restful.fail(form.get_error())
 
     def put(self):
+        """ 修改模块 """
         form = EditModelForm()
         if form.validate():
             form.old_module.update(form.data)
@@ -52,11 +64,9 @@ class ApiModuleView(views.MethodView):
         return app.restful.fail(form.get_error())
 
     def delete(self):
+        """ 删除模块 """
         form = DeleteModelForm()
         if form.validate():
             form.module.delete()
             return app.restful.success(f'模块【{form.module.name}】删除成功')
         return app.restful.fail(form.get_error())
-
-
-api_test.add_url_rule('/module', view_func=ApiModuleView.as_view('api_module'))

@@ -56,7 +56,16 @@ class Base(JsonUtil):
     def parse_validates(self, validates_list):
         """ 解析断言
         validates:
-            [{"key": "1", "value": "content.message", "validate_type": "equals"}]
+            [
+                {
+                    "data_source": "content",
+                    "data_type": "int",
+                    "key": "status",
+                    "remark": null,
+                    "validate_type": "相等",
+                    "value": "200"
+                }
+            ]
         return:
             [{"equals": ["1", "content.message"]}]
         """
@@ -129,6 +138,14 @@ class Base(JsonUtil):
                 args_and_kwargs.append(f'{kw_key}={data_source}.{kw_value}')
 
         return '${' + f'{func_name}({",".join(args_and_kwargs)})' + '}'
+
+    def parse_skip_if(self, skip_if):
+        """ 判断 skip_if 是否要执行 """
+        if skip_if and skip_if.get("expect") and skip_if.get("check_value"):
+            skip_if["expect"] = self.build_expect_result(skip_if["data_type"], skip_if["expect"])
+            skip_if["comparator"] = assert_mapping[skip_if["comparator"]]
+            return skip_if
+        return {}
 
     def parse_form_data(self, form_data_list):
         """ 解析form参数 """
@@ -231,6 +248,7 @@ class StepFormatModel(Base):
         self.run_times = kwargs.get('run_times')
         self.up_func = kwargs.get('up_func')
         self.down_func = kwargs.get('down_func')
+        self.skip_if = self.parse_skip_if(kwargs.get('skip_if'))
         self.is_run = kwargs.get('is_run')
         self.replace_host = kwargs.get('replace_host')
         self.headers = self.parse_headers(kwargs.get('headers', {}))

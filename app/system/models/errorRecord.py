@@ -23,7 +23,7 @@ class SystemErrorRecord(BaseModel):
         if form.method.data:
             filters.append(cls.method == form.method.data)
         if form.request_user.data:
-            filters.append(cls.url == form.request_user.data)
+            filters.append(cls.create_user == form.request_user.data)
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,

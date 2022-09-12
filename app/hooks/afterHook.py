@@ -23,7 +23,7 @@ def register_after_hook(app):
     @app.after_request
     def after_request(response_obj):
         """ 后置钩子函数，每个请求最后都会经过此函数 """
-        if 'download' in request.path:
+        if 'download' in request.path or '.' in request.path or request.path.endswith('swagger'):
             return response_obj
         result = copy.copy(response_obj.response)
         if isinstance(result[0], bytes):

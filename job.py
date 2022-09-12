@@ -21,7 +21,7 @@ host = "http://localhost:8024"
 
 def login():
     response = requests.post(
-        url=f"{host}/api/ucenter/login",
+        url=f"{host}/api/system/user/login/",
         json={
             "account": "common",
             "password": "common"
@@ -33,7 +33,7 @@ def login():
 def run_task(task_id, task_type):
     job.logger.info(f'{"*" * 20} 开始触发执行定时任务 {"*" * 20}')
     re = requests.post(
-        url=f'{host}/api/{task_type}Test/task/run',
+        url=f'{host}/api/{task_type}Test/task/run/',
         headers=login(),
         json={
             "id": task_id

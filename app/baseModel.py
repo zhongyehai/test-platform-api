@@ -81,7 +81,7 @@ class BaseModel(db.Model, JsonUtil):
     # 需要做序列化和反序列化的字段
     serialization_file_list = [
         'headers', 'variables', 'func_files',
-        'params', 'data_form', 'data_json', 'data_urlencoded', 'extracts', 'validates', "data_driver",
+        'params', 'data_form', 'data_json', 'data_urlencoded', 'extracts', 'validates', "data_driver", "skip_if",
         'set_ids', 'case_ids',
         'cookies', 'session_storage', 'local_storage',
         'kym', 'task_item',
@@ -458,6 +458,11 @@ class BaseStep(BaseModel):
     name = db.Column(db.String(255), comment='步骤名称')
     up_func = db.Column(db.Text(), default='', comment='步骤执行前的函数')
     down_func = db.Column(db.Text(), default='', comment='步骤执行后的函数')
+    skip_if = db.Column(
+        db.String(255),
+        default='{"expect": "", "comparator": "", "data_type": "", "check_value": ""}',
+        comment='是否跳过的判断条件'
+    )
 
     data_driver = db.Column(db.Text(), default='[]', comment='数据驱动，若此字段有值，则走数据驱动的解析')
     quote_case = db.Column(db.String(5), default='', comment='引用用例的id')

@@ -1,27 +1,33 @@
 # -*- coding: utf-8 -*-
-from flask import send_from_directory, views, current_app as app
+from flask import send_from_directory, current_app as app
 
+from app.baseView import LoginRequiredView
 from app.test_work import test_work
 from app.test_work.models.weekly import WeeklyConfigModel, WeeklyModel
 from app.test_work.forms.weekly import (
     GetWeeklyConfigListForm, GetWeeklyConfigForm, AddWeeklyConfigForm, ChangeWeeklyConfigForm, DeleteWeeklyConfigForm,
     GetWeeklyListForm, GetWeeklyForm, AddWeeklyForm, ChangeWeeklyForm, DeleteWeeklyForm
 )
-from app.ucenter.models.user import User
+from app.system.models.user import User
 from utils.globalVariable import TEMP_FILE_ADDRESS
 from utils.makeWeekly import make_weekly_excel, make_current_weekly_excel
 
-
-@test_work.route('/weeklyConfig/list')
-def get_weekly_config_list():
-    """ 获取产品、项目列表 """
-    form = GetWeeklyConfigListForm()
-    if form.validate():
-        return app.restful.success('获取成功', data=WeeklyConfigModel.make_pagination(form))
-    return app.restful.fail(form.get_error())
+ns = test_work.namespace("weekly", description="周报管理相关接口")
 
 
-class WeeklyConfigView(views.MethodView):
+@ns.route('/config/list/')
+class GetWeeklyConfigListView(LoginRequiredView):
+
+    def get(self):
+        """ 获取产品、项目列表 """
+        form = GetWeeklyConfigListForm()
+        if form.validate():
+            return app.restful.success('获取成功', data=WeeklyConfigModel.make_pagination(form))
+        return app.restful.fail(form.get_error())
+
+
+@ns.route('/config/')
+class WeeklyConfigView(LoginRequiredView):
     """ 产品、项目管理 """
 
     def get(self):
@@ -56,37 +62,42 @@ class WeeklyConfigView(views.MethodView):
         return app.restful.fail(form.get_error())
 
 
-@test_work.route('/weekly/list')
-def get_weekly_list():
-    """ 获取周报列表 """
-    form = GetWeeklyListForm()
-    if form.validate():
-        return app.restful.success('获取成功', data=WeeklyModel.make_pagination(form))
-    return app.restful.fail(form.get_error())
+@ns.route('/list/')
+class GetWeeklyListView(LoginRequiredView):
+
+    def get(self):
+        """ 获取周报列表 """
+        form = GetWeeklyListForm()
+        if form.validate():
+            return app.restful.success('获取成功', data=WeeklyModel.make_pagination(form))
+        return app.restful.fail(form.get_error())
 
 
-@test_work.route('/weekly/download')
-def weekly_download():
-    """ 导出周报 """
-    form = GetWeeklyListForm()
-    if form.validate():
-        form.pageNum.data = form.pageSize.data = ''
+@ns.route('/download/')
+class GetWeeklyDownloadView(LoginRequiredView):
 
-        # 获取产品、项目数据
-        product_dict = WeeklyConfigModel.get_data_dict()
-        user_dict = {user.id: user.name for user in User.get_all()}
+    def get(self):
+        """ 导出周报 """
+        form = GetWeeklyListForm()
+        if form.validate():
+            form.pageNum.data = form.pageSize.data = ''
 
-        if form.download_type.data == 'current':  # 导出本周周报
-            data_list = WeeklyModel.make_pagination(form)
-            file_name = make_current_weekly_excel(product_dict, data_list, user_dict)  # 生成excel
-        else:  # 导出指定时间段的周报
-            data_list = WeeklyModel.make_pagination(form)
-            file_name = make_weekly_excel(data_list, form, user_dict)
-        return send_from_directory(TEMP_FILE_ADDRESS, file_name, as_attachment=True)
-    return app.restful.fail(form.get_error())
+            # 获取产品、项目数据
+            product_dict = WeeklyConfigModel.get_data_dict()
+            user_dict = {user.id: user.name for user in User.get_all()}
+
+            if form.download_type.data == 'current':  # 导出本周周报
+                data_list = WeeklyModel.make_pagination(form)
+                file_name = make_current_weekly_excel(product_dict, data_list, user_dict)  # 生成excel
+            else:  # 导出指定时间段的周报
+                data_list = WeeklyModel.make_pagination(form)
+                file_name = make_weekly_excel(data_list, form, user_dict)
+            return send_from_directory(TEMP_FILE_ADDRESS, file_name, as_attachment=True)
+        return app.restful.fail(form.get_error())
 
 
-class WeeklyView(views.MethodView):
+@ns.route('/')
+class WeeklyView(LoginRequiredView):
     """ 周报管理 """
 
     def get(self):
@@ -119,7 +130,3 @@ class WeeklyView(views.MethodView):
             form.weekly.delete()
             return app.restful.success('删除成功')
         return app.restful.fail(form.get_error())
-
-
-test_work.add_url_rule('/weeklyConfig', view_func=WeeklyConfigView.as_view('weeklyConfig'))
-test_work.add_url_rule('/weekly', view_func=WeeklyView.as_view('weekly'))

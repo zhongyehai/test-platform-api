@@ -99,24 +99,24 @@ class Runner(object):
             SkipTest: skip test
 
         """
-        # TODO: move skip to initialize
-        skip_reason = None
+        if test_dict.get("skip"):
+            raise SkipTest("skip触发跳过用例")
 
-        if "skip" in test_dict:
-            skip_reason = test_dict["skip"]
+        elif test_dict.get("skipIf"):  # 只有 skipIf 条件为结果为True时才跳过，条件为假，或者执行报错，都不跳过
+            # {"expect": 200, "comparator": "_01equals", "check_value": 200, "check_result": "unchecked"}
+            skip_if_flag = True
+            skip_if_condition = self.session_context.eval_content(test_dict["skipIf"])
+            try:
+                skip_if_flag = self.session_context._do_validation(skip_if_condition)  # 借用断言来判断条件是否为真
+            except Exception as error:
+                pass
+            if skip_if_flag is None:  # 断言通过，即 skipIf 条件结果为true
+                raise SkipTest(f"{skip_if_condition} skipIf触发跳过用例")
 
-        elif "skipIf" in test_dict:
-            skip_if_condition = test_dict["skipIf"]
-            if self.session_context.eval_content(skip_if_condition):
-                skip_reason = "{} evaluate to True".format(skip_if_condition)
-
-        elif "skipUnless" in test_dict:
+        elif test_dict.get("skipUnless"):
             skip_unless_condition = test_dict["skipUnless"]
             if not self.session_context.eval_content(skip_unless_condition):
-                skip_reason = "{} evaluate to False".format(skip_unless_condition)
-
-        if skip_reason:
-            raise SkipTest(skip_reason)
+                raise SkipTest(f'{skip_unless_condition} skipUnless触发跳过用例')
 
     def do_hook_actions(self, actions, hook_type):
         """ 执行自定义函数

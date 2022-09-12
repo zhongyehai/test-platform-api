@@ -130,7 +130,7 @@ class SessionContext(object):
         comparator = utils.get_uniform_comparator(validator_dict["comparator"])
         validate_func = parser.get_mapping_function(comparator, self.FUNCTIONS_MAPPING)
 
-        check_item = validator_dict["check"]
+        check_item = validator_dict.get("check")
         check_value = validator_dict["check_value"]
         expect_value = validator_dict["expect"]
         check_value_type, expect_value_type = type(check_value).__name__, type(expect_value).__name__

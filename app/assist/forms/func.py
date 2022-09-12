@@ -85,22 +85,28 @@ class DebuggerFuncForm(HasFuncForm):
 
 
 class DeleteFuncForm(BaseForm):
-    """ 删除form """
+    """ 删除f函数文件 """
 
-    name = StringField(validators=[DataRequired('函数文件必传')])
+    id = StringField(validators=[DataRequired('函数文件id必传')])
 
-    def validate_name(self, field):
+    def validate_id(self, field):
         """
         1.校验自定义函数文件需存在
         2.校验是否有引用
         3.校验当前用户是否为管理员或者创建者
         """
-        func = self.validate_data_is_exist(f'函数文件【{field.data}】不存在', Func, name=field.data)
+        func = self.validate_data_is_exist(f'函数文件【{field.data}】不存在', Func, id=field.data)
 
         # 服务引用
-        project_env = ApiProjectEnv.query.filter(ApiProjectEnv.func_files.like(f'%{field.data}%')).first()
-        if project_env:
-            raise ValidationError(f'服务【{ApiProject.get_first(id=project_env).name}】已引用此函数文件，请先解除依赖再删除')
+        project_like = ApiProject.query.filter(ApiProject.func_files.like(f'%{field.data}%')).all()
+        if project_like:
+            for project in project_like:
+                if field.data in project.to_dict().get("func_files", []):
+                    raise ValidationError(f'服务【{ApiProject.get_first(id=project.id).name}】已引用此函数文件，请先解除依赖再删除')
+
+        # project = ApiProject.query.filter(ApiProject.func_files.like(f'%{field.data}%')).first()
+        # if project:
+        #     raise ValidationError(f'服务【{ApiProject.get_first(id=project).name}】已引用此函数文件，请先解除依赖再删除')
 
         # 用例引用
         case = ApiCase.query.filter(ApiCase.func_files.like(f'%{field.data}%')).first()

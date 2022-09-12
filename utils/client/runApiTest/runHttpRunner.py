@@ -322,9 +322,9 @@ class RunCase(BaseParse):
             'name': step.name,
             'setup_hooks': [up.strip() for up in step.up_func.split(';') if up] if step.up_func else [],
             'teardown_hooks': [func.strip() for func in step.down_func.split(';') if func] if step.down_func else [],
-            'skip': '',  # 无条件跳过当前测试
-            'skipIf': step.is_run,  # 如果条件为真，则跳过当前测试
-            'skipUnless': '',  # 除非条件为真，否则跳过当前测试
+            'skip': not step.is_run,  # 直接指定当前步骤是否执行
+            'skipIf': step.skip_if,  # 如果条件为真，则当前步骤不执行
+            # 'skipUnless': '',  # 除非条件为真，否则跳过当前测试
             'times': step.run_times,  # 运行次数
             'extract': step.extracts,  # 接口要提取的信息
             'validate': step.validates,  # 接口断言信息

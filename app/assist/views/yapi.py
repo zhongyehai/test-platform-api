@@ -13,10 +13,13 @@ from app.api_test.models.project import ApiProject, ApiProjectEnv
 from app.assist import assist
 from app.assist.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiffRecord
 from app.baseModel import db
+from app.baseView import LoginRequiredView
 from app.config.models.config import Config
 from utils.globalVariable import DIFF_RESULT
 from utils.makeXmind import make_xmind
 from utils.sendReport import send_diff_api_message
+
+ns = assist.namespace("yapi", description="yapi数据管理")
 
 
 def assert_coding_format(data):
@@ -384,472 +387,481 @@ def get_is_update_project_list(yapi_host, headers, project_id, group, ignore_pro
     return project_list
 
 
-@assist.route('/yapi/pull/all', methods=['POST'])
-def yapi_pull_all():
-    """ 拉取yapi的所有数据
-    id: 指定服务在测试平台的id
-    is_disable_ignore: 是否禁用配置的过滤条件
-    """
-    # 请求参数
-    request_project_id, is_disable_ignore = request.json.get('id'), request.json.get('is_disable_ignore')
+@ns.route('/pull/all/')
+class YapiPullAll(LoginRequiredView):
 
-    # 获取yapi平台的配置信息
-    conf = get_yapi_config(is_disable_ignore)
+    def post(self):
+        """ 拉取yapi的所有数据
+        id: 指定服务在测试平台的id
+        is_disable_ignore: 是否禁用配置的过滤条件
+        """
+        # 请求参数
+        request_project_id, is_disable_ignore = request.json.get('id'), request.json.get('is_disable_ignore')
 
-    # 获取头部信息
-    headers = get_yapi_header(conf.get('yapi_host'), conf.get('yapi_account'), conf.get('yapi_password'))
+        # 获取yapi平台的配置信息
+        conf = get_yapi_config(is_disable_ignore)
 
-    # 遍历要更新的分组列表
-    for group in get_group_list(conf.get('yapi_host'), headers, conf.get('ignore_group')):
+        # 获取头部信息
+        headers = get_yapi_header(conf.get('yapi_host'), conf.get('yapi_account'), conf.get('yapi_password'))
 
-        # 获取当前分组下要更新的服务列表
-        project_list = get_is_update_project_list(
-            conf.get('yapi_host'), headers, request_project_id, group, conf.get('ignore_project')
-        )
+        # 遍历要更新的分组列表
+        for group in get_group_list(conf.get('yapi_host'), headers, conf.get('ignore_group')):
 
-        # 遍历当前分组下要更新的服务列表
-        for yapi_project in project_list:
+            # 获取当前分组下要更新的服务列表
+            project_list = get_is_update_project_list(
+                conf.get('yapi_host'), headers, request_project_id, group, conf.get('ignore_project')
+            )
 
-            # 更新服务
-            app.logger.info(f'服务：{yapi_project}')
-            if assert_coding_format(yapi_project.get('name')):
+            # 遍历当前分组下要更新的服务列表
+            for yapi_project in project_list:
 
                 # 更新服务
-                api_test_project = update_project(yapi_project)
+                app.logger.info(f'服务：{yapi_project}')
+                if assert_coding_format(yapi_project.get('name')):
 
-                # 更新模块
-                for yapi_module in get_module_list(conf.get('yapi_host'), yapi_project['_id'], headers):
-                    app.logger.info(f'模块：{yapi_module}')
-                    if assert_coding_format(yapi_module['name']):
-                        update_module(api_test_project, yapi_module)
+                    # 更新服务
+                    api_test_project = update_project(yapi_project)
 
-                # 更新接口信息
-                for module_and_api in get_module_and_api(conf.get('yapi_host'), yapi_project['_id'], headers):
-                    update_api(api_test_project, module_and_api)
+                    # 更新模块
+                    for yapi_module in get_module_list(conf.get('yapi_host'), yapi_project['_id'], headers):
+                        app.logger.info(f'模块：{yapi_module}')
+                        if assert_coding_format(yapi_module['name']):
+                            update_module(api_test_project, yapi_module)
 
-    return app.restful.success('数据更新完成')
+                    # 更新接口信息
+                    for module_and_api in get_module_and_api(conf.get('yapi_host'), yapi_project['_id'], headers):
+                        update_api(api_test_project, module_and_api)
 
-
-@assist.route('/yapi/pull/project', methods=['POST'])
-def yapi_pull_project():
-    """ 拉取yapi的服务数据，同步到测试平台
-    id: 指定服务在测试平台的id
-    is_disable_ignore: 是否禁用配置的过滤条件
-    """
-    # 请求参数
-    request_project_id, is_disable_ignore = request.json.get('id'), request.json.get('is_disable_ignore')
-
-    # 获取yapi平台的配置信息
-    conf = get_yapi_config(is_disable_ignore)
-
-    # 获取头部信息
-    headers = get_yapi_header(conf.get('yapi_host'), conf.get('yapi_account'), conf.get('yapi_password'))
-
-    # 遍历要更新的分组列表
-    for group in get_group_list(conf.get('yapi_host'), headers, conf.get('ignore_group')):
-
-        # 获取当前分组下要更新的服务列表
-        project_list = get_is_update_project_list(
-            conf.get('yapi_host'), headers, request_project_id, group, conf.get('ignore_project')
-        )
-
-        # 遍历当前分组下要更新的服务列表
-        for yapi_project in project_list:
-
-            # 更新服务
-            app.logger.info(f'服务：{yapi_project}')
-            if assert_coding_format(yapi_project.get('name')):
-                update_project(yapi_project)
-
-    return app.restful.success('数据更新完成')
+        return app.restful.success('数据更新完成')
 
 
-@assist.route('/yapi/diff/byApi', methods=['POST'])
-def diff_by_yapi():
-    """ 接口对比，用于监控swagger接口是否有改动
-    is_disable_ignore：是否使用配置的忽略项
-    group_name：指定分组，若没有指定，则取全部分组
-    """
+@ns.route('/pull/project/')
+class YapiPullProject(LoginRequiredView):
 
-    # 获取yapi平台的配置信息
-    conf = get_yapi_config(is_disable_ignore=request.json.get('is_disable_ignore'))
+    def post(self):
+        """ 拉取yapi的服务数据，同步到测试平台
+        id: 指定服务在测试平台的id
+        is_disable_ignore: 是否禁用配置的过滤条件
+        """
+        # 请求参数
+        request_project_id, is_disable_ignore = request.json.get('id'), request.json.get('is_disable_ignore')
 
-    # 获取头部信息
-    headers = get_yapi_header(conf.get('yapi_host'), conf.get('yapi_account'), conf.get('yapi_password'))
+        # 获取yapi平台的配置信息
+        conf = get_yapi_config(is_disable_ignore)
 
-    # 获取分组信息
-    group_list = get_group_list(conf.get('yapi_host'), headers, [])  # 所有分组列表
-    if request.json and request.json.get('group_name'):
-        group_list = [group for group in group_list if group['group_name'] == request.json.get('group_name')]
+        # 获取头部信息
+        headers = get_yapi_header(conf.get('yapi_host'), conf.get('yapi_account'), conf.get('yapi_password'))
 
-    # 对比总结果
-    diff_is_changed = False
-    title = request.json.get('group_name') or '全部分组'
-    # 对比结果统计信息
-    diff_summary = {
-        'title': title,
-        'project': {'totle': 0, 'add': 0, 'modify': 0, 'remove': 0, 'errorCode': 0},  # 新增、修改、删除、编码异常
-        'module': {'totle': 0, 'add': 0, 'modify': 0, 'remove': 0, 'errorCode': 0},
-        'api': {'totle': 0, 'add': 0, 'modify': 0, 'remove': 0, 'errorCode': 0}
-    }
-    # 对比详细记录，做root节点的children
-    diff_detail = {"nodeData": {"topic": title, "root": True, "children": []}}
+        # 遍历要更新的分组列表
+        for group in get_group_list(conf.get('yapi_host'), headers, conf.get('ignore_group')):
 
-    # 遍历分组，取服务信息
-    for yapi_group in group_list:
-        group_str = f'分组【{yapi_group["group_name"]}】'
+            # 获取当前分组下要更新的服务列表
+            project_list = get_is_update_project_list(
+                conf.get('yapi_host'), headers, request_project_id, group, conf.get('ignore_project')
+            )
 
-        # 获取当分组在数据库中存的服务信息，和获取和到的服务对比
-        group_detail = {"topic": yapi_group["group_name"], "children": []}
-        project_detail_add = {"topic": "新增服务", "children": []}
-        project_detail_change = {"topic": "已修改服务", "children": []}
-        project_detail_remove = {"topic": "已删除服务", "children": []}
-        db_project_list = {project.yapi_id: project for project in YapiProject.get_all(yapi_group=yapi_group['_id'])}
-        for yapi_project in get_yapi_project_list(conf.get('yapi_host'), yapi_group['_id'], headers, []):
-            diff_summary['project']['totle'] += 1
+            # 遍历当前分组下要更新的服务列表
+            for yapi_project in project_list:
 
-            # 对比服务
-            if assert_coding_format(yapi_project["name"]):
-                project = db_project_list.pop(yapi_project['_id'], None)
-                if project:
-                    project_data = json.loads(project.yapi_data)
-                    project_detail_change_detail = {"topic": f"{project_data.get('name')}", "children": []}
-                    # 对比服务名
-                    if project_data.get('name') != yapi_project["name"]:
-                        diff_is_changed = True
-                        diff_summary['project']['modify'] += 1
-                        project_detail_change_detail['children'].append({"topic": f'服务名变更为【{yapi_project["name"]}】'})
-                        if project_detail_change_detail['children']:
-                            project_detail_change['children'].append(project_detail_change_detail)
-                else:
-                    diff_is_changed = True
-                    diff_summary['project']['add'] += 1
-                    project_detail_add['children'].append({"topic": f'{group_str}下，新增服务【{yapi_project["name"]}】'})
-            else:
-                diff_summary['project']['errorCode'] += 1
-                continue
+                # 更新服务
+                app.logger.info(f'服务：{yapi_project}')
+                if assert_coding_format(yapi_project.get('name')):
+                    update_project(yapi_project)
 
-            # 获取当服务在数据库中存的模块信息，和获取和到的模块对比
-            project_detail = {"topic": yapi_project["name"], "children": []}
-            module_detail_add = {"topic": "新增模块", "children": []}
-            module_detail_change = {"topic": "已修改模块", "children": []}
-            module_detail_remove = {"topic": "已删除模块", "children": []}
-            db_module_list = {module.yapi_id: module for module in YapiModule.get_all(yapi_project=yapi_project['_id'])}
-            for yapi_module in get_module_list(conf.get('yapi_host'), yapi_project['_id'], headers):
-                diff_summary['module']['totle'] += 1
-                if assert_coding_format(yapi_module["name"]):
-                    db_module = db_module_list.pop(yapi_module['_id'], None)
-                    if db_module:
-                        module_data = json.loads(db_module.yapi_data)
-                        module_detail_change_detail = {"topic": f"{module_data.get('name')}", "children": []}
-                        if module_data.get('name') != yapi_module["name"]:
+        return app.restful.success('数据更新完成')
+
+
+@ns.route('diff/byApi/')
+class DiffByYapi(LoginRequiredView):
+
+    def post(self):
+        """ 接口对比，用于监控swagger接口是否有改动
+        is_disable_ignore：是否使用配置的忽略项
+        group_name：指定分组，若没有指定，则取全部分组
+        """
+
+        # 获取yapi平台的配置信息
+        conf = get_yapi_config(is_disable_ignore=request.json.get('is_disable_ignore'))
+
+        # 获取头部信息
+        headers = get_yapi_header(conf.get('yapi_host'), conf.get('yapi_account'), conf.get('yapi_password'))
+
+        # 获取分组信息
+        group_list = get_group_list(conf.get('yapi_host'), headers, [])  # 所有分组列表
+        if request.json and request.json.get('group_name'):
+            group_list = [group for group in group_list if group['group_name'] == request.json.get('group_name')]
+
+        # 对比总结果
+        diff_is_changed = False
+        title = request.json.get('group_name') or '全部分组'
+        # 对比结果统计信息
+        diff_summary = {
+            'title': title,
+            'project': {'totle': 0, 'add': 0, 'modify': 0, 'remove': 0, 'errorCode': 0},  # 新增、修改、删除、编码异常
+            'module': {'totle': 0, 'add': 0, 'modify': 0, 'remove': 0, 'errorCode': 0},
+            'api': {'totle': 0, 'add': 0, 'modify': 0, 'remove': 0, 'errorCode': 0}
+        }
+        # 对比详细记录，做root节点的children
+        diff_detail = {"nodeData": {"topic": title, "root": True, "children": []}}
+
+        # 遍历分组，取服务信息
+        for yapi_group in group_list:
+            group_str = f'分组【{yapi_group["group_name"]}】'
+
+            # 获取当分组在数据库中存的服务信息，和获取和到的服务对比
+            group_detail = {"topic": yapi_group["group_name"], "children": []}
+            project_detail_add = {"topic": "新增服务", "children": []}
+            project_detail_change = {"topic": "已修改服务", "children": []}
+            project_detail_remove = {"topic": "已删除服务", "children": []}
+            db_project_list = {project.yapi_id: project for project in
+                               YapiProject.get_all(yapi_group=yapi_group['_id'])}
+            for yapi_project in get_yapi_project_list(conf.get('yapi_host'), yapi_group['_id'], headers, []):
+                diff_summary['project']['totle'] += 1
+
+                # 对比服务
+                if assert_coding_format(yapi_project["name"]):
+                    project = db_project_list.pop(yapi_project['_id'], None)
+                    if project:
+                        project_data = json.loads(project.yapi_data)
+                        project_detail_change_detail = {"topic": f"{project_data.get('name')}", "children": []}
+                        # 对比服务名
+                        if project_data.get('name') != yapi_project["name"]:
                             diff_is_changed = True
-                            diff_summary['module']['modify'] += 1
-                            module_detail_change_detail['children'].append({"topic": f'名称变更为【{yapi_module["name"]}】'})
-                            if module_detail_change_detail['children']:
-                                module_detail_change['children'].append(module_detail_change_detail)
+                            diff_summary['project']['modify'] += 1
+                            project_detail_change_detail['children'].append(
+                                {"topic": f'服务名变更为【{yapi_project["name"]}】'})
+                            if project_detail_change_detail['children']:
+                                project_detail_change['children'].append(project_detail_change_detail)
                     else:
                         diff_is_changed = True
-                        diff_summary['module']['add'] += 1
-                        module_detail_add['children'].append({"topic": f'新增模块:【{yapi_module["name"]}】'})
+                        diff_summary['project']['add'] += 1
+                        project_detail_add['children'].append({"topic": f'{group_str}下，新增服务【{yapi_project["name"]}】'})
                 else:
-                    diff_summary['module']['errorCode'] += 1
+                    diff_summary['project']['errorCode'] += 1
                     continue
-            else:
-                # 对比完后，数据库数据中还有模块，则说明该模块在yapi已删除
-                if db_module_list:
-                    diff_is_changed = True
-                    for module_id, module in db_module_list.items():
-                        diff_summary['module']['remove'] += 1
-                        module_detail_remove['children'].append({
-                            "topic": f'模块【{json.loads(module.yapi_data).get("name")}】已删除'
-                        })
-            # 模块对比完后，记录模块对比结果
-            if module_detail_add['children']:
-                project_detail['children'].append(module_detail_add)
-            if module_detail_change['children']:
-                project_detail['children'].append(module_detail_change)
-            if module_detail_remove['children']:
-                project_detail['children'].append(module_detail_remove)
 
-            # 获取当服务在数据库中存的接口信息，和获取和到的接口对比
-            for module_and_api in get_module_and_api(conf.get('yapi_host'), yapi_project['_id'], headers):
-                module_detail = {"topic": module_and_api["name"], "children": []}
-                api_detail_add = {"topic": "新增接口", "children": []}
-                api_detail_change = {"topic": "已修改接口", "children": []}
-                api_detail_remove = {"topic": "已删除接口", "children": []}
-                db_api_list = {}
-                db_module = YapiModule.get_first(yapi_project=yapi_project['_id'], yapi_name=module_and_api["name"])
-                if db_module:
-                    db_api_list = {y_api.yapi_id: y_api for y_api in YapiApiMsg.get_all(yapi_module=db_module.yapi_id)}
-                for yapi_api in module_and_api['list']:
-                    diff_summary['api']['totle'] += 1
-                    api_is_changed = False
-                    if assert_coding_format(yapi_api.get("title")):
-                        db_api = db_api_list.pop(yapi_api.get('_id'), None)
-                        if db_api:
-                            db_data = json.loads(db_api.yapi_data)
-                            api_detail_change_detail = {"topic": f"{db_data.get('title')}", "children": []}
-                            # 接口名
-                            if db_data.get('title') != yapi_api.get('title'):
+                # 获取当服务在数据库中存的模块信息，和获取和到的模块对比
+                project_detail = {"topic": yapi_project["name"], "children": []}
+                module_detail_add = {"topic": "新增模块", "children": []}
+                module_detail_change = {"topic": "已修改模块", "children": []}
+                module_detail_remove = {"topic": "已删除模块", "children": []}
+                db_module_list = {module.yapi_id: module for module in
+                                  YapiModule.get_all(yapi_project=yapi_project['_id'])}
+                for yapi_module in get_module_list(conf.get('yapi_host'), yapi_project['_id'], headers):
+                    diff_summary['module']['totle'] += 1
+                    if assert_coding_format(yapi_module["name"]):
+                        db_module = db_module_list.pop(yapi_module['_id'], None)
+                        if db_module:
+                            module_data = json.loads(db_module.yapi_data)
+                            module_detail_change_detail = {"topic": f"{module_data.get('name')}", "children": []}
+                            if module_data.get('name') != yapi_module["name"]:
                                 diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'名称变更为【{yapi_api.get("title")}】'
-                                })
-                            # 请求方法
-                            if db_data.get('method') != yapi_api.get('method'):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'请求方法由【{db_data.get("method")}】变更为【{yapi_api.get("method")}】'
-                                })
-                            # 地址
-                            if db_data.get('path') != yapi_api.get('path'):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'接口地址由【{db_data.get("path")}】变更为【{yapi_api.get("path")}】'
-                                })
-                            # 头部信息增加
-                            if not json.dumps(db_data.get('req_headers')) and json.dumps(yapi_api.get('req_headers')):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'头部信息由【{db_data.get("req_headers")}】变更为【{yapi_api.get("req_headers")}】'
-                                })
-                            # 头部信息删除
-                            elif json.dumps(db_data.get('req_headers')) and not json.dumps(yapi_api.get('req_headers')):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'头部信息由【{db_data.get("req_headers")}】变更为【{yapi_api.get("req_headers")}】'
-                                })
-                            else:
-                                # 头部信息修改
-                                for args in db_data.get('req_headers'):
-                                    args.pop('_id', None)
-                                for args in yapi_api.get('req_headers'):
-                                    args.pop('_id', None)
-                                if json.dumps(db_data.get('req_headers'), sort_keys=True) != json.dumps(
-                                        yapi_api.get('req_headers'), sort_keys=True):
+                                diff_summary['module']['modify'] += 1
+                                module_detail_change_detail['children'].append(
+                                    {"topic": f'名称变更为【{yapi_module["name"]}】'})
+                                if module_detail_change_detail['children']:
+                                    module_detail_change['children'].append(module_detail_change_detail)
+                        else:
+                            diff_is_changed = True
+                            diff_summary['module']['add'] += 1
+                            module_detail_add['children'].append({"topic": f'新增模块:【{yapi_module["name"]}】'})
+                    else:
+                        diff_summary['module']['errorCode'] += 1
+                        continue
+                else:
+                    # 对比完后，数据库数据中还有模块，则说明该模块在yapi已删除
+                    if db_module_list:
+                        diff_is_changed = True
+                        for module_id, module in db_module_list.items():
+                            diff_summary['module']['remove'] += 1
+                            module_detail_remove['children'].append({
+                                "topic": f'模块【{json.loads(module.yapi_data).get("name")}】已删除'
+                            })
+                # 模块对比完后，记录模块对比结果
+                if module_detail_add['children']:
+                    project_detail['children'].append(module_detail_add)
+                if module_detail_change['children']:
+                    project_detail['children'].append(module_detail_change)
+                if module_detail_remove['children']:
+                    project_detail['children'].append(module_detail_remove)
+
+                # 获取当服务在数据库中存的接口信息，和获取和到的接口对比
+                for module_and_api in get_module_and_api(conf.get('yapi_host'), yapi_project['_id'], headers):
+                    module_detail = {"topic": module_and_api["name"], "children": []}
+                    api_detail_add = {"topic": "新增接口", "children": []}
+                    api_detail_change = {"topic": "已修改接口", "children": []}
+                    api_detail_remove = {"topic": "已删除接口", "children": []}
+                    db_api_list = {}
+                    db_module = YapiModule.get_first(yapi_project=yapi_project['_id'], yapi_name=module_and_api["name"])
+                    if db_module:
+                        db_api_list = {y_api.yapi_id: y_api for y_api in
+                                       YapiApiMsg.get_all(yapi_module=db_module.yapi_id)}
+                    for yapi_api in module_and_api['list']:
+                        diff_summary['api']['totle'] += 1
+                        api_is_changed = False
+                        if assert_coding_format(yapi_api.get("title")):
+                            db_api = db_api_list.pop(yapi_api.get('_id'), None)
+                            if db_api:
+                                db_data = json.loads(db_api.yapi_data)
+                                api_detail_change_detail = {"topic": f"{db_data.get('title')}", "children": []}
+                                # 接口名
+                                if db_data.get('title') != yapi_api.get('title'):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'名称变更为【{yapi_api.get("title")}】'
+                                    })
+                                # 请求方法
+                                if db_data.get('method') != yapi_api.get('method'):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'请求方法由【{db_data.get("method")}】变更为【{yapi_api.get("method")}】'
+                                    })
+                                # 地址
+                                if db_data.get('path') != yapi_api.get('path'):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'接口地址由【{db_data.get("path")}】变更为【{yapi_api.get("path")}】'
+                                    })
+                                # 头部信息增加
+                                if not json.dumps(db_data.get('req_headers')) and json.dumps(
+                                        yapi_api.get('req_headers')):
                                     diff_is_changed = True
                                     api_is_changed = True
                                     api_detail_change_detail['children'].append({
                                         "topic": f'头部信息由【{db_data.get("req_headers")}】变更为【{yapi_api.get("req_headers")}】'
                                     })
+                                # 头部信息删除
+                                elif json.dumps(db_data.get('req_headers')) and not json.dumps(
+                                        yapi_api.get('req_headers')):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'头部信息由【{db_data.get("req_headers")}】变更为【{yapi_api.get("req_headers")}】'
+                                    })
+                                else:
+                                    # 头部信息修改
+                                    for args in db_data.get('req_headers'):
+                                        args.pop('_id', None)
+                                    for args in yapi_api.get('req_headers'):
+                                        args.pop('_id', None)
+                                    if json.dumps(db_data.get('req_headers'), sort_keys=True) != json.dumps(
+                                            yapi_api.get('req_headers'), sort_keys=True):
+                                        diff_is_changed = True
+                                        api_is_changed = True
+                                        api_detail_change_detail['children'].append({
+                                            "topic": f'头部信息由【{db_data.get("req_headers")}】变更为【{yapi_api.get("req_headers")}】'
+                                        })
 
-                            # 查询字符串参数增加
-                            if not json.dumps(db_data.get('req_query')) and json.dumps(yapi_api.get('req_query')):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'查询字符串参数由【{db_data.get("req_query")}】变更为【{yapi_api.get("req_query")}】'
-                                })
-                            # 查询字符串参数删除
-                            elif json.dumps(db_data.get('req_query')) and not json.dumps(yapi_api.get('req_query')):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'查询字符串参数由【{db_data.get("req_query")}】变更为【{yapi_api.get("req_query")}】'
-                                })
-                            else:
-                                # 头查询字符串参数修改
-                                for args in db_data.get('req_query'):
-                                    args.pop('_id', None)
-                                for args in yapi_api.get('req_query'):
-                                    args.pop('_id', None)
-                                if json.dumps(db_data.get('req_query'), sort_keys=True) != json.dumps(
-                                        yapi_api.get('req_query'), sort_keys=True):
+                                # 查询字符串参数增加
+                                if not json.dumps(db_data.get('req_query')) and json.dumps(yapi_api.get('req_query')):
                                     diff_is_changed = True
                                     api_is_changed = True
                                     api_detail_change_detail['children'].append({
                                         "topic": f'查询字符串参数由【{db_data.get("req_query")}】变更为【{yapi_api.get("req_query")}】'
                                     })
+                                # 查询字符串参数删除
+                                elif json.dumps(db_data.get('req_query')) and not json.dumps(yapi_api.get('req_query')):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'查询字符串参数由【{db_data.get("req_query")}】变更为【{yapi_api.get("req_query")}】'
+                                    })
+                                else:
+                                    # 头查询字符串参数修改
+                                    for args in db_data.get('req_query'):
+                                        args.pop('_id', None)
+                                    for args in yapi_api.get('req_query'):
+                                        args.pop('_id', None)
+                                    if json.dumps(db_data.get('req_query'), sort_keys=True) != json.dumps(
+                                            yapi_api.get('req_query'), sort_keys=True):
+                                        diff_is_changed = True
+                                        api_is_changed = True
+                                        api_detail_change_detail['children'].append({
+                                            "topic": f'查询字符串参数由【{db_data.get("req_query")}】变更为【{yapi_api.get("req_query")}】'
+                                        })
 
-                            # 请求参数类型
-                            if db_data.get('req_body_type') != yapi_api.get('req_body_type'):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'请求参数类型由【{db_data.get("req_body_type")}】变更为【{yapi_api.get("req_body_type")}】'
-                                })
-                            # 请求json参数
-                            if db_data.get('req_body_other') != yapi_api.get('req_body_other'):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'json参数由【{db_data.get("req_body_other")}】变更为【{yapi_api.get("req_body_other")}】'
-                                })
-                            # form参数增加
-                            if not json.dumps(db_data.get('req_body_form')) and json.dumps(
-                                    yapi_api.get('req_body_form')):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'form参数由【{db_data.get("req_body_form")}】变更为【{yapi_api.get("req_body_form")}】'
-                                })
-                            # form参数删除
-                            elif json.dumps(db_data.get('req_body_form')) and not json.dumps(
-                                    yapi_api.get('req_body_form')):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'form参数由【{db_data.get("req_body_form")}】变更为【{yapi_api.get("req_body_form")}】'
-                                })
-                            else:
-                                # form参数修改
-                                for args in db_data.get('req_body_form'):
-                                    args.pop('_id', None)
-                                for args in yapi_api.get('req_body_form'):
-                                    args.pop('_id', None)
-                                if json.dumps(db_data.get('req_body_form'), sort_keys=True) != json.dumps(
-                                        yapi_api.get('req_body_form'), sort_keys=True):
+                                # 请求参数类型
+                                if db_data.get('req_body_type') != yapi_api.get('req_body_type'):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'请求参数类型由【{db_data.get("req_body_type")}】变更为【{yapi_api.get("req_body_type")}】'
+                                    })
+                                # 请求json参数
+                                if db_data.get('req_body_other') != yapi_api.get('req_body_other'):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'json参数由【{db_data.get("req_body_other")}】变更为【{yapi_api.get("req_body_other")}】'
+                                    })
+                                # form参数增加
+                                if not json.dumps(db_data.get('req_body_form')) and json.dumps(
+                                        yapi_api.get('req_body_form')):
                                     diff_is_changed = True
                                     api_is_changed = True
                                     api_detail_change_detail['children'].append({
                                         "topic": f'form参数由【{db_data.get("req_body_form")}】变更为【{yapi_api.get("req_body_form")}】'
                                     })
+                                # form参数删除
+                                elif json.dumps(db_data.get('req_body_form')) and not json.dumps(
+                                        yapi_api.get('req_body_form')):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'form参数由【{db_data.get("req_body_form")}】变更为【{yapi_api.get("req_body_form")}】'
+                                    })
+                                else:
+                                    # form参数修改
+                                    for args in db_data.get('req_body_form'):
+                                        args.pop('_id', None)
+                                    for args in yapi_api.get('req_body_form'):
+                                        args.pop('_id', None)
+                                    if json.dumps(db_data.get('req_body_form'), sort_keys=True) != json.dumps(
+                                            yapi_api.get('req_body_form'), sort_keys=True):
+                                        diff_is_changed = True
+                                        api_is_changed = True
+                                        api_detail_change_detail['children'].append({
+                                            "topic": f'form参数由【{db_data.get("req_body_form")}】变更为【{yapi_api.get("req_body_form")}】'
+                                        })
 
-                            # 响应数据类型
-                            if db_data.get('res_body_type') != yapi_api.get('res_body_type'):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'响应数据类型由【{db_data.get("res_body_type")}】变更为【{yapi_api.get("res_body_type")}】'
-                                })
-                            # 响应参数
-                            if db_data.get('res_body') != yapi_api.get("res_body"):
-                                diff_is_changed = True
-                                api_is_changed = True
-                                api_detail_change_detail['children'].append({
-                                    "topic": f'响应体由【{db_data.get("res_body")}】变更为【{yapi_api.get("res_body")}】'
-                                })
-                            diff_summary['api']['modify'] += api_is_changed
-                            if api_detail_change_detail['children']:
-                                api_detail_change['children'].append(api_detail_change_detail)
+                                # 响应数据类型
+                                if db_data.get('res_body_type') != yapi_api.get('res_body_type'):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'响应数据类型由【{db_data.get("res_body_type")}】变更为【{yapi_api.get("res_body_type")}】'
+                                    })
+                                # 响应参数
+                                if db_data.get('res_body') != yapi_api.get("res_body"):
+                                    diff_is_changed = True
+                                    api_is_changed = True
+                                    api_detail_change_detail['children'].append({
+                                        "topic": f'响应体由【{db_data.get("res_body")}】变更为【{yapi_api.get("res_body")}】'
+                                    })
+                                diff_summary['api']['modify'] += api_is_changed
+                                if api_detail_change_detail['children']:
+                                    api_detail_change['children'].append(api_detail_change_detail)
+                            else:
+                                diff_summary['api']['add'] += 1
+                                api_detail_add['children'].append({"topic": f'新增接口:【{yapi_api.get("title")}】'})
                         else:
-                            diff_summary['api']['add'] += 1
-                            api_detail_add['children'].append({"topic": f'新增接口:【{yapi_api.get("title")}】'})
+                            diff_summary['api']['errorCode'] += 1
+                            continue
                     else:
-                        diff_summary['api']['errorCode'] += 1
-                        continue
-                else:
-                    # 对比完后，数据库数据中还有接口，则说明该接口在yapi已删除
-                    if db_api_list:
-                        diff_is_changed = True
-                        for api_id, db_api in db_api_list.items():
-                            diff_summary['api']['remove'] += 1
-                            api_detail_remove['children'].append({"topic": f'接口【{db_api.yapi_name}】已删除'})
-                # 添加接口的变化，有变化才添加
-                if api_detail_add['children']:
-                    module_detail['children'].append(api_detail_add)
-                if api_detail_change['children']:
-                    module_detail['children'].append(api_detail_change)
-                if api_detail_remove['children']:
-                    module_detail['children'].append(api_detail_remove)
-                if module_detail['children']:  # 把模块下的接口变化添加到服务中
-                    project_detail['children'].append(module_detail)
-            # 把服务下游的变化添加到分组中
-            if project_detail['children']:
-                group_detail['children'].append(project_detail)
-        else:
-            # 对比完后，数据库数据中还有服务，则说明该服务在yapi已删除
-            if db_project_list:
-                diff_is_changed = True
-                for project_id, project in db_project_list.items():
-                    diff_summary['project']['remove'] += 1
-                    project_detail_remove['children'].append({
-                        "topic": f'{group_str}下，服务【{json.loads(project.yapi_data).get("name")}】已删除'
-                    })
-        # 添加服务变化，有才添加，没有就不添加
-        if project_detail_add['children']:
-            group_detail['children'].append(project_detail_add)
-        if project_detail_change['children']:
-            group_detail['children'].append(project_detail_change)
-        if project_detail_remove['children']:
-            group_detail['children'].append(project_detail_remove)
-        if group_detail['children']:
-            diff_detail['nodeData']['children'].append(group_detail)
+                        # 对比完后，数据库数据中还有接口，则说明该接口在yapi已删除
+                        if db_api_list:
+                            diff_is_changed = True
+                            for api_id, db_api in db_api_list.items():
+                                diff_summary['api']['remove'] += 1
+                                api_detail_remove['children'].append({"topic": f'接口【{db_api.yapi_name}】已删除'})
+                    # 添加接口的变化，有变化才添加
+                    if api_detail_add['children']:
+                        module_detail['children'].append(api_detail_add)
+                    if api_detail_change['children']:
+                        module_detail['children'].append(api_detail_change)
+                    if api_detail_remove['children']:
+                        module_detail['children'].append(api_detail_remove)
+                    if module_detail['children']:  # 把模块下的接口变化添加到服务中
+                        project_detail['children'].append(module_detail)
+                # 把服务下游的变化添加到分组中
+                if project_detail['children']:
+                    group_detail['children'].append(project_detail)
+            else:
+                # 对比完后，数据库数据中还有服务，则说明该服务在yapi已删除
+                if db_project_list:
+                    diff_is_changed = True
+                    for project_id, project in db_project_list.items():
+                        diff_summary['project']['remove'] += 1
+                        project_detail_remove['children'].append({
+                            "topic": f'{group_str}下，服务【{json.loads(project.yapi_data).get("name")}】已删除'
+                        })
+            # 添加服务变化，有才添加，没有就不添加
+            if project_detail_add['children']:
+                group_detail['children'].append(project_detail_add)
+            if project_detail_change['children']:
+                group_detail['children'].append(project_detail_change)
+            if project_detail_remove['children']:
+                group_detail['children'].append(project_detail_remove)
+            if group_detail['children']:
+                diff_detail['nodeData']['children'].append(group_detail)
 
-    # 存对比结果
-    with db.auto_commit():
-        yapi_diff_record = YapiDiffRecord()
-        yapi_diff_record.name = title
-        yapi_diff_record.is_changed = diff_is_changed
-        yapi_diff_record.diff_summary = json.dumps(diff_summary, ensure_ascii=False, indent=4)
-        yapi_diff_record.create_user = g.user_id
-        db.session.add(yapi_diff_record)
-    with open(os.path.join(DIFF_RESULT, f'{yapi_diff_record.id}.json'), 'w', encoding='utf-8') as fp:
-        json.dump(diff_detail, fp, ensure_ascii=False, indent=4)
+        # 存对比结果
+        with db.auto_commit():
+            yapi_diff_record = YapiDiffRecord()
+            yapi_diff_record.name = title
+            yapi_diff_record.is_changed = diff_is_changed
+            yapi_diff_record.diff_summary = json.dumps(diff_summary, ensure_ascii=False, indent=4)
+            yapi_diff_record.create_user = g.user_id
+            db.session.add(yapi_diff_record)
+        with open(os.path.join(DIFF_RESULT, f'{yapi_diff_record.id}.json'), 'w', encoding='utf-8') as fp:
+            json.dump(diff_detail, fp, ensure_ascii=False, indent=4)
 
-    # 有改动则发送报告
-    if diff_is_changed:
-        send_diff_api_message(
-            content=diff_summary,
-            report_id=yapi_diff_record.id,
-            addr=request.json.get('addr') or Config.get_default_diff_message_send_addr()
-        )
-    return app.restful.success('对比完成', data=yapi_diff_record.to_dict())
+        # 有改动则发送报告
+        if diff_is_changed:
+            send_diff_api_message(
+                content=diff_summary,
+                report_id=yapi_diff_record.id,
+                addr=request.json.get('addr') or Config.get_default_diff_message_send_addr()
+            )
+        return app.restful.success('对比完成', data=yapi_diff_record.to_dict())
 
 
-@assist.route('/project/diff/byFront', methods=['POST'])
-def diff_by_front():
-    """ 接口对比，用于监控前端使用的接口与swagger是否一致 """
-    return app.restful.success('对比完成')
+@ns.route('/diff/byFront/')
+class DiffByFront(LoginRequiredView):
+
+    def post(self):
+        """ 接口对比，用于监控前端使用的接口与swagger是否一致 """
+        return app.restful.success('对比完成')
 
 
-@assist.route('/yapi/diff/download', methods=['GET'])
-def export_diff_record_as_xmind():
-    """ 导出为xmind """
-    with open(os.path.join(DIFF_RESULT, f'{request.args.get("id")}.json'), 'r', encoding='utf-8') as fp:
-        diff_data = json.load(fp)
-    file_name = f'{diff_data.get("nodeData", {}).get("topic", {})}.xmind'
-    file_path = os.path.join(DIFF_RESULT, file_name)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-    make_xmind(file_path, diff_data)
-    return send_from_directory(DIFF_RESULT, file_name, as_attachment=True)
+@ns.route('/diff/download/')
+class ExportDiffRecordAsXmind(LoginRequiredView):
+
+    def get(self):
+        """ 导出为xmind """
+        with open(os.path.join(DIFF_RESULT, f'{request.args.get("id")}.json'), 'r', encoding='utf-8') as fp:
+            diff_data = json.load(fp)
+        file_name = f'{diff_data.get("nodeData", {}).get("topic", {})}.xmind'
+        file_path = os.path.join(DIFF_RESULT, file_name)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        make_xmind(file_path, diff_data)
+        return send_from_directory(DIFF_RESULT, file_name, as_attachment=True)
 
 
-@assist.route('/diffRecord/list')
-def get_diff_record_list():
-    """ 接口对比结果列表 """
-    return app.restful.success('获取成功', data=YapiDiffRecord.make_pagination({
-        'pageNum': request.args.get('pageNum'),
-        'pageSize': request.args.get('pageSize'),
-        'create_user': request.args.get('create_user'),
-        'name': request.args.get('name')
-    }))
+@ns.route('/diff/record/list/')
+class GetDiffRecordList(LoginRequiredView):
+
+    def get(self):
+        """ 接口对比结果列表 """
+        return app.restful.success('获取成功', data=YapiDiffRecord.make_pagination({
+            'pageNum': request.args.get('pageNum'),
+            'pageSize': request.args.get('pageSize'),
+            'create_user': request.args.get('create_user'),
+            'name': request.args.get('name')
+        }))
 
 
-@assist.route('/diffRecord/project')
-def get_diff_record_project():
-    """ 获取有对比结果的服务列表 """
-    project_list = YapiDiffRecord.query.with_entities(YapiDiffRecord.name).distinct().all()
-    return app.restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
+@ns.route('/diff/record/project/')
+class GetDiffRecordProject(LoginRequiredView):
+
+    def get(self):
+        """ 获取有对比结果的服务列表 """
+        project_list = YapiDiffRecord.query.with_entities(YapiDiffRecord.name).distinct().all()
+        return app.restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
 
 
-@assist.route('/diffRecord/show')
-def show_diff_record():
-    """ 展示对比结果详情 """
-    data_id = request.args.get("id")
-    if not data_id:
-        return app.restful.fail('比对id必传')
-    with open(os.path.join(DIFF_RESULT, f'{data_id}.json'), 'r', encoding='utf-8') as fp:
-        data = json.load(fp)
-    return app.restful.success('获取成功', data=data)
+@ns.route('/diff/record/show/')
+class GetShowDiffRecord(LoginRequiredView):
 
-# class DiffRecordView(BaseMethodView):
-#     """ 接口对比结果 """
-#
-#     def get(self):
-#         data_id = request.args.get("id")
-#         if not data_id:
-#             return app.restful.fail('比对id必传')
-#         with open(os.path.join(DIFF_RESULT, f'{data_id}.json'), 'r', encoding='utf-8') as fp:
-#             data = json.load(fp)
-#         return app.restful.success('获取成功', data=data)
-#
-#
-# api.add_url_rule('/diffRecord', view_func=DiffRecordView.as_view('diffRecord'))
+    def get(self):
+        """ 展示对比结果详情 """
+        data_id = request.args.get("id")
+        if not data_id:
+            return app.restful.fail('比对id必传')
+        with open(os.path.join(DIFF_RESULT, f'{data_id}.json'), 'r', encoding='utf-8') as fp:
+            data = json.load(fp)
+        return app.restful.success('获取成功', data=data)

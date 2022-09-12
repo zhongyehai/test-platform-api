@@ -18,12 +18,12 @@ from utils.client.runUiTest.parseModel import ProjectFormatModel, ElementFormatM
 from utils.client.runUiTest.uitestrunner.api import UiTestRunner
 from utils.client.runUiTest.uitestrunner.utils import build_url
 from app.assist.models.func import Func
-from app.ui_test.models.project import UiProject as Project, UiProjectEnv as ProjectEnv
-from app.ui_test.models.element import UiElement as Element
-from app.ui_test.models.caseSet import UiCaeSet as Set
-from app.ui_test.models.case import UiCase as Case
-from app.ui_test.models.step import UiStep as Step
-from app.ui_test.models.report import UiReport as Report
+from app.web_ui_test.models.project import UiProject as Project, UiProjectEnv as ProjectEnv
+from app.web_ui_test.models.element import UiElement as Element
+from app.web_ui_test.models.caseSet import UiCaeSet as Set
+from app.web_ui_test.models.case import UiCase as Case
+from app.web_ui_test.models.step import UiStep as Step
+from app.web_ui_test.models.report import UiReport as Report
 from utils.sendReport import async_send_report
 from config.config import ui_action_mapping_reverse
 

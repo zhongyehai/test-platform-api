@@ -7,7 +7,7 @@ from flask_migrate import Migrate, MigrateCommand
 
 from utils.jsonUtil import JsonUtil
 from app.baseModel import db
-from app.ucenter.models.user import User, Permission, Role
+from app.system.models.user import User, Permission, Role
 from app.config.models.config import Config, ConfigType
 from app.assist.models.func import Func
 from main import app
@@ -275,7 +275,7 @@ def init_config():
         'ui自动化': [
             {'name': 'find_element_option', 'value': JsonUtil.dumps(find_element_option), 'desc': 'ui自动化定位元素方式'},
             {'name': 'wait_time_out', 'value': 10, 'desc': '等待元素出现时间'},
-            {'name': 'ui_report_addr', 'value': 'http://localhost/#/uiTest/reportShow?id=',
+            {'name': 'ui_report_addr', 'value': 'http://localhost/#/webUiTest/reportShow?id=',
              'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'}
         ]
     }

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from flask import request, abort, g
+from flask import request, abort, g, current_app
 
+from app.system.models.userOperationLog import UserOperationLog
 from utils.required import before_request_required
 
 
@@ -25,8 +26,22 @@ def register_before_hook(app):
         before_request_required()  # 校验登录状态和权限
 
     @app.before_request
-    def save_requests_log():
+    def save_requests_by_log():
         """ 打日志 """
         if request.method != 'HEAD':
             request_data = request.json or request.form.to_dict() or request.args.to_dict()
             app.logger.info(f'【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.url}】: \n请求参数：{request_data}\n')
+
+    @app.before_request
+    def save_requests_by_db():
+        """ 存访问日志 """
+        if request.method != 'HEAD':
+            UserOperationLog().create({
+                "ip": g.user_ip,
+                "url": request.path,
+                "method": request.method,
+                "headers": dict(request.headers),
+                "params": request.args or {},
+                "data_form": request.form or {},
+                "data_json": request.json or {}
+            })

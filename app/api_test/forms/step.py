@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Length, ValidationError
 
 from app.api_test.models.api import ApiMsg
 from app.api_test.models.case import ApiCase
@@ -38,6 +38,7 @@ class AddStepForm(BaseForm):
     name = StringField(validators=[DataRequired('步骤名称不能为空'), Length(1, 255, message='步骤名长度为1~255位')])
     up_func = StringField()
     down_func = StringField()
+    skip_if = StringField()
     is_run = IntegerField()
     run_times = IntegerField()
     headers = StringField()
@@ -79,6 +80,25 @@ class AddStepForm(BaseForm):
         """ 校验数据提取信息 """
         if not self.quote_case.data:
             self.validate_base_extracts(field.data)
+
+    def validate_skip_if(self, field):
+        if not self.quote_case.data:
+            check_value, comparator = field.data.get("check_value"), field.data.get("comparator")
+            data_type, expect = field.data.get("data_type"), field.data.get("expect")
+            if not check_value and not comparator and not data_type and not expect:
+                pass
+            elif check_value and comparator and data_type and expect:
+                try:
+                    if data_type in ["variable", "func", 'str']:
+                        pass
+                    elif data_type == 'json':
+                        self.dumps(self.loads(expect))
+                    else:  # python数据类型
+                        eval(f'{data_type}({expect})')
+                except Exception as error:
+                    raise ValidationError('【跳过条件】设置的条件错误，请检查')
+            else:
+                raise ValidationError('【跳过条件】设置的条件错误，请检查')
 
     def validate_validates(self, field):
         """ 校验断言信息 """

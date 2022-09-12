@@ -9,9 +9,12 @@ import datetime
 import requests
 from flask import request, jsonify
 
+from app.baseView import NotLoginView
 from app.tools import tool
 from utils.globalVariable import CALL_BACK_ADDRESS
 from app.config.models.config import Config
+
+ns = tool.namespace("mock", description="mock相关接口")
 
 
 def send_msg_by_webhook(msg_type, msg):
@@ -37,8 +40,7 @@ def actions(action):
         time.sleep(40)
 
 
-@tool.route('/mockData/autoTest', methods=['GET', 'POST'])
-def return_auto_test_mock_data_not_login_required():
+def get_auto_test_mock_data():
     """ 自动化测试模拟数据源
     1.json参数接收什么就返回什么
     2.args.action：查询字符串传参（非必传），在需要指定场景时使用，error、time_out、空
@@ -79,8 +81,27 @@ def return_auto_test_mock_data_not_login_required():
     return jsonify(datas)
 
 
-@tool.route('/mockData/common', methods=['GET', 'POST'])
-def return_mock_data_not_login_required():
+@ns.route('/autoTest/')
+class GetAutoTestMockDataView(NotLoginView):
+
+    def get(self):
+        """自动化测试模拟数据源"""
+        return get_auto_test_mock_data()
+
+    def post(self):
+        """自动化测试模拟数据源"""
+        return get_auto_test_mock_data()
+
+    def put(self):
+        """自动化测试模拟数据源"""
+        return get_auto_test_mock_data()
+
+    def delete(self):
+        """自动化测试模拟数据源"""
+        return get_auto_test_mock_data()
+
+
+def get_mock_data():
     """ 模拟数据源
     1.json参数接收什么就返回什么
     2.args.action：查询字符串传参（非必传），在需要指定场景时使用，error、time_out、空
@@ -123,8 +144,26 @@ def return_mock_data_not_login_required():
     return jsonify(datas)
 
 
-@tool.route('/callBack', methods=['GET', 'POST'])
-def call_back_not_login_required():
+@ns.route('/common/')
+class MockDataCommonView(NotLoginView):
+    def get(self):
+        """自动化测试模拟数据源"""
+        return get_mock_data()
+
+    def post(self):
+        """自动化测试模拟数据源"""
+        return get_mock_data()
+
+    def put(self):
+        """自动化测试模拟数据源"""
+        return get_mock_data()
+
+    def delete(self):
+        """自动化测试模拟数据源"""
+        return get_mock_data()
+
+
+def call_back():
     """ 回调接口 """
     params, json_data, form_data = request.args.to_dict(), request.get_json(silent=True), request.form.to_dict()
 
@@ -146,8 +185,26 @@ def call_back_not_login_required():
         "data": name})
 
 
-@tool.route('/mock', methods=['GET', 'POST'])
-def mock_api_not_login_required():
+@ns.route('/callBack/')
+class GetAutoTestMockDataView(NotLoginView):
+    def get(self):
+        """模拟回调"""
+        return call_back()
+
+    def post(self):
+        """模拟回调"""
+        return call_back()
+
+    def put(self):
+        """模拟回调"""
+        return call_back()
+
+    def delete(self):
+        """模拟回调"""
+        return call_back()
+
+
+def mock_api():
     """ mock_api， 收到什么就返回什么 """
     params, json_data, form_data = request.args.to_dict(), request.get_json(silent=True), request.form.to_dict()
     return jsonify({
@@ -156,3 +213,22 @@ def mock_api_not_login_required():
         "message": "请求成功",
         "data": json_data or form_data or params
     })
+
+
+@ns.route('/')
+class MockApiView(NotLoginView):
+    def get(self):
+        """ 模拟接口处理，收到什么就返回什么 """
+        return mock_api()
+
+    def post(self):
+        """ 模拟接口处理，收到什么就返回什么 """
+        return mock_api()
+
+    def put(self):
+        """ 模拟接口处理，收到什么就返回什么 """
+        return mock_api()
+
+    def delete(self):
+        """ 模拟接口处理，收到什么就返回什么 """
+        return mock_api()
