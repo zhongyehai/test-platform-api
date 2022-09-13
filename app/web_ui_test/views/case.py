@@ -109,7 +109,7 @@ class WebUiCopyCaseView(LoginRequiredView):
     def post(self):
         """ 复制用例 """
         # 复制用例
-        case = UiCase.get_first(id=request.args.get('id'))
+        case = UiCase.get_first(id=request.json.get('id'))
         with db.auto_commit():
             old_case = case.to_dict()
             old_case['create_user'] = old_case['update_user'] = g.user_id

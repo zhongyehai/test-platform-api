@@ -135,7 +135,7 @@ class WebUiTaskStatusView(LoginRequiredView):
                     json={
                         'userId': g.user_id,
                         'task': task.to_dict(),
-                        'type': 'web_ui'
+                        'type': 'webUi'
                     }
                 ).json()
                 if res["status"] == 200:
@@ -159,7 +159,7 @@ class WebUiTaskStatusView(LoginRequiredView):
                     headers=request.headers,
                     json={
                         'taskId': form.task.id,
-                        'type': 'web_ui'
+                        'type': 'webUi'
                     }
                 ).json()
                 if res["status"] == 200:
