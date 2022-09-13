@@ -7,7 +7,7 @@ from app.api_test.models.module import ApiModule
 from app.api_test.models.project import ApiProject
 from app.api_test.models.report import ApiReport as Report
 from app.baseView import LoginRequiredView
-from utils.globalVariable import STATIC_ADDRESS
+from utils.filePath import STATIC_ADDRESS
 from utils.parseExcel import parse_file_content
 from utils.client.runApiTest.runHttpRunner import RunApi
 from app.api_test import api_test

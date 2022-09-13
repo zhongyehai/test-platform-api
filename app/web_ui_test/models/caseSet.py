@@ -8,9 +8,9 @@ class UiCaeSet(BaseCaseSet):
     """ 用例集表 """
     __abstract__ = False
 
-    __tablename__ = 'ui_test_case_set'
+    __tablename__ = 'web_ui_test_case_set'
 
-    project_id = db.Column(db.Integer, db.ForeignKey('ui_test_project.id'), comment='所属的服务id')
+    project_id = db.Column(db.Integer, db.ForeignKey('web_ui_test_project.id'), comment='所属的服务id')
     project = db.relationship('UiProject', backref='case_sets')  # 一对多
 
     cases = db.relationship('UiCase', order_by='UiCase.num.asc()', lazy='dynamic')

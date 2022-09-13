@@ -7,7 +7,7 @@ from flask import request, current_app as app
 
 from app.baseView import LoginRequiredView
 from app.test_work import test_work
-from utils.globalVariable import DB_BACK_UP_ADDRESS
+from utils.filePath import DB_BACK_UP_ADDRESS
 
 ns = test_work.namespace("db", description="数据库管理相关接口")
 

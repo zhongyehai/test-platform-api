@@ -8,7 +8,7 @@ class UiProject(BaseProject):
     """ 服务表 """
     __abstract__ = False
 
-    __tablename__ = 'ui_test_project'
+    __tablename__ = 'web_ui_test_project'
 
     def delete_current_and_env(self):
         """ 删除服务及服务下的环境 """
@@ -19,7 +19,7 @@ class UiProjectEnv(BaseProjectEnv):
     """ 服务环境表 """
     __abstract__ = False
 
-    __tablename__ = 'ui_test_project_env'
+    __tablename__ = 'web_ui_test_project_env'
 
     cookies = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='cookie')
     session_storage = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]',

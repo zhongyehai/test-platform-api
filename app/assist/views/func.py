@@ -6,7 +6,7 @@ import traceback
 from flask import current_app as app
 
 from app.baseView import LoginRequiredView
-from utils.globalVariable import os, FUNC_ADDRESS
+from utils.filePath import os, FUNC_ADDRESS
 from utils.parse import parse_function, extract_functions
 from app.assist import assist
 from app.assist.models.func import Func

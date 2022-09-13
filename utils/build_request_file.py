@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 
-from utils.globalVariable import CASE_FILE_ADDRESS, CONTENT_TYPE
+from utils.contentType import CONTENT_TYPE
+from utils.filePath import CASE_FILE_ADDRESS
 
 
 def build_file_path(filename):

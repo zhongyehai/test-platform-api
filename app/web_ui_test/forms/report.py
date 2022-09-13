@@ -6,7 +6,7 @@ import os
 from wtforms import IntegerField
 from wtforms.validators import DataRequired
 
-from utils.globalVariable import UI_REPORT_ADDRESS
+from utils.filePath import WEB_UI_REPORT_ADDRESS
 from app.baseForm import BaseForm
 from app.web_ui_test.models.report import UiReport as Report
 
@@ -18,7 +18,7 @@ class DownloadReportForm(BaseForm):
     def validate_id(self, field):
         """ 校验报告是否存在 """
         report = self.validate_data_is_exist('报告不存在', Report, id=field.data)
-        report_path = os.path.join(UI_REPORT_ADDRESS, f'{report.id}.txt')
+        report_path = os.path.join(WEB_UI_REPORT_ADDRESS, f'{report.id}.txt')
         self.validate_data_is_true('报告文件不存在', os.path.exists(report_path))
         with open(report_path, 'r') as file:
             report_content = json.load(file)
@@ -37,7 +37,7 @@ class DeleteReportForm(BaseForm):
 
     def validate_id(self, field):
         report = self.validate_data_is_exist('报告不存在', Report, id=field.data)
-        report_path = os.path.join(UI_REPORT_ADDRESS, f'{report.id}.txt')
+        report_path = os.path.join(WEB_UI_REPORT_ADDRESS, f'{report.id}.txt')
         self.validate_data_is_true('报告文件不存在', os.path.exists(report_path))
         setattr(self, 'report', report)
         setattr(self, 'report_path', report_path)

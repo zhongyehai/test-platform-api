@@ -15,7 +15,7 @@ from app.assist.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiff
 from app.baseModel import db
 from app.baseView import LoginRequiredView
 from app.config.models.config import Config
-from utils.globalVariable import DIFF_RESULT
+from utils.filePath import DIFF_RESULT
 from utils.makeXmind import make_xmind
 from utils.sendReport import send_diff_api_message
 

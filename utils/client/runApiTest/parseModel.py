@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-
-import os
-
-from utils.globalVariable import CASE_FILE_ADDRESS, CONTENT_TYPE
 from utils.jsonUtil import JsonUtil
 from config.config import assert_mapping
 from utils.parse import extract_functions, parse_function, extract_variables

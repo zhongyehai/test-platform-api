@@ -12,7 +12,7 @@ from app.config.models.config import Config
 from app.api_test.models.project import ApiProject
 from app.api_test.models.module import ApiModule
 from app.api_test.models.api import ApiMsg
-from utils.globalVariable import SWAGGER_FILE_ADDRESS
+from utils.filePath import SWAGGER_FILE_ADDRESS
 from app.baseModel import db
 
 ns = assist.namespace("swagger", description="从swagger拉数据")

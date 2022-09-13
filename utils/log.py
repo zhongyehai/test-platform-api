@@ -55,7 +55,7 @@ import portalocker.constants as porta_lock_const
 from logging.handlers import TimedRotatingFileHandler
 from portalocker.utils import Lock as PortaLock
 
-from .globalVariable import LOG_ADDRESS
+from .filePath import LOG_ADDRESS
 
 
 class ConcurrentLogFileLock(PortaLock):

@@ -6,7 +6,7 @@ from openpyxl.styles import Alignment, Font, PatternFill, Border, Side, colors
 from openpyxl.utils import get_column_letter  # 根据列的数字返回字母 get_column_letter(2)  # B
 from flask import g
 
-from utils.globalVariable import TEMP_FILE_ADDRESS
+from utils.filePath import TEMP_FILE_ADDRESS
 from utils.makeExcel import Excel
 from utils.timeUtil import get_week_start_and_end
 

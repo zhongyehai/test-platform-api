@@ -7,7 +7,7 @@ from flask import request, send_from_directory, current_app as app
 
 from app.baseView import LoginRequiredView
 from app.test_work import test_work
-from utils.globalVariable import TEMP_FILE_ADDRESS
+from utils.filePath import TEMP_FILE_ADDRESS
 from utils.makeXmind import make_xmind
 from app.test_work.models.kym import KYMModule, db
 from app.config.models.config import Config

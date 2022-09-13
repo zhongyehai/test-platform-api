@@ -9,9 +9,9 @@ from wtforms.validators import ValidationError, DataRequired
 
 from app.baseForm import BaseForm
 from app.api_test.models.case import ApiCase
-from app.api_test.models.project import ApiProject, ApiProjectEnv
+from app.api_test.models.project import ApiProject
 from app.assist.models.func import Func
-from utils.globalVariable import FUNC_ADDRESS
+from utils.filePath import FUNC_ADDRESS
 
 
 class GetFuncFileForm(BaseForm):

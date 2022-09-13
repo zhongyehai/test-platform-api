@@ -2,7 +2,7 @@
 
 import os
 
-from utils.globalVariable import UI_CASE_FILE_ADDRESS
+from utils.filePath import UI_CASE_FILE_ADDRESS
 from utils.jsonUtil import JsonUtil
 
 

@@ -13,7 +13,7 @@ from app.api_test.models.api import ApiMsg
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.task import ApiTask as Task
 from app.api_test.models.report import ApiReport as Report
-from utils.globalVariable import CASE_FILE_ADDRESS
+from utils.filePath import CASE_FILE_ADDRESS
 
 ns = home.namespace("apiTest", description="接口自动化统计相关接口")
 

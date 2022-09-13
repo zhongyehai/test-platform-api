@@ -11,7 +11,7 @@ from flask import request, jsonify
 
 from app.baseView import NotLoginView
 from app.tools import tool
-from utils.globalVariable import CALL_BACK_ADDRESS
+from utils.filePath import CALL_BACK_ADDRESS
 from app.config.models.config import Config
 
 ns = tool.namespace("mock", description="mock相关接口")

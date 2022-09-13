@@ -19,7 +19,7 @@ from app.api_test.models.report import ApiReport as Report
 from app.config.models.config import Config
 from utils.client.runApiTest.httprunner.api import HttpRunner
 from utils.log import logger
-from utils.globalVariable import API_REPORT_ADDRESS
+from utils.filePath import API_REPORT_ADDRESS
 from utils.parse import encode_object
 from utils.client.runApiTest.parseModel import ProjectFormatModel, ApiFormatModel, CaseFormatModel, StepFormatModel
 from utils.sendReport import async_send_report

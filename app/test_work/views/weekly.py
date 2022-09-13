@@ -9,7 +9,7 @@ from app.test_work.forms.weekly import (
     GetWeeklyListForm, GetWeeklyForm, AddWeeklyForm, ChangeWeeklyForm, DeleteWeeklyForm
 )
 from app.system.models.user import User
-from utils.globalVariable import TEMP_FILE_ADDRESS
+from utils.filePath import TEMP_FILE_ADDRESS
 from utils.makeWeekly import make_weekly_excel, make_current_weekly_excel
 
 ns = test_work.namespace("weekly", description="周报管理相关接口")

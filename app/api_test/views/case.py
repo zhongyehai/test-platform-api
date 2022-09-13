@@ -63,7 +63,7 @@ class ApiChangeCaseSortView(LoginRequiredView):
 @ns.route('/run/')
 class ApiRunCaseView(LoginRequiredView):
 
-    def POST(self):
+    def post(self):
         """ 运行测试用例，并生成报告 """
         form = RunCaseForm()
         if form.validate():

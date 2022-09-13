@@ -6,7 +6,7 @@ import types
 from sqlalchemy.dialects.mysql import LONGTEXT
 
 from app.baseModel import BaseModel, db
-from utils.globalVariable import FUNC_ADDRESS
+from utils.filePath import FUNC_ADDRESS
 
 
 class Func(BaseModel):

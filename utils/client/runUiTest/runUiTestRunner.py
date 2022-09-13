@@ -13,7 +13,7 @@ from flask.json import JSONEncoder
 from app.config.models.config import Config
 from utils.log import logger
 from utils.parse import encode_object, list_to_dict
-from utils.globalVariable import UI_REPORT_ADDRESS, BROWSER_DRIVER_ADDRESS
+from utils.filePath import WEB_UI_REPORT_ADDRESS, BROWSER_DRIVER_ADDRESS
 from utils.client.runUiTest.parseModel import ProjectFormatModel, ElementFormatModel, CaseFormatModel, StepFormatModel
 from utils.client.runUiTest.uitestrunner.api import UiTestRunner
 from utils.client.runUiTest.uitestrunner.utils import build_url
@@ -117,7 +117,7 @@ class RunCase:
         report.update({'is_passed': 1 if result['success'] else 0, 'is_done': 1})
 
         # 测试报告写入到文本文件
-        with open(os.path.join(UI_REPORT_ADDRESS, f'{report.id}.txt'), 'w') as f:
+        with open(os.path.join(WEB_UI_REPORT_ADDRESS, f'{report.id}.txt'), 'w') as f:
             f.write(json_result)
 
     def run_case(self):

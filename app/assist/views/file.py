@@ -7,7 +7,7 @@ from flask import request, send_from_directory, current_app as app
 
 from app.assist import assist
 from app.baseView import LoginRequiredView, NotLoginView
-from utils.globalVariable import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, \
+from utils.filePath import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, \
     UI_CASE_FILE_ADDRESS
 
 ns = assist.namespace("file", description="文件管理")
