@@ -67,7 +67,7 @@ class BaseParseModel(JsonUtil):
             "update_to_header_filed_list": []
         }
         for extract in extracts_list:
-            if extract.get('key') is not None and extract.get('value') is not None:
+            if extract.get('key') and extract.get('value'):
                 parsed["extractors"].append({
                     extract['key']: self.build_extract_expression(extract.get('data_source'), extract['value'])
                 })
