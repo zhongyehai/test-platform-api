@@ -25,7 +25,7 @@ class ApiMsg(BaseApi):
     response = db.Column(db.Text(), default='{}', comment='响应对象')
     extracts = db.Column(
         db.Text(),
-        default='[{"key": null, "data_source": null, "value": null, "remark": null}]',
+        default='[{"key": null, "data_source": null, "value": null, "remark": null, "update_to_header": null}]',
         comment='提取信息'
     )
     validates = db.Column(

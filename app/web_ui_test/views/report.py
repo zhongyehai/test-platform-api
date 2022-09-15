@@ -8,7 +8,7 @@ from app.baseView import LoginRequiredView, NotLoginView
 from utils.report.report import render_html_report
 from app.web_ui_test import web_ui_test
 from app.baseModel import db
-from app.web_ui_test.models.report import UiReport as Report
+from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.forms.report import GetReportForm, DownloadReportForm, DeleteReportForm, FindReportForm
 from utils.required import login_required
 

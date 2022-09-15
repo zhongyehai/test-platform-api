@@ -3,7 +3,7 @@
 from app.baseModel import BaseApi, db
 
 
-class UiPage(BaseApi):
+class WebUiPage(BaseApi):
     """ 页面表 """
     __abstract__ = False
 
@@ -19,12 +19,12 @@ class UiPage(BaseApi):
         """ 解析分页条件 """
         filters = []
         if form.moduleId.data:
-            filters.append(UiPage.module_id == form.moduleId.data)
+            filters.append(cls.module_id == form.moduleId.data)
         if form.name.data:
-            filters.append(UiPage.name.like(f'%{form.name.data}%'))
+            filters.append(cls.name.like(f'%{form.name.data}%'))
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=UiPage.num.asc()
+            order_by=cls.num.asc()
         )

@@ -4,7 +4,7 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, Length, DataRequired
 
 from app.baseForm import BaseForm
-from app.api_test.models.project import ApiProject, ApiProjectEnv
+from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
 from app.system.models.user import User
 from app.assist.models.func import Func
 
@@ -18,7 +18,7 @@ class AddProjectForm(BaseForm):
 
     def validate_name(self, field):
         """ 校验服务名不重复 """
-        self.validate_data_is_not_exist(f'服务名【{field.data}】已存在', ApiProject, name=field.data)
+        self.validate_data_is_not_exist(f'服务名【{field.data}】已存在', Project, name=field.data)
 
     def validate_manager(self, field):
         """ 校验服务负责人是否存在 """
@@ -52,7 +52,7 @@ class GetProjectByIdForm(BaseForm):
     id = IntegerField(validators=[DataRequired('服务id必传')])
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
         setattr(self, 'project', project)
 
 
@@ -60,8 +60,8 @@ class DeleteProjectForm(GetProjectByIdForm):
     """ 删除服务 """
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
-        self.validate_data_is_true('不能删除别人负责的服务', ApiProject.is_can_delete(project.id, project))
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
+        self.validate_data_is_true('不能删除别人负责的服务', Project.is_can_delete(project.id, project))
         self.validate_data_is_false('请先去【接口管理】删除服务下的接口模块', project.modules)
         setattr(self, 'project', project)
 
@@ -73,7 +73,7 @@ class EditProjectForm(GetProjectByIdForm, AddProjectForm):
         """ 校验服务名不重复 """
         self.validate_data_is_not_repeat(
             f'服务名【{field.data}】已存在',
-            ApiProject,
+            Project,
             self.id.data,
             name=field.data
         )
@@ -90,10 +90,9 @@ class AddEnv(BaseForm):
     variables = StringField()
     headers = StringField()
     all_func_name = {}
-    all_variables = {}
 
     def validate_project_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
         self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files))
         setattr(self, 'project', project)
 
@@ -105,27 +104,28 @@ class AddEnv(BaseForm):
     def validate_variables(self, field):
         """ 校验公共变量 """
         # 校验格式
-        self.validate_variable_and_header_format(field.data, '自定义变量设置，，第【', '】行，要设置自定义变量，则key和value都需设置')
+        self.validate_variable_format(field.data)
 
         # 校验存在使用自定义函数，但是没有引用函数文件的情况
         self.validate_func(self.all_func_name, self.dumps(field.data))
 
         # 校验存在使用自定义变量，但是没有声明的情况
-        self.all_variables = {
+        self.validate_variable({
             variable.get('key'): variable.get('value') for variable in field.data if variable.get('key')
-        }
-        self.validate_variable(self.all_variables, self.dumps(field.data))  # 公共变量
+        }, self.dumps(field.data))  # 公共变量
 
     def validate_headers(self, field):
         """ 校验头部信息是否有引用自定义函数 """
         # 校验格式
-        self.validate_variable_and_header_format(field.data, '头部信息设置，第【', '】行，要设置头部信息，则key和value都需设置')
+        self.validate_header_format(field.data)
 
         # 校验存在使用自定义函数，但是没有引用函数文件的情况
         self.validate_func(self.all_func_name, self.dumps(field.data))
 
         # 校验存在使用自定义变量，但是没有声明的情况
-        self.validate_variable(self.all_variables, self.dumps(field.data))
+        self.validate_variable({
+            variable.get('key'): variable.get('value') for variable in self.variables.data if variable.get('key')
+        }, self.dumps(field.data))
 
 
 class EditEnv(AddEnv):
@@ -135,7 +135,7 @@ class EditEnv(AddEnv):
     def validate_env(self, field):
         env_data = self.validate_data_is_exist(
             '当前环境不存在',
-            ApiProjectEnv,
+            ProjectEnv,
             project_id=self.project_id.data,
             env=field.data
         )
@@ -148,9 +148,9 @@ class FindEnvForm(BaseForm):
     env = StringField()
 
     def validate_projectId(self, field):
-        env_data = ApiProjectEnv.get_first(project_id=field.data, env=self.env.data)
+        env_data = ProjectEnv.get_first(project_id=field.data, env=self.env.data)
         if not env_data:  # 如果没有就插入一条记录
-            env_data = ApiProjectEnv().create({"env": self.env.data, "project_id": field.data})
+            env_data = ProjectEnv().create({"env": self.env.data, "project_id": field.data})
             setattr(self, 'env_data', env_data)
         setattr(self, 'env_data', env_data)
 
@@ -162,5 +162,5 @@ class SynchronizationEnvForm(BaseForm):
     envTo = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
 
     def validate_projectId(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在',Project, id=field.data)
         setattr(self, 'project', project)

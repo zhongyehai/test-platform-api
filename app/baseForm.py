@@ -69,11 +69,37 @@ class BaseForm(Form, JsonUtil):
             if variable not in variables_container:
                 raise ValidationError(f'{message}引用的变量【{variable}】不存在')
 
-    def validate_variable_and_header_format(self, content: list, message1='', message2=''):
-        """ 自定义变量、头部信息，格式校验 """
+    def validate_header_format(self, content: list):
+        """ 头部信息，格式校验 """
         for index, data in enumerate(content):
-            if (data['key'] and not data['value']) or (not data['key'] and data['value']):
-                raise ValidationError(f'{message1}{index + 1}{message2}')
+            title, key, value = f'头部信息设置，第【{index + 1}】行', data.get("key"), data.get("value")
+            if not ((key and value) or (not key and not value)):
+                raise ValidationError(f'{title}，要设置头部信息，则key和value都需设置')
+
+    def validate_variable_format(self, content: list):
+        """ 自定义变量，格式校验 """
+        for index, data in enumerate(content):
+            title = f'自定义变量设置，第【{index + 1}】行'
+            key, value, data_type = data.get("key"), data.get("value"), data.get("data_type")
+            # 校验格式
+            if not ((key and value and data_type) or (not key and not value)):
+                raise ValidationError(f'{title}，要设置自定义变量，则【key、value、数据类型】都需设置')
+
+            # 检验数据类型
+            if value and self.validate_data_format(value, data_type) is False:
+                raise ValidationError(f'{title}，自定义变量值与数据类型不匹配')
+
+    def validate_data_format(self, value, data_type):
+        """ 校验数据格式 """
+        try:
+            if data_type in ["variable", "func", 'str']:
+                pass
+            elif data_type == 'json':
+                self.dumps(self.loads(value))
+            else:  # python数据类型
+                eval(f'{data_type}({value})')
+        except Exception as error:
+            return False
 
     def validate_base_validates(self, data, func_container):
         """ 校验断言信息 """

@@ -8,10 +8,10 @@ from app.api_test import api_test
 from app.baseView import LoginRequiredView
 from utils.client.runApiTest.runHttpRunner import RunCase
 from app.baseModel import db
-from app.api_test.models.case import ApiCase
+from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.report import ApiReport as Report
-from app.api_test.models.caseSet import ApiSet
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm
 
 ns = api_test.namespace("case", description="用例管理相关接口")
@@ -24,7 +24,7 @@ class ApiGetCaseListView(LoginRequiredView):
         """ 根据模块获取用例list """
         form = FindCaseForm()
         if form.validate():
-            return app.restful.success(data=ApiCase.make_pagination(form))
+            return app.restful.success(data=Case.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -36,7 +36,7 @@ class ApiGetCaseNameByIdView(LoginRequiredView):
         # caseId: '1,4,12'
         case_ids: list = request.args.to_dict().get('caseId').split(',')
         return app.restful.success(
-            data=[{'id': int(case_id), 'name': ApiCase.get_first(id=case_id).name} for case_id in case_ids])
+            data=[{'id': int(case_id), 'name': Case.get_first(id=case_id).name} for case_id in case_ids])
 
 
 @ns.route('/quote/')
@@ -46,7 +46,7 @@ class ApiChangeCaseQuoteView(LoginRequiredView):
         """ 更新用例引用 """
         case_id, quote_type, quote = request.json.get('id'), request.json.get('quoteType'), request.json.get('quote')
         with db.auto_commit():
-            case = ApiCase.get_first(id=case_id)
+            case = Case.get_first(id=case_id)
             setattr(case, quote_type, json.dumps(quote))
         return app.restful.success(msg='引用关系修改成功')
 
@@ -56,7 +56,7 @@ class ApiChangeCaseSortView(LoginRequiredView):
 
     def put(self):
         """ 更新用例的排序 """
-        ApiCase.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
+        Case.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
         return app.restful.success(msg='修改排序成功')
 
 
@@ -68,7 +68,7 @@ class ApiRunCaseView(LoginRequiredView):
         form = RunCaseForm()
         if form.validate():
             case, case_list = form.case_list[0], form.case_list
-            project_id = ApiSet.get_first(id=case.set_id).project_id
+            project_id = CaseSet.get_first(id=case.set_id).project_id
 
             report = Report.get_new_report(case.name, 'case', g.user_name, g.user_id, project_id)
 
@@ -93,7 +93,7 @@ class ApiChangeCaseStatusView(LoginRequiredView):
     def put(self):
         """ 修改用例状态（是否执行） """
         with db.auto_commit():
-            ApiCase.get_first(id=request.json.get('id')).is_run = request.json.get('is_run')
+            Case.get_first(id=request.json.get('id')).is_run = request.json.get('is_run')
         return app.restful.success(f'用例已修改为 {"执行" if request.json.get("is_run") else "不执行"}')
 
 
@@ -103,18 +103,19 @@ class ApiCopyCaseView(LoginRequiredView):
     def post(self):
         """ 复制用例 """
         # 复制用例
-        case = ApiCase.get_first(id=request.json.get('id'))
+        case_id = request.json.get('id')
+        case = Case.get_first(id=case_id)
         with db.auto_commit():
             old_case = case.to_dict()
             old_case['create_user'] = old_case['update_user'] = g.user_id
-            new_case = ApiCase()
+            new_case = Case()
             new_case.create(old_case, 'func_files', 'variables', 'headers')
             new_case.name = old_case['name'] + '_copy'
-            new_case.num = ApiCase.get_insert_num(set_id=old_case['set_id'])
+            new_case.num = Case.get_insert_num(set_id=old_case['set_id'])
             db.session.add(new_case)
 
         # 复制步骤
-        old_step_list = Step.query.filter_by(case_id=request.args.get('id')).order_by(Step.num.asc()).all()
+        old_step_list = Step.query.filter_by(case_id=case_id).order_by(Step.num.asc()).all()
         for index, old_step in enumerate(old_step_list):
             step = old_step.to_dict()
             step['num'] = index
@@ -145,8 +146,8 @@ class ApiCaseView(LoginRequiredView):
         """ 新增用例 """
         form = AddCaseForm()
         if form.validate():
-            form.num.data = ApiCase.get_insert_num(set_id=form.set_id.data)
-            new_case = ApiCase().create(form.data)
+            form.num.data = Case.get_insert_num(set_id=form.set_id.data)
+            new_case = Case().create(form.data)
             return app.restful.success(f'用例【{new_case.name}】新建成功', data=new_case.to_dict())
         return app.restful.fail(form.get_error())
 

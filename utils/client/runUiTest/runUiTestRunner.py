@@ -18,12 +18,12 @@ from utils.client.runUiTest.parseModel import ProjectFormatModel, ElementFormatM
 from utils.client.runUiTest.uitestrunner.api import UiTestRunner
 from utils.client.runUiTest.uitestrunner.utils import build_url
 from app.assist.models.func import Func
-from app.web_ui_test.models.project import UiProject as Project, UiProjectEnv as ProjectEnv
-from app.web_ui_test.models.element import UiElement as Element
-from app.web_ui_test.models.caseSet import UiCaeSet as Set
-from app.web_ui_test.models.case import UiCase as Case
-from app.web_ui_test.models.step import UiStep as Step
-from app.web_ui_test.models.report import UiReport as Report
+from app.web_ui_test.models.project import WebUiProject as Project, WebUiProjectEnv as ProjectEnv
+from app.web_ui_test.models.element import WebUiElement as Element
+from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
+from app.web_ui_test.models.case import WebUiCase as Case
+from app.web_ui_test.models.step import WebUiStep as Step
+from app.web_ui_test.models.report import WebUiReport as Report
 from utils.sendReport import async_send_report
 from config.config import ui_action_mapping_reverse
 
@@ -321,7 +321,7 @@ class RunCase:
             project_container = {'cookies': [], 'session_storage': [], 'local_storage': []}  # 项目数据的容器
 
             current_case = Case.get_first(id=case_id)
-            current_project = self.get_formated_project(Set.get_first(id=current_case.set_id).project_id)
+            current_project = self.get_formated_project(CaseSet.get_first(id=current_case.set_id).project_id)
 
             # 用例格式模板, # 火狐：geckodriver
             browser_path = os.path.join(

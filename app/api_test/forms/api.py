@@ -6,9 +6,9 @@ from app.baseForm import BaseForm
 from app.api_test.models.case import ApiCase as Case
 from app.assist.models.func import Func
 from app.api_test.models.step import ApiStep as Step
-from app.api_test.models.api import ApiMsg
-from app.api_test.models.module import ApiModule
-from app.api_test.models.project import ApiProject, ApiProjectEnv
+from app.api_test.models.api import ApiMsg as Api
+from app.api_test.models.module import ApiModule as Module
+from app.api_test.models.project import ApiProject as Project
 
 
 class GetApiByIdForm(BaseForm):
@@ -16,7 +16,7 @@ class GetApiByIdForm(BaseForm):
     id = IntegerField(validators=[DataRequired('接口id必传')])
 
     def validate_id(self, field):
-        api = self.validate_data_is_exist(f'id为【{field.data}】的接口不存在', ApiMsg, id=field.data)
+        api = self.validate_data_is_exist(f'id为【{field.data}】的接口不存在', Api, id=field.data)
         setattr(self, 'api', api)
 
 
@@ -46,12 +46,12 @@ class AddApiForm(BaseForm):
 
     def validate_project_id(self, field):
         """ 校验服务id """
-        self.project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        self.project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
         setattr(self, 'project', self.project)
 
     def validate_module_id(self, field):
         """ 校验模块id """
-        self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', ApiModule, id=field.data)
+        self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', Module, id=field.data)
 
     def validate_name(self, field):
         """ 校验同一模块下接口名不重复 """
@@ -83,7 +83,7 @@ class EditApiForm(GetApiByIdForm, AddApiForm):
         """ 校验接口名不重复 """
         self.validate_data_is_not_repeat(
             f'当前模块下，名为【{field.data}】的接口已存在',
-            ApiMsg,
+            Api,
             self.id.data,
             name=field.data,
             module_id=self.module_id.data
@@ -98,14 +98,14 @@ class RunApiMsgForm(BaseForm):
 
     def validate_projectId(self, field):
         """ 校验服务id """
-        self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
 
     def validate_apis(self, field):
         """ 校验接口存在 """
         self.validate_data_is_true('接口id必传', self.apis.data)
         api_list = []
         for api_id in self.apis.data:
-            api_list.append(self.validate_data_is_exist(f'id为【{api_id}】的接口不存在', ApiMsg, id=api_id))
+            api_list.append(self.validate_data_is_exist(f'id为【{api_id}】的接口不存在', Api, id=api_id))
         setattr(self, 'api_list', api_list)
 
 
@@ -122,15 +122,19 @@ class ApiBelongToForm(BaseForm):
     addr = StringField(validators=[DataRequired('接口地址必传')])
 
     def validate_addr(self, field):
-        api = self.validate_data_is_exist(f'地址为【{field.data}】的接口不存在', ApiMsg, addr=field.data)
-        setattr(self, 'api', api)
+        # api = self.validate_data_is_exist(f'地址为【{field.data}】的接口不存在', Api, addr=field.data)
+        # setattr(self, 'api', api)
+        api_list = Api.get_all(addr=field.data)
+        if not api_list:
+            raise ValidationError(f'地址为【{field.data}】的接口不存在')
+        setattr(self, 'api_list', api_list)
 
 
 class DeleteApiForm(GetApiByIdForm):
     """ 删除接口 """
 
     def validate_id(self, field):
-        api = self.validate_data_is_exist(f'id为【{field.data}】的接口不存在', ApiMsg, id=field.data)
+        api = self.validate_data_is_exist(f'id为【{field.data}】的接口不存在', Api, id=field.data)
 
         # 校验接口是否被测试用例引用
         case_data = Step.get_first(api_id=field.data)
@@ -140,6 +144,6 @@ class DeleteApiForm(GetApiByIdForm):
 
         self.validate_data_is_true(
             '不能删除别人服务下的接口',
-            ApiProject.is_can_delete(ApiModule.get_first(id=api.module_id).project_id, api)
+            Project.is_can_delete(Module.get_first(id=api.module_id).project_id, api)
         )
         setattr(self, 'api', api)

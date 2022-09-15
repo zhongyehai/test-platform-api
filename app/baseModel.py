@@ -321,7 +321,7 @@ class BaseProjectEnv(BaseModel):
 
     env = db.Column(db.String(10), nullable=True, comment='所属环境')
     host = db.Column(db.String(255), default='', comment='域名')
-    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共变量')
+    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment='服务的公共变量')
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
 
     @classmethod
@@ -427,8 +427,8 @@ class BaseCase(BaseModel):
     desc = db.Column(db.Text(), comment='用例描述')
     is_run = db.Column(db.Boolean(), default=True, comment='是否执行此用例，True执行，False不执行，默认执行')
     run_times = db.Column(db.Integer(), default=1, comment='执行次数，默认执行1次')
-    func_files = db.Column(db.Text(), comment='用例需要引用的函数list')
-    variables = db.Column(db.Text(), comment='用例级的公共参数')
+    func_files = db.Column(db.Text(), default='[]', comment='用例需要引用的函数list')
+    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment='用例级的公共参数')
 
     @classmethod
     def make_pagination(cls, form):

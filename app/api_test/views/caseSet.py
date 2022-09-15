@@ -8,7 +8,7 @@ from app.api_test.models.report import ApiReport as Report
 from app.baseView import LoginRequiredView
 from utils.client.runApiTest.runHttpRunner import RunCase
 from app.api_test import api_test
-from app.api_test.models.caseSet import ApiSet
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.forms.caseSet import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, \
     DeleteCaseSetForm, RunCaseSetForm
 
@@ -22,7 +22,7 @@ class ApiGetCaseSetListView(LoginRequiredView):
         """ 获取用例集列表 """
         form = FindCaseSet()
         if form.validate():
-            return app.restful.success(data=ApiSet.make_pagination(form))
+            return app.restful.success(data=CaseSet.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -58,8 +58,8 @@ class ApiCaseSetTreeView(LoginRequiredView):
     def get(self):
         """ 获取指定服务下的用例集列表 """
         set_list = [
-            case_set.to_dict() for case_set in ApiSet.query.filter_by(
-                project_id=int(request.args.get('project_id'))).order_by(ApiSet.parent.asc()).all()
+            case_set.to_dict() for case_set in CaseSet.query.filter_by(
+                project_id=int(request.args.get('project_id'))).order_by(CaseSet.parent.asc()).all()
         ]
         return app.restful.success(data=set_list)
 
@@ -79,8 +79,8 @@ class ApiCaseSetView(LoginRequiredView):
         """ 新增用例集 """
         form = AddCaseSetForm()
         if form.validate():
-            form.num.data = ApiSet.get_insert_num(project_id=form.project_id.data)
-            new_set = ApiSet().create(form.data)
+            form.num.data = CaseSet.get_insert_num(project_id=form.project_id.data)
+            new_set = CaseSet().create(form.data)
             return app.restful.success(f'用例集【{form.name.data}】创建成功', new_set.to_dict())
         return app.restful.fail(form.get_error())
 

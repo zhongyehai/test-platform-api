@@ -3,16 +3,16 @@ from threading import Thread
 
 from flask import current_app as app, request, send_from_directory, g
 
-from app.api_test.models.module import ApiModule
-from app.api_test.models.project import ApiProject
-from app.api_test.models.report import ApiReport as Report
+from app.baseModel import db
+from app.api_test import api_test
 from app.baseView import LoginRequiredView
 from utils.filePath import STATIC_ADDRESS
 from utils.parseExcel import parse_file_content
 from utils.client.runApiTest.runHttpRunner import RunApi
-from app.api_test import api_test
-from app.baseModel import db
-from app.api_test.models.api import ApiMsg
+from app.api_test.models.module import ApiModule as Module
+from app.api_test.models.project import ApiProject as Project
+from app.api_test.models.report import ApiReport as Report
+from app.api_test.models.api import ApiMsg as Api
 from app.config.models.config import Config
 from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, \
     ApiBelongToForm
@@ -47,7 +47,7 @@ class ApiGetApiListView(LoginRequiredView):
         """ 根据模块查接口list """
         form = ApiListForm()
         if form.validate():
-            return app.restful.success(data=ApiMsg.make_pagination(form))
+            return app.restful.success(data=Api.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -58,10 +58,12 @@ class ApiGetApiBelongToView(LoginRequiredView):
         """ 根据接口地址获取接口的归属信息 """
         form = ApiBelongToForm()
         if form.validate():
-            api_msg = form.api
-            project = ApiProject.get_first(id=api_msg.project_id)
-            module = ApiModule.get_first(id=api_msg.module_id)
-            return app.restful.success(msg=f'此接口归属于：{project.name}_{module.name}_{api_msg.name}')
+            res_msg = '此接口归属：'
+            for api in form.api_list:  # 多个服务存在同一个接口地址的情况
+                project = Project.get_first(id=api.project_id)
+                module = Module.get_first(id=api.module_id)
+                res_msg += f'【{project.name}_{module.name}_{api.name}】、'
+            return app.restful.success(msg=res_msg)
         return app.restful.fail(form.get_error())
 
 
@@ -70,14 +72,14 @@ class ApiGetApiUploadView(LoginRequiredView):
 
     def post(self):
         """ 从excel中导入接口 """
-        file, module, user_id = request.files.get('file'), ApiModule.get_first(id=request.form.get('id')), g.user_id
+        file, module, user_id = request.files.get('file'), Module.get_first(id=request.form.get('id')), g.user_id
         if not module:
             return app.restful.fail('模块不存在')
         if file and file.filename.endswith('xls'):
             excel_data = parse_file_content(file.read())  # [{'请求类型': 'get', '接口名称': 'xx接口', 'addr': '/api/v1/xxx'}]
             with db.auto_commit():
                 for api_data in excel_data:
-                    new_api = ApiMsg()
+                    new_api = Api()
                     for key, value in api_data.items():
                         if hasattr(new_api, key):
                             setattr(new_api, key, value)
@@ -128,7 +130,7 @@ class ApiChangeApiSortView(LoginRequiredView):
 
     def put(self):
         """ 修改接口的排序 """
-        ApiMsg.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
+        Api.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
         return app.restful.success(msg='修改排序成功')
 
 
@@ -147,8 +149,8 @@ class ApiMsgView(LoginRequiredView):
         """ 新增接口 """
         form = AddApiForm()
         if form.validate():
-            form.num.data = ApiMsg.get_insert_num(module_id=form.module_id.data)
-            new_api = ApiMsg().create(form.data)
+            form.num.data = Api.get_insert_num(module_id=form.module_id.data)
+            new_api = Api().create(form.data)
             return app.restful.success(f'接口【{form.name.data}】新建成功', data=new_api.to_dict())
         return app.restful.fail(form.get_error())
 

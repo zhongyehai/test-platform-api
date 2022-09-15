@@ -22,7 +22,7 @@ class ApiStep(BaseStep):
     data_type = db.Column(db.String(10), default='json', comment='请求体参数类型')
     extracts = db.Column(
         db.Text(),
-        default='[{"key": null, "data_source": null, "value": null, "remark": null}]',
+        default='[{"key": null, "data_source": null, "value": null, "remark": null, "update_to_header": null}]',
         comment='提取信息'
     )
     validates = db.Column(

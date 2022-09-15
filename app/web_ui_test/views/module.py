@@ -4,7 +4,7 @@ from flask import request, current_app as app
 
 from app.baseView import LoginRequiredView
 from app.web_ui_test import web_ui_test
-from app.web_ui_test.models.module import UiModule
+from app.web_ui_test.models.module import WebUiModule as Module
 from app.web_ui_test.forms.module import AddModelForm, EditModelForm, FindModelForm, DeleteModelForm, GetModelForm
 
 ns = web_ui_test.namespace("module", description="模块管理相关接口")
@@ -17,7 +17,7 @@ class WebUiGetModuleListView(LoginRequiredView):
         """ 获取模块列表 """
         form = FindModelForm()
         if form.validate():
-            return app.restful.get_success(data=UiModule.make_pagination(form))
+            return app.restful.get_success(data=Module.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -28,8 +28,8 @@ class WebUiGetModuleTreeView(LoginRequiredView):
         """ 获取指定服务下的模块树 """
         project_id = int(request.args.get('project_id'))
         module_list = [
-            module.to_dict() for module in UiModule.query.filter_by(
-                project_id=project_id).order_by(UiModule.parent.asc()).all()
+            module.to_dict() for module in Module.query.filter_by(
+                project_id=project_id).order_by(Module.parent.asc()).all()
         ]
         return app.restful.success(data=module_list)
 
@@ -48,8 +48,8 @@ class WebUiModuleView(LoginRequiredView):
         """ 新增模块 """
         form = AddModelForm()
         if form.validate():
-            form.num.data = UiModule.get_insert_num(project_id=form.project_id.data)
-            new_model = UiModule().create(form.data)
+            form.num.data = Module.get_insert_num(project_id=form.project_id.data)
+            new_model = Module().create(form.data)
             setattr(new_model, 'children', [])
             return app.restful.success(f'模块【{form.name.data}】创建成功', new_model.to_dict())
         return app.restful.fail(form.get_error())

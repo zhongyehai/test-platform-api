@@ -2,7 +2,7 @@
 from flask import current_app as app
 
 from app.api_test import api_test
-from app.api_test.models.project import ApiProject, ApiProjectEnv
+from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
 from app.api_test.forms.project import (
     AddProjectForm, EditProjectForm, FindProjectForm, DeleteProjectForm, GetProjectByIdForm,
     EditEnv, AddEnv, FindEnvForm, SynchronizationEnvForm
@@ -17,7 +17,7 @@ class ApiProjectAllView(LoginRequiredView):
 
     def get(self):
         """ 所有服务列表 """
-        return app.restful.success(data=[project.to_dict() for project in ApiProject.get_all()])
+        return app.restful.success(data=[project.to_dict() for project in Project.get_all()])
 
 
 @ns.route('/list/')
@@ -27,7 +27,7 @@ class ApiProjectListView(LoginRequiredView):
         """ 获取服务列表 """
         form = FindProjectForm()
         if form.validate():
-            return app.restful.success(data=ApiProject.make_pagination(form))
+            return app.restful.success(data=Project.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -47,8 +47,8 @@ class ApiProjectView(LoginRequiredView):
         """ 新增服务 """
         form = AddProjectForm()
         if form.validate():
-            project = ApiProject().create(form.data)
-            ApiProjectEnv.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
+            project = Project().create(form.data)
+            ProjectEnv.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
             return app.restful.success(f'服务【{form.name.data}】新建成功', project.to_dict())
         return app.restful.fail(msg=form.get_error())
 
@@ -76,8 +76,8 @@ class ApiProjectEnvViewSynchronizationView(LoginRequiredView):
         """ 同步环境数据 """
         form = SynchronizationEnvForm()
         if form.validate():
-            from_env = ApiProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
-            synchronization_result = ApiProjectEnv.synchronization(from_env, form.envTo.data, ['variables', 'headers'])
+            from_env = ProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
+            synchronization_result = ProjectEnv.synchronization(from_env, form.envTo.data, ['variables', 'headers'])
             return app.restful.success('同步成功', data=synchronization_result)
         return app.restful.fail(form.get_error())
 
@@ -98,7 +98,7 @@ class ApiProjectEnvView(LoginRequiredView):
         """ 新增服务环境 """
         form = AddEnv()
         if form.validate():
-            env = ApiProjectEnv().create(form.data)
+            env = ProjectEnv().create(form.data)
             return app.restful.success(f'环境新建成功', env.to_dict())
         return app.restful.fail(msg=form.get_error())
 
@@ -114,9 +114,9 @@ class ApiProjectEnvView(LoginRequiredView):
 
             # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
             env_list = [
-                env.env for env in ApiProjectEnv.get_all(project_id=form.project_id.data) if
+                env.env for env in ProjectEnv.get_all(project_id=form.project_id.data) if
                 env.env != form.env_data.env
             ]
-            ApiProjectEnv.synchronization(form.env_data, env_list, ['variables', 'headers'])
+            ProjectEnv.synchronization(form.env_data, env_list, ['variables', 'headers'])
             return app.restful.success(f'环境修改成功', form.env_data.to_dict())
         return app.restful.fail(msg=form.get_error())

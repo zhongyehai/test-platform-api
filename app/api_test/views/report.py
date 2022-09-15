@@ -7,7 +7,7 @@ from app.baseView import LoginRequiredView, NotLoginView
 from utils.report.report import render_html_report
 from app.api_test import api_test
 from app.baseModel import db
-from app.api_test.models.report import ApiReport
+from app.api_test.models.report import ApiReport as Report
 from app.api_test.forms.report import GetReportForm, DownloadReportForm, DeleteReportForm, FindReportForm
 from utils.required import login_required
 
@@ -30,7 +30,7 @@ class ApiGetReportListView(LoginRequiredView):
         """ 报告列表 """
         form = FindReportForm()
         if form.validate():
-            return app.restful.success(data=ApiReport.make_pagination(form))
+            return app.restful.success(data=Report.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -38,7 +38,7 @@ class ApiGetReportListView(LoginRequiredView):
 class ApiReportIsDoneView(LoginRequiredView):
     def get(self):
         """ 查询报告是否生成 """
-        return app.restful.success(data=ApiReport.get_first(id=request.args.to_dict().get('id')).is_done)
+        return app.restful.success(data=Report.get_first(id=request.args.to_dict().get('id')).is_done)
 
 
 @ns.route('/')

@@ -4,7 +4,7 @@ from app.baseModel import BaseProject, BaseProjectEnv, db
 from app.config.models.config import Config
 
 
-class UiProject(BaseProject):
+class WebUiProject(BaseProject):
     """ 服务表 """
     __abstract__ = False
 
@@ -12,10 +12,10 @@ class UiProject(BaseProject):
 
     def delete_current_and_env(self):
         """ 删除服务及服务下的环境 """
-        return self.delete_current_and_children(UiProjectEnv, 'project_id')
+        return self.delete_current_and_children(WebUiProjectEnv, 'project_id')
 
 
-class UiProjectEnv(BaseProjectEnv):
+class WebUiProjectEnv(BaseProjectEnv):
     """ 服务环境表 """
     __abstract__ = False
 

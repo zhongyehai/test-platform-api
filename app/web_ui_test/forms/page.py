@@ -4,10 +4,10 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import Length, DataRequired
 
 from app.baseForm import BaseForm
-from app.web_ui_test.models.element import UiElement
-from app.web_ui_test.models.page import UiPage
-from app.web_ui_test.models.module import UiModule
-from app.web_ui_test.models.project import UiProject
+from app.web_ui_test.models.element import WebUiElement as Element
+from app.web_ui_test.models.page import WebUiPage as Page
+from app.web_ui_test.models.module import WebUiModule as Module
+from app.web_ui_test.models.project import WebUiProject as Project
 
 
 class AddPageForm(BaseForm):
@@ -22,18 +22,18 @@ class AddPageForm(BaseForm):
 
     def validate_project_id(self, field):
         """ 校验项目id """
-        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', Project, id=field.data)
         setattr(self, 'project', project)
 
     def validate_module_id(self, field):
         """ 校验模块id """
-        self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
+        self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', Module, id=field.data)
 
     def validate_name(self, field):
         """ 校验同一模块下页面名不重复 """
         self.validate_data_is_not_exist(
             f'当前模块下，名为【{field.data}】的页面已存在',
-            UiPage,
+            Page,
             name=field.data,
             module_id=self.module_id.data
         )
@@ -45,14 +45,14 @@ class EditPageForm(AddPageForm):
 
     def validate_id(self, field):
         """ 校验页面id已存在 """
-        old = self.validate_data_is_exist(f'id为【{field.data}】的页面不存在', UiPage, id=field.data)
+        old = self.validate_data_is_exist(f'id为【{field.data}】的页面不存在', Page, id=field.data)
         setattr(self, 'old', old)
 
     def validate_name(self, field):
         """ 校验页面名不重复 """
         self.validate_data_is_not_repeat(
             f'当前模块下，名为【{field.data}】的页面已存在',
-            UiPage,
+            Page,
             self.id.data,
             name=field.data,
             module_id=self.module_id.data
@@ -65,7 +65,7 @@ class ValidateProjectId(BaseForm):
 
     def validate_projectId(self, field):
         """ 校验项目id """
-        self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', Project, id=field.data)
 
 
 class PageListForm(BaseForm):
@@ -81,7 +81,7 @@ class GetPageById(BaseForm):
     id = IntegerField(validators=[DataRequired('页面id必传')])
 
     def validate_id(self, field):
-        page = self.validate_data_is_exist(f'id为【{field.data}】的页面不存在', UiPage, id=field.data)
+        page = self.validate_data_is_exist(f'id为【{field.data}】的页面不存在', Page, id=field.data)
         setattr(self, 'page', page)
 
 
@@ -91,10 +91,10 @@ class DeletePageForm(GetPageById):
     def validate_id(self, field):
 
         # 页面存在
-        page = self.validate_data_is_exist(f'id为【{field.data}】的页面不存在', UiPage, id=field.data)
+        page = self.validate_data_is_exist(f'id为【{field.data}】的页面不存在', Page, id=field.data)
 
         # 页面下没有元素
-        self.validate_data_is_not_exist('当前页面下有元素，请先删除元素，再删除页面', UiElement, page_id=field.data)
+        self.validate_data_is_not_exist('当前页面下有元素，请先删除元素，再删除页面', Element, page_id=field.data)
 
         # 校验页面是否被测试用例引用
         # case_data = Step.get_first(api_id=field.data)
@@ -104,7 +104,7 @@ class DeletePageForm(GetPageById):
 
         self.validate_data_is_true(
             '不能删除别人项目下的页面',
-            UiProject.is_can_delete(UiModule.get_first(id=page.module_id).project_id, page)
+            Project.is_can_delete(Module.get_first(id=page.module_id).project_id, page)
         )
 
         setattr(self, 'page', page)

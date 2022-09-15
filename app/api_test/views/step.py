@@ -3,7 +3,7 @@ from flask import current_app as app, request
 
 from app.api_test import api_test
 from app.baseModel import db
-from app.api_test.models.step import ApiStep
+from app.api_test.models.step import ApiStep as Step
 from app.api_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
 from app.baseView import LoginRequiredView
 
@@ -16,7 +16,7 @@ class ApiGetStepListView(LoginRequiredView):
         """ 根据用例id获取步骤列表 """
         form = GetStepListForm()
         if form.validate():
-            step_obj_list = ApiStep.query.filter_by(case_id=form.caseId.data).order_by(ApiStep.num.asc()).all()
+            step_obj_list = Step.query.filter_by(case_id=form.caseId.data).order_by(Step.num.asc()).all()
             return app.restful.success('获取成功', data=[step.to_dict() for step in step_obj_list])
         return app.restful.error(form.get_error())
 
@@ -26,7 +26,7 @@ class ApiChangeStepStatusView(LoginRequiredView):
     def put(self):
         """ 修改步骤状态（是否执行） """
         with db.auto_commit():
-            ApiStep.get_first(id=request.json.get('id')).is_run = request.json.get('is_run')
+            Step.get_first(id=request.json.get('id')).is_run = request.json.get('is_run')
         return app.restful.success(f'步骤已修改为 {"执行" if request.json.get("is_run") else "不执行"}')
 
 
@@ -34,7 +34,7 @@ class ApiChangeStepStatusView(LoginRequiredView):
 class ApiChangeStepHostView(LoginRequiredView):
     def put(self):
         """ 修改步骤引用的host """
-        step = ApiStep.get_first(id=request.json.get('id'))
+        step = Step.get_first(id=request.json.get('id'))
         with db.auto_commit():
             step.replace_host = request.json.get('replace_host')
         return app.restful.success(
@@ -47,18 +47,19 @@ class ApiChangeStepHostView(LoginRequiredView):
 class ApiChangeStepSortView(LoginRequiredView):
     def put(self):
         """ 更新步骤的排序 """
-        ApiStep.change_sort(request.json.get('List'), request.json.get('pageNum', 0), request.json.get('pageSize', 0))
+        Step.change_sort(request.json.get('List'), request.json.get('pageNum', 0), request.json.get('pageSize', 0))
         return app.restful.success(msg='修改排序成功')
 
 
 @ns.route('/copy/')
 class ApiCopyStepView(LoginRequiredView):
-    def get(self):
+
+    def post(self):
         """ 复制步骤 """
-        old = ApiStep.get_first(id=request.json.get('id')).to_dict()
+        old = Step.get_first(id=request.json.get('id')).to_dict()
         old['name'] = f"{old['name']}_copy"
-        old['num'] = ApiStep.get_insert_num(case_id=old['case_id'])
-        step = ApiStep().create(old)
+        old['num'] = Step.get_insert_num(case_id=old['case_id'])
+        step = Step().create(old)
         step.add_api_quote_count()
         return app.restful.success(msg='步骤复制成功', data=step.to_dict())
 
@@ -77,8 +78,8 @@ class ApiStepMethodView(LoginRequiredView):
         """ 新增步骤 """
         form = AddStepForm()
         if form.validate():
-            form.num.data = ApiStep.get_insert_num(case_id=form.case_id.data)
-            step = ApiStep().create(form.data)
+            form.num.data = Step.get_insert_num(case_id=form.case_id.data)
+            step = Step().create(form.data)
             step.add_api_quote_count()
             return app.restful.success(f'步骤【{step.name}】新建成功', data=step.to_dict())
         return app.restful.error(form.get_error())

@@ -21,6 +21,7 @@ class SessionContext(object):
         self.FUNCTIONS_MAPPING = functions
         self.init_test_variables()
         self.validation_results = []
+        self.update_to_header = {}
 
     def init_test_variables(self, variables_mapping=None):
         """ 初始化测试变量，在每个测试（api）开始时调用。变量映射将首先进行评估。
@@ -187,3 +188,16 @@ class SessionContext(object):
         if not validate_pass:  # 断言未通过
             failures_string = "\n".join([failure for failure in failures])
             raise exceptions.ValidationFailure(failures_string)
+
+    def save_update_to_header_filed(self, filed_list: list, extracted_variables_mapping: dict):
+        """ 把提取后需要更新到头部信息的数据保存下来
+        filed_list: ['data']
+        extracted_variables_mapping: {'data': 123, 'data2': 456}
+        """
+        for filed in filed_list:
+            self.update_to_header[filed] = extracted_variables_mapping[filed]
+
+    def update_filed_to_header(self, headers: dict):
+        """ 把保存下来的需要更新到头部信息的字段更新到头部信息 """
+        headers.update(self.update_to_header)
+        return headers

@@ -53,10 +53,8 @@ class Runner(object):
         self.functions = functions
         self.validation_results = []
 
-        # testcase setup hooks
-        testcase_setup_hooks = config.get("setup_hooks", [])
-        # testcase teardown hooks
-        self.testcase_teardown_hooks = config.get("teardown_hooks", [])
+        testcase_setup_hooks = config.get("setup_hooks", [])  # 用例级别的前置条件
+        self.testcase_teardown_hooks = config.get("teardown_hooks", [])  # 用例级别的后置条件
 
         self.http_client_session = http_client_session or HttpSession(base_url)
         self.session_context = SessionContext(self.functions)
@@ -204,6 +202,8 @@ class Runner(object):
 
         # 解析请求，替换变量、自定义函数
         raw_request = test_dict.get('request', {})
+        # 把上一个步骤提取出来需要更新到头部信息的数据更新到请求上
+        raw_request['headers'] = self.session_context.update_filed_to_header(raw_request['headers'])
         parsed_test_request = self.session_context.eval_content(raw_request)
         self.session_context.update_test_variables("request", parsed_test_request)
 
@@ -252,10 +252,14 @@ class Runner(object):
 
         # 数据提取
         extractors = test_dict.get("extract", {})
-        extracted_variables_mapping = resp_obj.extract_response(self.session_context, extractors)
+        extracted_variables_mapping = resp_obj.extract_response(self.session_context, extractors.get("extractors", []))
         self.http_client_session.meta_data['data'][0]['extract_msgs'] = extracted_variables_mapping
-        # setattr(resp_obj, 'extractors',extracted_variables_mapping)
-        self.session_context.update_session_variables(extracted_variables_mapping)
+        self.session_context.update_session_variables(extracted_variables_mapping)  # 把提取到的数据更新到变量中
+        # 把需要更新到头部信息的数据保存下来
+        self.session_context.save_update_to_header_filed(
+            extractors.get("update_to_header_filed_list", []),
+            extracted_variables_mapping
+        )
 
         # 后置函数
         teardown_hooks = test_dict.get("teardown_hooks", [])

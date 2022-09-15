@@ -6,7 +6,7 @@ from app.baseView import LoginRequiredView
 from app.web_ui_test import web_ui_test
 from app.baseModel import db
 from config.config import (ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list)
-from app.web_ui_test.models.step import UiStep
+from app.web_ui_test.models.step import WebUiStep as Step
 from app.web_ui_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
 
 ns = web_ui_test.namespace("step", description="测试步骤管理相关接口")
@@ -19,7 +19,7 @@ class WebUiGetStepListView(LoginRequiredView):
         """ 根据用例id获取步骤列表 """
         form = GetStepListForm()
         if form.validate():
-            step_obj_list = UiStep.query.filter_by(case_id=form.caseId.data).order_by(UiStep.num.asc()).all()
+            step_obj_list = Step.query.filter_by(case_id=form.caseId.data).order_by(Step.num.asc()).all()
             return app.restful.success('获取成功', data=[step.to_dict() for step in step_obj_list])
         return app.restful.error(form.get_error())
 
@@ -54,7 +54,7 @@ class WebUiChangeStepStatusView(LoginRequiredView):
     def put(self):
         """ 修改步骤状态（是否执行） """
         with db.auto_commit():
-            UiStep.get_first(id=request.json.get('id')).is_run = request.json.get('is_run')
+            Step.get_first(id=request.json.get('id')).is_run = request.json.get('is_run')
         return app.restful.success(f'步骤已修改为 {"执行" if request.json.get("is_run") else "不执行"}')
 
 
@@ -63,7 +63,7 @@ class WebUiChangeStepSortView(LoginRequiredView):
 
     def put(self):
         """ 更新步骤的排序 """
-        UiStep.change_sort(request.json.get('List'), request.json.get('pageNum', 0), request.json.get('pageSize', 0))
+        Step.change_sort(request.json.get('List'), request.json.get('pageNum', 0), request.json.get('pageSize', 0))
         return app.restful.success(msg='修改排序成功')
 
 
@@ -72,10 +72,10 @@ class WebUiCopyStepView(LoginRequiredView):
 
     def post(self):
         """ 复制步骤 """
-        old = UiStep.get_first(id=request.json.get('id')).to_dict()
+        old = Step.get_first(id=request.json.get('id')).to_dict()
         old['name'] = f"{old['name']}_copy"
-        old['num'] = UiStep.get_insert_num(case_id=old['case_id'])
-        step = UiStep().create(old)
+        old['num'] = Step.get_insert_num(case_id=old['case_id'])
+        step = Step().create(old)
         return app.restful.success(msg='步骤复制成功', data=step.to_dict())
 
 
@@ -93,8 +93,8 @@ class WebUiStepMethodViewView(LoginRequiredView):
         """ 新增步骤 """
         form = AddStepForm()
         if form.validate():
-            form.num.data = UiStep.get_insert_num(case_id=form.case_id.data)
-            step = UiStep().create(form.data)
+            form.num.data = Step.get_insert_num(case_id=form.case_id.data)
+            step = Step().create(form.data)
             return app.restful.success(f'步骤【{step.name}】新建成功', data=step.to_dict())
         return app.restful.error(form.get_error())
 

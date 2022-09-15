@@ -4,13 +4,13 @@ import json
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, DataRequired
 
+from app.baseForm import BaseForm
 from app.assist.models.func import Func
 from app.api_test.models.project import ApiProject, ApiProjectEnv
-from app.api_test.models.caseSet import ApiSet
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.models.step import ApiStep as Step
-from app.baseForm import BaseForm
-from app.api_test.models.task import ApiTask
-from app.api_test.models.case import ApiCase
+from app.api_test.models.task import ApiTask as Task
+from app.api_test.models.case import ApiCase as Case
 
 
 class GetCaseForm(BaseForm):
@@ -18,7 +18,7 @@ class GetCaseForm(BaseForm):
     id = IntegerField(validators=[DataRequired('用例id必传')])
 
     def validate_id(self, field):
-        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', ApiCase, id=field.data)
+        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', Case, id=field.data)
         setattr(self, 'case', case)
 
 
@@ -41,8 +41,8 @@ class AddCaseForm(BaseForm):
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """
-        self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', ApiSet, id=field.data)
-        self.project = ApiProject.get_first(id=ApiSet.get_first(id=self.set_id.data).project_id).to_dict()
+        self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', CaseSet, id=field.data)
+        self.project = ApiProject.get_first(id=CaseSet.get_first(id=self.set_id.data).project_id).to_dict()
         self.project_env = ApiProjectEnv.get_first(project_id=self.project['id']).to_dict()
 
     def validate_func_files(self, field):
@@ -57,7 +57,7 @@ class AddCaseForm(BaseForm):
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
         # 校验格式
-        self.validate_variable_and_header_format(field.data, '自定义变量设置，，第【', '】行，要设置自定义变量，则key和value都需设置')
+        self.validate_variable_format(field.data)
 
         # 校验引用的自定义函数
         self.validate_func(self.all_func_name, content=self.dumps(field.data))
@@ -77,7 +77,7 @@ class AddCaseForm(BaseForm):
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
         # 校验格式
-        self.validate_variable_and_header_format(field.data, '自定义变量设置，，第【', '】行，要设置自定义变量，则key和value都需设置')
+        self.validate_header_format(field.data)
 
         # 校验引用的自定义函数
         self.validate_func(self.all_func_name, content=self.dumps(field.data))
@@ -87,7 +87,7 @@ class AddCaseForm(BaseForm):
 
     def validate_name(self, field):
         """ 用例名不重复 """
-        self.validate_data_is_not_exist(f'用例名【{field.data}】已存在', ApiCase, name=field.data, set_id=self.set_id.data)
+        self.validate_data_is_not_exist(f'用例名【{field.data}】已存在', Case, name=field.data, set_id=self.set_id.data)
 
 
 class EditCaseForm(GetCaseForm, AddCaseForm):
@@ -97,7 +97,7 @@ class EditCaseForm(GetCaseForm, AddCaseForm):
         """ 同一用例集下用例名不重复 """
         self.validate_data_is_not_repeat(
             f'用例名【{field.data}】已存在',
-            ApiCase,
+            Case,
             self.id.data,
             name=field.data,
             set_id=self.set_id.data
@@ -113,8 +113,8 @@ class FindCaseForm(BaseForm):
 
     def validate_name(self, field):
         if field.data:
-            case = ApiCase.query.filter_by(
-                set_id=self.setId.data).filter(ApiCase.name.like('%{}%'.format(field.data)))
+            case = Case.query.filter_by(
+                set_id=self.setId.data).filter(Case.name.like('%{}%'.format(field.data)))
             setattr(self, 'case', case)
 
 
@@ -123,15 +123,15 @@ class DeleteCaseForm(BaseForm):
     id = IntegerField(validators=[DataRequired('用例id必传')])
 
     def validate_id(self, field):
-        case = self.validate_data_is_exist('用例不存在', ApiCase, id=field.data)
+        case = self.validate_data_is_exist('用例不存在', Case, id=field.data)
 
         self.validate_data_is_true(
             f'不能删除别人的用例',
-            ApiProject.is_can_delete(ApiSet.get_first(id=case.set_id).project_id, case)
+            ApiProject.is_can_delete(CaseSet.get_first(id=case.set_id).project_id, case)
         )
 
         # 校验是否有定时任务已引用此用例
-        for task in ApiTask.query.filter(ApiTask.case_ids.like(f'%{field.data}%')).all():
+        for task in Task.query.filter(Task.case_ids.like(f'%{field.data}%')).all():
             self.validate_data_is_false(
                 f'定时任务【{task.name}】已引用此用例，请先解除引用',
                 field.data in json.loads(task.case_ids)
@@ -140,7 +140,7 @@ class DeleteCaseForm(BaseForm):
         # 校验是否有其他用例已引用此用例
         step = Step.get_first(quote_case=field.data)
         if step:
-            raise ValidationError(f'用例【{ApiCase.get_first(id=step.case_id).name}】已引用此用例，请先解除引用')
+            raise ValidationError(f'用例【{Case.get_first(id=step.case_id).name}】已引用此用例，请先解除引用')
 
         setattr(self, 'case', case)
 
@@ -156,5 +156,5 @@ class RunCaseForm(BaseForm):
 
         case_list = []
         for case_id in self.caseId.data:
-            case_list.append(self.validate_data_is_exist(f'id为【{case_id}】的用例不存在', ApiCase, id=case_id))
+            case_list.append(self.validate_data_is_exist(f'id为【{case_id}】的用例不存在', Case, id=case_id))
         setattr(self, 'case_list', case_list)

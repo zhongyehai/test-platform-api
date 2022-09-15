@@ -5,10 +5,10 @@ from threading import Thread
 from flask import request, g, current_app as app
 
 from app.baseView import LoginRequiredView
-from app.web_ui_test.models.case import UiCase
-from app.web_ui_test.models.report import UiReport as Report
+from app.web_ui_test.models.case import WebUiCase as Case
+from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test import web_ui_test
-from app.web_ui_test.models.caseSet import UiCaeSet
+from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
 from app.web_ui_test.forms.caseSet import AddCaseSetForm, EditCaseSetForm, FindCaseSet, GetCaseSetEditForm, \
     DeleteCaseSetForm, RunCaseSetForm
 from utils.client.runUiTest.runUiTestRunner import RunCase
@@ -23,7 +23,7 @@ class WebUiGetCaseSetListView(LoginRequiredView):
         """ 用例集list """
         form = FindCaseSet()
         if form.validate():
-            return app.restful.success(data=UiCaeSet.make_pagination(form))
+            return app.restful.success(data=CaseSet.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -43,7 +43,7 @@ class WebUiRunCaseSetView(LoginRequiredView):
                     project_id=project_id,
                     run_name=report.name,
                     case_id=[
-                        case.id for case in UiCase.query.filter_by(set_id=form.set.id).order_by(UiCase.num.asc()).all()
+                        case.id for case in Case.query.filter_by(set_id=form.set.id).order_by(Case.num.asc()).all()
                         if
                         case.is_run
                     ],
@@ -62,8 +62,8 @@ class WebUiGetCaseSetTreeView(LoginRequiredView):
     def get(self):
         """ 获取当前服务下的用例集树 """
         set_list = [
-            case_set.to_dict() for case_set in UiCaeSet.query.filter_by(
-                project_id=int(request.args.get('project_id'))).order_by(UiCaeSet.parent.asc()).all()
+            case_set.to_dict() for case_set in CaseSet.query.filter_by(
+                project_id=int(request.args.get('project_id'))).order_by(CaseSet.parent.asc()).all()
         ]
         return app.restful.success(data=set_list)
 
@@ -82,8 +82,8 @@ class WebUiCaseSetView(LoginRequiredView):
         """ 新增用例集 """
         form = AddCaseSetForm()
         if form.validate():
-            form.num.data = UiCaeSet.get_insert_num(project_id=form.project_id.data)
-            new_set = UiCaeSet().create(form.data)
+            form.num.data = CaseSet.get_insert_num(project_id=form.project_id.data)
+            new_set = CaseSet().create(form.data)
             return app.restful.success(f'用例集【{form.name.data}】创建成功', new_set.to_dict())
         return app.restful.fail(form.get_error())
 

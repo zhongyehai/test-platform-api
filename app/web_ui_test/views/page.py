@@ -4,8 +4,8 @@ from flask import request, g, current_app as app
 
 from app.baseView import LoginRequiredView
 from app.web_ui_test import web_ui_test
-from app.web_ui_test.models.element import UiElement
-from app.web_ui_test.models.page import UiPage, db
+from app.web_ui_test.models.element import WebUiElement as Element
+from app.web_ui_test.models.page import WebUiPage as Page, db
 from app.web_ui_test.forms.page import AddPageForm, EditPageForm, DeletePageForm, PageListForm, GetPageById
 
 ns = web_ui_test.namespace("page", description="页面管理相关接口")
@@ -18,7 +18,7 @@ class WebUiGetPageListView(LoginRequiredView):
         """ 根据模块获取页面列表 """
         form = PageListForm()
         if form.validate():
-            return app.restful.success(data=UiPage.make_pagination(form))
+            return app.restful.success(data=Page.make_pagination(form))
 
 
 @ns.route('/copy/')
@@ -31,18 +31,18 @@ class WebUiCopyPageView(LoginRequiredView):
             page = form.page.to_dict()
 
             # 复制页面
-            page['num'] = UiPage.get_insert_num(module_id=page['module_id'])
+            page['num'] = Page.get_insert_num(module_id=page['module_id'])
             page['name'] = page['name'] + '_copy'
             page['create_user'] = page['update_user'] = g.user_id
-            new_page = UiPage().create(page)
+            new_page = Page().create(page)
 
             # 复制页面元素
             with db.auto_commit():
-                for index, element in enumerate(UiElement.get_all(page_id=page['id'])):
+                for index, element in enumerate(Element.get_all(page_id=page['id'])):
                     element_dict = element.to_dict()
                     element_dict.pop('id')
                     # db.session.add(UiElement(**element))
-                    db.session.add(UiElement(
+                    db.session.add(Element(
                         num=index,
                         name=element.name,
                         desc=element.desc,
@@ -59,7 +59,7 @@ class WebUiCopyPageView(LoginRequiredView):
 
             return app.restful.success(msg='复制成功', data={
                 "page": new_page.to_dict(),
-                "element": [element.to_dict() for element in UiElement.get_all(page_id=new_page.id)]
+                "element": [element.to_dict() for element in Element.get_all(page_id=new_page.id)]
             })
         return app.restful.fail(form.get_error())
 
@@ -69,7 +69,7 @@ class WebUiChangePageSortView(LoginRequiredView):
 
     def put(self):
         """ 更新接口的排序 """
-        UiPage.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
+        Page.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
         return app.restful.success(msg='修改排序成功')
 
 
@@ -87,8 +87,8 @@ class WebUiPageView(LoginRequiredView):
         """ 新增页面 """
         form = AddPageForm()
         if form.validate():
-            form.num.data = UiPage.get_insert_num(module_id=form.module_id.data)
-            new_page = UiPage().create(form.data)
+            form.num.data = Page.get_insert_num(module_id=form.module_id.data)
+            new_page = Page().create(form.data)
             return app.restful.success(f'页面【{form.name.data}】新建成功', data=new_page.to_dict())
         return app.restful.fail(form.get_error())
 

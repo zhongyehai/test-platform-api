@@ -5,12 +5,12 @@ import requests
 from flask import request, g, current_app as app
 
 from app.baseView import LoginRequiredView
-from app.web_ui_test.models.report import UiReport
-from app.web_ui_test.models.caseSet import UiCaeSet
+from app.web_ui_test.models.report import WebUiReport as Report
+from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
 from utils.client.runUiTest.runUiTestRunner import RunCase
 from app.web_ui_test import web_ui_test
 from app.baseModel import db
-from app.web_ui_test.models.task import UiTask
+from app.web_ui_test.models.task import WebUiTask as Task
 from app.web_ui_test.forms.task import RunTaskForm, AddTaskForm, EditTaskForm, HasTaskIdForm, DeleteTaskIdForm, \
     GetTaskListForm
 
@@ -26,7 +26,7 @@ class WebUiRunTaskView(LoginRequiredView):
         if form.validate():
             task = form.task
             project_id = task.project_id
-            report = UiReport.get_new_report(task.name, 'task', g.user_name, g.user_id, project_id)
+            report = Report.get_new_report(task.name, 'task', g.user_name, g.user_id, project_id)
 
             # 新起线程运行任务
             Thread(
@@ -35,7 +35,7 @@ class WebUiRunTaskView(LoginRequiredView):
                     report_id=report.id,
                     run_name=report.name,
                     task=task.to_dict(),
-                    case_id=UiCaeSet.get_case_id(project_id, task.loads(task.set_ids), task.loads(task.case_ids)),
+                    case_id=CaseSet.get_case_id(project_id, task.loads(task.set_ids), task.loads(task.case_ids)),
                     is_async=form.is_async.data,
                     env=form.env.data or task.env
                 ).run_case
@@ -51,7 +51,7 @@ class WebUiGetTaskListView(LoginRequiredView):
         """ 任务列表 """
         form = GetTaskListForm()
         if form.validate():
-            return app.restful.success(data=UiTask.make_pagination(form))
+            return app.restful.success(data=Task.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -60,7 +60,7 @@ class WebUiChangeTaskSortView(LoginRequiredView):
 
     def put(self):
         """ 更新定时任务的排序 """
-        UiTask.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
+        Task.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
         return app.restful.success(msg='修改排序成功')
 
 
@@ -73,11 +73,11 @@ class WebUiTaskCopyView(LoginRequiredView):
         if form.validate():
             old_task = form.task
             with db.auto_commit():
-                new_task = UiTask()
+                new_task = Task()
                 new_task.create(old_task.to_dict())
                 new_task.name = old_task.name + '_copy'
                 new_task.status = 0
-                new_task.num = UiTask.get_insert_num(project_id=old_task.project_id)
+                new_task.num = Task.get_insert_num(project_id=old_task.project_id)
                 db.session.add(new_task)
             return app.restful.success(msg='复制成功', data=new_task.to_dict())
         return app.restful.fail(form.get_error())
@@ -97,8 +97,8 @@ class WebUiTaskView(LoginRequiredView):
         """ 新增定时任务 """
         form = AddTaskForm()
         if form.validate():
-            form.num.data = UiTask.get_insert_num(project_id=form.project_id.data)
-            new_task = UiTask().create(form.data)
+            form.num.data = Task.get_insert_num(project_id=form.project_id.data)
+            new_task = Task().create(form.data)
             return app.restful.success(f'任务【{form.name.data}】新建成功', new_task.to_dict())
         return app.restful.fail(form.get_error())
 
@@ -106,7 +106,7 @@ class WebUiTaskView(LoginRequiredView):
         """ 修改定时任务 """
         form = EditTaskForm()
         if form.validate():
-            form.num.data = UiTask.get_insert_num(project_id=form.project_id.data)
+            form.num.data = Task.get_insert_num(project_id=form.project_id.data)
             form.task.update(form.data)
             return app.restful.success(f'任务【{form.name.data}】修改成功', form.task.to_dict())
         return app.restful.fail(form.get_error())

@@ -4,7 +4,7 @@ from flask import request, current_app as app
 
 from app.baseView import LoginRequiredView
 from app.web_ui_test import web_ui_test
-from app.web_ui_test.models.element import UiElement
+from app.web_ui_test.models.element import WebUiElement as Element
 from app.web_ui_test.forms.element import AddElementForm, EditElementForm, DeleteElementForm, ElementListForm, \
     GetElementById, ChangeElementById
 
@@ -18,7 +18,7 @@ class WebUiGetElementListView(LoginRequiredView):
         """ 根据模块查接口list """
         form = ElementListForm()
         if form.validate():
-            return app.restful.success(data=UiElement.make_pagination(form))
+            return app.restful.success(data=Element.make_pagination(form))
 
 
 @ns.route('/sort/')
@@ -26,7 +26,7 @@ class WebUiChangeElementSortView(LoginRequiredView):
 
     def put(self):
         """ 更新接口的排序 """
-        UiElement.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
+        Element.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
         return app.restful.success(msg='修改排序成功')
 
 
@@ -56,8 +56,8 @@ class WebUiElementView(LoginRequiredView):
         """ 新增元素 """
         form = AddElementForm()
         if form.validate():
-            form.num.data = UiElement.get_insert_num(module_id=form.module_id.data)
-            new_element = UiElement().create(form.data)
+            form.num.data = Element.get_insert_num(module_id=form.module_id.data)
+            new_element = Element().create(form.data)
             form.update_page_addr()
             return app.restful.success(f'元素【{form.name.data}】新建成功', data=new_element.to_dict())
         return app.restful.fail(form.get_error())

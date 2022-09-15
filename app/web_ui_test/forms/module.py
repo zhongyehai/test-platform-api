@@ -4,9 +4,9 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import Length, DataRequired
 
 from app.baseForm import BaseForm
-from app.web_ui_test.models.page import UiPage
-from app.web_ui_test.models.project import UiProject
-from app.web_ui_test.models.module import UiModule
+from app.web_ui_test.models.page import WebUiPage as Page
+from app.web_ui_test.models.project import WebUiProject as Project
+from app.web_ui_test.models.module import WebUiModule as Module
 
 
 class AddModelForm(BaseForm):
@@ -20,14 +20,14 @@ class AddModelForm(BaseForm):
 
     def validate_project_id(self, field):
         """ 项目id合法 """
-        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', Project, id=field.data)
         setattr(self, 'project', project)
 
     def validate_name(self, field):
         """ 模块名不重复 """
         self.validate_data_is_not_exist(
             f'当前模块下已存在名为【{field.data}】的模块',
-            UiModule,
+            Module,
             project_id=self.project_id.data,
             level=self.level.data,
             name=field.data,
@@ -48,7 +48,7 @@ class GetModelForm(BaseForm):
     id = IntegerField(validators=[DataRequired('模块id必传')])
 
     def validate_id(self, field):
-        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', Module, id=field.data)
         setattr(self, 'module', module)
 
 
@@ -57,7 +57,7 @@ class ModuleIdForm(BaseForm):
     id = IntegerField(validators=[DataRequired('模块id必传')])
 
     def validate_id(self, field):
-        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', Module, id=field.data)
         setattr(self, 'module', module)
 
 
@@ -65,10 +65,10 @@ class DeleteModelForm(ModuleIdForm):
     """ 删除模块 """
 
     def validate_id(self, field):
-        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
-        self.validate_data_is_true('不能删除别人项目下的模块', UiProject.is_can_delete(module.project_id, module))
-        self.validate_data_is_not_exist('请先删除模块下的页面', UiPage, module_id=module.id)
-        self.validate_data_is_not_exist('请先删除当前模块下的子模块', UiModule, parent=module.id)
+        module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', Module, id=field.data)
+        self.validate_data_is_true('不能删除别人项目下的模块', Project.is_can_delete(module.project_id, module))
+        self.validate_data_is_not_exist('请先删除模块下的页面', Page, module_id=module.id)
+        self.validate_data_is_not_exist('请先删除当前模块下的子模块', Module, parent=module.id)
         setattr(self, 'module', module)
 
 
@@ -77,14 +77,14 @@ class EditModelForm(ModuleIdForm, AddModelForm):
 
     def validate_id(self, field):
         """ 模块必须存在 """
-        old_module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', UiModule, id=field.data)
+        old_module = self.validate_data_is_exist(f'id为【{field.data}】的模块不存在', Module, id=field.data)
         setattr(self, 'old_module', old_module)
 
     def validate_name(self, field):
         """ 同一个项目下，模块名不重复 """
         self.validate_data_is_not_repeat(
             f'id为【{self.project_id.data}】的项目下已存在名为【{field.data}】的模块',
-            UiModule,
+            Module,
             self.id.data,
             project_id=self.project_id.data,
             level=self.level.data,

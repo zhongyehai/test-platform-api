@@ -3,11 +3,11 @@
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, DataRequired, Length
 
-from app.web_ui_test.models.element import UiElement
-from app.web_ui_test.models.case import UiCase
+from app.web_ui_test.models.element import WebUiElement as Element
+from app.web_ui_test.models.case import WebUiCase as Case
 from app.baseForm import BaseForm
-from app.web_ui_test.models.project import UiProject, UiProjectEnv
-from app.web_ui_test.models.step import UiStep
+from app.web_ui_test.models.project import WebUiProject as Project, WebUiProjectEnv as ProjectEnv
+from app.web_ui_test.models.step import WebUiStep as Step
 from app.assist.models.func import Func
 
 
@@ -16,7 +16,7 @@ class GetStepListForm(BaseForm):
     caseId = IntegerField(validators=[DataRequired('用例id必传')])
 
     def validate_caseId(self, field):
-        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', UiCase, id=field.data)
+        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', Case, id=field.data)
         setattr(self, 'case', case)
 
 
@@ -25,7 +25,7 @@ class GetStepForm(BaseForm):
     id = IntegerField(validators=[DataRequired('步骤id必传')])
 
     def validate_id(self, field):
-        step = self.validate_data_is_exist(f'id为 {field.data} 的步骤不存在', UiStep, id=field.data)
+        step = self.validate_data_is_exist(f'id为 {field.data} 的步骤不存在', Step, id=field.data)
         setattr(self, 'step', step)
 
 
@@ -55,18 +55,18 @@ class AddStepForm(BaseForm):
     def validate_project_id(self, field):
         """ 校验服务id """
         if not self.quote_case.data:
-            project = self.validate_data_is_exist(f'id为 {field.data} 的项目不存在', UiProject, id=field.data)
+            project = self.validate_data_is_exist(f'id为 {field.data} 的项目不存在', Project, id=field.data)
             setattr(self, 'project', project)
 
     def validate_case_id(self, field):
         """ 校验用例存在 """
-        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', UiCase, id=field.data)
+        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', Case, id=field.data)
         setattr(self, 'case', case)
 
     def validate_element_id(self, field):
         """ 校验元素存在 """
         if not self.quote_case.data:
-            self.validate_data_is_exist(f'id为 {field.data} 的元素不存在', UiElement, id=field.data)
+            self.validate_data_is_exist(f'id为 {field.data} 的元素不存在', Element, id=field.data)
 
     def validate_quote_case(self, field):
         """ 不能自己引用自己 """
@@ -127,5 +127,5 @@ class EditStepForm(AddStepForm):
 
     def validate_id(self, field):
         """ 校验步骤id已存在 """
-        step = self.validate_data_is_exist(f'id为【{field.data}】的步骤不存在', UiStep, id=field.data)
+        step = self.validate_data_is_exist(f'id为【{field.data}】的步骤不存在', Step, id=field.data)
         setattr(self, 'step', step)

@@ -5,8 +5,8 @@ from wtforms.validators import ValidationError, DataRequired
 from crontab import CronTab
 
 from app.baseForm import BaseForm
-from app.api_test.models.task import ApiTask
-from app.api_test.models.project import ApiProject
+from app.api_test.models.task import ApiTask as Task
+from app.api_test.models.project import ApiProject as Project
 
 
 def validate_email(email_server, email_from, email_pwd, email_to):
@@ -82,7 +82,7 @@ class AddTaskForm(BaseForm):
         """ 校验任务名不重复 """
         self.validate_data_is_not_exist(
             f'当前服务中，任务名【{field.data}】已存在',
-            ApiTask,
+            Task,
             project_id=self.project_id.data,
             name=field.data
         )
@@ -94,7 +94,7 @@ class HasTaskIdForm(BaseForm):
 
     def validate_id(self, field):
         """ 校验id存在 """
-        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', ApiTask, id=field.data)
+        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', Task, id=field.data)
         setattr(self, 'task', task)
 
 
@@ -109,7 +109,7 @@ class EditTaskForm(AddTaskForm, HasTaskIdForm):
 
     def validate_id(self, field):
         """ 校验id存在 """
-        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', ApiTask, id=field.data)
+        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', Task, id=field.data)
         self.validate_data_is_true(f'任务【{task.name}】的状态不为禁用中，请先禁用再修改', task.is_disable())
         setattr(self, 'task', task)
 
@@ -117,7 +117,7 @@ class EditTaskForm(AddTaskForm, HasTaskIdForm):
         """ 校验任务名不重复 """
         self.validate_data_is_not_repeat(
             f'当前服务中，任务名【{field.data}】已存在',
-            ApiTask,
+            Task,
             self.id.data,
             project_id=self.project_id.data,
             name=field.data
@@ -140,9 +140,9 @@ class FindTaskForm(BaseForm):
 
     def validate_taskName(self, field):
         """ 校验任务名存在 """
-        task_select = ApiTask.query.filter_by(project_id=self.projectId.data)
+        task_select = Task.query.filter_by(project_id=self.projectId.data)
         if field.data:
-            task_select = task_select.filter(ApiTask.name.like('%{}%'.format(field.data)))
+            task_select = task_select.filter(Task.name.like('%{}%'.format(field.data)))
             self.validate_data_is_true(f'名为【{field.data}】的任务不存在', task_select)
         setattr(self, 'task_filter', task_select)
 
@@ -152,7 +152,7 @@ class DeleteTaskIdForm(HasTaskIdForm):
 
     def validate_id(self, field):
         """ 校验id存在 """
-        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', ApiTask, id=field.data)
+        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', Task, id=field.data)
         self.validate_data_is_true(f'请先禁用任务【{task.name}】', task.is_disable())
-        self.validate_data_is_true(f'不能删除别人的数据【{task.name}】', ApiProject.is_can_delete(task.project_id, task))
+        self.validate_data_is_true(f'不能删除别人的数据【{task.name}】', Project.is_can_delete(task.project_id, task))
         setattr(self, 'task', task)

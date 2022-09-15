@@ -3,7 +3,7 @@
 from app.baseModel import BaseStep, db
 
 
-class UiStep(BaseStep):
+class WebUiStep(BaseStep):
     """ 测试步骤表 """
     __abstract__ = False
 
@@ -23,12 +23,12 @@ class UiStep(BaseStep):
         comment='断言信息')
 
     project_id = db.Column(db.Integer, db.ForeignKey('web_ui_test_project.id'), comment='步骤所在的服务的id')
-    project = db.relationship('UiProject', backref='steps')
+    project = db.relationship('WebUiProject', backref='steps')
 
     case_id = db.Column(db.Integer, db.ForeignKey('web_ui_test_case.id'), comment='步骤所在的用例的id')
 
     page_id = db.Column(db.Integer, db.ForeignKey('web_ui_test_page.id'), comment='步骤所在的元素对应的页面的id')
-    page = db.relationship('UiPage', backref='steps')
+    page = db.relationship('WebUiPage', backref='steps')
 
     element_id = db.Column(db.Integer, db.ForeignKey('web_ui_test_element.id'), comment='步骤所引用的元素的id')
-    element = db.relationship('UiElement', backref='steps')
+    element = db.relationship('WebUiElement', backref='steps')

@@ -3,7 +3,7 @@ from flask import current_app as app
 
 from app.baseView import LoginRequiredView
 from app.web_ui_test import web_ui_test
-from app.web_ui_test.models.project import UiProject, UiProjectEnv
+from app.web_ui_test.models.project import WebUiProject as Project, WebUiProjectEnv as ProjectEnv
 from app.web_ui_test.forms.project import (
     AddUiProjectForm, EditUiProjectForm, FindUiProjectForm, DeleteUiProjectForm, GetUiProjectByIdForm,
     EditEnv, AddEnv, FindEnvForm, SynchronizationEnvForm
@@ -17,7 +17,7 @@ class WebUiProjectAllView(LoginRequiredView):
 
     def get(self):
         """ 获取所有项目列表 """
-        return app.restful.success(data=[project.to_dict() for project in UiProject.get_all()])
+        return app.restful.success(data=[project.to_dict() for project in Project.get_all()])
 
 
 @ns.route('/list/')
@@ -27,7 +27,7 @@ class WebUiProjectListView(LoginRequiredView):
         """ 查找项目列表 """
         form = FindUiProjectForm()
         if form.validate():
-            return app.restful.success(data=UiProject.make_pagination(form))
+            return app.restful.success(data=Project.make_pagination(form))
         return app.restful.fail(form.get_error())
 
 
@@ -45,8 +45,8 @@ class WebProjectView(LoginRequiredView):
         """ 新增项目 """
         form = AddUiProjectForm()
         if form.validate():
-            project = UiProject().create(form.data)
-            UiProjectEnv.create_env(project.id)  # 新增项目的时候，一并把环境设置齐全
+            project = Project().create(form.data)
+            ProjectEnv.create_env(project.id)  # 新增项目的时候，一并把环境设置齐全
             return app.restful.success(f'项目【{form.name.data}】新建成功', project.to_dict())
         return app.restful.fail(msg=form.get_error())
 
@@ -74,8 +74,8 @@ class WebUiProjectEnvSynchronizationView(LoginRequiredView):
         """ 同步环境数据 """
         form = SynchronizationEnvForm()
         if form.validate():
-            from_env = UiProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
-            synchronization_result = UiProjectEnv.synchronization(
+            from_env = ProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
+            synchronization_result = ProjectEnv.synchronization(
                 from_env,
                 form.envTo.data,
                 ["variables", 'cookies', 'session_storage', 'local_storage']
@@ -98,7 +98,7 @@ class WebUiProjectEnvView(LoginRequiredView):
         """ 新增项目环境 """
         form = AddEnv()
         if form.validate():
-            env = UiProjectEnv().create(form.data)
+            env = ProjectEnv().create(form.data)
             return app.restful.success(f'环境新建成功', env.to_dict())
         return app.restful.fail(msg=form.get_error())
 
@@ -114,9 +114,9 @@ class WebUiProjectEnvView(LoginRequiredView):
 
             # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
             env_list = [
-                env.env for env in UiProjectEnv.get_all(project_id=form.project_id.data) if env.env != form.env_data.env
+                env.env for env in ProjectEnv.get_all(project_id=form.project_id.data) if env.env != form.env_data.env
             ]
-            UiProjectEnv.synchronization(
+            ProjectEnv.synchronization(
                 form.env_data,
                 env_list,
                 ["variables", 'cookies', 'session_storage', 'local_storage']

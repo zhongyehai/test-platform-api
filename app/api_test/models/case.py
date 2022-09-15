@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from app.baseModel import BaseCase, db
-from app.api_test.models.step import ApiStep
+from app.api_test.models.step import ApiStep as Step
 
 
 class ApiCase(BaseCase):
@@ -14,7 +14,7 @@ class ApiCase(BaseCase):
     set_id = db.Column(db.Integer, db.ForeignKey('api_test_case_set.id'), comment='所属的用例集id')
 
     def delete_current_and_step(self):
-        for step in ApiStep.get_all(case_id=self.id):
+        for step in Step.get_all(case_id=self.id):
             step.delete()
             step.subtract_api_quote_count()
         self.delete()

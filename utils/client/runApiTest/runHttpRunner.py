@@ -9,8 +9,8 @@ from datetime import datetime
 
 from flask.json import JSONEncoder
 
-from app.api_test.models.caseSet import ApiSet as Set, db
-from app.api_test.models.api import ApiMsg
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet, db
+from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.step import ApiStep as Step
 from app.assist.models.func import Func
@@ -310,10 +310,10 @@ class RunCase(BaseParse):
         step: 原始step
         返回解析后的步骤 {}
         """
-        # 解析头部信息，继承
+        # 解析头部信息，继承头部信息，接口所在服务、当前所在服务、用例、步骤
         headers = {}
-        headers.update(current_project.headers)
         headers.update(project.headers)
+        headers.update(current_project.headers)
         # headers.update(api['request']['headers'])
         headers.update(case.headers)
         headers.update(step.headers)
@@ -358,7 +358,7 @@ class RunCase(BaseParse):
         for case_id in self.case_id_list:
 
             current_case = Case.get_first(id=case_id)
-            current_project = self.get_formated_project(Set.get_first(id=current_case.set_id).project_id)
+            current_project = self.get_formated_project(CaseSet.get_first(id=current_case.set_id).project_id)
 
             # 用例格式模板
             case_template = {
@@ -379,7 +379,7 @@ class RunCase(BaseParse):
             for step in self.all_case_steps:
                 step = StepFormatModel(**step.to_dict())
                 case = self.get_formated_case(step.case_id)
-                api_temp = ApiMsg.get_first(id=step.api_id)
+                api_temp = Api.get_first(id=step.api_id)
                 project = self.get_formated_project(api_temp.project_id)
                 api = self.get_formated_api(project, api_temp)
 

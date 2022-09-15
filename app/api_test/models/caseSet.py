@@ -4,7 +4,7 @@ from app.api_test.models.case import ApiCase as Case
 from app.baseModel import BaseCaseSet, db
 
 
-class ApiSet(BaseCaseSet):
+class ApiCaseSet(BaseCaseSet):
     """ 用例集表 """
     __abstract__ = False
 
@@ -29,7 +29,7 @@ class ApiSet(BaseCaseSet):
             set_ids = set_id
         else:
             set_ids = [
-                set.id for set in cls.query.filter_by(project_id=project_id).order_by(ApiSet.num.asc()).all()
+                set.id for set in cls.query.filter_by(project_id=project_id).order_by(cls.num.asc()).all()
             ]
         case_ids = [
             case.id for set_id in set_ids for case in Case.query.filter_by(

@@ -8,7 +8,7 @@ from wtforms.validators import DataRequired
 
 from utils.filePath import WEB_UI_REPORT_ADDRESS
 from app.baseForm import BaseForm
-from app.web_ui_test.models.report import UiReport as Report
+from app.web_ui_test.models.report import WebUiReport as Report
 
 
 class DownloadReportForm(BaseForm):

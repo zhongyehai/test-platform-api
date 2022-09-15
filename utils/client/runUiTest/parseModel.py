@@ -1,40 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import os
-
-from utils.filePath import UI_CASE_FILE_ADDRESS
-from utils.jsonUtil import JsonUtil
+from utils.client.baseParseModel import BaseParseModel
 
 
-class Base(JsonUtil):
-
-    def build_file_path(self, filename):
-        """ 拼装要上传文件的路径 """
-        return os.path.join(UI_CASE_FILE_ADDRESS, filename)
-
-    def parse_headers(self, headers_list):
-        """ 解析头部信息
-        headers_list:
-            [{"key": "x-auth-token", "value": "aaa"}, {"key": null, "value": null}]
-        :return
-            {"x-auth-token": "aaa"}
-        """
-        return {header['key']: header['value'] for header in headers_list if header.get('key')}
-
-    def parse_variables(self, variables_list):
-        """ 解析公用变量
-        variables_list:
-            [
-                {"key":"auto_test_token","remark":"token","value":"eyJhbGciOiJIUzI1NiJ9"},
-                {"key":"rating_amount","remark":"申请金额","value":"500000"}
-            ]
-        :return
-            {"auto_test_token": "eyJhbGciOiJIUzI1NiJ9", "rating_amount": "500000"}
-        """
-        return {v['key']: v['value'] for v in variables_list if v.get('key') and v.get('value') is not None}
-
-
-class ProjectFormatModel(Base):
+class ProjectFormatModel(BaseParseModel):
     """ 格式化服务信息 """
 
     def __init__(self, **kwargs):
@@ -51,7 +20,7 @@ class ProjectFormatModel(Base):
         self.local_storage = self.parse_headers(kwargs.get('local_storage', [{}]))
 
 
-class ElementFormatModel(Base):
+class ElementFormatModel(BaseParseModel):
     """ 格式化元素信息 """
 
     def __init__(self, **kwargs):
@@ -67,7 +36,7 @@ class ElementFormatModel(Base):
         self.project_id = kwargs.get('project_id')
 
 
-class CaseFormatModel(Base):
+class CaseFormatModel(BaseParseModel):
     """ 格式化用例信息 """
 
     def __init__(self, **kwargs):
@@ -87,7 +56,7 @@ class CaseFormatModel(Base):
         self.create_user = kwargs.get('create_user')
 
 
-class StepFormatModel(Base):
+class StepFormatModel(BaseParseModel):
     """ 格式化步骤信息 """
 
     def __init__(self, **kwargs):

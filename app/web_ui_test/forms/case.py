@@ -4,12 +4,12 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, DataRequired
 
 from app.assist.models.func import Func
-from app.web_ui_test.models.project import UiProject, UiProjectEnv
-from app.web_ui_test.models.caseSet import UiCaeSet
-from app.web_ui_test.models.step import UiStep
+from app.web_ui_test.models.project import WebUiProject as Project, WebUiProjectEnv as ProjectEnv
+from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
+from app.web_ui_test.models.step import WebUiStep as Step
 from app.baseForm import BaseForm
 # from ..task.models import Task
-from app.web_ui_test.models.case import UiCase
+from app.web_ui_test.models.case import WebUiCase as Case
 
 
 class AddCaseForm(BaseForm):
@@ -36,9 +36,9 @@ class AddCaseForm(BaseForm):
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
         if not self.project:
-            self.project = UiProject.get_first(id=UiCaeSet.get_first(id=self.set_id.data).project_id)
+            self.project = Project.get_first(id=CaseSet.get_first(id=self.set_id.data).project_id)
 
-        env = UiProjectEnv.get_first(project_id=self.project.id).to_dict()
+        env = ProjectEnv.get_first(project_id=self.project.id).to_dict()
         setattr(self, 'project_env', env)
 
         # 自定义函数
@@ -50,16 +50,16 @@ class AddCaseForm(BaseForm):
         # 公共变量
         variables = env['variables']
         variables.extend(field.data)
-        self.validate_variable_and_header_format(field.data, '自定义变量设置，，第【', '】行，要设置自定义变量，则key和value都需设置')
+        self.validate_variable_format(field.data)
         self.validate_variable(self.all_variables, variables, self.dumps(field.data))
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """
-        self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', UiCaeSet, id=field.data)
+        self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', CaseSet, id=field.data)
 
     def validate_name(self, field):
         """ 用例名不重复 """
-        self.validate_data_is_not_exist(f'用例名【{field.data}】已存在', UiCase, name=field.data, set_id=self.set_id.data)
+        self.validate_data_is_not_exist(f'用例名【{field.data}】已存在', Case, name=field.data, set_id=self.set_id.data)
 
 
 class EditCaseForm(AddCaseForm):
@@ -68,14 +68,14 @@ class EditCaseForm(AddCaseForm):
 
     def validate_id(self, field):
         """ 校验用例id已存在 """
-        old_data = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', UiCase, id=field.data)
+        old_data = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', Case, id=field.data)
         setattr(self, 'old_data', old_data)
 
     def validate_name(self, field):
         """ 同一用例集下用例名不重复 """
         self.validate_data_is_not_repeat(
             f'用例名【{field.data}】已存在',
-            UiCase,
+            Case,
             self.id.data,
             name=field.data,
             set_id=self.set_id.data
@@ -91,8 +91,8 @@ class FindCaseForm(BaseForm):
 
     def validate_name(self, field):
         if field.data:
-            case = UiCase.query.filter_by(
-                set_id=self.setId.data).filter(UiCase.name.like('%{}%'.format(field.data)))
+            case = Case.query.filter_by(
+                set_id=self.setId.data).filter(Case.name.like('%{}%'.format(field.data)))
             setattr(self, 'case', case)
 
 
@@ -101,10 +101,10 @@ class DeleteCaseForm(BaseForm):
     id = IntegerField(validators=[DataRequired('用例id必传')])
 
     def validate_id(self, field):
-        case = self.validate_data_is_exist('没有该用例', UiCase, id=field.data)
+        case = self.validate_data_is_exist('没有该用例', Case, id=field.data)
         self.validate_data_is_true(
             '不能删除别人的用例',
-            UiProject.is_can_delete(UiCaeSet.get_first(id=case.set_id).project_id, case)
+            Project.is_can_delete(CaseSet.get_first(id=case.set_id).project_id, case)
         )
 
         # 校验是否有定时任务已引用此用例
@@ -113,9 +113,9 @@ class DeleteCaseForm(BaseForm):
         #         raise ValidationError(f'定时任务【{task.name}】已引用此用例，请先解除引用')
 
         # 校验是否有其他用例已引用此用例
-        step = UiStep.get_first(quote_case=field.data)
+        step = Step.get_first(quote_case=field.data)
         if step:
-            raise ValidationError(f'用例【{UiCase.get_first(id=step.case_id).name}】已引用此用例，请先解除引用')
+            raise ValidationError(f'用例【{Case.get_first(id=step.case_id).name}】已引用此用例，请先解除引用')
 
         setattr(self, 'case', case)
 
@@ -126,7 +126,7 @@ class GetCaseForm(BaseForm):
     env = StringField()
 
     def validate_id(self, field):
-        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', UiCase, id=field.data)
+        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', Case, id=field.data)
         setattr(self, 'case', case)
 
 
@@ -137,5 +137,5 @@ class RunCaseForm(BaseForm):
 
     def validate_caseId(self, field):
         """ 校验用例id存在 """
-        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', UiCase, id=field.data)
+        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', Case, id=field.data)
         setattr(self, 'case', case)

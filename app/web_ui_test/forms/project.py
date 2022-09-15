@@ -6,9 +6,9 @@ from wtforms.validators import Length, DataRequired
 
 from app.assist.models.func import Func
 from app.baseForm import BaseForm
-from app.web_ui_test.models.project import UiProject, UiProjectEnv
+from app.web_ui_test.models.project import WebUiProject as Project, WebUiProjectEnv as ProjectEnv
 from app.system.models.user import User
-from app.web_ui_test.models.module import UiModule
+from app.web_ui_test.models.module import WebUiModule as Module
 
 
 class AddUiProjectForm(BaseForm):
@@ -20,7 +20,7 @@ class AddUiProjectForm(BaseForm):
 
     def validate_name(self, field):
         """ 校验项目名不重复 """
-        self.validate_data_is_not_exist(f'项目名【{field.data}】已存在', UiProject, name=field.data)
+        self.validate_data_is_not_exist(f'项目名【{field.data}】已存在', Project, name=field.data)
 
     def validate_manager(self, field):
         """ 校验项目负责人是否存在 """
@@ -49,7 +49,7 @@ class GetUiProjectByIdForm(BaseForm):
     id = IntegerField(validators=[DataRequired('项目id必传')])
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', Project, id=field.data)
         setattr(self, 'project', project)
 
 
@@ -57,9 +57,9 @@ class DeleteUiProjectForm(GetUiProjectByIdForm):
     """ 删除项目 """
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', Project, id=field.data)
         self.validate_data_is_true('不能删除别人负责的项目', self.is_can_delete(project.id, project))
-        self.validate_data_is_not_exist('请先去【页面管理】删除项目下的模块', UiModule, project_id=field.data)
+        self.validate_data_is_not_exist('请先去【页面管理】删除项目下的模块', Module, project_id=field.data)
         setattr(self, 'project', project)
 
 
@@ -70,7 +70,7 @@ class EditUiProjectForm(GetUiProjectByIdForm, AddUiProjectForm):
         """ 校验项目名不重复 """
         self.validate_data_is_not_repeat(
             f'项目名【{field.data}】已存在',
-            UiProject,
+            Project,
             self.id.data,
             name=field.data
         )
@@ -89,7 +89,7 @@ class AddEnv(BaseForm):
     all_variables = {}
 
     def validate_project_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', Project, id=field.data)
         self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files))
         setattr(self, 'project', project)
 
@@ -97,15 +97,9 @@ class AddEnv(BaseForm):
         """ 校验地址是否正确 """
         self.validate_data_is_true(f'环境地址【{field.data}】不正确', field.data and validators.url(field.data) is True)
 
-    # def validate_headers(self, field):
-    #     """ 校验头部信息是否有引用自定义函数 """
-    #     self.validate_variable_and_header_format(field.data, '头部信息设置，第【', '】行，要设置头部信息，则key和value都需设置')
-    #     self.validate_func(self.all_func_name, self.func_files.data, self.dumps(field.data))  # 自定义函数
-    #     self.validate_variable(self.all_variables, self.variables.data, self.dumps(field.data))  # 公共变量
-
     def validate_variables(self, field):
         """ 校验公共变量 """
-        self.validate_variable_and_header_format(field.data, '自定义变量设置，，第【', '】行，要设置自定义变量，则key和value都需设置')
+        self.validate_variable_format(field.data)
         self.validate_func(self.all_func_name, self.dumps(field.data))  # 自定义函数
         self.validate_variable(self.all_variables, field.data, self.dumps(field.data))  # 公共变量
 
@@ -117,7 +111,7 @@ class EditEnv(AddEnv):
     def validate_env(self, field):
         env_data = self.validate_data_is_exist(
             '当前环境不存在',
-            UiProjectEnv,
+            ProjectEnv,
             project_id=self.project_id.data,
             env=field.data
         )
@@ -130,9 +124,9 @@ class FindEnvForm(BaseForm):
     env = StringField()
 
     def validate_projectId(self, field):
-        env_data = UiProjectEnv.get_first(project_id=field.data, env=self.env.data)
+        env_data = ProjectEnv.get_first(project_id=field.data, env=self.env.data)
         if not env_data:  # 如果没有就插入一条记录
-            env_data = UiProjectEnv().create({"env": self.env.data, "project_id": field.data})
+            env_data = ProjectEnv().create({"env": self.env.data, "project_id": field.data})
             setattr(self, 'env_data', env_data)
         setattr(self, 'env_data', env_data)
 
@@ -144,5 +138,5 @@ class SynchronizationEnvForm(BaseForm):
     envTo = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
 
     def validate_projectId(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', UiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的项目不存在', Project, id=field.data)
         setattr(self, 'project', project)

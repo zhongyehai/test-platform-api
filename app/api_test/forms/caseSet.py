@@ -4,8 +4,8 @@ from wtforms.validators import Length, DataRequired
 
 from app.baseForm import BaseForm
 from app.api_test.models.case import ApiCase as Case
-from app.api_test.models.project import ApiProject
-from app.api_test.models.caseSet import ApiSet
+from app.api_test.models.project import ApiProject as Project
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 
 
 class GetCaseSetForm(BaseForm):
@@ -13,7 +13,7 @@ class GetCaseSetForm(BaseForm):
     id = IntegerField(validators=[DataRequired('用例集id必传')])
 
     def validate_id(self, field):
-        set = self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', ApiSet, id=field.data)
+        set = self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', CaseSet, id=field.data)
         setattr(self, 'set', set)
 
 
@@ -23,7 +23,7 @@ class RunCaseSetForm(GetCaseSetForm):
     env = StringField()
 
     def validate_id(self, field):
-        set = self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', ApiSet, id=field.data)
+        set = self.validate_data_is_exist(f'id为【{field.data}】的用例集不存在', CaseSet, id=field.data)
         self.validate_data_is_exist(f'用例集下没有用例', Case, set_id=field.data)
         setattr(self, 'set', set)
 
@@ -39,14 +39,14 @@ class AddCaseSetForm(BaseForm):
 
     def validate_project_id(self, field):
         """ 服务id合法 """
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在，请先创建', ApiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在，请先创建', Project, id=field.data)
         setattr(self, 'project', project)
 
     def validate_name(self, field):
         """ 校验用例集名不重复 """
         self.validate_data_is_not_exist(
             f'用例集名字【{field.data}】已存在',
-            ApiSet,
+            CaseSet,
             project_id=self.project_id.data,
             level=self.level.data,
             name=field.data,
@@ -59,7 +59,7 @@ class GetCaseSetEditForm(BaseForm):
     id = IntegerField(validators=[DataRequired('用例集id必传')])
 
     def validate_id(self, field):
-        set = self.validate_data_is_exist('没有此用例集', ApiSet, id=field.data)
+        set = self.validate_data_is_exist('没有此用例集', CaseSet, id=field.data)
         setattr(self, 'set', set)
 
 
@@ -67,12 +67,12 @@ class DeleteCaseSetForm(GetCaseSetEditForm):
     """ 删除用例集 """
 
     def validate_id(self, field):
-        case_set = ApiSet.get_first(id=field.data)
+        case_set = CaseSet.get_first(id=field.data)
         # 数据权限
-        self.validate_data_is_true('不能删除别人服务下的用例集', ApiProject.is_can_delete(case_set.project_id, case_set))
+        self.validate_data_is_true('不能删除别人服务下的用例集', Project.is_can_delete(case_set.project_id, case_set))
 
         # 用例集下是否有用例集
-        self.validate_data_is_false('请先删除当前用例集下的用例集', ApiSet.get_first(parent=field.data))
+        self.validate_data_is_false('请先删除当前用例集下的用例集', CaseSet.get_first(parent=field.data))
 
         # 用例集下是否有用例
         self.validate_data_is_false('请先删除当前用例集下的用例', Case.get_first(set_id=field.data))
@@ -84,14 +84,14 @@ class EditCaseSetForm(GetCaseSetEditForm, AddCaseSetForm):
 
     def validate_id(self, field):
         """ 用例集id已存在 """
-        case_set = self.validate_data_is_exist(f'不存在id为【{field.data}】的用例集', ApiSet, id=field.data)
+        case_set = self.validate_data_is_exist(f'不存在id为【{field.data}】的用例集', CaseSet, id=field.data)
         setattr(self, 'case_set', case_set)
 
     def validate_name(self, field):
         """ 校验用例集名不重复 """
         self.validate_data_is_not_repeat(
             f'用例集名字【{field.data}】已存在',
-            ApiSet,
+            CaseSet,
             self.id.data,
             project_id=self.project_id.data,
             level=self.level.data,
@@ -108,5 +108,5 @@ class FindCaseSet(BaseForm):
     projectId = IntegerField(validators=[DataRequired('服务id必传')])
 
     def validate_projectId(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', ApiProject, id=field.data)
+        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
         setattr(self, 'all_sets', project.api_test_set)
