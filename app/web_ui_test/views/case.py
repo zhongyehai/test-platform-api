@@ -13,16 +13,10 @@ from app.web_ui_test.models.case import WebUiCase as Case
 from app.web_ui_test.models.step import WebUiStep as Step
 from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
-from app.web_ui_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm
+from app.web_ui_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, \
+    RunCaseForm, CopyCaseStepForm
 
 ns = web_ui_test.namespace("case", description="用例管理相关接口")
-
-
-def create_step(index, case_id, old_step):
-    """ 插入步骤 """
-    old_step["num"] = index
-    old_step["case_id"] = case_id
-    return Step().create(old_step)
 
 
 @ns.route('/list/')
@@ -121,9 +115,11 @@ class WebUiCopyCaseView(LoginRequiredView):
 
         # 复制步骤
         old_step_list = Step.query.filter_by(case_id=case_id).order_by(Step.num.asc()).all()
-        with db.auto_commit():
-            for old_step in old_step_list:
-                db.session.add(create_step(old_step.num, new_case.id, old_step.to_dict()))
+        for index, old_step in enumerate(old_step_list):
+            step = old_step.to_dict()
+            step['num'], step['case_id'] = index, new_case.id
+            new_step = Step().create(step)
+            new_step.add_api_quote_count()
 
         return app.restful.success(
             '复制成功',
@@ -132,6 +128,23 @@ class WebUiCopyCaseView(LoginRequiredView):
                 'steps': [step.to_dict() for step in Step.get_all(case_id=new_case.id)]
             }
         )
+
+
+@ns.route('/copy/step/')
+class WebUiCopyCaseStepView(LoginRequiredView):
+
+    def post(self):
+        """ 复制指定用例的步骤到当前用例下 """
+        form = CopyCaseStepForm()
+        if form.validate():
+            from_case, to_case = form.source_case, form.to_case
+            step_list, num_start = [], Step.get_max_num(case_id=to_case.id)
+            for index, step in enumerate(Step.get_all(case_id=from_case.id)):
+                step_dict = step.to_dict()
+                step_dict['case_id'], step_dict['num'] = to_case.id, num_start + index + 1
+                step_list.append(Step().create(step_dict).to_dict())
+            return app.restful.success('步骤复制成功', data=step_list)
+        return app.restful.fail(form.get_error())
 
 
 @ns.route('/')

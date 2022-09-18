@@ -6,7 +6,8 @@ from flask import current_app as app, request, g
 
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.models.caseSet import ApiCaseSet as CaseSet
-from app.baseView import LoginRequiredView
+from app.baseView import LoginRequiredView, NotLoginView
+from app.system.models.user import User
 from utils.client.runApiTest.runHttpRunner import RunCase
 from app.api_test import api_test
 from app.baseModel import db
@@ -18,14 +19,20 @@ ns = api_test.namespace("task", description="定时任务管理相关接口")
 
 
 @ns.route('/run/')
-class ApiRunTaskView(LoginRequiredView):
+class ApiRunTaskView(NotLoginView):
     def post(self):
         """ 运行定时任务 """
         form = RunTaskForm()
         if form.validate():
             task = form.task
             project_id = task.project_id
-            report = Report.get_new_report(task.name, 'task', g.user_name, g.user_id, project_id)
+            report = Report.get_new_report(
+                task.name,
+                'task',
+                g.user_name or '自动化测试',
+                g.user_id or User.get_first(name='common').id,
+                project_id
+            )
 
             # 新起线程运行任务
             Thread(

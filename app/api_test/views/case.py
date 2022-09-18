@@ -12,7 +12,8 @@ from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.models.caseSet import ApiCaseSet as CaseSet
-from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm
+from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm, \
+    CopyCaseStepForm
 
 ns = api_test.namespace("case", description="用例管理相关接口")
 
@@ -102,34 +103,54 @@ class ApiCopyCaseView(LoginRequiredView):
 
     def post(self):
         """ 复制用例 """
-        # 复制用例
-        case_id = request.json.get('id')
-        case = Case.get_first(id=case_id)
-        with db.auto_commit():
-            old_case = case.to_dict()
-            old_case['create_user'] = old_case['update_user'] = g.user_id
-            new_case = Case()
-            new_case.create(old_case, 'func_files', 'variables', 'headers')
-            new_case.name = old_case['name'] + '_copy'
-            new_case.num = Case.get_insert_num(set_id=old_case['set_id'])
-            db.session.add(new_case)
+        form = GetCaseForm()
+        if form.validate():
+            case = form.case
 
-        # 复制步骤
-        old_step_list = Step.query.filter_by(case_id=case_id).order_by(Step.num.asc()).all()
-        for index, old_step in enumerate(old_step_list):
-            step = old_step.to_dict()
-            step['num'] = index
-            step['case_id'] = new_case.id
-            new_step = Step().create(step)
-            new_step.add_api_quote_count()
+            # 复制用例
+            with db.auto_commit():
+                old_case = case.to_dict()
+                old_case['create_user'] = old_case['update_user'] = g.user_id
+                new_case = Case()
+                new_case.create(old_case, 'func_files', 'variables', 'headers')
+                new_case.name = old_case['name'] + '_copy'
+                new_case.num = Case.get_insert_num(set_id=old_case['set_id'])
+                db.session.add(new_case)
 
-        return app.restful.success(
-            '复制成功',
-            data={
-                'case': new_case.to_dict(),
-                'steps': [step.to_dict() for step in Step.get_all(case_id=new_case.id)]
-            }
-        )
+            # 复制步骤
+            old_step_list = Step.query.filter_by(case_id=case.id).order_by(Step.num.asc()).all()
+            for index, old_step in enumerate(old_step_list):
+                step = old_step.to_dict()
+                step['num'] = index
+                step['case_id'] = new_case.id
+                new_step = Step().create(step)
+                new_step.add_api_quote_count()
+
+            return app.restful.success(
+                '复制成功',
+                data={
+                    'case': new_case.to_dict(),
+                    'steps': [step.to_dict() for step in Step.get_all(case_id=new_case.id)]
+                }
+            )
+        return app.restful.fail(form.get_error())
+
+
+@ns.route('/copy/step/')
+class ApiCopyCaseStepView(LoginRequiredView):
+
+    def post(self):
+        """ 复制指定用例的步骤到当前用例下 """
+        form = CopyCaseStepForm()
+        if form.validate():
+            from_case, to_case = form.source_case, form.to_case
+            step_list, num_start = [], Step.get_max_num(case_id=to_case.id)
+            for index, step in enumerate(Step.get_all(case_id=from_case.id)):
+                step_dict = step.to_dict()
+                step_dict['case_id'], step_dict['num'] = to_case.id, num_start + index + 1
+                step_list.append(Step().create(step_dict).to_dict())
+            return app.restful.success('步骤复制成功', data=step_list)
+        return app.restful.fail(form.get_error())
 
 
 @ns.route('/')

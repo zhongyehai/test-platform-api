@@ -145,6 +145,21 @@ class DeleteCaseForm(BaseForm):
         setattr(self, 'case', case)
 
 
+class CopyCaseStepForm(BaseForm):
+    """ 复制用例的步骤 """
+
+    source = IntegerField(validators=[DataRequired('复制源用例id必传')])
+    to = IntegerField(validators=[DataRequired('当前用例id必传')])
+
+    def validate_source(self, field):
+        source_case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', Case, id=field.data)
+        setattr(self, 'source_case', source_case)
+
+    def validate_to(self, field):
+        to_case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', Case, id=field.data)
+        setattr(self, 'to_case', to_case)
+
+
 class RunCaseForm(BaseForm):
     """ 运行用例 """
     caseId = StringField(validators=[DataRequired('请选择用例')])

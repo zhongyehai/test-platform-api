@@ -494,6 +494,7 @@ class BaseTask(BaseModel):
     status = db.Column(db.Integer(), default=0, comment='任务的运行状态，0：禁用中、1：启用中，默认0')
     is_async = db.Column(db.Integer(), default=1, comment='任务的运行机制，0：单线程，1：多线程，默认1')
     set_ids = db.Column(db.Text(), comment='用例集id')
+    call_back = db.Column(db.Text(), comment='回调给流水线')
 
     def is_enable(self):
         """ 判断任务是否为启用状态 """

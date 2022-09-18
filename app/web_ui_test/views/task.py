@@ -4,7 +4,8 @@ from threading import Thread
 import requests
 from flask import request, g, current_app as app
 
-from app.baseView import LoginRequiredView
+from app.baseView import LoginRequiredView, NotLoginView
+from app.system.models.user import User
 from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
 from utils.client.runUiTest.runUiTestRunner import RunCase
@@ -18,7 +19,7 @@ ns = web_ui_test.namespace("task", description="定时任务管理相关接口")
 
 
 @ns.route('/run/')
-class WebUiRunTaskView(LoginRequiredView):
+class WebUiRunTaskView(NotLoginView):
 
     def post(self):
         """ 单次运行定时任务 """
@@ -26,7 +27,13 @@ class WebUiRunTaskView(LoginRequiredView):
         if form.validate():
             task = form.task
             project_id = task.project_id
-            report = Report.get_new_report(task.name, 'task', g.user_name, g.user_id, project_id)
+            report = Report.get_new_report(
+                task.name,
+                'task',
+                g.user_name or '自动化测试',
+                g.user_id or User.get_first(name='common').id,
+                project_id
+            )
 
             # 新起线程运行任务
             Thread(

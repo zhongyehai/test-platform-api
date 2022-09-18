@@ -190,3 +190,13 @@ class BaseForm(Form, JsonUtil):
         """ 校验数据为假 """
         if data:
             raise ValidationError(error_msg)
+
+    def validate_call_back(self, field):
+        """ 校验回调信息 """
+        if field.data:
+            try:
+                call_back_data = self.loads(field.data)
+                if isinstance(call_back_data, list) is False:
+                    raise
+            except Exception as error:
+                raise ValidationError('回调信息错误，若需要回调，请按示例填写')

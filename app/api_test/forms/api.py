@@ -57,7 +57,7 @@ class AddApiForm(BaseForm):
         """ 校验同一模块下接口名不重复 """
         self.validate_data_is_not_exist(
             f'当前模块下，名为【{field.data}】的接口已存在',
-            ApiMsg,
+            Api,
             name=field.data,
             module_id=self.module_id.data
         )

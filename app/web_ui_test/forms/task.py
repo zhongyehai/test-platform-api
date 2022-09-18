@@ -54,6 +54,7 @@ class AddTaskForm(BaseForm):
     email_pwd = StringField()
     cron = StringField()
     num = StringField()
+    call_back = StringField()
     is_async = IntegerField()
 
     def validate_is_send(self, field):

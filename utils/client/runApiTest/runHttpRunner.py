@@ -22,7 +22,7 @@ from utils.log import logger
 from utils.filePath import API_REPORT_ADDRESS
 from utils.parse import encode_object
 from utils.client.runApiTest.parseModel import ProjectFormatModel, ApiFormatModel, CaseFormatModel, StepFormatModel
-from utils.sendReport import async_send_report
+from utils.sendReport import async_send_report, call_back_for_pipeline
 
 
 class BaseParse:
@@ -201,8 +201,14 @@ class BaseParse:
     def send_report(self, res):
         """ 发送测试报告 """
         if self.task:
+            content = json.loads(res)
+
+            # 发送回调给流水线
+            call_back_for_pipeline(self.task["call_back"] or [], content["success"])
+
+            # 发送测试报告
             async_send_report(
-                content=json.loads(res),
+                content=content,
                 **self.task,
                 report_id=self.report_id,
                 report_addr=Config.get_api_report_addr()

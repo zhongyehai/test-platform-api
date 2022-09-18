@@ -24,7 +24,7 @@ from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
 from app.web_ui_test.models.case import WebUiCase as Case
 from app.web_ui_test.models.step import WebUiStep as Step
 from app.web_ui_test.models.report import WebUiReport as Report
-from utils.sendReport import async_send_report
+from utils.sendReport import async_send_report, call_back_for_pipeline
 from config.config import ui_action_mapping_reverse
 
 
@@ -148,6 +148,12 @@ class RunCase:
     def send_report(self, res):
         """ 发送测试报告 """
         if self.task:
+            content = json.loads(res)
+
+            # 发送回调给流水线
+            call_back_for_pipeline(self.task["call_back"] or [], content["success"])
+
+            # 发送测试报告
             async_send_report(
                 content=json.loads(res),
                 **self.task,

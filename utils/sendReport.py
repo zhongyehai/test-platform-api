@@ -8,6 +8,7 @@ import requests
 from utils.sendEmail import SendEmail
 from utils.report.report import render_html_report
 from app.config.models.config import Config
+from config.config import conf
 
 
 # def by_we_chat(content, webhook, report_id):
@@ -87,6 +88,34 @@ def async_send_report(**kwargs):
     print('多线程发送测试报告完毕')
 
 
+def call_back_for_pipeline(call_back_info: list, status):
+    """ 把测试结果回调给流水线 """
+    print('开始执行回调')
+    for call_back in call_back_info:
+        try:
+            print(f'开始回调{call_back.get("url")}')
+            for key, value in call_back.get('json', {}).items():
+                if value == '$status':
+                    call_back.get('json', {})[key] = status
+            call_back_res = requests.request(**call_back).json()
+            print(f'回调{call_back.get("url")}结束: \n{call_back_res}')
+        except Exception as error:
+            print(f'回调{call_back.get("url")}失败')
+            # 发送即时通讯通知
+            try:
+                requests.post(
+                    url=conf['error_push']['url'],
+                    json={
+                        'key': conf['error_push']['key'],
+                        'head': f'回调{call_back.get("url")}报错了',
+                        'body': f'{error}'
+                    }
+                )
+            except Exception as error:
+                print(f'发送回调错误消息失败')
+    print('回调执行结束')
+
+
 def send_diff_api_message(content, report_id, addr):
     """ 发送接口对比报告 """
     msg = {
@@ -114,7 +143,7 @@ def send_diff_api_message(content, report_id, addr):
                     f'##### 乱码:<font color=#E74C3C> {content["api"]["errorCode"]} </font>个 \n> '
                     f'##### \n> '
                     f'#### 请登录[测试平台]({Config.get_diff_api_addr()}{str(report_id)})查看详情，并确认是否更新\n'
-                    # f'#### 请登录[测试平台]({conf["diff_addr"]}{str(report_id)})查看详情，并确认是否更新\n'
+            # f'#### 请登录[测试平台]({conf["diff_addr"]}{str(report_id)})查看详情，并确认是否更新\n'
         }
     }
     try:
