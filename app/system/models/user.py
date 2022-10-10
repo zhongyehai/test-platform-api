@@ -35,7 +35,7 @@ class User(BaseModel):
     account = db.Column(db.String(50), unique=True, index=True, comment='账号')
     password_hash = db.Column(db.String(255), comment='密码')
     name = db.Column(db.String(12), comment='姓名')
-    status = db.Column(db.Integer, default=1, comment='状态，1为启用，2为冻结')
+    status = db.Column(db.Integer, default=1, comment='状态，1为启用，0为冻结')
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'), comment='所属的角色id')
     role = db.relationship('Role', back_populates='users')
 

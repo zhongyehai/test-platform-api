@@ -71,7 +71,14 @@ class ApiRunCaseView(LoginRequiredView):
             case, case_list = form.case_list[0], form.case_list
             project_id = CaseSet.get_first(id=case.set_id).project_id
 
-            report = Report.get_new_report(case.name, 'case', g.user_name, g.user_id, project_id)
+            report = Report.get_new_report(
+                name=case.name,
+                run_type='case',
+                performer=g.user_name,
+                create_user=g.user_id,
+                project_id=project_id,
+                env=form.env.data
+            )
 
             # 新起线程运行用例
             Thread(
@@ -105,20 +112,16 @@ class ApiCopyCaseView(LoginRequiredView):
         """ 复制用例 """
         form = GetCaseForm()
         if form.validate():
-            case = form.case
 
             # 复制用例
-            with db.auto_commit():
-                old_case = case.to_dict()
-                old_case['create_user'] = old_case['update_user'] = g.user_id
-                new_case = Case()
-                new_case.create(old_case, 'func_files', 'variables', 'headers')
-                new_case.name = old_case['name'] + '_copy'
-                new_case.num = Case.get_insert_num(set_id=old_case['set_id'])
-                db.session.add(new_case)
+            old_case = form.case.to_dict()
+            old_case['create_user'] = old_case['update_user'] = g.user_id
+            old_case['name'] = old_case['name'] + '_copy'
+            old_case['num'] = Case.get_insert_num(set_id=old_case['set_id'])
+            new_case = Case().create(old_case)
 
             # 复制步骤
-            old_step_list = Step.query.filter_by(case_id=case.id).order_by(Step.num.asc()).all()
+            old_step_list = Step.query.filter_by(case_id=form.case.id).order_by(Step.num.asc()).all()
             for index, old_step in enumerate(old_step_list):
                 step = old_step.to_dict()
                 step['num'] = index
@@ -145,7 +148,7 @@ class ApiCopyCaseStepView(LoginRequiredView):
         if form.validate():
             from_case, to_case = form.source_case, form.to_case
             step_list, num_start = [], Step.get_max_num(case_id=to_case.id)
-            for index, step in enumerate(Step.get_all(case_id=from_case.id)):
+            for index, step in enumerate(Step.query.filter_by(case_id=from_case.id).order_by(Step.num.asc()).all()):
                 step_dict = step.to_dict()
                 step_dict['case_id'], step_dict['num'] = to_case.id, num_start + index + 1
                 step_list.append(Step().create(step_dict).to_dict())

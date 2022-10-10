@@ -17,6 +17,7 @@ def parse_token(token):
         g.user_id, g.user_name, g.user_role = data['id'], data['name'], data['role']  # 把用户数据存到g对象，方便后面使用
         return True
     except:
+        g.user_id = g.user_name = g.user_role = None
         return False
 
 

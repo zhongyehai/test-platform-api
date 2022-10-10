@@ -72,9 +72,11 @@ class CaseFormatModel(BaseParseModel):
         self.func_files = kwargs.get('func_files')
         self.headers = self.parse_headers(kwargs.get('headers', {}))
         self.variables = self.parse_variables(kwargs.get('variables', {}))
+        self.skip_if = self.parse_skip_if(kwargs.get('skip_if'))
         self.is_run = kwargs.get('is_run')
         self.run_times = kwargs.get('run_times')
         self.module_id = kwargs.get('module_id')
+        self.set_id = kwargs.get('set_id')
         self.create_user = kwargs.get('create_user')
 
 

@@ -4,6 +4,7 @@ from flask import current_app as app, request
 from app.api_test import api_test
 from app.baseModel import db
 from app.api_test.models.step import ApiStep as Step
+from app.api_test.models.case import ApiCase as Case
 from app.api_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
 from app.baseView import LoginRequiredView
 
@@ -81,7 +82,11 @@ class ApiStepMethodView(LoginRequiredView):
             form.num.data = Step.get_insert_num(case_id=form.case_id.data)
             step = Step().create(form.data)
             step.add_api_quote_count()
-            return app.restful.success(f'步骤【{step.name}】新建成功', data=step.to_dict())
+            Case.merge_variables(step.quote_case, step.case_id)
+            return app.restful.success(
+                f'步骤【{step.name}】新建成功{", 自定义变量已合并至当前用例" if step.quote_case else ""}',
+                data=step.to_dict()
+            )
         return app.restful.error(form.get_error())
 
     def put(self):

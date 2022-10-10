@@ -13,6 +13,9 @@ from app.api_test.models.module import ApiModule as Module
 from app.api_test.models.project import ApiProject as Project
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.models.api import ApiMsg as Api
+from app.api_test.models.case import ApiCase as Case
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet
+from app.api_test.models.step import ApiStep as Step
 from app.config.models.config import Config
 from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, \
     ApiBelongToForm
@@ -63,6 +66,38 @@ class ApiGetApiBelongToView(LoginRequiredView):
                 project = Project.get_first(id=api.project_id)
                 module = Module.get_first(id=api.module_id)
                 res_msg += f'【{project.name}_{module.name}_{api.name}】、'
+            return app.restful.success(msg=res_msg)
+        return app.restful.fail(form.get_error())
+
+
+@ns.route('/belongToStep/')
+class ApiGetApiBelongToStepView(LoginRequiredView):
+
+    def get(self):
+        """ 查询哪些用例下的步骤引用了当前接口 """
+        form = ApiBelongToForm()
+        if form.validate():
+            res_msg = '以下步骤由当前接口转化：'
+            case_dict, case_set_dict, project_dict = {}, {}, {}  # 可能存在重复获取数据的请，获取到就存下来，一条数据只查一次库
+            for api in form.api_list:  # 多个服务存在同一个接口地址的情况
+                steps = Step.get_all(api_id=api.id)  # 存在一个接口在多个步骤调用的情况
+                for step in steps:
+                    # 获取用例
+                    if step.case_id not in case_dict:
+                        case_dict[step.case_id] = Case.get_first(id=step.case_id)
+                    case = case_dict[step.case_id]
+
+                    # 获取用例集
+                    if case.set_id not in case_set_dict:
+                        case_set_dict[case.set_id] = CaseSet.get_first(id=case.set_id)
+                    case_set = case_set_dict[case.set_id]
+
+                    # 获取步骤
+                    if case_set.project_id not in project_dict:
+                        project_dict[case_set.project_id] = Project.get_first(id=case_set.project_id)
+                    project = project_dict[case_set.project_id]
+
+                    res_msg += f'【{project.name}_{case_set.name}_{case.name}】、'
             return app.restful.success(msg=res_msg)
         return app.restful.fail(form.get_error())
 

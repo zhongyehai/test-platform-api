@@ -22,6 +22,8 @@ def by_we_chat(content, kwargs):
                        f'>执行用例:<font color="comment"> {content["stat"]["testcases"]["total"]} </font>条\n'
                        f'>成功:<font color="info"> {content["stat"]["testcases"]["success"]} </font>条\n'
                        f'>失败:<font color="warning"> {content["stat"]["testcases"]["fail"]} </font>条\n'
+                       f'>此次共运行<font color=#info> {content["count_step"]} </font>个步骤，'
+                       f'涉及<font color=#info> {content["count_api"]} </font>个接口 \n> '
                        f'详情请登录[测试平台]({kwargs["report_addr"] + str(kwargs["report_id"])})查看'
         }
     }
@@ -35,15 +37,19 @@ def by_we_chat(content, kwargs):
 # def by_ding_ding(content, webhook, report_id):
 def by_ding_ding(content, kwargs):
     """ 通过钉钉机器人发送测试报告 """
+    testcases = content["stat"]["testcases"]
     msg = {
         "msgtype": "markdown",
         "markdown": {
             "title": "测试报告",
             "text": f'## 测试报告 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
                     f'### 任务名：{content["stat"]["testcases"]["project"]} \n> '
-                    f'#### 执行用例:<font color=#3498DB> {content["stat"]["testcases"]["total"]} </font>条 \n> '
-                    f'#### 成功:<font color=#27AE60> {content["stat"]["testcases"]["success"]} </font>条 \n> '
-                    f'#### 失败:<font color=#E74C3C> {content["stat"]["testcases"]["fail"]} </font>条 \n> '
+                    f'#### 执行用例:<font color=#409EFF> {testcases["total"]} </font>条 \n> '
+                    f'#### 成功:<font color=#00FF00> {testcases["success"]} </font>条 \n> '
+                    f'#### 失败:<font color=#FF0000> {testcases["fail"]} </font>条 \n> '
+                    f'#### 通过率:<font color=#409EFF> {testcases["success"] / testcases["total"]} </font> \n> '
+                    f'#### 此次共运行<font color=#19D4AE> {content["count_step"]} </font>个步骤，'
+                    f'涉及<font color=#19D4AE> {content["count_api"]} </font>个接口 \n> '
                     f'#### 详情请登录[测试平台]({kwargs["report_addr"] + str(kwargs["report_id"])})查看\n'
         }
     }

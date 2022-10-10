@@ -16,6 +16,7 @@ class Func(BaseModel):
     name = db.Column(db.String(128), nullable=True, unique=True, comment='脚本名称')
     func_data = db.Column(LONGTEXT, default='', comment='脚本代码')
     desc = db.Column(db.Text(), comment='函数文件描述')
+    num = db.Column(db.Integer(), nullable=True, comment='当前函数文件的序号')
 
     @classmethod
     def create_func_file(cls, env='test'):
@@ -54,5 +55,5 @@ class Func(BaseModel):
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.id.asc()
+            order_by=cls.num.asc()
         )

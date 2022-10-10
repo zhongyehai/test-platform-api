@@ -17,6 +17,7 @@ class AddUiProjectForm(BaseForm):
     manager = StringField(validators=[DataRequired('请选择负责人')])
     swagger = StringField()
     func_files = StringField()
+    num = StringField()
 
     def validate_name(self, field):
         """ 校验项目名不重复 """
@@ -79,8 +80,8 @@ class EditUiProjectForm(GetUiProjectByIdForm, AddUiProjectForm):
 class AddEnv(BaseForm):
     """ 添加环境 """
     project_id = IntegerField(validators=[DataRequired('项目id必传')])
-    env = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
-    host = StringField(validators=[DataRequired('域名必传'), Length(2, 255, message='域名长度为1~255位')])
+    env = StringField(validators=[DataRequired('所属环境必传'), Length(1, 255, message='所属环境长度为1~255位')])
+    host = StringField(validators=[DataRequired('域名必传'), Length(2, 255, message='域名长度为2~255位')])
     variables = StringField()
     cookies = StringField()
     session_storage = StringField()

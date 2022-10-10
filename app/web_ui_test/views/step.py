@@ -7,6 +7,7 @@ from app.web_ui_test import web_ui_test
 from app.baseModel import db
 from config.config import (ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list)
 from app.web_ui_test.models.step import WebUiStep as Step
+from app.web_ui_test.models.case import WebUiCase as Case
 from app.web_ui_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
 
 ns = web_ui_test.namespace("step", description="测试步骤管理相关接口")
@@ -95,7 +96,11 @@ class WebUiStepMethodViewView(LoginRequiredView):
         if form.validate():
             form.num.data = Step.get_insert_num(case_id=form.case_id.data)
             step = Step().create(form.data)
-            return app.restful.success(f'步骤【{step.name}】新建成功', data=step.to_dict())
+            Case.merge_variables(step.quote_case, step.case_id)
+            return app.restful.success(
+                f'步骤【{step.name}】新建成功{", 自定义变量已合并至当前用例，请处理" if step.quote_case else ""}',
+                data=step.to_dict()
+            )
         return app.restful.error(form.get_error())
 
     def put(self):

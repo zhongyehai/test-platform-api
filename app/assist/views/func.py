@@ -3,7 +3,7 @@ import importlib
 import types
 import traceback
 
-from flask import current_app as app
+from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView
 from utils.filePath import os, FUNC_ADDRESS
@@ -25,6 +25,15 @@ class GetFuncListView(LoginRequiredView):
         if form.validate():
             return app.restful.success('获取成功', data=Func.make_pagination(form))
         return app.restful.error(form.get_error())
+
+
+@ns.route('/sort/')
+class FuncChangeSortView(LoginRequiredView):
+
+    def put(self):
+        """ 更新服务的排序 """
+        Func.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
+        return app.restful.success(msg='修改排序成功')
 
 
 @ns.route('/debug/')
@@ -84,6 +93,7 @@ class FuncView(LoginRequiredView):
         """ 新增函数文件 """
         form = CreatFuncForm()
         if form.validate():
+            form.num.data = Func.get_insert_num()
             Func().create(form.data)
             return app.restful.success(f'函数文件 {form.name.data} 创建成功')
         return app.restful.fail(form.get_error())

@@ -81,25 +81,6 @@ class AddStepForm(BaseForm):
         if not self.quote_case.data:
             self.validate_base_extracts(field.data)
 
-    def validate_skip_if(self, field):
-        if not self.quote_case.data:
-            check_value, comparator = field.data.get("check_value"), field.data.get("comparator")
-            data_type, expect = field.data.get("data_type"), field.data.get("expect")
-            if not check_value and not comparator and not data_type and not expect:
-                pass
-            elif check_value and comparator and data_type and expect:
-                try:
-                    if data_type in ["variable", "func", 'str']:
-                        pass
-                    elif data_type == 'json':
-                        self.dumps(self.loads(expect))
-                    else:  # python数据类型
-                        eval(f'{data_type}({expect})')
-                except Exception as error:
-                    raise ValidationError('【跳过条件】设置的条件错误，请检查')
-            else:
-                raise ValidationError('【跳过条件】设置的条件错误，请检查')
-
     def validate_validates(self, field):
         """ 校验断言信息 """
         if not self.quote_case.data:

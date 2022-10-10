@@ -13,6 +13,7 @@ class AddProjectForm(BaseForm):
     """ 添加服务参数校验 """
     name = StringField(validators=[DataRequired('服务名称不能为空'), Length(1, 255, message='服务名长度不可超过255位')])
     manager = StringField(validators=[DataRequired('请选择负责人')])
+    num = StringField()
     swagger = StringField()
     func_files = StringField()
 
@@ -85,8 +86,8 @@ class EditProjectForm(GetProjectByIdForm, AddProjectForm):
 class AddEnv(BaseForm):
     """ 添加环境 """
     project_id = IntegerField(validators=[DataRequired('服务id必传')])
-    env = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
-    host = StringField(validators=[DataRequired('域名必传'), Length(2, 255, message='域名长度为1~255位')])
+    env = StringField(validators=[DataRequired('所属环境必传'), Length(1, 255, message='所属环境长度为1~255位')])
+    host = StringField(validators=[DataRequired('域名必传'), Length(2, 255, message='域名长度为2~255位')])
     variables = StringField()
     headers = StringField()
     all_func_name = {}

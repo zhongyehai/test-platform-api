@@ -19,22 +19,33 @@ class ApiCaseSet(BaseCaseSet):
     def get_case_id(cls, project_id: int, set_id: list, case_id: list):
         """
         获取要执行的用例的id
-        1.如果有用例id，则只拿对应的用例
-        2.如果没有用例id，有模块id，则拿模块下的所有用例id
-        3.如果没有用例id，也没有用模块id，则拿服务下所有模块下的所有用例
+            1、即没选择用例，也没选择用例集
+            2、只选择了用例
+            3、只选了用例集
+            4、选定了用例和用例集
         """
-        if len(case_id) != 0:
+        # 1、只选择了用例，则直接返回用例
+        if len(case_id) != 0 and len(set_id) == 0:
             return case_id
-        elif len(set_id) != 0:
-            set_ids = set_id
-        else:
-            set_ids = [
-                set.id for set in cls.query.filter_by(project_id=project_id).order_by(cls.num.asc()).all()
+
+        # 2、没有选择用例集和用例，则视为选择了所有用例集
+        elif len(set_id) == 0 and len(case_id) == 0:
+            set_id = [
+                case_set.id for case_set in cls.query.filter_by(project_id=project_id).order_by(cls.num.asc()).all()
             ]
+
+        # 解析已选中的用例集，并继承已选中的用例列表，再根据用例id去重
         case_ids = [
-            case.id for set_id in set_ids for case in Case.query.filter_by(
-                set_id=set_id,
+            case.id for case_set_id in set_id for case in Case.query.filter_by(
+                set_id=case_set_id,
                 is_run=1
             ).order_by(Case.num.asc()).all() if case and case.is_run
         ]
-        return case_ids
+        case_ids.extend(case_id)
+        return list(set(case_ids))
+
+    @classmethod
+    def create_case_set_by_project(cls, project_id):
+        """ 根据项目id，创建用例集 """
+        for name in ['引用用例集', '流程用例集', '单接口用例集', '辅助测试用例集']:
+            cls().create({'name': name, 'project_id': project_id})

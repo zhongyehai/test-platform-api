@@ -23,7 +23,7 @@ from utils.filePath import API_REPORT_ADDRESS
 from utils.parse import encode_object
 from utils.client.runApiTest.parseModel import ProjectFormatModel, ApiFormatModel, CaseFormatModel, StepFormatModel
 from utils.sendReport import async_send_report, call_back_for_pipeline
-
+from utils.client.runApiTest.httprunner import built_in
 
 class BaseParse:
 
@@ -46,6 +46,9 @@ class BaseParse:
         self.parsed_project_dict = {}
         self.parsed_case_dict = {}
         self.parsed_api_dict = {}
+
+        self.count_step = 0
+        self.api_set = set()
 
         Func.create_func_file(self.environment)  # 创建所有函数文件
 
@@ -100,6 +103,20 @@ class BaseParse:
             self.DataTemplate['project_mapping']['functions'].update({
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
+
+    def parse_case_is_skip(self, skip_if_list):
+        """ 判断是否跳过用例，暂时只支持对运行环境的判断 """
+        for skip_if in skip_if_list:
+            skip_type = skip_if["skip_type"]
+            if skip_if["data_source"] == "run_env":
+                skip_if["check_value"] = self.environment
+                try:
+                    comparator = getattr(built_in, skip_if["comparator"])
+                    skip_if_result = comparator(skip_if["check_value"], skip_if["expect"])  # 借用断言来判断条件是否为真
+                except Exception as error:
+                    skip_if_result = error
+                if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
+                    return True
 
     def parse_api(self, project, api):
         """ 把解析后的接口对象 解析为httpRunner的数据结构 """
@@ -174,6 +191,8 @@ class BaseParse:
         summary['time']['start_at'] = datetime.fromtimestamp(summary['time']['start_at']).strftime("%Y-%m-%d %H:%M:%S")
         summary['run_type'] = self.DataTemplate.get('is_async', 0)
         summary['run_env'] = self.environment
+        summary['count_step'] = self.count_step
+        summary['count_api'] = len(self.api_set)
         jump_res = json.dumps(summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
         self.build_report(jump_res)
         self.send_report(jump_res)
@@ -184,7 +203,9 @@ class BaseParse:
         if all(run_dict.values()):  # 全都执行完毕
             all_summary = run_dict[0]
             all_summary['run_type'] = self.DataTemplate.get('is_async', 0)
-            summary['run_env'] = self.environment
+            all_summary['run_env'] = self.environment
+            all_summary['count_step'] = self.count_step
+            all_summary['count_api'] = len(self.api_set)
             all_summary['time']['start_at'] = datetime.fromtimestamp(all_summary['time']['start_at']).strftime(
                 "%Y-%m-%d %H:%M:%S")
             for index, res in enumerate(run_dict.values()):
@@ -237,6 +258,8 @@ class RunApi(BaseParse):
 
         # 解析api
         self.format_data_for_template()
+
+        self.count_step = 1
 
     def format_data_for_template(self):
         """ 接口调试 """
@@ -307,11 +330,12 @@ class RunCase(BaseParse):
         self.all_case_steps = []
         self.parse_all_case()
 
-    def parse_step(self, current_project, project, case, api, step):
+    def parse_step(self, current_project, project, current_case, case, api, step):
         """ 解析测试步骤
         current_project: 当前用例所在的服务(解析后的)
         project: 当前步骤对应接口所在的服务(解析后的)
-        case: 解析后的case
+        current_case: 当前用例
+        case: 被引用的case
         api: 解析后的api
         step: 原始step
         返回解析后的步骤 {}
@@ -319,9 +343,11 @@ class RunCase(BaseParse):
         # 解析头部信息，继承头部信息，接口所在服务、当前所在服务、用例、步骤
         headers = {}
         headers.update(project.headers)
+        if case:
+            headers.update(case.headers)
         headers.update(current_project.headers)
         # headers.update(api['request']['headers'])
-        headers.update(case.headers)
+        headers.update(current_case.headers)
         headers.update(step.headers)
 
         return {
@@ -350,12 +376,16 @@ class RunCase(BaseParse):
     def get_all_steps(self, case_id: int):
         """ 解析引用的用例 """
         case = self.get_formated_case(case_id)
-        steps = Step.query.filter_by(case_id=case.id, is_run=True).order_by(Step.num.asc()).all()
-        for step in steps:
-            if step.quote_case:
-                self.get_all_steps(step.quote_case)
-            else:
-                self.all_case_steps.append(step)
+
+        if self.parse_case_is_skip(case.skip_if) is not True:  # 不满足跳过条件才解析
+            steps = Step.query.filter_by(case_id=case.id, is_run=True).order_by(Step.num.asc()).all()
+            for step in steps:
+                if step.quote_case:
+                    self.get_all_steps(step.quote_case)
+                else:
+                    self.all_case_steps.append(step)
+                    self.count_step += 1
+                    self.api_set.add(step.api_id)
 
     def parse_all_case(self):
         """ 解析所有用例 """
@@ -363,7 +393,12 @@ class RunCase(BaseParse):
         # 遍历要运行的用例
         for case_id in self.case_id_list:
 
-            current_case = Case.get_first(id=case_id)
+            current_case = self.get_formated_case(case_id)
+
+            # 满足跳过条件则跳过
+            if self.parse_case_is_skip(current_case.skip_if) is True:
+                continue
+
             current_project = self.get_formated_project(CaseSet.get_first(id=current_case.set_id).project_id)
 
             # 用例格式模板
@@ -371,7 +406,8 @@ class RunCase(BaseParse):
                 'config': {
                     'variables': {},
                     'headers': {},
-                    'name': current_case.name
+                    'name': current_case.name,
+                    'run_env': self.environment
                 },
                 'teststeps': []
             }
@@ -401,9 +437,9 @@ class RunCase(BaseParse):
                         # 数据驱动的 comment 字段，用于做标识
                         step.name += driver_data.get('comment', '')
                         step.params = step.params = step.data_json = step.data_form = driver_data.get('data', {})
-                        case_template['teststeps'].append(self.parse_step(current_project, project, case, api, step))
+                        case_template['teststeps'].append(self.parse_step(current_project, project, current_case, case, api, step))
                 else:
-                    case_template['teststeps'].append(self.parse_step(current_project, project, case, api, step))
+                    case_template['teststeps'].append(self.parse_step(current_project, project, current_case, case, api, step))
 
                 # 把服务和用例的的自定义变量留下来
                 all_variables.update(project.variables)
@@ -411,7 +447,7 @@ class RunCase(BaseParse):
 
             # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
             all_variables.update(current_project.variables)
-            all_variables.update(self.get_formated_case(current_case.id).variables)
+            all_variables.update(current_case.variables)
             case_template['config']['variables'].update(all_variables)  # = all_variables
 
             # 设置的用例执行多少次就加入多少次

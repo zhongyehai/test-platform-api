@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from datetime import datetime
 from werkzeug.exceptions import abort
 
@@ -112,7 +111,7 @@ class BaseModel(db.Model, JsonUtil):
 
         with db.auto_commit():
             for key, value in attrs_dict.items():
-                if hasattr(self, key) and key != 'id':
+                if hasattr(self, key) and key not in ['id', 'created_time', 'update_time']:
                     setattr(self, key, self.dumps(value) if key in args else value)
 
             self.set_attr(['create_user', 'update_user'])
@@ -185,7 +184,9 @@ class BaseModel(db.Model, JsonUtil):
         """ 批量修改排序 """
         with db.auto_commit():
             for index, data_id in enumerate(id_list):
-                cls.get_first(id=data_id).num = (page_num - 1) * page_size + index
+                data = cls.get_first(id=data_id)
+                if data:
+                    data.num = (page_num - 1) * page_size + index
 
     @classmethod
     def get_max_num(cls, **kwargs):
@@ -258,8 +259,8 @@ class BaseProject(BaseModel):
 
     name = db.Column(db.String(255), nullable=True, comment='服务名称')
     manager = db.Column(db.Integer(), nullable=True, default=1, comment='服务管理员id，默认为admin')
-    test = db.Column(db.String(255), default='', comment='测试环境域名')
     func_files = db.Column(db.Text(), nullable=True, default='[]', comment='引用的函数文件')
+    num = db.Column(db.Integer(), nullable=True, comment='当前服务的序号')
 
     def is_not_manager(self):
         """ 判断用户非服务负责人 """
@@ -312,16 +313,17 @@ class BaseProject(BaseModel):
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.created_time.desc())
+            order_by=cls.num.asc())
 
 
 class BaseProjectEnv(BaseModel):
     """ 服务环境基类表 """
     __abstract__ = True
 
-    env = db.Column(db.String(10), nullable=True, comment='所属环境')
+    env = db.Column(db.String(255), nullable=True, comment='所属环境')
     host = db.Column(db.String(255), default='', comment='域名')
-    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment='服务的公共变量')
+    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]',
+                          comment='服务的公共变量')
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
 
     @classmethod
@@ -425,10 +427,18 @@ class BaseCase(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment='用例序号')
     name = db.Column(db.String(255), nullable=True, comment='用例名称')
     desc = db.Column(db.Text(), comment='用例描述')
-    is_run = db.Column(db.Boolean(), default=True, comment='是否执行此用例，True执行，False不执行，默认执行')
+    is_run = db.Column(db.Boolean(), default=False, comment='是否执行此用例，True执行，False不执行，默认执行')
     run_times = db.Column(db.Integer(), default=1, comment='执行次数，默认执行1次')
     func_files = db.Column(db.Text(), default='[]', comment='用例需要引用的函数list')
-    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment='用例级的公共参数')
+    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]',
+                          comment='用例级的公共参数')
+    skip_if = db.Column(
+        db.Text(),
+        default=BaseModel.dumps([
+            {"skip_type": "", "data_source": "", "check_value": "", "comparator": "", "data_type": "", "expect": ""}
+        ]),
+        comment='是否跳过的判断条件'
+    )
 
     @classmethod
     def make_pagination(cls, form):
@@ -445,6 +455,19 @@ class BaseCase(BaseModel):
             order_by=cls.num.asc()
         )
 
+    @classmethod
+    def merge_variables(cls, from_case_id, to_case_id):
+        """ 当用例引用的时候，自动将被引用用例的自定义变量合并到发起引用的用例上 """
+        if from_case_id:
+            from_case, to_case = cls.get_first(id=from_case_id), cls.get_first(id=to_case_id),
+            from_case_variables = {variable["key"]: variable for variable in from_case.to_dict()["variables"]}
+            to_case_variables = {variable["key"]: variable for variable in to_case.to_dict()["variables"]}
+
+            for from_variable_key, from_case_variable in from_case_variables.items():
+                to_case_variables.setdefault(from_variable_key, from_case_variable)
+
+            to_case.update({"variables": [value for key, value in to_case_variables.items()]})
+
 
 class BaseStep(BaseModel):
     """ 测试步骤基类表 """
@@ -459,8 +482,10 @@ class BaseStep(BaseModel):
     up_func = db.Column(db.Text(), default='', comment='步骤执行前的函数')
     down_func = db.Column(db.Text(), default='', comment='步骤执行后的函数')
     skip_if = db.Column(
-        db.String(255),
-        default='{"expect": "", "comparator": "", "data_type": "", "check_value": ""}',
+        db.Text(),
+        default=BaseModel.dumps([
+            {"skip_type": "", "data_source": "", "check_value": "", "comparator": "", "data_type": "", "expect": ""}
+        ]),
         comment='是否跳过的判断条件'
     )
 
@@ -479,12 +504,12 @@ class BaseTask(BaseModel):
 
     num = db.Column(db.Integer(), comment='任务序号')
     name = db.Column(db.String(255), comment='任务名称')
-    env = db.Column(db.String(10), default='test', comment='运行环境')
+    env = db.Column(db.String(255), default='test', comment='运行环境')
     case_ids = db.Column(db.Text(), comment='用例id')
-    task_type = db.Column(db.String(10), default='cron', comment='定时类型')
+    task_type = db.Column(db.String(255), default='cron', comment='定时类型')
     cron = db.Column(db.String(255), nullable=True, comment='cron表达式')
     is_send = db.Column(db.String(10), comment='是否发送报告，1.不发送、2.始终发送、3.仅用例不通过时发送')
-    send_type = db.Column(db.String(10), default='webhook', comment='测试报告发送类型，webhook，email，all')
+    send_type = db.Column(db.String(255), default='webhook', comment='测试报告发送类型，webhook，email，all')
     we_chat = db.Column(db.Text(), comment='企业微信机器人地址')
     ding_ding = db.Column(db.Text(), comment='钉钉机器人地址')
     email_server = db.Column(db.String(255), comment='发件邮箱服务器')
@@ -533,23 +558,16 @@ class BaseReport(BaseModel):
     __abstract__ = True
 
     name = db.Column(db.String(128), nullable=True, comment='测试报告名称')
-    status = db.Column(db.String(10), nullable=True, default='未读', comment='阅读状态，已读、未读')
+    status = db.Column(db.String(255), nullable=True, default='未读', comment='阅读状态，已读、未读')
     is_passed = db.Column(db.Integer, default=1, comment='是否全部通过，1全部通过，0有报错')
-    performer = db.Column(db.String(16), nullable=True, comment='执行者')
-    run_type = db.Column(db.String(10), default='task', nullable=True, comment='报告类型，task/case/api')
+    performer = db.Column(db.String(255), nullable=True, comment='执行者')
+    run_type = db.Column(db.String(255), default='task', nullable=True, comment='报告类型，task/case/api')
     is_done = db.Column(db.Integer, default=0, comment='是否执行完毕，1执行完毕，0执行中')
+    env = db.Column(db.String(255), default='test', comment='运行环境')
 
     @classmethod
-    def get_new_report(cls, name, run_type, performer, create_user, project_id):
-        with db.auto_commit():
-            report = cls()
-            report.name = name
-            report.run_type = run_type
-            report.performer = performer
-            report.create_user = create_user
-            report.project_id = project_id
-            db.session.add(report)
-        return report
+    def get_new_report(cls, **kwargs):
+        return cls().create(kwargs)
 
     @classmethod
     def make_pagination(cls, form):
@@ -563,3 +581,119 @@ class BaseReport(BaseModel):
             filters=filters,
             order_by=cls.created_time.desc()
         )
+
+
+class ConfigType(BaseModel):
+    """ 配置类型表 """
+
+    __tablename__ = 'config_type'
+
+    name = db.Column(db.String(128), nullable=True, unique=True, comment='字段名')
+    desc = db.Column(db.Text(), comment='描述')
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.id.asc()
+        )
+
+
+class Config(BaseModel):
+    """ 配置表 """
+
+    __tablename__ = 'config'
+
+    name = db.Column(db.String(128), nullable=True, unique=True, comment='字段名')
+    value = db.Column(db.Text(), nullable=True, comment='字段值')
+    type = db.Column(db.Integer(), nullable=True, comment='配置类型')
+    desc = db.Column(db.Text(), comment='描述')
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.type.data:
+            filters.append(cls.type == form.type.data)
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.id.asc()
+        )
+
+    @classmethod
+    def get_kym(cls):
+        """ 获取kym配置项 """
+        return cls.loads(cls.get_first(name='kym').value)
+
+    @classmethod
+    def get_run_test_env(cls):
+        """ 获取运行环境配置项 """
+        return cls.loads(cls.get_first(name='run_test_env').value)
+
+    @classmethod
+    def get_http_methods(cls):
+        """ 配置的http请求方法 """
+        return cls.get_first(name='http_methods').value
+
+    @classmethod
+    def get_default_diff_message_send_addr(cls):
+        """ 配置的对比结果通知地址 """
+        return cls.get_first(name='default_diff_message_send_addr').value
+
+    @classmethod
+    def get_make_user_info_mapping(cls):
+        return cls.get_first(name='make_user_info_mapping').value
+
+    @classmethod
+    def get_callback_webhook(cls):
+        return cls.get_first(name='callback_webhook').value
+
+    @classmethod
+    def get_call_back_response(cls):
+        return cls.get_first(name='call_back_response').value
+
+    @classmethod
+    def get_data_source_callback_addr(cls):
+        return cls.get_first(name='data_source_callback_addr').value
+
+    @classmethod
+    def get_data_source_callback_token(cls):
+        return cls.get_first(name='data_source_callback_token').value
+
+    @classmethod
+    def get_run_time_error_message_send_addr(cls):
+        return cls.get_first(name='run_time_error_message_send_addr').value
+
+    @classmethod
+    def get_request_time_out(cls):
+        return cls.get_first(name='request_time_out').value
+
+    @classmethod
+    def get_is_parse_headers_by_swagger(cls):
+        return cls.get_first(name='is_parse_headers_by_swagger').value
+
+    @classmethod
+    def get_wait_time_out(cls):
+        return cls.get_first(name='wait_time_out').value
+
+    @classmethod
+    def get_func_error_addr(cls):
+        return cls.get_first(name='func_error_addr').value
+
+    @classmethod
+    def get_diff_api_addr(cls):
+        return cls.get_first(name='diff_api_addr').value
+
+    @classmethod
+    def get_api_report_addr(cls):
+        return cls.get_first(name='api_report_addr').value
+
+    @classmethod
+    def get_ui_report_addr(cls):
+        return cls.get_first(name='ui_report_addr').value

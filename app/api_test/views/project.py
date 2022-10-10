@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from flask import current_app as app
+from flask import current_app as app, request
 
 from app.api_test import api_test
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.forms.project import (
     AddProjectForm, EditProjectForm, FindProjectForm, DeleteProjectForm, GetProjectByIdForm,
     EditEnv, AddEnv, FindEnvForm, SynchronizationEnvForm
@@ -31,6 +32,15 @@ class ApiProjectListView(LoginRequiredView):
         return app.restful.fail(form.get_error())
 
 
+@ns.route('/sort/')
+class ProjectChangeSortView(LoginRequiredView):
+
+    def put(self):
+        """ 更新服务的排序 """
+        Project.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
+        return app.restful.success(msg='修改排序成功')
+
+
 @ns.route('/')
 @api_test.doc(title='服务管理', description='服务管理接口')
 class ApiProjectView(LoginRequiredView):
@@ -47,8 +57,10 @@ class ApiProjectView(LoginRequiredView):
         """ 新增服务 """
         form = AddProjectForm()
         if form.validate():
+            form.num.data = Project.get_insert_num()
             project = Project().create(form.data)
             ProjectEnv.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
+            CaseSet.create_case_set_by_project(project.id)  # 新增服务的时候，一并把用例集设置齐全
             return app.restful.success(f'服务【{form.name.data}】新建成功', project.to_dict())
         return app.restful.fail(msg=form.get_error())
 
@@ -107,10 +119,6 @@ class ApiProjectEnvView(LoginRequiredView):
         form = EditEnv()
         if form.validate():
             form.env_data.update(form.data)
-
-            # 修改环境的时候，如果是测试环境，一并把服务的测试环境地址更新
-            if form.env_data.env == 'test':
-                form.project.update({'test': form.env_data.host})
 
             # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
             env_list = [

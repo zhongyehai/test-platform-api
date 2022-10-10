@@ -562,6 +562,7 @@ def parse_data(content, variables_mapping=None, functions_mapping=None, raise_if
                 variables_mapping,
                 functions_mapping
             )
+
             # 用公用变量替换字符串中的占位符
             content = parse_string_variables(
                 content,

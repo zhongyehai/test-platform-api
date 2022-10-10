@@ -48,6 +48,7 @@ class Runner(object):
 
         """
         base_url = config.get("base_url")
+        self.run_env = config.get("run_env")
         self.verify = config.get("verify", True)
         self.output = config.get("output", [])
         self.functions = functions
@@ -101,15 +102,19 @@ class Runner(object):
             raise SkipTest("skip触发跳过用例")
 
         elif test_dict.get("skipIf"):  # 只有 skipIf 条件为结果为True时才跳过，条件为假，或者执行报错，都不跳过
-            # {"expect": 200, "comparator": "_01equals", "check_value": 200, "check_result": "unchecked"}
-            skip_if_flag = True
+            # [{"expect": 200, "comparator": "_01equals", "check_value": 200, "check_result": "unchecked"}]
             skip_if_condition = self.session_context.eval_content(test_dict["skipIf"])
-            try:
-                skip_if_flag = self.session_context._do_validation(skip_if_condition)  # 借用断言来判断条件是否为真
-            except Exception as error:
-                pass
-            if skip_if_flag is None:  # 断言通过，即 skipIf 条件结果为true
-                raise SkipTest(f"{skip_if_condition} skipIf触发跳过用例")
+
+            for skip_if in skip_if_condition:
+                skip_type = skip_if["skip_type"]
+                if skip_if["data_source"] == "run_env":
+                    skip_if["check_value"] = self.run_env
+                    try:
+                        skip_if_result = self.session_context._do_validation(skip_if)  # 借用断言来判断条件是否为真
+                    except Exception as error:
+                        skip_if_result = error
+                    if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
+                        raise SkipTest(f"{skip_if_condition} skipIf触发跳过用例")
 
         elif test_dict.get("skipUnless"):
             skip_unless_condition = test_dict["skipUnless"]

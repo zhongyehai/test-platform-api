@@ -56,6 +56,7 @@ class CreatFuncForm(BaseForm):
     """ 创建自定义函数文件 """
     name = StringField(validators=[DataRequired('请输入函数文件名')])
     desc = StringField()
+    num = StringField()
 
     def validate_name(self, field):
         """ 校验Python函数文件 """

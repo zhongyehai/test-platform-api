@@ -179,7 +179,7 @@ class RunCase:
         if all(run_dict.values()):  # 全都执行完毕
             all_summary = run_dict[0]
             all_summary['run_type'] = self.DataTemplate.get('is_async', 0)
-            summary['run_env'] = self.environment
+            all_summary['run_env'] = self.environment
             all_summary['time']['start_at'] = datetime.fromtimestamp(all_summary['time']['start_at']).strftime(
                 "%Y-%m-%d %H:%M:%S")
             for index, res in enumerate(run_dict.values()):

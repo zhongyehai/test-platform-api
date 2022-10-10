@@ -118,6 +118,8 @@ class BaseParseModel(JsonUtil):
         """ 生成实际结果表达式 """
         if data_source == 'regexp':  # 正则表达式
             return key
+        elif data_source == 'other':  # 其他数据，常量、自定义函数、自定义变量
+            return key
         elif not key:  # 整个指定的响应对象
             return data_source
         else:
@@ -161,13 +163,15 @@ class BaseParseModel(JsonUtil):
 
         return '${' + f'{func_name}({",".join(args_and_kwargs)})' + '}'
 
-    def parse_skip_if(self, skip_if):
+    def parse_skip_if(self, skip_if_list):
         """ 判断 skip_if 是否要执行 """
-        if skip_if and skip_if.get("expect") and skip_if.get("check_value"):
-            skip_if["expect"] = self.build_data(skip_if["data_type"], skip_if["expect"])
-            skip_if["comparator"] = assert_mapping[skip_if["comparator"]]
-            return skip_if
-        return {}
+        data_list = []
+        for skip_if in skip_if_list:
+            if skip_if and skip_if.get("expect"):
+                skip_if["expect"] = self.build_data(skip_if["data_type"], skip_if["expect"])
+                skip_if["comparator"] = assert_mapping[skip_if["comparator"]]
+                data_list.append(skip_if)
+        return data_list
 
     def parse_form_data(self, form_data_list):
         """ 解析form参数 """

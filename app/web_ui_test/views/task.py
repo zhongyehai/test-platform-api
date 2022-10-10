@@ -28,11 +28,12 @@ class WebUiRunTaskView(NotLoginView):
             task = form.task
             project_id = task.project_id
             report = Report.get_new_report(
-                task.name,
-                'task',
-                g.user_name or '自动化测试',
-                g.user_id or User.get_first(name='common').id,
-                project_id
+                name=task.name,
+                run_type='task',
+                performer=g.user_name or '自动化测试',
+                create_user=g.user_id or User.get_first(account='common').id,
+                project_id=project_id,
+                env=form.env.data or task.env
             )
 
             # 新起线程运行任务

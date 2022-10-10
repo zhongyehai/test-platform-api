@@ -33,7 +33,7 @@ class ApiMsg(BaseApi):
         default='[{"data_source": null, "key": null, "validate_type": null, "data_type": null, "value": null, "remark": null}]',
         comment='断言信息')
 
-    quote_count = db.Column(db.Integer(), nullable=True, default=0, comment='被引用次数，即多少条用例使用到了此接口')
+    quote_count = db.Column(db.Integer(), nullable=True, default=0, comment='被引用次数，即多少个步骤直接使用了此接口')
 
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
     yapi_id = db.Column(db.Integer(), comment='当前接口在yapi平台的id')

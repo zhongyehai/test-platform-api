@@ -142,7 +142,8 @@ response_data_source_mapping = [
     {"label": "响应体", "value": "content"},
     {"label": "响应头部信息", "value": "headers"},
     {"label": "响应cookies", "value": "cookies"},
-    {"label": "正则表达式（从响应体提取）", "value": "regexp"}
+    {"label": "正则表达式（从响应体提取）", "value": "regexp"},
+    {"label": "其他（常量、自定义变量、自定义函数）", "value": "other"}
 ]
 
 # python数据类型
@@ -252,7 +253,7 @@ def init_config():
             {'name': 'ignore_keyword_for_project', 'value': '[]', 'desc': '不需要从yapi同步的服务关键字'},
             {'name': 'kym', 'value': JsonUtil.dumps(kym_keword), 'desc': 'KYM分析项'},
             {'name': 'default_diff_message_send_addr', 'value': '', 'desc': 'yapi接口监控报告默认发送钉钉机器人地址'},
-            {'name': 'run_time_out', 'value': '45', 'desc': '前端运行测试时，等待的超时时间，秒'},
+            {'name': 'run_time_out', 'value': '60', 'desc': '前端运行测试时，等待的超时时间，秒'},
             {'name': 'call_back_response', 'value': '', 'desc': '回调接口的响应信息，若没有设置值，则回调代码里面的默认响应'},
             {'name': 'callback_webhook', 'value': '', 'desc': '接口收到回调请求后即时通讯通知的地址'},
             {'name': 'func_error_addr', 'value': 'http://localhost/#/assist/errorRecord',
@@ -265,7 +266,7 @@ def init_config():
              'desc': '响应对象数据源映射'},
             {'name': 'run_time_error_message_send_addr', 'value': '', 'desc': '运行测试用例时，有错误信息实时通知地址'},
             {'name': 'request_time_out', 'value': 60, 'desc': '运行测试步骤时，request超时时间'},
-            {'name': 'is_parse_headers_by_swagger', 'value': "1", 'desc': '从swagger拉取数据时，是否解析头部参数, "1"为要同步'},
+            {'name': 'is_parse_headers_by_swagger', 'value': "1", 'desc': '从swagger拉取数据时，是否解析头部参数, 1为要同步'},
             {'name': 'api_report_addr', 'value': 'http://localhost/#/apiTest/reportShow?id=',
              'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'},
             {'name': 'diff_api_addr', 'value': 'http://localhost/#/assist/diffRecordShow?id=',

@@ -24,3 +24,30 @@ class SwaggerDiffRecord(BaseModel):
             page_size=attr.get('pageSize', 20),
             filters=filters,
             order_by=cls.created_time.desc())
+
+
+class SwaggerPullLog(BaseModel):
+    """ swagger拉取日志 """
+    __tablename__ = 'swagger_pull_log'
+
+    is_success = db.Column(db.Integer, default=1, comment='拉取结果，0失败，1拉取中，2拉取成功')
+    project_id = db.Column(db.Integer, comment='服务id')
+    desc = db.Column(db.Text, comment='备注')
+
+    @classmethod
+    def make_pagination(cls, attr):
+        """ 解析分页条件 """
+        return cls.pagination(
+            page_num=attr.get('pageNum', 1),
+            page_size=attr.get('pageSize', 20),
+            order_by=cls.created_time.desc())
+
+    def pull_fail(self, project, desc=None):
+        """ 拉取失败 """
+        self.update({"is_success": 0, 'desc': desc})
+        project.last_pull_is_fail()
+
+    def pull_success(self, project):
+        """ 拉取成功 """
+        self.update({"is_success": 2})
+        project.last_pull_is_success()

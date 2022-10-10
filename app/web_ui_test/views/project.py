@@ -45,6 +45,7 @@ class WebProjectView(LoginRequiredView):
         """ 新增项目 """
         form = AddUiProjectForm()
         if form.validate():
+            form.num.data = Project.get_insert_num()
             project = Project().create(form.data)
             ProjectEnv.create_env(project.id)  # 新增项目的时候，一并把环境设置齐全
             return app.restful.success(f'项目【{form.name.data}】新建成功', project.to_dict())
@@ -107,10 +108,6 @@ class WebUiProjectEnvView(LoginRequiredView):
         form = EditEnv()
         if form.validate():
             form.env_data.update(form.data)
-
-            # 修改环境的时候，如果是测试环境，一并把服务的测试环境地址更新
-            if form.env_data.env == 'test':
-                form.project.update({'test': form.env_data.host})
 
             # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
             env_list = [

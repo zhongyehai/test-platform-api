@@ -54,7 +54,7 @@ class LoginForm(BaseForm):
         """ 校验账号 """
         user = self.validate_data_is_exist('账号或密码错误', User, account=field.data)
         self.validate_data_is_true('账号或密码错误', user.verify_password(self.password.data))
-        self.validate_data_is_true(f'账号 {field.data} 为冻结状态，请联系管理员', user.status != 2)
+        self.validate_data_is_true(f'账号 {field.data} 为冻结状态，请联系管理员', user.status != 0)
         setattr(self, 'user', user)
 
 

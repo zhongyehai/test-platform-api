@@ -34,6 +34,17 @@ ui_extract_mapping, ui_extract_mapping_list = extract_mapping['mapping_dict'], e
 ui_extract_mapping.setdefault('自定义函数', 'func')
 ui_extract_mapping_list.append({'label': '自定义函数', 'value': 'func'})
 
+# 跳过条件判断类型映射
+skip_if_type_mapping = [
+    {"label": "满足则跳过", "value": "skip_if_true"},
+    {"label": "不满足则跳过", "value": "skip_if_false"},
+]
+
+# 跳过条件数据源映射
+skip_if_data_source_mapping = [
+    {"label": "运行环境", "value": "run_env"}
+]
+
 basedir, conf = os.path.abspath('.'), load(os.path.abspath('.') + '/config/config.yaml')
 
 
@@ -73,8 +84,12 @@ class ProductionConfig:
                               f'{conf["db"]["port"]}/' \
                               f'{conf["db"]["database"]}?charset=utf8mb4&autocommit=true'
 
+    # 关闭数据追踪，避免内存资源浪费
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
+
+    # 关闭自动提交，若开启自动提交会出现以下报错
+    # sqlalchemy.exc.InvalidRequestError: Can't reconnect until invalid transaction is rolled back
+    SQLALCHEMY_COMMIT_ON_TEARDOWN = False
 
     # 每次连接从池中检查，如果有错误，监测为断开的状态，连接将被立即回收。
     SQLALCHEMY_POOL_PRE_PING = True

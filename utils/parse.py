@@ -26,11 +26,12 @@ def parse_list_to_dict(data_list: list):
     """ list转字典，如果列表中有多个相同的key，则以最后一个为准 """
     result = {}
     for data in data_list:
-        if data['key']:
-            result[data['key']] = {
-                'key': data['key'],
-                'value': data['value'],
-                'remark': data['remark']
+        if data["key"]:
+            result[data["key"]] = {
+                "key": data.get("key"),
+                "value": data.get("value"),
+                "data_type": data.get("data_type"),
+                "remark": data.get("remark")
             }
     return result
 
@@ -41,6 +42,7 @@ def parse_dict_to_list(data_dict: dict):
         'a': {
             'key': 'a',
             'value': 123,
+            'data_type': 'str',
             'remark': '测试'
         }
     }
@@ -48,13 +50,15 @@ def parse_dict_to_list(data_dict: dict):
     result = []
     for key, value in data_dict.items():
         result.append({
-            'key': value['key'],
-            'value': value['value'],
-            'remark': value['remark'],
+            "key": value.get("key"),
+            "value": value.get("value"),
+            "data_type": value.get("data_type"),
+            "remark": value.get("remark")
         })
     result.append({
         'key': None,
         'value': None,
+        'data_type': None,
         'remark': None,
     })
     return result

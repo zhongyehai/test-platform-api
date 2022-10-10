@@ -122,8 +122,6 @@ class ApiBelongToForm(BaseForm):
     addr = StringField(validators=[DataRequired('接口地址必传')])
 
     def validate_addr(self, field):
-        # api = self.validate_data_is_exist(f'地址为【{field.data}】的接口不存在', Api, addr=field.data)
-        # setattr(self, 'api', api)
         api_list = Api.get_all(addr=field.data)
         if not api_list:
             raise ValidationError(f'地址为【{field.data}】的接口不存在')

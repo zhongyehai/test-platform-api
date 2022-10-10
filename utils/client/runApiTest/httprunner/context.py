@@ -1,4 +1,5 @@
 import json
+import re
 
 from . import exceptions, logger, parser, utils, built_in
 
@@ -100,9 +101,10 @@ class SessionContext(object):
             or parser.extract_functions(check_item):
             # format 1/2/3
             check_value = self.eval_content(check_item)
-        else:
-            # format 4/5
+        elif re.compile(r".*\(.*\).*").match(check_item) or check_item.startswith(("content", "headers", "cookies")):  # 正则表达式或提取表达式
             check_value = resp_obj.extract_field(check_item)
+        else:
+            check_value = check_item
 
         validator["check_value"] = check_value
 

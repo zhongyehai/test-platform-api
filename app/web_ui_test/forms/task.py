@@ -5,6 +5,7 @@ from wtforms.validators import ValidationError, DataRequired
 from crontab import CronTab
 
 from app.baseForm import BaseForm
+from app.config.models.config import Config
 from app.web_ui_test.models.task import WebUiTask as Task
 from app.web_ui_test.models.project import WebUiProject as Project
 
@@ -103,6 +104,11 @@ class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
     env = StringField()
     is_async = IntegerField()
+
+    def validate_env(self, field):
+        """ 检验环境 """
+        if field.data:
+            self.validate_data_is_true(f'环境【{field.data}】不存在', field.data in Config.get_run_test_env())
 
 
 class EditTaskForm(AddTaskForm, HasTaskIdForm):

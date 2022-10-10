@@ -27,6 +27,7 @@ class AddCaseForm(BaseForm):
     set_id = IntegerField(validators=[DataRequired('请选择用例集')])
     name = StringField(validators=[DataRequired('用例名称不能为空')])
     func_files = StringField()
+    skip_if = StringField()
     variables = StringField()
     headers = StringField()
     run_times = IntegerField()

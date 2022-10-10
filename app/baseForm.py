@@ -200,3 +200,31 @@ class BaseForm(Form, JsonUtil):
                     raise
             except Exception as error:
                 raise ValidationError('回调信息错误，若需要回调，请按示例填写')
+
+    def validate_skip_if(self, field):
+        """ 校验跳过条件 """
+        if hasattr(self, 'quote_case'):
+            if self.quote_case.data:
+                return
+        for index, skip_if in enumerate(field.data):
+            index += 1
+            skip_type, data_source = skip_if.get("skip_type"), skip_if.get("data_source")
+            check_value, comparator = skip_if.get("check_value"), skip_if.get("comparator")
+            data_type, expect = skip_if.get("data_type"), skip_if.get("expect")
+            if any((skip_type, data_source, check_value, comparator, data_type, expect)):
+                if skip_type and data_source and comparator and data_type and expect:
+                    if data_source != 'run_env' and not check_value:
+                        raise ValidationError(f'【跳过条件】第【{index}】行设置的条件错误，请检查')
+                    else:
+                        try:
+                            if data_type in ["variable", "func", 'str']:
+                                continue
+                            elif data_type == 'json':
+                                self.dumps(self.loads(expect))
+                                continue
+                            else:  # python数据类型
+                                eval(f'{data_type}({expect})')
+                                continue
+                        except Exception as error:
+                            raise ValidationError(f'【跳过条件】第【{index}】行设置的条件错误，请检查')
+                raise ValidationError(f'【跳过条件】第【{index}】行设置的条件错误，请检查')

@@ -7,6 +7,7 @@ import requests
 from flask import request, current_app as app
 
 from app.assist import assist
+from app.assist.models.swagger import SwaggerPullLog
 from app.baseView import LoginRequiredView
 from app.config.models.config import Config
 from app.api_test.models.project import ApiProject
@@ -335,15 +336,18 @@ class SwaggerPullView(LoginRequiredView):
     def post(self):
         """ 根据指定服务的swagger拉取所有数据 """
         project, module_dict = ApiProject.get_first(id=request.json.get('id')), {}
-
+        pull_log = SwaggerPullLog().create({"project_id": project.id})
         try:
             swagger_data = get_swagger_data(project.swagger)  # swagger数据
             if swagger_data.get("status") == 500:
+                pull_log.pull_fail(project, swagger_data)
                 app.logger.info(f'swagger数据拉取失败: \n{swagger_data}')
                 raise
         except Exception as error:
+            pull_log.pull_fail(project, error)
             app.logger.error(error)
             return app.restful.error('swagger数据拉取失败，详见日志')
+        pull_log.pull_success(project)
 
         is_parse_headers = Config.get_is_parse_headers_by_swagger()
 
