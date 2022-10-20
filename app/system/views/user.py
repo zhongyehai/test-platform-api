@@ -109,10 +109,10 @@ class UserView(AdminRequiredView):
             return app.restful.success(f'用户 {form.user.name} 修改成功', form.user.to_dict())
         return app.restful.fail(msg=form.get_error())
 
-    def delete(self):
-        """ 删除用户 """
-        form = DeleteUserForm()
-        if form.validate():
-            form.user.delete()
-            return app.restful.success('删除成功')
-        return app.restful.fail(form.get_error())
+    # def delete(self):
+    #     """ 删除用户 """
+    #     form = DeleteUserForm()
+    #     if form.validate():
+    #         form.user.delete()
+    #         return app.restful.success('删除成功')
+    #     return app.restful.fail(form.get_error())

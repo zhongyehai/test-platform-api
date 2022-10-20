@@ -11,7 +11,7 @@ from datetime import datetime
 from . import exceptions, logger
 from .compat import basestring, bytes, is_py2
 from .exceptions import ParamsError
-from utils.regexp import absolute_http_url_regexp
+from utils.variables.regexp import absolute_http_url_regexp
 
 
 def set_os_environ(variables_mapping):

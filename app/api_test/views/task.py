@@ -26,13 +26,15 @@ class ApiRunTaskView(NotLoginView):
         if form.validate():
             task = form.task
             project_id = task.project_id
+            env = form.env.data.lower() if form.env.data else task.env
             report = Report.get_new_report(
                 name=task.name,
                 run_type='task',
                 performer=g.user_name or '自动化测试',
                 create_user=g.user_id or User.get_first(account='common').id,
                 project_id=project_id,
-                env=form.env.data or task.env
+                env=env,
+                trigger_type=form.trigger_type.data
             )
 
             # 新起线程运行任务
@@ -44,7 +46,8 @@ class ApiRunTaskView(NotLoginView):
                     task=task.to_dict(),
                     case_id=CaseSet.get_case_id(project_id, task.loads(task.set_ids), task.loads(task.case_ids)),
                     is_async=form.is_async.data,
-                    env=form.env.data or task.env
+                    env=env,
+                    trigger_type=form.trigger_type.data
                 ).run_case
             ).start()
             return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})

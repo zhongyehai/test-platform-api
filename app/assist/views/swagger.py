@@ -13,7 +13,7 @@ from app.config.models.config import Config
 from app.api_test.models.project import ApiProject
 from app.api_test.models.module import ApiModule
 from app.api_test.models.api import ApiMsg
-from utils.filePath import SWAGGER_FILE_ADDRESS
+from utils.util.fileUtil import SWAGGER_FILE_ADDRESS, FileUtil
 from app.baseModel import db
 
 ns = assist.namespace("swagger", description="从swagger拉数据")
@@ -417,9 +417,7 @@ class SwaggerPullView(LoginRequiredView):
 
             # 同步完成后，保存原始数据
             swagger_file = os.path.join(SWAGGER_FILE_ADDRESS, f'{project.id}.json')
-            if os.path.exists(swagger_file):
-                os.remove(swagger_file)
-            with open(swagger_file, 'w', encoding='utf8') as fp:
-                json.dump(swagger_data, fp, ensure_ascii=False, indent=4)
+            FileUtil.delete_file(swagger_file)
+            FileUtil.save_file(swagger_file, swagger_data)
 
         return app.restful.success('数据拉取并更新完成')

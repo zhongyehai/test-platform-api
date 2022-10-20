@@ -34,7 +34,13 @@ class ApiCaseSetRunView(LoginRequiredView):
         form = RunCaseSetForm()
         if form.validate():
             project_id = form.set.project_id
-            report = Report.get_new_report(form.set.name, 'set', g.user_name, g.user_id, project_id)
+            report = Report.get_new_report(
+                name=form.set.name,
+                run_type='set',
+                performer=g.user_name,
+                create_user=g.user_id,
+                project_id=project_id
+            )
 
             # 新起线程运行任务
             Thread(

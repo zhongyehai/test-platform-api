@@ -7,7 +7,7 @@ import six
 import urllib3.fields as f
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
-from utils.yamlUtil import load
+from utils.util.yamlUtil import load
 from utils.client.runApiTest.httprunner import built_in as assert_func_file
 from utils.client.runUiTest.uitestrunner.webdriverAction import Driver
 

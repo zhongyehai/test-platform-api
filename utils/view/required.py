@@ -6,9 +6,6 @@ from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from flask import current_app as app, request, g
 
 
-# from utils import restful
-
-
 def parse_token(token):
     """ 校验token是否过期，或者是否合法 """
     try:

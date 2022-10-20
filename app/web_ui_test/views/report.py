@@ -10,7 +10,7 @@ from app.web_ui_test import web_ui_test
 from app.baseModel import db
 from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.forms.report import GetReportForm, DownloadReportForm, DeleteReportForm, FindReportForm
-from utils.required import login_required
+from utils.view.required import login_required
 
 ns = web_ui_test.namespace("report", description="测试报告管理相关接口")
 

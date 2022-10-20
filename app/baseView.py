@@ -1,7 +1,7 @@
 """ 封装基类视图，所有视图都继承 flask_restx.Resource 以便生成swagger文档 """
 from flask_restx import Resource
 
-from utils.required import login_required, admin_required
+from utils.view.required import login_required, admin_required
 
 
 class NotLoginView(Resource):

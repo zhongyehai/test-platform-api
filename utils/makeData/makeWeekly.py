@@ -6,9 +6,9 @@ from openpyxl.styles import Alignment, Font, PatternFill, Border, Side, colors
 from openpyxl.utils import get_column_letter  # 根据列的数字返回字母 get_column_letter(2)  # B
 from flask import g
 
-from utils.filePath import TEMP_FILE_ADDRESS
-from utils.makeExcel import Excel
-from utils.timeUtil import get_week_start_and_end
+from utils.util.fileUtil import TEMP_FILE_ADDRESS, FileUtil
+from utils.makeData.makeExcel import Excel
+from utils.util.timeUtil import get_week_start_and_end
 
 # 设置边框线
 side = Side(style='thin', color=colors.BLACK)  # 黑色，细线
@@ -35,10 +35,8 @@ def make_current_weekly_excel(product_dict, weekly_data, user_dict):
     file_title = f'测试组周报({last_start}-{last_end})'
     file_name = f'{file_title}_{g.user_id}.xlsx'  # 避免多人导出同一时间段周报时出现死锁问题，每一份文件后都加上用户id
     file_path = os.path.join(TEMP_FILE_ADDRESS, file_name)
-    # file_path = os.path.join(TEMP_FILE_ADDRESS, f'{time.time()}.xlsx')
 
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    FileUtil.delete_file(file_path)
 
     excel = Excel(file_path, is_delete_old=True)
     sheet = excel.get_sheet_obj('会议纪要')

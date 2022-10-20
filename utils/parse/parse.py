@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import ast
-import importlib
 import json
 import re
-import types
-from utils.regexp import variable_regexp, function_regexp, function_regexp_compile
+from utils.variables.regexp import variable_regexp, function_regexp, function_regexp_compile
 
 
 # variable_regexp = r"\$([\w_]+)"

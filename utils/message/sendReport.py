@@ -5,7 +5,7 @@ from threading import Thread
 
 import requests
 
-from utils.sendEmail import SendEmail
+from utils.message.sendEmail import SendEmail
 from utils.report.report import render_html_report
 from app.config.models.config import Config
 from config.config import conf
@@ -34,10 +34,10 @@ def by_we_chat(content, kwargs):
         print(f'向企业微信发送测试报告失败，错误信息：\n{error}')
 
 
-# def by_ding_ding(content, webhook, report_id):
 def by_ding_ding(content, kwargs):
     """ 通过钉钉机器人发送测试报告 """
     testcases = content["stat"]["testcases"]
+    pass_rate = round(testcases["success"] / testcases["total"] * 100, 3) if testcases["total"] else 100
     msg = {
         "msgtype": "markdown",
         "markdown": {
@@ -47,7 +47,7 @@ def by_ding_ding(content, kwargs):
                     f'#### 执行用例:<font color=#409EFF> {testcases["total"]} </font>条 \n> '
                     f'#### 成功:<font color=#00FF00> {testcases["success"]} </font>条 \n> '
                     f'#### 失败:<font color=#FF0000> {testcases["fail"]} </font>条 \n> '
-                    f'#### 通过率:<font color=#409EFF> {testcases["success"] / testcases["total"]} </font> \n> '
+                    f'#### 通过率:<font color=#409EFF> {pass_rate}% </font> \n> '
                     f'#### 此次共运行<font color=#19D4AE> {content["count_step"]} </font>个步骤，'
                     f'涉及<font color=#19D4AE> {content["count_api"]} </font>个接口 \n> '
                     f'#### 详情请登录[测试平台]({kwargs["report_addr"] + str(kwargs["report_id"])})查看\n'

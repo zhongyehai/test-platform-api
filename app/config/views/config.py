@@ -11,7 +11,7 @@ from app.config.forms.config import (
 from app.config import config
 from app.web_ui_test.models.project import WebUiProjectEnv
 from config.config import skip_if_type_mapping, skip_if_data_source_mapping
-from utils.required import admin_required
+from utils.view.required import admin_required
 
 ns = config.namespace("config", description="配置管理相关接口")
 
@@ -84,14 +84,13 @@ class ConfigView(LoginRequiredView):
         """ 修改配置 """
         form = PutConfigForm()
         if form.validate():
+            # 如果key是 run_test_env 则自动同步环境信息
+            if form.name.data == 'run_test_env':
+                new_env_list = Config.get_new_env_list(form)
+                if new_env_list:
+                    ApiProjectEnv.create_env(env_list=new_env_list)
+                    WebUiProjectEnv.create_env(env_list=new_env_list)
             form.conf.update(form.data)
-
-            # 同步环境信息
-            new_env_list = Config.get_new_env_list(form)
-            if new_env_list:
-                ApiProjectEnv.create_env(env_list=new_env_list)
-                WebUiProjectEnv.create_env(env_list=new_env_list)
-
             return app.restful.success('修改成功', data=form.conf.to_dict())
         return app.restful.error(form.get_error())
 

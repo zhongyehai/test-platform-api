@@ -28,7 +28,7 @@ def register_errorhandler_hook(app):
         return _app.restful.url_not_find(msg=f'接口 {request.path} 不存在')
 
     @app.errorhandler(Exception)
-    def error_handler(e):
+    def error_handler_500(e):
         """ 捕获所有服务器内部的异常，把错误发送到 即时达推送 的 系统错误 通道 """
         error = traceback.format_exc()
         try:
@@ -52,7 +52,7 @@ def register_errorhandler_hook(app):
                 json={
                     'key': _app.conf['error_push']['key'],
                     'head': f'{_app.conf["SECRET_KEY"]}报错了 \n数据id为：{error_record.id}',
-                    'body': f'{error}'
+                    'body': f'{error_record}   \n\n{error}'
                 }
             )
         except:

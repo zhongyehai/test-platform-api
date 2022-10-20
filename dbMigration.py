@@ -5,7 +5,7 @@ from collections import OrderedDict
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 
-from utils.jsonUtil import JsonUtil
+from utils.util.jsonUtil import JsonUtil
 from app.baseModel import db
 from app.system.models.user import User, Permission, Role
 from app.config.models.config import Config, ConfigType
@@ -173,6 +173,14 @@ find_element_option = [
 # 环境配置，可根据实际需求自行修改，但环境不可重复
 env_dict = {"dev": "开发环境", "test": "测试环境", "uat": "uat环境", "production": "生产环境"}
 
+# 运行测试的类型
+run_type = {
+    "api": "接口",
+    "case": "用例",
+    "caseSet": "用例集",
+    "task": "任务",
+}
+
 
 @manager.command
 def init_role():
@@ -220,7 +228,7 @@ def init_config_type():
         {'name': '系统配置', 'desc': '全局配置'},
         {'name': '邮箱', 'desc': '邮箱服务器'},
         {'name': '接口自动化', 'desc': '接口自动化测试'},
-        {'name': 'ui自动化', 'desc': 'ui自动化测试'}
+        {'name': 'webUi自动化', 'desc': 'webUi自动化测试'}
     ]
     for data in config_type_list:
         if ConfigType.get_first(name=data["name"]) is None:
@@ -243,6 +251,7 @@ def init_config():
         '系统配置': [
             {'name': 'platform_name', 'value': '极测平台', 'desc': '测试平台名字'},
             {'name': 'run_test_env', 'value': JsonUtil.dumps(env_dict), 'desc': '测试平台支持的环境'},
+            {'name': 'run_type', 'value': JsonUtil.dumps(run_type), 'desc': '运行测试的类型'},
             {'name': 'make_user_info_mapping', 'value': JsonUtil.dumps(make_user_info_mapping),
              'desc': '生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）'},
             {'name': 'data_type_mapping', 'value': JsonUtil.dumps(data_type_mapping), 'desc': 'python数据类型映射'},
@@ -273,7 +282,7 @@ def init_config():
              'desc': '展示yapi监控报告页面的前端地址（用于即时通讯通知）'}
         ],
 
-        'ui自动化': [
+        'webUi自动化': [
             {'name': 'find_element_option', 'value': JsonUtil.dumps(find_element_option), 'desc': 'ui自动化定位元素方式'},
             {'name': 'wait_time_out', 'value': 10, 'desc': '等待元素出现时间'},
             {'name': 'ui_report_addr', 'value': 'http://localhost/#/webUiTest/reportShow?id=',

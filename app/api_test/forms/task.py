@@ -104,6 +104,7 @@ class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
     env = StringField()
     is_async = IntegerField()
+    trigger_type = StringField()  # pipeline 代表是流水线触发，跑完过后会发送测试报告
 
     def validate_env(self, field):
         """ 检验环境 """

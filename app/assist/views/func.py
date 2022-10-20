@@ -6,8 +6,8 @@ import traceback
 from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView
-from utils.filePath import os, FUNC_ADDRESS
-from utils.parse import parse_function, extract_functions
+from utils.util.fileUtil import FileUtil
+from utils.parse.parse import parse_function, extract_functions
 from app.assist import assist
 from app.assist.models.func import Func
 from app.assist.forms.func import HasFuncForm, SaveFuncDataForm, CreatFuncForm, EditFuncForm, DebuggerFuncForm, \
@@ -46,9 +46,7 @@ class DebugFuncView(LoginRequiredView):
             name, debug_data = form.func.name, form.debug_data.data
 
             # 把自定义函数脚本内容写入到python脚本中
-            with open(os.path.join(FUNC_ADDRESS, f'{name}.py'), 'w', encoding='utf8') as file:
-                # file.write(form.func.func_data)
-                file.write('# coding:utf-8\n\n' + f'env = "test"\n\n' + form.func.func_data)
+            FileUtil.save_func_data(name, form.func.func_data)
 
             # 动态导入脚本
             try:

@@ -12,8 +12,8 @@ from flask.json import JSONEncoder
 
 from app.config.models.config import Config
 from utils.log import logger
-from utils.parse import encode_object, list_to_dict
-from utils.filePath import WEB_UI_REPORT_ADDRESS, BROWSER_DRIVER_ADDRESS
+from utils.parse.parse import encode_object, list_to_dict
+from utils.util.fileUtil import BROWSER_DRIVER_ADDRESS, FileUtil
 from utils.client.runUiTest.parseModel import ProjectFormatModel, ElementFormatModel, CaseFormatModel, StepFormatModel
 from utils.client.runUiTest.uitestrunner.api import UiTestRunner
 from utils.client.runUiTest.uitestrunner.utils import build_url
@@ -24,7 +24,7 @@ from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
 from app.web_ui_test.models.case import WebUiCase as Case
 from app.web_ui_test.models.step import WebUiStep as Step
 from app.web_ui_test.models.report import WebUiReport as Report
-from utils.sendReport import async_send_report, call_back_for_pipeline
+from utils.message.sendReport import async_send_report, call_back_for_pipeline
 from config.config import ui_action_mapping_reverse
 
 
@@ -56,7 +56,14 @@ class RunCase:
         self.wait_time_out = Config.get_wait_time_out()
 
         if not report_id:
-            self.report = Report.get_new_report(self.run_name, 'task', performer, create_user, project_id)
+            self.report = Report.get_new_report(
+                name=self.run_name,
+                run_type='task',
+                performer=performer,
+                create_user=create_user,
+                project_id=project_id,
+                # trigger_type=self.trigger_type
+            )
 
         self.report_id = report_id or self.report.id
 
@@ -117,8 +124,7 @@ class RunCase:
         report.update({'is_passed': 1 if result['success'] else 0, 'is_done': 1})
 
         # 测试报告写入到文本文件
-        with open(os.path.join(WEB_UI_REPORT_ADDRESS, f'{report.id}.txt'), 'w') as f:
-            f.write(json_result)
+        FileUtil.save_web_ui_test_report(report.id, json_result)
 
     def run_case(self):
         """ 调 HttpRunner().run() 执行测试 """

@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-import json
 import os
 
 from wtforms import IntegerField
 from wtforms.validators import DataRequired
 
-from utils.filePath import API_REPORT_ADDRESS
+from utils.util.fileUtil import API_REPORT_ADDRESS, FileUtil
 from app.baseForm import BaseForm
 from app.api_test.models.report import ApiReport as Report
 
@@ -19,11 +18,9 @@ class DownloadReportForm(BaseForm):
         report = self.validate_data_is_exist('报告还未生成, 请联系管理员处理', Report, id=field.data)
         report_path = os.path.join(API_REPORT_ADDRESS, f'{report.id}.txt')
         self.validate_data_is_true('报告文件不存在, 请联系管理员处理', os.path.exists(report_path))
-        with open(report_path, 'r', encoding='utf-8') as file:
-            report_content = json.load(file)
         setattr(self, 'report', report)
         setattr(self, 'report_path', report_path)
-        setattr(self, 'report_content', report_content)
+        setattr(self, 'report_content', FileUtil.get_api_test_report(field.data))
 
 
 class GetReportForm(DownloadReportForm):

@@ -6,8 +6,8 @@ from flask import current_app as app, request, send_from_directory, g
 from app.baseModel import db
 from app.api_test import api_test
 from app.baseView import LoginRequiredView
-from utils.filePath import STATIC_ADDRESS
-from utils.parseExcel import parse_file_content
+from utils.util.fileUtil import STATIC_ADDRESS
+from utils.parse.parseExcel import parse_file_content
 from utils.client.runApiTest.runHttpRunner import RunApi
 from app.api_test.models.module import ApiModule as Module
 from app.api_test.models.project import ApiProject as Project
@@ -144,7 +144,13 @@ class ApiRunApiMsgView(LoginRequiredView):
         form = RunApiMsgForm()
         if form.validate():
             api, api_list = form.api_list[0], form.api_list
-            report = Report.get_new_report(api.name, 'api', g.user_name, g.user_id, form.projectId.data)
+            report = Report.get_new_report(
+                name=api.name,
+                run_type='api',
+                performer=g.user_name,
+                create_user=g.user_id,
+                project_id=form.projectId.data
+            )
 
             # 新起线程运行接口
             Thread(

@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import json
 import os
 
 from wtforms import IntegerField
 from wtforms.validators import DataRequired
 
-from utils.filePath import WEB_UI_REPORT_ADDRESS
+from utils.util.fileUtil import WEB_UI_REPORT_ADDRESS, FileUtil
 from app.baseForm import BaseForm
 from app.web_ui_test.models.report import WebUiReport as Report
 
@@ -20,11 +19,9 @@ class DownloadReportForm(BaseForm):
         report = self.validate_data_is_exist('报告不存在', Report, id=field.data)
         report_path = os.path.join(WEB_UI_REPORT_ADDRESS, f'{report.id}.txt')
         self.validate_data_is_true('报告文件不存在', os.path.exists(report_path))
-        with open(report_path, 'r') as file:
-            report_content = json.load(file)
         setattr(self, 'report', report)
         setattr(self, 'report_path', report_path)
-        setattr(self, 'report_content', report_content)
+        setattr(self, 'report_content', FileUtil.get_web_ui_test_report(field.data))
 
 
 class GetReportForm(DownloadReportForm):

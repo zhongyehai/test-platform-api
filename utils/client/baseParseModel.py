@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 
-from utils.filePath import UI_CASE_FILE_ADDRESS
-from utils.jsonUtil import JsonUtil
+from utils.util.fileUtil import UI_CASE_FILE_ADDRESS
+from utils.util.jsonUtil import JsonUtil
 from config.config import assert_mapping
-from utils.parse import extract_functions, parse_function, extract_variables
+from utils.parse.parse import extract_functions, parse_function, extract_variables
 
 
 class BaseParseModel(JsonUtil):

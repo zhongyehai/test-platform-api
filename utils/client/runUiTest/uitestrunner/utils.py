@@ -8,7 +8,7 @@ import os.path
 
 from . import exceptions, logger
 from .exceptions import ParamsError
-from utils.regexp import absolute_http_url_regexp
+from utils.variables.regexp import absolute_http_url_regexp
 
 
 def get_os_environ(variable_name):

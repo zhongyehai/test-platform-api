@@ -5,7 +5,7 @@ import re
 from . import exceptions, logger, utils
 from .compat import OrderedDict, basestring, is_py2
 from .parser import extract_functions, parse_function, get_mapping_variable
-from utils.parse import extract_variables
+from utils.parse.parse import extract_variables
 
 text_extractor_regexp_compile = re.compile(r".*\(.*\).*")
 

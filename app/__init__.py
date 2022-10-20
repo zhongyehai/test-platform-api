@@ -4,7 +4,7 @@ import os
 
 from flask import Flask
 
-from utils import restful
+from utils.view import restful
 from utils.log import logger
 from config.config import conf, ProductionConfig
 from app.baseModel import db
@@ -28,6 +28,11 @@ def create_app():
     db.app = app
     db.create_all()
 
+    # 注册钩子函数
+    register_before_hook(app)  # 注册前置钩子函数
+    register_after_hook(app)  # 注册后置钩子函数
+    register_errorhandler_hook(app)  # 注册异常捕获钩子函数
+
     # 注册蓝图
     from app.api_test import api_test_blueprint
     from app.web_ui_test import web_ui_test_blueprint
@@ -45,10 +50,5 @@ def create_app():
     app.register_blueprint(tool_blueprint, url_prefix='/api/tools')
     app.register_blueprint(home_blueprint, url_prefix='/api/home')
     app.register_blueprint(system_manage_blueprint, url_prefix='/api/system')
-
-    # 注册钩子函数
-    register_before_hook(app)  # 注册前置钩子函数
-    register_after_hook(app)  # 注册后置钩子函数
-    register_errorhandler_hook(app)  # 注册异常捕获钩子函数
 
     return app

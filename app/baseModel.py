@@ -7,8 +7,8 @@ from flask_sqlalchemy import SQLAlchemy as _SQLAlchemy, BaseQuery, Pagination
 from sqlalchemy import MetaData
 from contextlib import contextmanager
 
-from utils.jsonUtil import JsonUtil
-from utils.parse import parse_list_to_dict, update_dict_to_list
+from utils.util.jsonUtil import JsonUtil
+from utils.parse.parse import parse_list_to_dict, update_dict_to_list
 
 
 class SQLAlchemy(_SQLAlchemy):
@@ -564,6 +564,11 @@ class BaseReport(BaseModel):
     run_type = db.Column(db.String(255), default='task', nullable=True, comment='报告类型，task/case/api')
     is_done = db.Column(db.Integer, default=0, comment='是否执行完毕，1执行完毕，0执行中')
     env = db.Column(db.String(255), default='test', comment='运行环境')
+    trigger_type = db.Column(db.String(128), nullable=True, comment='触发类型，流水线触发、页面触发')
+
+    def update_status(self, run_result, is_done=1):
+        """ 测试运行结束后，更新状态和结果 """
+        self.update({'is_passed': 1 if run_result else 0, 'is_done': is_done})
 
     @classmethod
     def get_new_report(cls, **kwargs):
@@ -697,3 +702,7 @@ class Config(BaseModel):
     @classmethod
     def get_ui_report_addr(cls):
         return cls.get_first(name='ui_report_addr').value
+
+    @classmethod
+    def get_run_type(cls):
+        return cls.loads(cls.get_first(name='run_type').value)

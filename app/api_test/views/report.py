@@ -9,7 +9,7 @@ from app.api_test import api_test
 from app.baseModel import db
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.forms.report import GetReportForm, DownloadReportForm, DeleteReportForm, FindReportForm
-from utils.required import login_required
+from utils.view.required import login_required
 
 ns = api_test.namespace("report", description="测试报告管理相关接口")
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import importlib
 import traceback
 
@@ -11,7 +10,7 @@ from app.baseForm import BaseForm
 from app.api_test.models.case import ApiCase
 from app.api_test.models.project import ApiProject
 from app.assist.models.func import Func
-from utils.filePath import FUNC_ADDRESS
+from utils.util.fileUtil import FileUtil
 
 
 class GetFuncFileForm(BaseForm):
@@ -38,9 +37,7 @@ class SaveFuncDataForm(HasFuncForm):
         """ 校验自定义函数文件内容合法 """
 
         # 把自定义函数脚本内容写入到python脚本中
-        with open(os.path.join(FUNC_ADDRESS, f'{self.func.name}.py'), 'w', encoding='utf8') as file:
-            # file.write(field.data)
-            file.write('# coding:utf-8\n\n' + f'env = "test"\n\n' + field.data)
+        FileUtil.save_func_data(self.func.name, field.data)
 
         # 动态导入脚本，语法有错误则不保存
         try:

@@ -7,8 +7,8 @@ from flask import request, send_from_directory, current_app as app
 
 from app.baseView import LoginRequiredView
 from app.test_work import test_work
-from utils.filePath import TEMP_FILE_ADDRESS
-from utils.makeXmind import make_xmind
+from utils.util.fileUtil import TEMP_FILE_ADDRESS, FileUtil
+from utils.makeData.makeXmind import make_xmind
 from app.test_work.models.kym import KYMModule, db
 from app.config.models.config import Config
 
@@ -47,8 +47,7 @@ class ExportKYMAsXmindView(LoginRequiredView):
         """ 导出为xmind """
         project = KYMModule.get_first(project=request.args.get("project"))
         file_path = os.path.join(TEMP_FILE_ADDRESS, f'{project.project}.xmind')
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        FileUtil.delete_file(file_path)
         make_xmind(file_path, json.loads(project.kym))
         return send_from_directory(TEMP_FILE_ADDRESS, f'{project.project}.xmind', as_attachment=True)
 

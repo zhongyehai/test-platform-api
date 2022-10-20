@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from flask import request, abort, g, current_app
+from flask import request, abort, g
 
 from app.system.models.userOperationLog import UserOperationLog
-from utils.required import before_request_required
+from utils.view.required import before_request_required
 
 
 def register_before_hook(app):

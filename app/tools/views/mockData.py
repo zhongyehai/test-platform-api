@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import io
 import json
 import os
 import time
@@ -11,7 +10,7 @@ from flask import request, jsonify
 
 from app.baseView import NotLoginView
 from app.tools import tool
-from utils.filePath import CALL_BACK_ADDRESS
+from utils.util.fileUtil import CALL_BACK_ADDRESS, FileUtil
 from app.config.models.config import Config
 
 ns = tool.namespace("mock", description="mock相关接口")
@@ -169,8 +168,7 @@ def call_back():
 
     # 存回调数据
     name = f'callBack{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.json'
-    with io.open(os.path.join(CALL_BACK_ADDRESS, name), 'w', encoding='utf-8') as call_back_file:
-        json.dump(json_data or form_data or params, call_back_file, ensure_ascii=False)
+    FileUtil.save_file(os.path.join(CALL_BACK_ADDRESS, name), json_data or form_data or params)
     send_msg_by_webhook('回调结果', f'已收到回调数据，保存文件名：{name}')
 
     # 如果有配置返回数据，则返回回调数据，否则返回默认数据

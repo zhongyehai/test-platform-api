@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import importlib
-import os
 import types
 
 from sqlalchemy.dialects.mysql import LONGTEXT
 
 from app.baseModel import BaseModel, db
-from utils.filePath import FUNC_ADDRESS
+from utils.util.fileUtil import FileUtil
 
 
 class Func(BaseModel):
@@ -29,9 +28,7 @@ class Func(BaseModel):
             脚本内容
         """
         for func in cls.get_all():
-            func_file_path = os.path.join(FUNC_ADDRESS, f'{env}_{func.name}.py')
-            with open(func_file_path, 'w', encoding='utf8') as file:
-                file.write('# coding:utf-8\n\n' + f'env = "{env}"\n\n' + func.func_data)
+            FileUtil.save_func_data(f'{env}_{func.name}', func.func_data, env)
 
     @classmethod
     def get_func_by_func_file_name(cls, func_file_id_list, env='test'):

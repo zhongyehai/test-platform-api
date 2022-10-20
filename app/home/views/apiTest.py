@@ -13,8 +13,8 @@ from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.task import ApiTask as Task
 from app.api_test.models.report import ApiReport as Report
-from utils.filePath import CASE_FILE_ADDRESS
-from utils.timeUtil import get_now, time_calculate, get_week_start_and_end
+from utils.util.fileUtil import CASE_FILE_ADDRESS
+from utils.util.timeUtil import get_now, time_calculate, get_week_start_and_end
 
 ns = home.namespace("apiTest", description="接口自动化统计相关接口")
 

@@ -7,7 +7,7 @@ from flask import request, current_app as app
 
 from app.baseView import NotLoginView
 from app.tools import tool
-from utils import makeUserTools
+from utils.makeData import makeUserTools
 from app.config.models.config import Config
 
 ns = tool.namespace("makeUser", description="生成用户相关接口")

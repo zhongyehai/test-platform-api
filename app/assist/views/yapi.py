@@ -15,9 +15,9 @@ from app.assist.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiff
 from app.baseModel import db
 from app.baseView import LoginRequiredView
 from app.config.models.config import Config
-from utils.filePath import DIFF_RESULT
-from utils.makeXmind import make_xmind
-from utils.sendReport import send_diff_api_message
+from utils.util.fileUtil import DIFF_RESULT, FileUtil
+from utils.makeData.makeXmind import make_xmind
+from utils.message.sendReport import send_diff_api_message
 
 ns = assist.namespace("yapi", description="yapi数据管理")
 
@@ -796,8 +796,7 @@ class DiffByYapi(LoginRequiredView):
             yapi_diff_record.diff_summary = json.dumps(diff_summary, ensure_ascii=False, indent=4)
             yapi_diff_record.create_user = g.user_id
             db.session.add(yapi_diff_record)
-        with open(os.path.join(DIFF_RESULT, f'{yapi_diff_record.id}.json'), 'w', encoding='utf-8') as fp:
-            json.dump(diff_detail, fp, ensure_ascii=False, indent=4)
+        FileUtil.save_diff_result(yapi_diff_record.id, diff_detail)
 
         # 有改动则发送报告
         if diff_is_changed:
@@ -822,12 +821,10 @@ class ExportDiffRecordAsXmind(LoginRequiredView):
 
     def get(self):
         """ 导出为xmind """
-        with open(os.path.join(DIFF_RESULT, f'{request.args.get("id")}.json'), 'r', encoding='utf-8') as fp:
-            diff_data = json.load(fp)
+        diff_data = FileUtil.get_diff_result(request.args.get("id"))
         file_name = f'{diff_data.get("nodeData", {}).get("topic", {})}.xmind'
         file_path = os.path.join(DIFF_RESULT, file_name)
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        FileUtil.delete_file(file_path)
         make_xmind(file_path, diff_data)
         return send_from_directory(DIFF_RESULT, file_name, as_attachment=True)
 
@@ -859,9 +856,4 @@ class GetShowDiffRecord(LoginRequiredView):
 
     def get(self):
         """ 展示对比结果详情 """
-        data_id = request.args.get("id")
-        if not data_id:
-            return app.restful.fail('比对id必传')
-        with open(os.path.join(DIFF_RESULT, f'{data_id}.json'), 'r', encoding='utf-8') as fp:
-            data = json.load(fp)
-        return app.restful.success('获取成功', data=data)
+        return app.restful.success('获取成功', data=FileUtil.get_diff_result(request.args.get("id")))

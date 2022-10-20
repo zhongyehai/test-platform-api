@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
 import json
-import os
 import types
 import importlib
 from threading import Thread
@@ -19,10 +18,10 @@ from app.api_test.models.report import ApiReport as Report
 from app.config.models.config import Config
 from utils.client.runApiTest.httprunner.api import HttpRunner
 from utils.log import logger
-from utils.filePath import API_REPORT_ADDRESS
-from utils.parse import encode_object
+from utils.util.fileUtil import FileUtil
+from utils.parse.parse import encode_object
 from utils.client.runApiTest.parseModel import ProjectFormatModel, ApiFormatModel, CaseFormatModel, StepFormatModel
-from utils.sendReport import async_send_report, call_back_for_pipeline
+from utils.message.sendReport import async_send_report, call_back_for_pipeline
 from utils.client.runApiTest.httprunner import built_in
 
 class BaseParse:
@@ -34,15 +33,25 @@ class BaseParse:
                  performer=None,
                  create_user=None,
                  env=None,
+                 trigger_type='page',
                  is_rollback=False):
 
         self.environment = env  # 运行环境
         self.project_id = project_id
         self.run_name = name
         self.is_rollback = is_rollback
+        self.trigger_type = trigger_type
         self.time_out = Config.get_request_time_out()
 
-        self.report_id = report_id or Report.get_new_report(self.run_name, 'task', performer, create_user, project_id).id
+        self.report_id = report_id or Report.get_new_report(
+            name=self.run_name,
+            run_type='task',
+            performer=performer,
+            create_user=create_user,
+            project_id=project_id,
+            trigger_type=self.trigger_type
+        ).id
+
         self.parsed_project_dict = {}
         self.parsed_case_dict = {}
         self.parsed_api_dict = {}
@@ -147,12 +156,10 @@ class BaseParse:
     def build_report(self, json_result):
         """ 写入测试报告到数据库, 并把数据写入到文本中 """
         result = json.loads(json_result)
-        report = Report.get_first(id=self.report_id)
-        report.update({'is_passed': 1 if result['success'] else 0, 'is_done': 1})
 
-        # 测试报告写入到文本文件
-        with open(os.path.join(API_REPORT_ADDRESS, f'{report.id}.txt'), 'w', encoding='utf-8') as f:
-            f.write(json_result)
+        report = Report.get_first(id=self.report_id)
+        report.update_status(result['success'])
+        FileUtil.save_api_test_report(report.id, result)  # 测试报告写入到文本文件
 
         # 定时任务需要把连接放回连接池，不放回去会报错
         if self.is_rollback:
@@ -224,8 +231,9 @@ class BaseParse:
         if self.task:
             content = json.loads(res)
 
-            # 发送回调给流水线
-            call_back_for_pipeline(self.task["call_back"] or [], content["success"])
+            # 如果是流水线触发的，则回调给流水线
+            if self.trigger_type == 'pipeline':
+                call_back_for_pipeline(self.task["call_back"] or [], content["success"])
 
             # 发送测试报告
             async_send_report(
@@ -265,17 +273,19 @@ class RunApi(BaseParse):
         """ 接口调试 """
         logger.info(f'本次测试的接口id：\n{self.api_ids}')
 
-        # 用例的数据结构
-        test_case_template = {
-            'config': {
-                'variables': {},
-            },
-            'teststeps': []  # 测试步骤
-        }
-
         # 解析api
         for api_obj in self.api_ids:
             api = self.get_formated_api(self.project, api_obj)
+
+            # 用例的数据结构
+            test_case_template = {
+                'config': {
+                    'name': api.get("name"),
+                    'variables': {},
+                },
+                'teststeps': []  # 测试步骤
+            }
+
 
             # 合并头部信息
             headers = {}
@@ -286,9 +296,9 @@ class RunApi(BaseParse):
             # 把api加入到步骤
             test_case_template['teststeps'].append(api)
 
-        # 更新公共变量
-        test_case_template['config']['variables'].update(self.project.variables)
-        self.DataTemplate['testcases'].append(test_case_template)
+            # 更新公共变量
+            test_case_template['config']['variables'].update(self.project.variables)
+            self.DataTemplate['testcases'].append(copy.deepcopy(test_case_template))
 
 
 class RunCase(BaseParse):
@@ -304,6 +314,7 @@ class RunCase(BaseParse):
                  create_user=None,
                  is_async=True,
                  env='test',
+                 trigger_type='page',
                  is_rollback=False):
         super().__init__(
             project_id=project_id,
@@ -312,6 +323,7 @@ class RunCase(BaseParse):
             performer=performer,
             create_user=create_user,
             env=env,
+            trigger_type=trigger_type,
             is_rollback=is_rollback)
 
         self.task = task

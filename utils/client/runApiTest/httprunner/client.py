@@ -6,7 +6,7 @@ from urllib import parse
 import requests
 import urllib3
 
-from utils.build_request_file import build_request_file
+from utils.util.fileUtil import FileUtil
 from . import logger
 from .utils import build_url, lower_dict_keys, omit_long_data
 from requests import Request, Response
@@ -147,7 +147,7 @@ class HttpSession(requests.Session):
             kwargs["data"] = parse.urlencode(kwargs["data"])
 
         # 构建文件请求对象
-        kwargs["files"] = build_request_file(kwargs["files"])
+        kwargs["files"] = FileUtil.build_request_file(kwargs["files"])
 
         # 记录开始请求时间
         request_timestamp = time.time()

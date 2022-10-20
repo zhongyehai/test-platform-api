@@ -7,8 +7,8 @@ from flask import request, send_from_directory, current_app as app
 
 from app.assist import assist
 from app.baseView import LoginRequiredView, NotLoginView
-from utils.filePath import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, \
-    UI_CASE_FILE_ADDRESS
+from utils.util.fileUtil import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, \
+    UI_CASE_FILE_ADDRESS, FileUtil
 
 ns = assist.namespace("file", description="文件管理")
 
@@ -132,6 +132,5 @@ class FileManageView(LoginRequiredView):
         request_json = request.get_json(silent=True)
         name, addr = request_json.get('name'), folders.get(request_json.get('fileType'), 'case')
         path = os.path.join(addr, name)
-        if os.path.exists(path):
-            os.remove(path)
+        FileUtil.delete_file(path)
         return app.restful.success('删除成功', data={'name': name})
