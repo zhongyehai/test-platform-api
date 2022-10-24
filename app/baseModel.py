@@ -82,7 +82,6 @@ class BaseModel(db.Model, JsonUtil):
         'headers', 'variables', 'func_files',
         'params', 'data_form', 'data_json', 'data_urlencoded', 'extracts', 'validates', "data_driver", "skip_if",
         'set_ids', 'case_ids',
-        'cookies', 'session_storage', 'local_storage',
         'kym', 'task_item',
     ]
 
@@ -604,7 +603,7 @@ class ConfigType(BaseModel):
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.id.asc()
+            order_by=cls.id.desc()
         )
 
 
@@ -628,7 +627,7 @@ class Config(BaseModel):
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.id.asc()
+            order_by=cls.id.desc()
         )
 
     @classmethod
@@ -640,6 +639,11 @@ class Config(BaseModel):
     def get_run_test_env(cls):
         """ 获取运行环境配置项 """
         return cls.loads(cls.get_first(name='run_test_env').value)
+
+    @classmethod
+    def get_default_env(cls):
+        """ 获取默认环境 """
+        return cls.get_first(name='default_env').value
 
     @classmethod
     def get_http_methods(cls):
@@ -700,9 +704,38 @@ class Config(BaseModel):
         return cls.get_first(name='api_report_addr').value
 
     @classmethod
+    def get_find_element_option(cls):
+        return cls.loads(cls.get_first(name='find_element_option').value)
+
+
+    @classmethod
     def get_ui_report_addr(cls):
         return cls.get_first(name='ui_report_addr').value
 
     @classmethod
     def get_run_type(cls):
         return cls.loads(cls.get_first(name='run_type').value)
+
+
+class FuncErrorRecord(BaseModel):
+    """ 自定义函数执行错误记录表 """
+    __tablename__ = 'func_error_record'
+
+    name = db.Column(db.String(255), nullable=True, comment='错误title')
+    detail = db.Column(db.Text(), default='', comment='错误详情')
+
+    def to_dict(self, *args, **kwargs):
+        """ 自定义序列化器，把模型的每个字段转为字典，方便返回给前端 """
+        return super(FuncErrorRecord, self).to_dict()
+
+    @classmethod
+    def make_pagination(cls, form):
+        """ 解析分页条件 """
+        filters = []
+        if form.name.data:
+            filters.append(FuncErrorRecord.name.like(f'%{form.name.data}%'))
+        return cls.pagination(
+            page_num=form.pageNum.data,
+            page_size=form.pageSize.data,
+            filters=filters,
+            order_by=cls.created_time.desc())

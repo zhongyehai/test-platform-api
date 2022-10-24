@@ -57,10 +57,7 @@ class WebUiCopyPageView(LoginRequiredView):
                         update_user=g.user_id
                     ))
 
-            return app.restful.success(msg='复制成功', data={
-                "page": new_page.to_dict(),
-                "element": [element.to_dict() for element in Element.get_all(page_id=new_page.id)]
-            })
+            return app.restful.success(msg='复制成功', data={"page": new_page.to_dict()})
         return app.restful.fail(form.get_error())
 
 

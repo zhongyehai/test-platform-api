@@ -83,9 +83,6 @@ class AddEnv(BaseForm):
     env = StringField(validators=[DataRequired('所属环境必传'), Length(1, 255, message='所属环境长度为1~255位')])
     host = StringField(validators=[DataRequired('域名必传'), Length(2, 255, message='域名长度为2~255位')])
     variables = StringField()
-    cookies = StringField()
-    session_storage = StringField()
-    local_storage = StringField()
     all_func_name = {}
     all_variables = {}
 

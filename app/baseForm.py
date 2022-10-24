@@ -6,7 +6,7 @@ from flask import request, g
 from wtforms import Form, ValidationError
 
 from utils.util.jsonUtil import JsonUtil
-from utils.parse.parse import extract_functions, parse_function, extract_variables
+from utils.client.testRunner.parser import extract_variables, parse_function, extract_functions
 
 
 class BaseForm(Form, JsonUtil):

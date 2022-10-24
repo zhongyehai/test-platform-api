@@ -247,13 +247,15 @@ class GetApiTestCountReportView(LoginRequiredView):
                 group by run_type
             """)
 
-        last_day_add = len(Report.query.filter(Report.created_time.between(time_calculate(-1), time_calculate(0))).all())
+        last_day_add = len(
+            Report.query.filter(Report.created_time.between(time_calculate(-1), time_calculate(0))).all())
         to_day_add = len(Report.query.filter(Report.created_time.between(time_calculate(0), get_now())).all())
         last_start_time, last_end_time = get_week_start_and_end(1)
         last_week_add = len(Report.query.filter(Report.created_time.between(last_start_time, last_end_time)).all())
 
         current_start_time, current_end_time = get_week_start_and_end(0)
-        current_week_add = len(Report.query.filter(Report.created_time.between(current_start_time, current_end_time)).all())
+        current_week_add = len(
+            Report.query.filter(Report.created_time.between(current_start_time, current_end_time)).all())
 
         last_month_add = len(Report.query.filter(Report.created_time.between(time_calculate(-30), get_now())).all())
 

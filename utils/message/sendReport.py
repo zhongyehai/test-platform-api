@@ -7,7 +7,7 @@ import requests
 
 from utils.message.sendEmail import SendEmail
 from utils.report.report import render_html_report
-from app.config.models.config import Config
+from app.baseModel import Config
 from config.config import conf
 
 
@@ -149,7 +149,6 @@ def send_diff_api_message(content, report_id, addr):
                     f'##### 乱码:<font color=#E74C3C> {content["api"]["errorCode"]} </font>个 \n> '
                     f'##### \n> '
                     f'#### 请登录[测试平台]({Config.get_diff_api_addr()}{str(report_id)})查看详情，并确认是否更新\n'
-            # f'#### 请登录[测试平台]({conf["diff_addr"]}{str(report_id)})查看详情，并确认是否更新\n'
         }
     }
     try:
@@ -164,7 +163,6 @@ def send_run_time_error_message(content, addr):
         "msgtype": "markdown",
         "markdown": {
             "title": content.get("title"),
-            # "text": content.get("detail") + f'#### 详情请登录[测试平台]({conf["error_addr"]})查看\n'
             "text": content.get("detail") + f'#### 详情请登录[测试平台]({Config.get_func_error_addr()})查看\n'
         }
     }
@@ -180,6 +178,11 @@ def async_send_run_time_error_message(**kwargs):
     print('开始多线程发送错误信息')
     Thread(target=send_run_time_error_message, kwargs=kwargs).start()
     print('多线程发送错误信息完毕')
+
+
+def send_run_func_error_message(content):
+    """ 运行自定义函数错误通知 """
+    async_send_run_time_error_message(content=content, addr=Config.get_run_time_error_message_send_addr())
 
 
 if __name__ == '__main__':

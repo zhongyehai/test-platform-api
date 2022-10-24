@@ -122,20 +122,16 @@ class ApiCopyCaseView(LoginRequiredView):
 
             # 复制步骤
             old_step_list = Step.query.filter_by(case_id=form.case.id).order_by(Step.num.asc()).all()
+            step_list = []
             for index, old_step in enumerate(old_step_list):
                 step = old_step.to_dict()
                 step['num'] = index
                 step['case_id'] = new_case.id
                 new_step = Step().create(step)
                 new_step.add_api_quote_count()
+                step_list.append(new_step.to_dict())
 
-            return app.restful.success(
-                '复制成功',
-                data={
-                    'case': new_case.to_dict(),
-                    'steps': [step.to_dict() for step in Step.get_all(case_id=new_case.id)]
-                }
-            )
+            return app.restful.success('复制成功', data={'case': new_case.to_dict(), 'steps': step_list})
         return app.restful.fail(form.get_error())
 
 

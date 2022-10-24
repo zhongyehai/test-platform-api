@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from flask import request, current_app as app
+from flask import request, current_app as app, send_from_directory, g
 
-from app.baseView import LoginRequiredView
+from app.baseView import LoginRequiredView, NotLoginView
+from app.config.models.config import Config
 from app.web_ui_test import web_ui_test
+from app.web_ui_test.models.page import WebUiPage as Page, db
 from app.web_ui_test.models.element import WebUiElement as Element
 from app.web_ui_test.forms.element import AddElementForm, EditElementForm, DeleteElementForm, ElementListForm, \
     GetElementById, ChangeElementById
+from utils.parse.parseExcel import parse_file_content
+from utils.util.fileUtil import STATIC_ADDRESS
 
 ns = web_ui_test.namespace("element", description="元素管理相关接口")
 
@@ -40,6 +44,45 @@ class WebUiChangeElementByIdView(LoginRequiredView):
             form.old.update(form.data)
             return app.restful.success(f'元素修改成功')
         return app.restful.fail(form.get_error())
+
+
+@ns.route('/template/download/')
+class ElementTemplateDownloadView(LoginRequiredView):
+
+    def get(self):
+        """ 下载元素导入模板 """
+        return send_from_directory(STATIC_ADDRESS, '元素导入模板.xls', as_attachment=True)
+
+
+@ns.route('/upload/')
+class ElementUploadView(NotLoginView):
+
+    def post(self):
+        """ 从excel中导入元素 """
+        file, page, user_id = request.files.get('file'), Page.get_first(id=request.form.get('id')), g.user_id
+        if not page:
+            return app.restful.fail('页面不存在')
+        if file and file.filename.endswith('xls'):
+            excel_data = parse_file_content(file.read())  # [{'元素名称': '账号输入框', '定位方式': '根据id属性定位', '元素表达式': 'account', '等待元素出现的超时时间': 10.0}]
+            option_dict = {option["label"]: option["value"] for option in Config.get_find_element_option()}
+            with db.auto_commit():
+                for element_data in excel_data:
+                    name, by = element_data.get('元素名称', ''), element_data.get('定位方式', '')
+                    element, wait_time_out = element_data.get('元素表达式', ''), element_data.get('等待元素出现的超时时间', '')
+                    if all((name, by, element, wait_time_out)):
+                        new_element = Element()
+                        new_element.name = name
+                        new_element.by = option_dict[by] if by in option_dict else 'id'
+                        new_element.element = element
+                        new_element.wait_time_out = wait_time_out
+                        new_element.num = new_element.get_insert_num(page_id=page.id)
+                        new_element.project_id = page.project_id
+                        new_element.module_id = page.module_id
+                        new_element.page_id = page.id
+                        new_element.create_user = user_id
+                        db.session.add(new_element)
+            return app.restful.success('元素导入成功')
+        return app.restful.fail('请上传后缀为xls的Excel文件')
 
 
 @ns.route('/')

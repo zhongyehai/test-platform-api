@@ -16,13 +16,14 @@ from app.assist.models.func import Func
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
 from app.api_test.models.report import ApiReport as Report
 from app.config.models.config import Config
-from utils.client.runApiTest.httprunner.api import HttpRunner
+from utils.client.testRunner.api import TestRunner
 from utils.log import logger
 from utils.util.fileUtil import FileUtil
 from utils.parse.parse import encode_object
 from utils.client.runApiTest.parseModel import ProjectFormatModel, ApiFormatModel, CaseFormatModel, StepFormatModel
 from utils.message.sendReport import async_send_report, call_back_for_pipeline
-from utils.client.runApiTest.httprunner import built_in
+from utils.client.testRunner import built_in
+
 
 class BaseParse:
 
@@ -141,6 +142,7 @@ class BaseParse:
             'validate': api.validates,  # 接口断言信息
             'base_url': project.host,
             'data_type': api.data_type,
+            'variables': [],
             'request': {
                 'method': api.method,
                 'url': api.addr,
@@ -182,7 +184,7 @@ class BaseParse:
             self.sync_run_case()
 
     def _run_case(self, case, run_case_dict, index):
-        runner = HttpRunner()
+        runner = TestRunner()
         runner.run(case)
         self.update_run_case_status(run_case_dict, index, runner.summary)
 
@@ -192,7 +194,7 @@ class BaseParse:
 
     def sync_run_case(self):
         """ 单线程运行用例 """
-        runner = HttpRunner()
+        runner = TestRunner()
         runner.run(self.DataTemplate)
         summary = runner.summary
         summary['time']['start_at'] = datetime.fromtimestamp(summary['time']['start_at']).strftime("%Y-%m-%d %H:%M:%S")
@@ -258,15 +260,9 @@ class RunApi(BaseParse):
         super().__init__(project_id=project_id, name=run_name, report_id=report_id, env=env)
 
         self.task = task
-        # 要执行的接口id
-        self.api_ids = api_ids
-
-        # 解析当前服务信息
-        self.project = self.get_formated_project(self.project_id)
-
-        # 解析api
-        self.format_data_for_template()
-
+        self.api_ids = api_ids  # 要执行的接口id
+        self.project = self.get_formated_project(self.project_id)  # 解析当前服务信息
+        self.format_data_for_template()  # 解析api
         self.count_step = 1
 
     def format_data_for_template(self):
@@ -282,10 +278,11 @@ class RunApi(BaseParse):
                 'config': {
                     'name': api.get("name"),
                     'variables': {},
+                    'setup_hooks': [],
+                    'teardown_hooks': []
                 },
                 'teststeps': []  # 测试步骤
             }
-
 
             # 合并头部信息
             headers = {}
@@ -419,7 +416,8 @@ class RunCase(BaseParse):
                     'variables': {},
                     'headers': {},
                     'name': current_case.name,
-                    'run_env': self.environment
+                    'run_env': self.environment,
+                    "run_type": "api"
                 },
                 'teststeps': []
             }
@@ -449,9 +447,11 @@ class RunCase(BaseParse):
                         # 数据驱动的 comment 字段，用于做标识
                         step.name += driver_data.get('comment', '')
                         step.params = step.params = step.data_json = step.data_form = driver_data.get('data', {})
-                        case_template['teststeps'].append(self.parse_step(current_project, project, current_case, case, api, step))
+                        case_template['teststeps'].append(
+                            self.parse_step(current_project, project, current_case, case, api, step))
                 else:
-                    case_template['teststeps'].append(self.parse_step(current_project, project, current_case, case, api, step))
+                    case_template['teststeps'].append(
+                        self.parse_step(current_project, project, current_case, case, api, step))
 
                 # 把服务和用例的的自定义变量留下来
                 all_variables.update(project.variables)

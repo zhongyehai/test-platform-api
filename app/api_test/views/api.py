@@ -5,7 +5,7 @@ from flask import current_app as app, request, send_from_directory, g
 
 from app.baseModel import db
 from app.api_test import api_test
-from app.baseView import LoginRequiredView
+from app.baseView import LoginRequiredView, NotLoginView
 from utils.util.fileUtil import STATIC_ADDRESS
 from utils.parse.parseExcel import parse_file_content
 from utils.client.runApiTest.runHttpRunner import RunApi
@@ -103,7 +103,7 @@ class ApiGetApiBelongToStepView(LoginRequiredView):
 
 
 @ns.route('/upload/')
-class ApiGetApiUploadView(LoginRequiredView):
+class ApiGetApiUploadView(NotLoginView):
 
     def post(self):
         """ 从excel中导入接口 """
@@ -132,7 +132,7 @@ class ApiGetApiUploadView(LoginRequiredView):
 class ApiTemplateDownloadView(LoginRequiredView):
 
     def get(self):
-        """ 下载接口模板 """
+        """ 下载接口导入模板 """
         return send_from_directory(STATIC_ADDRESS, '接口导入模板.xls', as_attachment=True)
 
 

@@ -10,10 +10,6 @@ class WebUiCase(BaseCase):
 
     __tablename__ = 'web_ui_test_case'
 
-    cookies = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='cookie')
-    session_storage = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='session_storage')
-    local_storage = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='local_storage')
-
     set_id = db.Column(db.Integer, db.ForeignKey('web_ui_test_case_set.id'), comment='所属的用例集id')
 
     def delete_current_and_step(self):

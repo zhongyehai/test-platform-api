@@ -251,6 +251,7 @@ def init_config():
         '系统配置': [
             {'name': 'platform_name', 'value': '极测平台', 'desc': '测试平台名字'},
             {'name': 'run_test_env', 'value': JsonUtil.dumps(env_dict), 'desc': '测试平台支持的环境'},
+            {'name': 'default_env', 'value': list(env_dict.keys())[0], 'desc': '编辑、运行时，默认选择的环境'},
             {'name': 'run_type', 'value': JsonUtil.dumps(run_type), 'desc': '运行测试的类型'},
             {'name': 'make_user_info_mapping', 'value': JsonUtil.dumps(make_user_info_mapping),
              'desc': '生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）'},

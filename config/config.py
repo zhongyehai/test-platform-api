@@ -8,8 +8,8 @@ import urllib3.fields as f
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 from utils.util.yamlUtil import load
-from utils.client.runApiTest.httprunner import built_in as assert_func_file
-from utils.client.runUiTest.uitestrunner.webdriverAction import Driver
+from utils.client.testRunner import built_in as assert_func_file
+from utils.client.testRunner.webdriverAction import Driver
 
 # 从 httpRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
 assert_mapping, assert_mapping_list = {}, []

@@ -15,9 +15,6 @@ class ProjectFormatModel(BaseParseModel):
         self.test = kwargs.get('test')
         self.host = kwargs.get('host')
         self.variables = self.parse_variables(kwargs.get('variables', [{}]))
-        self.cookies = self.parse_headers(kwargs.get('cookies', [{}]))
-        self.session_storage = self.parse_headers(kwargs.get('session_storage', [{}]))
-        self.local_storage = self.parse_headers(kwargs.get('local_storage', [{}]))
 
 
 class ElementFormatModel(BaseParseModel):
@@ -47,9 +44,6 @@ class CaseFormatModel(BaseParseModel):
         self.env = kwargs.get('env')
         self.func_files = kwargs.get('func_files')
         self.variables = self.parse_variables(kwargs.get('variables', [{}]))
-        self.cookies = self.parse_headers(kwargs.get('cookies', [{}]))
-        self.session_storage = self.parse_headers(kwargs.get('session_storage', [{}]))
-        self.local_storage = self.parse_headers(kwargs.get('local_storage', [{}]))
         self.is_run = kwargs.get('is_run')
         self.run_times = kwargs.get('run_times')
         self.module_id = kwargs.get('module_id')

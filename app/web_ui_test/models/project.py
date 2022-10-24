@@ -20,11 +20,6 @@ class WebUiProjectEnv(BaseProjectEnv):
 
     __tablename__ = 'web_ui_test_project_env'
 
-    cookies = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='cookie')
-    session_storage = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]',
-                                comment='session_storage')
-    local_storage = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='local_storage')
-
     @classmethod
     def create_env(cls, project_id=None, env_list=None):
         """

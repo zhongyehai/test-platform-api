@@ -79,7 +79,7 @@ class WebUiProjectEnvSynchronizationView(LoginRequiredView):
             synchronization_result = ProjectEnv.synchronization(
                 from_env,
                 form.envTo.data,
-                ["variables", 'cookies', 'session_storage', 'local_storage']
+                ["variables"]
             )
             return app.restful.success('同步成功', data=synchronization_result)
         return app.restful.fail(form.get_error())
@@ -116,7 +116,7 @@ class WebUiProjectEnvView(LoginRequiredView):
             ProjectEnv.synchronization(
                 form.env_data,
                 env_list,
-                ["variables", 'cookies', 'session_storage', 'local_storage']
+                ["variables"]
             )
             return app.restful.success(f'环境保存成功', form.env_data.to_dict())
         return app.restful.fail(msg=form.get_error())

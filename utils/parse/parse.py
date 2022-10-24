@@ -6,20 +6,6 @@ import re
 from utils.variables.regexp import variable_regexp, function_regexp, function_regexp_compile
 
 
-# variable_regexp = r"\$([\w_]+)"
-# function_regexp = r"\$\{([\w_]+\([\$\w\.\-_ =,]*\))\}"
-# function_regexp_compile = re.compile(r"^([\w_]+)\(([\$\w\.\-/_ =,]*)\)$")
-# function_regexp_compile = re.compile(r"^([\w_]+)\(([\$\w\W\.\-/_ =,]*)\)$")
-
-def get_dict_data(content):
-    if isinstance(content, dict):
-        return content
-    try:
-        return json.loads(content)
-    except Exception as error:
-        return content
-
-
 def parse_list_to_dict(data_list: list):
     """ list转字典，如果列表中有多个相同的key，则以最后一个为准 """
     result = {}
@@ -70,83 +56,83 @@ def update_dict_to_list(from_dict: dict, to_list: list):
     return parse_dict_to_list(variables)
 
 
-def list_to_dict(data: list):
-    """ [{}] => {} """
-    # res = {}
-    # for item in data:
-    #     for key, value in item.items():
-    #         res[key] = value
-    # return res
-    return {key: value for item in data for key, value in item.items()}
+# def list_to_dict(data: list):
+#     """ [{}] => {} """
+#     # res = {}
+#     # for item in data:
+#     #     for key, value in item.items():
+#     #         res[key] = value
+#     # return res
+#     return {key: value for item in data for key, value in item.items()}
 
 
-def extract_functions(content):
-    """ 从字符串内容中提取所有自定义函数，格式为${fun()}
-    @param (str) content
-    @return (list) functions list
-
-    e.g. ${func(5)} => ["func(5)"]
-         ${func(a=1, b=2)} => ["func(a=1, b=2)"]
-         /api_1_0/1000?_t=${get_timestamp()} => ["get_timestamp()"]
-         /api_1_0/${add(1, 2)} => ["add(1, 2)"]
-         "/api_1_0/${add(1, 2)}?_t=${get_timestamp()}" => ["add(1, 2)", "get_timestamp()"]
-    """
-    try:
-        return re.findall(function_regexp, content)
-    except TypeError:
-        return []
-
-
-def parse_function(content):
-    """ 从字符串内容中解析函数名和参数
-        >>> parse_function("func()")
-        {'func_name': 'func', 'args': [], 'kwargs': {}}
-
-        >>> parse_function("func(5)")
-        {'func_name': 'func', 'args': [5], 'kwargs': {}}
-
-        >>> parse_function("func(1, 2)")
-        {'func_name': 'func', 'args': [1, 2], 'kwargs': {}}
-
-        >>> parse_function("func(a=1, b=2)")
-        {'func_name': 'func', 'args': [], 'kwargs': {'a': 1, 'b': 2}}
-
-        >>> parse_function("func(1, 2, a=3, b=4)")
-        {'func_name': 'func', 'args': [1, 2], 'kwargs': {'a':3, 'b':4}}
-
-    """
-    matched = function_regexp_compile.match(content)
-    function_meta = {"func_name": matched.group(1), "args": [], "kwargs": {}}
-    args_str = matched.group(2).strip()
-    if args_str == "":
-        return function_meta
-
-    args_list = args_str.split(',')
-    for arg in args_list:
-        arg = arg.strip()
-        if '=' in arg:
-            key, value = arg.split('=')
-            function_meta["kwargs"][key.strip()] = parse_string_value(value.strip())
-        else:
-            function_meta["args"].append(parse_string_value(arg))
-
-    return function_meta
+# def extract_functions(content):
+#     """ 从字符串内容中提取所有自定义函数，格式为${fun()}
+#     @param (str) content
+#     @return (list) functions list
+#
+#     e.g. ${func(5)} => ["func(5)"]
+#          ${func(a=1, b=2)} => ["func(a=1, b=2)"]
+#          /api_1_0/1000?_t=${get_timestamp()} => ["get_timestamp()"]
+#          /api_1_0/${add(1, 2)} => ["add(1, 2)"]
+#          "/api_1_0/${add(1, 2)}?_t=${get_timestamp()}" => ["add(1, 2)", "get_timestamp()"]
+#     """
+#     try:
+#         return re.findall(function_regexp, content)
+#     except TypeError:
+#         return []
 
 
-def extract_variables(content):
-    """ 从内容中提取所有变量名，格式为$variable
-    @param (str) content
-    @return (list) variable name list
+# def parse_function(content):
+#     """ 从字符串内容中解析函数名和参数
+#         >>> parse_function("func()")
+#         {'func_name': 'func', 'args': [], 'kwargs': {}}
+#
+#         >>> parse_function("func(5)")
+#         {'func_name': 'func', 'args': [5], 'kwargs': {}}
+#
+#         >>> parse_function("func(1, 2)")
+#         {'func_name': 'func', 'args': [1, 2], 'kwargs': {}}
+#
+#         >>> parse_function("func(a=1, b=2)")
+#         {'func_name': 'func', 'args': [], 'kwargs': {'a': 1, 'b': 2}}
+#
+#         >>> parse_function("func(1, 2, a=3, b=4)")
+#         {'func_name': 'func', 'args': [1, 2], 'kwargs': {'a':3, 'b':4}}
+#
+#     """
+#     matched = function_regexp_compile.match(content)
+#     function_meta = {"func_name": matched.group(1), "args": [], "kwargs": {}}
+#     args_str = matched.group(2).strip()
+#     if args_str == "":
+#         return function_meta
+#
+#     args_list = args_str.split(',')
+#     for arg in args_list:
+#         arg = arg.strip()
+#         if '=' in arg:
+#             key, value = arg.split('=')
+#             function_meta["kwargs"][key.strip()] = parse_string_value(value.strip())
+#         else:
+#             function_meta["args"].append(parse_string_value(arg))
+#
+#     return function_meta
 
-    e.g. $variable => ["variable"]
-         /blog/$postid => ["postid"]
-         /$var1/$var2 => ["var1", "var2"]
-         abc => []
-    """
-    try:
-        return re.findall(variable_regexp, content)
-    except TypeError:
-        return []
+
+# def extract_variables(content):
+#     """ 从内容中提取所有变量名，格式为$variable
+#     @param (str) content
+#     @return (list) variable name list
+#
+#     e.g. $variable => ["variable"]
+#          /blog/$postid => ["postid"]
+#          /$var1/$var2 => ["var1", "var2"]
+#          abc => []
+#     """
+#     try:
+#         return re.findall(variable_regexp, content)
+#     except TypeError:
+#         return []
 
 
 def convert(variable):

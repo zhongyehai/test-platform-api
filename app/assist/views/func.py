@@ -7,7 +7,8 @@ from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView
 from utils.util.fileUtil import FileUtil
-from utils.parse.parse import parse_function, extract_functions
+# from utils.parse.parse import parse_function, extract_functions
+from utils.client.testRunner.parser import parse_function, extract_functions
 from app.assist import assist
 from app.assist.models.func import Func
 from app.assist.forms.func import HasFuncForm, SaveFuncDataForm, CreatFuncForm, EditFuncForm, DebuggerFuncForm, \
