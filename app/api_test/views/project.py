@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app, request
 
-from app.api_test import api_test
+from app.api_test.blueprint import api_test
+from app.busines import ProjectBusiness, ProjectEnvBusiness
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
 from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.forms.project import (
@@ -10,10 +11,7 @@ from app.api_test.forms.project import (
 )
 from app.baseView import LoginRequiredView
 
-ns = api_test.namespace("project", description="服务管理相关接口")
 
-
-@ns.route('/all/')
 class ApiProjectAllView(LoginRequiredView):
 
     def get(self):
@@ -21,18 +19,14 @@ class ApiProjectAllView(LoginRequiredView):
         return app.restful.success(data=[project.to_dict() for project in Project.get_all()])
 
 
-@ns.route('/list/')
 class ApiProjectListView(LoginRequiredView):
 
     def get(self):
         """ 获取服务列表 """
-        form = FindProjectForm()
-        if form.validate():
-            return app.restful.success(data=Project.make_pagination(form))
-        return app.restful.fail(form.get_error())
+        form = FindProjectForm().do_validate()
+        return app.restful.success(data=Project.make_pagination(form))
 
 
-@ns.route('/sort/')
 class ProjectChangeSortView(LoginRequiredView):
 
     def put(self):
@@ -41,90 +35,68 @@ class ProjectChangeSortView(LoginRequiredView):
         return app.restful.success(msg='修改排序成功')
 
 
-@ns.route('/')
-@api_test.doc(title='服务管理', description='服务管理接口')
 class ApiProjectView(LoginRequiredView):
     """ 服务管理 """
 
     def get(self):
         """ 获取服务 """
-        form = GetProjectByIdForm()
-        if form.validate():
-            return app.restful.success(data=form.project.to_dict())
-        return app.restful.fail(form.get_error())
+        form = GetProjectByIdForm().do_validate()
+        return app.restful.success(data=form.project.to_dict())
 
     def post(self):
         """ 新增服务 """
-        form = AddProjectForm()
-        if form.validate():
-            form.num.data = Project.get_insert_num()
-            project = Project().create(form.data)
-            ProjectEnv.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
-            CaseSet.create_case_set_by_project(project.id)  # 新增服务的时候，一并把用例集设置齐全
-            return app.restful.success(f'服务【{form.name.data}】新建成功', project.to_dict())
-        return app.restful.fail(msg=form.get_error())
+        form = AddProjectForm().do_validate()
+        project = ProjectBusiness.post(form, Project, ProjectEnv, CaseSet)
+        return app.restful.success(f'服务【{form.name.data}】新建成功', project.to_dict())
 
     def put(self):
         """ 修改服务 """
-        form = EditProjectForm()
-        if form.validate():
-            form.project.update(form.data)
-            return app.restful.success(f'服务【{form.name.data}】修改成功', form.project.to_dict())
-        return app.restful.fail(msg=form.get_error())
+        form = EditProjectForm().do_validate()
+        form.project.update(form.data)
+        return app.restful.success(f'服务【{form.name.data}】修改成功', form.project.to_dict())
 
     def delete(self):
         """ 删除服务 """
-        form = DeleteProjectForm()
-        if form.validate():
-            form.project.delete_current_and_env()
-            return app.restful.success(msg=f'服务【{form.project.name}】删除成功')
-        return app.restful.fail(form.get_error())
+        form = DeleteProjectForm().do_validate()
+        form.project.delete_current_and_env()
+        return app.restful.success(msg=f'服务【{form.project.name}】删除成功')
 
 
-@ns.route('/env/synchronization/')
 class ApiProjectEnvViewSynchronizationView(LoginRequiredView):
 
     def post(self):
         """ 同步环境数据 """
-        form = SynchronizationEnvForm()
-        if form.validate():
-            from_env = ProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
-            synchronization_result = ProjectEnv.synchronization(from_env, form.envTo.data, ['variables', 'headers'])
-            return app.restful.success('同步成功', data=synchronization_result)
-        return app.restful.fail(form.get_error())
+        form = SynchronizationEnvForm().do_validate()
+        from_env = ProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
+        synchronization_result = ProjectEnv.synchronization(from_env, form.envTo.data, ['variables', 'headers'])
+        return app.restful.success('同步成功', data=synchronization_result)
 
 
-@ns.route('/env/')
-@api_test.doc(title='服务环境管理', description='服务环境管理接口')
 class ApiProjectEnvView(LoginRequiredView):
     """ 服务环境管理 """
 
     def get(self):
         """ 获取服务环境 """
-        form = FindEnvForm()
-        if form.validate():
-            return app.restful.success(data=form.env_data.to_dict())
-        return app.restful.fail(form.get_error())
+        form = FindEnvForm().do_validate()
+        return app.restful.success(data=form.env_data.to_dict())
 
     def post(self):
         """ 新增服务环境 """
-        form = AddEnv()
-        if form.validate():
-            env = ProjectEnv().create(form.data)
-            return app.restful.success(f'环境新建成功', env.to_dict())
-        return app.restful.fail(msg=form.get_error())
+        form = AddEnv().do_validate()
+        env = ProjectEnv().create(form.data)
+        return app.restful.success(f'环境新建成功', env.to_dict())
 
     def put(self):
         """ 修改服务环境 """
-        form = EditEnv()
-        if form.validate():
-            form.env_data.update(form.data)
+        form = EditEnv().do_validate()
+        ProjectEnvBusiness.put(form, ProjectEnv)
+        return app.restful.success(f'环境修改成功', form.env_data.to_dict())
 
-            # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
-            env_list = [
-                env.env for env in ProjectEnv.get_all(project_id=form.project_id.data) if
-                env.env != form.env_data.env
-            ]
-            ProjectEnv.synchronization(form.env_data, env_list, ['variables', 'headers'])
-            return app.restful.success(f'环境修改成功', form.env_data.to_dict())
-        return app.restful.fail(msg=form.get_error())
+
+api_test.add_url_rule('/project', view_func=ApiProjectView.as_view('ApiProjectView'))
+api_test.add_url_rule('/project/all', view_func=ApiProjectAllView.as_view('ApiProjectAllView'))
+api_test.add_url_rule('/project/list', view_func=ApiProjectListView.as_view('ApiProjectListView'))
+api_test.add_url_rule('/project/sort', view_func=ProjectChangeSortView.as_view('ProjectChangeSortView'))
+api_test.add_url_rule('/project/env', view_func=ApiProjectEnvView.as_view('ApiProjectEnvView'))
+api_test.add_url_rule('/project/env/synchronization',
+                      view_func=ApiProjectEnvViewSynchronizationView.as_view('ApiProjectEnvViewSynchronizationView'))

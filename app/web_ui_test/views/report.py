@@ -1,69 +1,57 @@
 # -*- coding: utf-8 -*-
 
-import os
-
 from flask import request, current_app as app
 
 from app.baseView import LoginRequiredView, NotLoginView
 from utils.report.report import render_html_report
-from app.web_ui_test import web_ui_test
-from app.baseModel import db
+from app.web_ui_test.blueprint import web_ui_test
 from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.forms.report import GetReportForm, DownloadReportForm, DeleteReportForm, FindReportForm
+from utils.util.fileUtil import FileUtil
 from utils.view.required import login_required
 
-ns = web_ui_test.namespace("report", description="测试报告管理相关接口")
 
-
-@ns.route('/download/')
 class WebUiDownloadReportView(LoginRequiredView):
 
     def get(self):
         """ 报告下载 """
-        form = DownloadReportForm()
-        if form.validate():
-            return app.restful.success(data=render_html_report(form.report_content))
-        return app.restful.fail(form.get_error())
+        form = DownloadReportForm().do_validate()
+        return app.restful.success(data=render_html_report(form.report_content))
 
 
-@ns.route('/list/')
 class WebUiReportListView(LoginRequiredView):
 
     def get(self):
         """ 报告列表 """
-        form = FindReportForm()
-        if form.validate():
-            return app.restful.success(data=Report.make_pagination(form))
-        return app.restful.fail(form.get_error())
+        form = FindReportForm().do_validate()
+        return app.restful.success(data=Report.make_pagination(form))
 
 
-@ns.route('/done/')
-class WebUiReportIsDoneView(LoginRequiredView):
+class WebUiReportStatusView(LoginRequiredView):
 
     def get(self):
         """ 查询报告是否生成 """
-        return app.restful.success(data=Report.get_first(id=request.args.to_dict().get('id')).is_done)
+        return app.restful.success(data=Report.get_first(id=request.args.to_dict().get('id')).status)
 
 
-@ns.route('/')
 class WebUiReportView(NotLoginView):
 
     def get(self):
         """ 获取测试报告 """
-        form = GetReportForm()
-        if form.validate():
-            with db.auto_commit():
-                form.report.status = '已读'
-            return app.restful.success('获取成功', data=form.report_content)
-        return app.restful.fail(form.get_error())
+        form = GetReportForm().do_validate()
+        form.report.read()
+        return app.restful.success('获取成功', data=form.report_content)
 
     @login_required
     def delete(self):
         """ 删除测试报告 """
-        form = DeleteReportForm()
-        if form.validate():
-            form.report.delete()
-            if os.path.exists(form.report_path):
-                os.remove(form.report_path)
-            return app.restful.success('删除成功')
-        return app.restful.fail(form.get_error())
+        form = DeleteReportForm().do_validate()
+        form.report.delete()
+        FileUtil.delete_file(form.report_path)
+        return app.restful.success('删除成功')
+
+
+web_ui_test.add_url_rule('/report', view_func=WebUiReportView.as_view('WebUiReportView'))
+web_ui_test.add_url_rule('/report/status', view_func=WebUiReportStatusView.as_view('WebUiReportStatusView'))
+web_ui_test.add_url_rule('/report/list', view_func=WebUiReportListView.as_view('WebUiReportListView'))
+web_ui_test.add_url_rule('/report/download', view_func=WebUiDownloadReportView.as_view('WebUiDownloadReportView'))

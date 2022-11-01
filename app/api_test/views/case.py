@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
-from threading import Thread
 
-from flask import current_app as app, request, g
+from flask import current_app as app, request
 
-from app.api_test import api_test
+from app.api_test.blueprint import api_test
 from app.baseView import LoginRequiredView
-from utils.client.runApiTest.runHttpRunner import RunCase
-from app.baseModel import db
+from app.busines import RunCaseBusiness, CaseBusiness
+from utils.client.runApiTest import RunCase
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.report import ApiReport as Report
@@ -15,21 +14,15 @@ from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm, \
     CopyCaseStepForm
 
-ns = api_test.namespace("case", description="用例管理相关接口")
 
-
-@ns.route('/list/')
 class ApiGetCaseListView(LoginRequiredView):
 
     def get(self):
         """ 根据模块获取用例list """
-        form = FindCaseForm()
-        if form.validate():
-            return app.restful.success(data=Case.make_pagination(form))
-        return app.restful.fail(form.get_error())
+        form = FindCaseForm().do_validate()
+        return app.restful.success(data=Case.make_pagination(form))
 
 
-@ns.route('/name/')
 class ApiGetCaseNameByIdView(LoginRequiredView):
 
     def get(self):
@@ -40,19 +33,15 @@ class ApiGetCaseNameByIdView(LoginRequiredView):
             data=[{'id': int(case_id), 'name': Case.get_first(id=case_id).name} for case_id in case_ids])
 
 
-@ns.route('/quote/')
 class ApiChangeCaseQuoteView(LoginRequiredView):
 
     def put(self):
         """ 更新用例引用 """
         case_id, quote_type, quote = request.json.get('id'), request.json.get('quoteType'), request.json.get('quote')
-        with db.auto_commit():
-            case = Case.get_first(id=case_id)
-            setattr(case, quote_type, json.dumps(quote))
+        Case.get_first(id=case_id).update({quote_type: json.dumps(quote)})
         return app.restful.success(msg='引用关系修改成功')
 
 
-@ns.route('/sort/')
 class ApiChangeCaseSortView(LoginRequiredView):
 
     def put(self):
@@ -61,128 +50,76 @@ class ApiChangeCaseSortView(LoginRequiredView):
         return app.restful.success(msg='修改排序成功')
 
 
-@ns.route('/run/')
 class ApiRunCaseView(LoginRequiredView):
 
     def post(self):
         """ 运行测试用例，并生成报告 """
-        form = RunCaseForm()
-        if form.validate():
-            case, case_list = form.case_list[0], form.case_list
-            project_id = CaseSet.get_first(id=case.set_id).project_id
-
-            report = Report.get_new_report(
-                name=case.name,
-                run_type='case',
-                performer=g.user_name,
-                create_user=g.user_id,
-                project_id=project_id,
-                env=form.env.data
-            )
-
-            # 新起线程运行用例
-            Thread(
-                target=RunCase(
-                    project_id=project_id,
-                    run_name=report.name,
-                    case_id=form.caseId.data,
-                    report_id=report.id,
-                    is_async=False,
-                    env=form.env.data
-                ).run_case
-            ).start()
-            return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
-        return app.restful.fail(form.get_error())
+        form = RunCaseForm().do_validate()
+        case = form.case_list[0]
+        project_id = CaseSet.get_first(id=case.set_id).project_id
+        report_id = RunCaseBusiness.run(form, project_id, case.name, 'case', Report, form.caseId.data, RunCase)
+        return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report_id})
 
 
-@ns.route('/changeIsRun/')
 class ApiChangeCaseStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改用例状态（是否执行） """
-        with db.auto_commit():
-            Case.get_first(id=request.json.get('id')).is_run = request.json.get('is_run')
-        return app.restful.success(f'用例已修改为 {"执行" if request.json.get("is_run") else "不执行"}')
+        Case.get_first(id=request.json.get('id')).update(request.json)
+        return app.restful.success("运行状态修改成功")
 
 
-@ns.route('/copy/')
 class ApiCopyCaseView(LoginRequiredView):
 
     def post(self):
         """ 复制用例 """
-        form = GetCaseForm()
-        if form.validate():
-
-            # 复制用例
-            old_case = form.case.to_dict()
-            old_case['create_user'] = old_case['update_user'] = g.user_id
-            old_case['name'] = old_case['name'] + '_copy'
-            old_case['num'] = Case.get_insert_num(set_id=old_case['set_id'])
-            new_case = Case().create(old_case)
-
-            # 复制步骤
-            old_step_list = Step.query.filter_by(case_id=form.case.id).order_by(Step.num.asc()).all()
-            step_list = []
-            for index, old_step in enumerate(old_step_list):
-                step = old_step.to_dict()
-                step['num'] = index
-                step['case_id'] = new_case.id
-                new_step = Step().create(step)
-                new_step.add_api_quote_count()
-                step_list.append(new_step.to_dict())
-
-            return app.restful.success('复制成功', data={'case': new_case.to_dict(), 'steps': step_list})
-        return app.restful.fail(form.get_error())
+        form = GetCaseForm().do_validate()
+        data = CaseBusiness.copy(form, Case, Step, 'api')
+        return app.restful.success('复制成功', data=data)
 
 
-@ns.route('/copy/step/')
 class ApiCopyCaseStepView(LoginRequiredView):
 
     def post(self):
         """ 复制指定用例的步骤到当前用例下 """
-        form = CopyCaseStepForm()
-        if form.validate():
-            from_case, to_case = form.source_case, form.to_case
-            step_list, num_start = [], Step.get_max_num(case_id=to_case.id)
-            for index, step in enumerate(Step.query.filter_by(case_id=from_case.id).order_by(Step.num.asc()).all()):
-                step_dict = step.to_dict()
-                step_dict['case_id'], step_dict['num'] = to_case.id, num_start + index + 1
-                step_list.append(Step().create(step_dict).to_dict())
-            return app.restful.success('步骤复制成功', data=step_list)
-        return app.restful.fail(form.get_error())
+        form = CopyCaseStepForm().do_validate()
+        step_list = CaseBusiness.copy_step_to_current_case(form, Step)
+        return app.restful.success('步骤复制成功', data=step_list)
 
 
-@ns.route('/')
 class ApiCaseView(LoginRequiredView):
 
     def get(self):
         """ 获取用例 """
-        form = GetCaseForm()
-        if form.validate():
-            return app.restful.success('获取成功', data=form.case.to_dict())
-        return app.restful.fail(form.get_error())
+        form = GetCaseForm().do_validate()
+        return app.restful.success('获取成功', data=form.case.to_dict())
 
     def post(self):
         """ 新增用例 """
-        form = AddCaseForm()
-        if form.validate():
-            form.num.data = Case.get_insert_num(set_id=form.set_id.data)
-            new_case = Case().create(form.data)
-            return app.restful.success(f'用例【{new_case.name}】新建成功', data=new_case.to_dict())
-        return app.restful.fail(form.get_error())
+        form = AddCaseForm().do_validate()
+        form.num.data = Case.get_insert_num(set_id=form.set_id.data)
+        new_case = Case().create(form.data)
+        return app.restful.success(f'用例【{new_case.name}】新建成功', data=new_case.to_dict())
 
     def put(self):
         """ 修改用例 """
-        form = EditCaseForm()
-        if form.validate():
-            form.case.update(form.data)
-            return app.restful.success(msg=f'用例【{form.case.name}】修改成功', data=form.case.to_dict())
-        return app.restful.fail(form.get_error())
+        form = EditCaseForm().do_validate()
+        form.case.update(form.data)
+        return app.restful.success(msg=f'用例【{form.case.name}】修改成功', data=form.case.to_dict())
 
     def delete(self):
         """ 删除用例 """
-        form = DeleteCaseForm()
-        if form.validate():
-            form.case.delete_current_and_step()
-            return app.restful.success(f'用例【{form.case.name}】删除成功')
-        return app.restful.fail(form.get_error())
+        form = DeleteCaseForm().do_validate()
+        form.case.delete_current_and_step()
+        return app.restful.success(f'用例【{form.case.name}】删除成功')
+
+
+api_test.add_url_rule('/case', view_func=ApiCaseView.as_view('ApiCaseView'))
+api_test.add_url_rule('/case/run', view_func=ApiRunCaseView.as_view('ApiRunCaseView'))
+api_test.add_url_rule('/case/copy', view_func=ApiCopyCaseView.as_view('ApiCopyCaseView'))
+api_test.add_url_rule('/case/list', view_func=ApiGetCaseListView.as_view('ApiGetCaseListView'))
+api_test.add_url_rule('/case/sort', view_func=ApiChangeCaseSortView.as_view('ApiChangeCaseSortView'))
+api_test.add_url_rule('/case/copy/step', view_func=ApiCopyCaseStepView.as_view('ApiCopyCaseStepView'))
+api_test.add_url_rule('/case/name', view_func=ApiGetCaseNameByIdView.as_view('ApiGetCaseNameByIdView'))
+api_test.add_url_rule('/case/quote', view_func=ApiChangeCaseQuoteView.as_view('ApiChangeCaseQuoteView'))
+api_test.add_url_rule('/case/changeIsRun', view_func=ApiChangeCaseStatusView.as_view('ApiChangeCaseStatusView'))

@@ -9,11 +9,9 @@ import requests
 from flask import request, jsonify
 
 from app.baseView import NotLoginView
-from app.tools import tool
+from app.tools.blueprint import tool
 from utils.util.fileUtil import CALL_BACK_ADDRESS, FileUtil
 from app.config.models.config import Config
-
-ns = tool.namespace("mock", description="mock相关接口")
 
 
 def send_msg_by_webhook(msg_type, msg):
@@ -80,7 +78,6 @@ def get_auto_test_mock_data():
     return jsonify(datas)
 
 
-@ns.route('/autoTest/')
 class GetAutoTestMockDataView(NotLoginView):
 
     def get(self):
@@ -143,7 +140,6 @@ def get_mock_data():
     return jsonify(datas)
 
 
-@ns.route('/common/')
 class MockDataCommonView(NotLoginView):
     def get(self):
         """自动化测试模拟数据源"""
@@ -183,8 +179,7 @@ def call_back():
         "data": name})
 
 
-@ns.route('/callBack/')
-class GetAutoTestMockDataView(NotLoginView):
+class GetCallBackMockDataView(NotLoginView):
     def get(self):
         """模拟回调"""
         return call_back()
@@ -213,7 +208,6 @@ def mock_api():
     })
 
 
-@ns.route('/')
 class MockApiView(NotLoginView):
     def get(self):
         """ 模拟接口处理，收到什么就返回什么 """
@@ -230,3 +224,9 @@ class MockApiView(NotLoginView):
     def delete(self):
         """ 模拟接口处理，收到什么就返回什么 """
         return mock_api()
+
+
+tool.add_url_rule('/mock', view_func=MockApiView.as_view('MockApiView'))
+tool.add_url_rule('/mock/common', view_func=MockDataCommonView.as_view('MockDataCommonView'))
+tool.add_url_rule('/mock/callBack', view_func=GetCallBackMockDataView.as_view('GetCallBackMockDataView'))
+tool.add_url_rule('/mock/autoTest', view_func=GetAutoTestMockDataView.as_view('GetAutoTestMockDataView'))

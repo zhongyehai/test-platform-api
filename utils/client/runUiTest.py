@@ -1,79 +1,94 @@
 # -*- coding: utf-8 -*-
+
 import copy
+import platform
 import json
+import os
 import types
 import importlib
-from threading import Thread
 from datetime import datetime
+from threading import Thread
 
 from flask.json import JSONEncoder
 
-from app.api_test.models.caseSet import ApiCaseSet as CaseSet, db
-from app.api_test.models.api import ApiMsg as Api
-from app.api_test.models.case import ApiCase as Case
-from app.api_test.models.step import ApiStep as Step
-from app.assist.models.func import Func
-from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
-from app.api_test.models.report import ApiReport as Report
+from app import db
 from app.config.models.config import Config
-from utils.client.testRunner.api import TestRunner
-from utils.log import logger
-from utils.util.fileUtil import FileUtil
-from utils.parse.parse import encode_object
-from utils.client.runApiTest.parseModel import ProjectFormatModel, ApiFormatModel, CaseFormatModel, StepFormatModel
-from utils.message.sendReport import async_send_report, call_back_for_pipeline
 from utils.client.testRunner import built_in
+from utils.log import logger
+from utils.parse.parse import encode_object
+from utils.util.fileUtil import BROWSER_DRIVER_ADDRESS, FileUtil
+from utils.client.parseModel import ProjectModel, ElementModel, CaseModel, StepModel
+from utils.client.testRunner.api import TestRunner
+from utils.client.testRunner.utils import build_url
+from app.assist.models.func import Func
+from app.web_ui_test.models.project import WebUiProject as Project, WebUiProjectEnv as ProjectEnv
+from app.web_ui_test.models.element import WebUiElement as Element
+from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
+from app.web_ui_test.models.case import WebUiCase as Case
+from app.web_ui_test.models.step import WebUiStep as Step
+from app.web_ui_test.models.report import WebUiReport as Report
+from utils.message.sendReport import async_send_report, call_back_for_pipeline
+from config import ui_action_mapping_reverse
 
 
-class BaseParse:
+class RunCase:
+    """ 运行测试用例 """
 
     def __init__(self,
                  project_id=None,
-                 name=None,
+                 run_name=None,
+                 case_id=[],
+                 task={},
                  report_id=None,
                  performer=None,
                  create_user=None,
-                 env=None,
+                 is_async=True,
+                 env='test',
                  trigger_type='page',
                  is_rollback=False):
 
-        self.environment = env  # 运行环境
         self.project_id = project_id
-        self.run_name = name
+        self.run_name = run_name
         self.is_rollback = is_rollback
         self.trigger_type = trigger_type
-        self.time_out = Config.get_request_time_out()
-
-        self.report_id = report_id or Report.get_new_report(
-            name=self.run_name,
-            run_type='task',
-            performer=performer,
-            create_user=create_user,
-            project_id=project_id,
-            trigger_type=self.trigger_type
-        ).id
-
+        self.task = task
+        self.environment = env
         self.parsed_project_dict = {}
+        self.parsed_page_dict = {}
+        self.parsed_element_dict = {}
         self.parsed_case_dict = {}
-        self.parsed_api_dict = {}
 
-        self.count_step = 0
-        self.api_set = set()
+        self.case_id_list = case_id  # 要执行的用例id_list
+        self.all_case_steps = []  # 所有测试步骤
+        self.wait_time_out = Config.get_wait_time_out()
+
+        if not report_id:
+            self.report = Report.get_new_report(
+                name=self.run_name,
+                run_type='task',
+                performer=performer,
+                create_user=create_user,
+                project_id=project_id,
+                trigger_type=self.trigger_type
+            )
+
+        self.report_id = report_id or self.report.id
 
         Func.create_func_file(self.environment)  # 创建所有函数文件
 
-        # httpRunner需要的数据格式
+        # UiTestRunner需要的数据格式
         self.DataTemplate = {
-            'is_async': False,
+            'is_async': is_async,
             'project': self.run_name,
             'project_mapping': {
                 'functions': {},
                 'variables': {}
             },
-            'testsuites': [],  # 用例集
-            'testcases': [],  # 用例
-            'apis': [],  # 接口
+            'testcases': []
         }
+        self.count_step = 0
+        self.element_set = set()
+        self.parse_all_case()
 
     def get_formated_project(self, project_id):
         """ 从已解析的服务字典中取指定id的服务，如果没有，则取出来解析后放进去 """
@@ -83,27 +98,23 @@ class BaseParse:
 
             env = ProjectEnv.get_first(env=self.environment, project_id=project['id']).to_dict()
             env.update(project)
-
-            self.parsed_project_dict.update({project_id: ProjectFormatModel(**env)})
+            self.parsed_project_dict.update({project_id: ProjectModel(**env)})
         return self.parsed_project_dict[project_id]
+
+    def get_formated_element(self, element_id):
+        """ 从已解析的元素字典中取指定id的元素，如果没有，则取出来解析后放进去 """
+        if element_id not in self.parsed_element_dict:
+            element = Element.get_first(id=element_id).to_dict()
+            self.parsed_element_dict.update({element_id: ElementModel(**element)})
+        return self.parsed_element_dict[element_id]
 
     def get_formated_case(self, case_id):
         """ 从已解析的用例字典中取指定id的用例，如果没有，则取出来解析后放进去 """
         if case_id not in self.parsed_case_dict:
             case = Case.get_first(id=case_id)
             self.parse_functions(json.loads(case.func_files))
-            self.parsed_case_dict.update({case_id: CaseFormatModel(**case.to_dict())})
+            self.parsed_case_dict.update({case_id: CaseModel(**case.to_dict())})
         return self.parsed_case_dict[case_id]
-
-    def get_formated_api(self, project, api):
-        """ 从已解析的接口字典中取指定id的接口，如果没有，则取出来解析后放进去 """
-        if api.id not in self.parsed_api_dict:
-            if api.project_id not in self.parsed_project_dict:
-                self.parse_functions(json.loads(Project.get_first(id=api.project_id).func_files))
-            self.parsed_api_dict.update({
-                api.id: self.parse_api(project, ApiFormatModel(**api.to_dict()))
-            })
-        return self.parsed_api_dict[api.id]
 
     def parse_functions(self, func_list):
         """ 获取自定义函数 """
@@ -128,59 +139,32 @@ class BaseParse:
                 if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
                     return True
 
-    def parse_api(self, project, api):
-        """ 把解析后的接口对象 解析为httpRunner的数据结构 """
-        return {
-            'name': api.name,  # 接口名
-            'setup_hooks': [up.strip() for up in api.up_func.split(';') if up] if api.up_func else [],
-            'teardown_hooks': [func.strip() for func in api.down_func.split(';') if func] if api.down_func else [],
-            'skip': '',  # 无条件跳过当前测试
-            'skipIf': '',  # 如果条件为真，则跳过当前测试
-            'skipUnless': '',  # 除非条件为真，否则跳过当前测试
-            'times': 1,  # 运行次数
-            'extract': api.extracts,  # 接口要提取的信息
-            'validate': api.validates,  # 接口断言信息
-            'base_url': project.host,
-            'data_type': api.data_type,
-            'variables': [],
-            'request': {
-                'method': api.method,
-                'url': api.addr,
-                'timeout': api.time_out,
-                'headers': api.headers,  # 接口头部信息
-                'params': api.params,  # 接口查询字符串参数
-                'json': api.data_json,
-                'data': api.data_form,
-                'files': api.data_file
-            }
-        }
-
     def build_report(self, json_result):
         """ 写入测试报告到数据库, 并把数据写入到文本中 """
         result = json.loads(json_result)
 
         report = Report.get_first(id=self.report_id)
         report.update_status(result['success'])
-        FileUtil.save_api_test_report(report.id, result)  # 测试报告写入到文本文件
+        FileUtil.save_web_ui_test_report(report.id, json_result)  # 测试报告写入到文本文件
 
         # 定时任务需要把连接放回连接池，不放回去会报错
         if self.is_rollback:
             db.session.rollback()
 
     def run_case(self):
-        """ 调 HttpRunner().run() 执行测试 """
+        """ 调 testRunner().run() 执行测试 """
 
         logger.info(f'请求数据：\n{self.DataTemplate}')
 
-        if self.DataTemplate.get('is_async', 0):
-            # 并行执行, 遍历case，以case为维度多线程执行，测试报告按顺序排列
+        if self.DataTemplate.get('is_async', 0):  # 串行执行
+            # 遍历case，以case为维度多线程执行，测试报告按顺序排列
             run_case_dict = {}
             for index, case in enumerate(self.DataTemplate['testcases']):
                 run_case_dict[index] = False  # 用例运行标识，索引：是否运行完成
                 temp_case = self.DataTemplate
                 temp_case['testcases'] = [case]
                 self._async_run_case(temp_case, run_case_dict, index)
-        else:  # 串行执行
+        else:  # 并行执行
             self.sync_run_case()
 
     def _run_case(self, case, run_case_dict, index):
@@ -192,6 +176,22 @@ class BaseParse:
         """ 多线程运行用例 """
         Thread(target=self._run_case, args=[case, run_case_dict, index]).start()
 
+    def send_report(self, res):
+        """ 发送测试报告 """
+        if self.task:
+            content = json.loads(res)
+
+            # 发送回调给流水线
+            call_back_for_pipeline(self.task["call_back"] or [], content["success"])
+
+            # 发送测试报告
+            async_send_report(
+                content=json.loads(res),
+                **self.task,
+                report_id=self.report_id,
+                report_addr=Config.get_ui_report_addr()
+            )
+
     def sync_run_case(self):
         """ 单线程运行用例 """
         runner = TestRunner()
@@ -201,7 +201,7 @@ class BaseParse:
         summary['run_type'] = self.DataTemplate.get('is_async', 0)
         summary['run_env'] = self.environment
         summary['count_step'] = self.count_step
-        summary['count_api'] = len(self.api_set)
+        summary['element_set'] = len(self.element_set)
         jump_res = json.dumps(summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
         self.build_report(jump_res)
         self.send_report(jump_res)
@@ -214,7 +214,7 @@ class BaseParse:
             all_summary['run_type'] = self.DataTemplate.get('is_async', 0)
             all_summary['run_env'] = self.environment
             all_summary['count_step'] = self.count_step
-            all_summary['count_api'] = len(self.api_set)
+            all_summary['element_set'] = len(self.element_set)
             all_summary['time']['start_at'] = datetime.fromtimestamp(all_summary['time']['start_at']).strftime(
                 "%Y-%m-%d %H:%M:%S")
             for index, res in enumerate(run_dict.values()):
@@ -228,23 +228,6 @@ class BaseParse:
             self.build_report(jump_res)
             self.send_report(jump_res)
 
-    def send_report(self, res):
-        """ 发送测试报告 """
-        if self.task:
-            content = json.loads(res)
-
-            # 如果是流水线触发的，则回调给流水线
-            if self.trigger_type == 'pipeline':
-                call_back_for_pipeline(self.task["call_back"] or [], content["success"])
-
-            # 发送测试报告
-            async_send_report(
-                content=content,
-                **self.task,
-                report_id=self.report_id,
-                report_addr=Config.get_api_report_addr()
-            )
-
     def build_summary(self, source1, source2, fields):
         """ 合并测试报告统计 """
         for field in fields:
@@ -252,149 +235,120 @@ class BaseParse:
                 if key != 'project':
                     source1['stat'][field][key] += source2['stat'][field][key]
 
-
-class RunApi(BaseParse):
-    """ 接口调试 """
-
-    def __init__(self, project_id=None, run_name=None, api_ids=None, report_id=None, task=None, env='test'):
-        super().__init__(project_id=project_id, name=run_name, report_id=report_id, env=env)
-
-        self.task = task
-        self.api_ids = api_ids  # 要执行的接口id
-        self.project = self.get_formated_project(self.project_id)  # 解析当前服务信息
-        self.format_data_for_template()  # 解析api
-        self.count_step = 1
-
-    def format_data_for_template(self):
-        """ 接口调试 """
-        logger.info(f'本次测试的接口id：\n{self.api_ids}')
-
-        # 解析api
-        for api_obj in self.api_ids:
-            api = self.get_formated_api(self.project, api_obj)
-
-            # 用例的数据结构
-            test_case_template = {
-                'config': {
-                    'name': api.get("name"),
-                    'variables': {},
-                    'setup_hooks': [],
-                    'teardown_hooks': []
-                },
-                'teststeps': []  # 测试步骤
-            }
-
-            # 合并头部信息
-            headers = {}
-            headers.update(self.project.headers)
-            headers.update(api['request']['headers'])
-            api['request']['headers'] = headers
-
-            # 把api加入到步骤
-            test_case_template['teststeps'].append(api)
-
-            # 更新公共变量
-            test_case_template['config']['variables'].update(self.project.variables)
-            self.DataTemplate['testcases'].append(copy.deepcopy(test_case_template))
-
-
-class RunCase(BaseParse):
-    """ 运行测试用例 """
-
-    def __init__(self,
-                 project_id=None,
-                 run_name=None,
-                 case_id=[],
-                 task={},
-                 report_id=None,
-                 performer=None,
-                 create_user=None,
-                 is_async=True,
-                 env='test',
-                 trigger_type='page',
-                 is_rollback=False):
-        super().__init__(
-            project_id=project_id,
-            name=run_name,
-            report_id=report_id,
-            performer=performer,
-            create_user=create_user,
-            env=env,
-            trigger_type=trigger_type,
-            is_rollback=is_rollback)
-
-        self.task = task
-        self.DataTemplate['is_async'] = is_async
-
-        # 接口对应的服务字典，在需要解析服务时，先到这里面查，没有则去数据库取出来解析
-        self.projects_dict = {}
-
-        # 步骤对应的接口字典，在需要解析字典时，先到这里面查，没有则去数据库取出来解析
-        self.apis_dict = {}
-
-        # 要执行的用例id_list
-        self.case_id_list = case_id
-
-        # 所有测试步骤
-        self.all_case_steps = []
-        self.parse_all_case()
-
-    def parse_step(self, current_project, project, current_case, case, api, step):
+    def parse_step(self, project, element, step):
         """ 解析测试步骤
-        current_project: 当前用例所在的服务(解析后的)
-        project: 当前步骤对应接口所在的服务(解析后的)
-        current_case: 当前用例
-        case: 被引用的case
-        api: 解析后的api
+        project: 当前步骤对应元素所在的项目(解析后的)
+        element: 解析后的element
         step: 原始step
         返回解析后的步骤 {}
         """
-        # 解析头部信息，继承头部信息，接口所在服务、当前所在服务、用例、步骤
-        headers = {}
-        headers.update(project.headers)
-        if case:
-            headers.update(case.headers)
-        headers.update(current_project.headers)
-        # headers.update(api['request']['headers'])
-        headers.update(current_case.headers)
-        headers.update(step.headers)
-
         return {
             'name': step.name,
             'setup_hooks': [up.strip() for up in step.up_func.split(';') if up] if step.up_func else [],
             'teardown_hooks': [func.strip() for func in step.down_func.split(';') if func] if step.down_func else [],
-            'skip': not step.is_run,  # 直接指定当前步骤是否执行
-            'skipIf': step.skip_if,  # 如果条件为真，则当前步骤不执行
+            'skip': not step.status,  # 无条件跳过当前测试
+            'skipIf': step.skip_if,  # 如果条件为真，则跳过当前测试
             # 'skipUnless': '',  # 除非条件为真，否则跳过当前测试
             'times': step.run_times,  # 运行次数
-            'extract': step.extracts,  # 接口要提取的信息
-            'validate': step.validates,  # 接口断言信息
-            'base_url': current_project.host if step.replace_host else project.host,
-            'request': {
-                'method': api['request']['method'],
-                'url': api['request']['url'],
-                'timeout': step.time_out or api['request']['timeout'] or self.time_out,
-                'headers': headers,  # 接口头部信息
-                'params': step.params,  # 接口查询字符串参数
-                'json': step.data_json,
-                'data': step.data_form,
-                'files': step.data_file,
+            'extract': step.extracts,  # 要提取的信息
+            'validate': step.validates,  # 断言信息
+            "test_action": {
+                'execute_name': step.execute_name,
+                "action": step.execute_type,
+                "by_type": element.by,
+                # 如果是打开页面，则设置为项目域名+页面地址
+                "element": build_url(project.host, element.element) if element.by == 'url' else element.element,
+                "text": step.send_keys,
+                "wait_time_out": float(step.wait_time_out or element.wait_time_out or self.wait_time_out)
             }
         }
+
+    def parse_extracts(self, extracts: list):
+        """ 解析数据提取
+        extracts_list:
+            [
+                {'data_source': 'extract_09_value', 'key': 'name1', 'remark': None, 'value': 1},
+                {'data_source': 'func', 'key': 'name2', 'remark': None, 'value': '$do_something()'},
+            ]
+        return:
+            [
+                {
+                    "type": "element",
+                    "key": "name1",
+                    "value": {
+                        "action": "action_09get_value",
+                        "by_type": "id",
+                        "element": "su"
+                    }
+                },
+                {"type": "func", "key": "name2", "value": "$do_something()"},
+            ]
+        """
+        parsed_list = []
+        for extract in extracts:
+            if extract['extract_type'] == 'func':  # 自定义函数提取
+                parsed_list.append({
+                    "type": "func",
+                    "key": extract.get('key'),
+                    "value": extract.get('value')
+                })
+            elif extract['extract_type']:  # 页面元素提取
+                element = self.get_formated_element(extract["value"])
+                parsed_list.append({
+                    "type": "element",
+                    "key": extract.get('key'),
+                    "value": {
+                        "action": extract.get('extract_type'),
+                        "by_type": element.by,
+                        "element": element.element
+                    }
+                })
+        return parsed_list
+
+    def parse_validates(self, validates_list):
+        """ 解析断言
+        validates:
+            [{'element': 3, 'data_type': 'str', 'key': 'null', 'validate_type': 'assert_52_element_value_larger_than', 'value': '123123'}]
+        return:
+            [{
+                "comparator": "validate_type",  # 断言方式
+                "check": ("id", "kw"),  # 实际结果
+                "expect": "123123"  # 预期结果
+            }]
+        """
+        parsed_validate = []
+        for validate in validates_list:
+            if validate["validate_type"]:
+                element = self.get_formated_element(validate["element"])
+                parsed_validate.append({
+                    "comparator": validate["validate_type"],  # 断言方式
+                    "check": (element.by, element.element),  # 实际结果
+                    "expect": self.build_expect_result(validate["data_type"], validate["value"])  # 预期结果
+                })
+        return parsed_validate
+
+    def build_expect_result(self, data_type, value):
+        """ 生成预期结果 """
+        if data_type in ["variable", "func", 'str']:
+            return value
+        elif data_type == 'json':
+            return json.dumps(json.loads(value))
+        else:  # python数据类型
+            return eval(f'{data_type}({value})')
 
     def get_all_steps(self, case_id: int):
         """ 解析引用的用例 """
         case = self.get_formated_case(case_id)
 
         if self.parse_case_is_skip(case.skip_if) is not True:  # 不满足跳过条件才解析
-            steps = Step.query.filter_by(case_id=case.id, is_run=True).order_by(Step.num.asc()).all()
+            steps = Step.query.filter_by(case_id=case.id, status=1).order_by(Step.num.asc()).all()
             for step in steps:
                 if step.quote_case:
                     self.get_all_steps(step.quote_case)
                 else:
                     self.all_case_steps.append(step)
                     self.count_step += 1
-                    self.api_set.add(step.api_id)
+                    self.element_set.add(step.element_id)
 
     def parse_all_case(self):
         """ 解析所有用例 """
@@ -410,14 +364,17 @@ class RunCase(BaseParse):
 
             current_project = self.get_formated_project(CaseSet.get_first(id=current_case.set_id).project_id)
 
-            # 用例格式模板
+            # 用例格式模板, # 火狐：geckodriver
+            browser_path = os.path.join(
+                BROWSER_DRIVER_ADDRESS, f"chromedriver{'.exe' if 'Windows' in platform.platform() else ''}"
+            )
             case_template = {
                 'config': {
                     'variables': {},
-                    'headers': {},
                     'name': current_case.name,
-                    'run_env': self.environment,
-                    "run_type": "api"
+                    "browser_type": "chrome",
+                    "browser_path": browser_path,
+                    "run_type": "ui"
                 },
                 'teststeps': []
             }
@@ -429,11 +386,13 @@ class RunCase(BaseParse):
             # 循环解析测试步骤
             all_variables = {}  # 当前用例的所有公共变量
             for step in self.all_case_steps:
-                step = StepFormatModel(**step.to_dict())
                 case = self.get_formated_case(step.case_id)
-                api_temp = Api.get_first(id=step.api_id)
-                project = self.get_formated_project(api_temp.project_id)
-                api = self.get_formated_api(project, api_temp)
+                element = self.get_formated_element(step.element_id)
+                step = StepModel(**step.to_dict())
+                step.execute_name = ui_action_mapping_reverse[step.execute_type]  # 执行方式的别名，用于展示测试报告
+                step.extracts = self.parse_extracts(step.extracts)  # 解析数据提取
+                step.validates = self.parse_validates(step.validates)  # 解析断言
+                project = self.get_formated_project(element.project_id)  # 元素所在的项目
 
                 if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动
                     """
@@ -447,11 +406,9 @@ class RunCase(BaseParse):
                         # 数据驱动的 comment 字段，用于做标识
                         step.name += driver_data.get('comment', '')
                         step.params = step.params = step.data_json = step.data_form = driver_data.get('data', {})
-                        case_template['teststeps'].append(
-                            self.parse_step(current_project, project, current_case, case, api, step))
+                        case_template['teststeps'].append(self.parse_step(project, element, step))
                 else:
-                    case_template['teststeps'].append(
-                        self.parse_step(current_project, project, current_case, case, api, step))
+                    case_template['teststeps'].append(self.parse_step(project, element, step))
 
                 # 把服务和用例的的自定义变量留下来
                 all_variables.update(project.variables)
@@ -459,14 +416,13 @@ class RunCase(BaseParse):
 
             # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
             all_variables.update(current_project.variables)
-            all_variables.update(current_case.variables)
-            case_template['config']['variables'].update(all_variables)  # = all_variables
+            all_variables.update(self.get_formated_case(current_case.id).variables)
+            case_template['config']['variables'].update(all_variables)
 
             # 设置的用例执行多少次就加入多少次
             name = case_template['config']['name']
             for index in range(current_case.run_times or 1):
                 case_template['config']['name'] = f"{name}_{index + 1}" if current_case.run_times > 1 else name
-                # self.DataTemplate['testcases'].append(copy.copy(case_template))
                 self.DataTemplate['testcases'].append(copy.deepcopy(case_template))
 
             # 完整的解析完一条用例后，去除对应的解析信息

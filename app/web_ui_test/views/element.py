@@ -3,8 +3,9 @@
 from flask import request, current_app as app, send_from_directory, g
 
 from app.baseView import LoginRequiredView, NotLoginView
+from app.busines import ElementBusiness
 from app.config.models.config import Config
-from app.web_ui_test import web_ui_test
+from app.web_ui_test.blueprint import web_ui_test
 from app.web_ui_test.models.page import WebUiPage as Page, db
 from app.web_ui_test.models.element import WebUiElement as Element
 from app.web_ui_test.forms.element import AddElementForm, EditElementForm, DeleteElementForm, ElementListForm, \
@@ -12,20 +13,15 @@ from app.web_ui_test.forms.element import AddElementForm, EditElementForm, Delet
 from utils.parse.parseExcel import parse_file_content
 from utils.util.fileUtil import STATIC_ADDRESS
 
-ns = web_ui_test.namespace("element", description="元素管理相关接口")
 
-
-@ns.route('/list/')
 class WebUiGetElementListView(LoginRequiredView):
 
     def get(self):
         """ 根据模块查接口list """
-        form = ElementListForm()
-        if form.validate():
-            return app.restful.success(data=Element.make_pagination(form))
+        form = ElementListForm().do_validate()
+        return app.restful.success(data=Element.make_pagination(form))
 
 
-@ns.route('/sort/')
 class WebUiChangeElementSortView(LoginRequiredView):
 
     def put(self):
@@ -34,19 +30,15 @@ class WebUiChangeElementSortView(LoginRequiredView):
         return app.restful.success(msg='修改排序成功')
 
 
-@ns.route('/changeById/')
 class WebUiChangeElementByIdView(LoginRequiredView):
 
     def put(self):
         """ 根据id更新元素 """
-        form = ChangeElementById()
-        if form.validate():
-            form.old.update(form.data)
-            return app.restful.success(f'元素修改成功')
-        return app.restful.fail(form.get_error())
+        form = ChangeElementById().do_validate()
+        form.old.update(form.data)
+        return app.restful.success(f'元素修改成功')
 
 
-@ns.route('/template/download/')
 class ElementTemplateDownloadView(LoginRequiredView):
 
     def get(self):
@@ -54,7 +46,6 @@ class ElementTemplateDownloadView(LoginRequiredView):
         return send_from_directory(STATIC_ADDRESS, '元素导入模板.xls', as_attachment=True)
 
 
-@ns.route('/upload/')
 class ElementUploadView(NotLoginView):
 
     def post(self):
@@ -63,12 +54,13 @@ class ElementUploadView(NotLoginView):
         if not page:
             return app.restful.fail('页面不存在')
         if file and file.filename.endswith('xls'):
-            excel_data = parse_file_content(file.read())  # [{'元素名称': '账号输入框', '定位方式': '根据id属性定位', '元素表达式': 'account', '等待元素出现的超时时间': 10.0}]
+            # [{'元素名称': '账号输入框', '定位方式': '根据id属性定位', '元素表达式': 'account', '等待元素出现的超时时间': 10.0}]
+            excel_data = parse_file_content(file.read())
             option_dict = {option["label"]: option["value"] for option in Config.get_find_element_option()}
             with db.auto_commit():
                 for element_data in excel_data:
-                    name, by = element_data.get('元素名称', ''), element_data.get('定位方式', '')
-                    element, wait_time_out = element_data.get('元素表达式', ''), element_data.get('等待元素出现的超时时间', '')
+                    name, by = element_data.get('元素名称'), element_data.get('定位方式')
+                    element, wait_time_out = element_data.get('元素表达式'), element_data.get('等待元素出现的超时时间')
                     if all((name, by, element, wait_time_out)):
                         new_element = Element()
                         new_element.name = name
@@ -85,39 +77,38 @@ class ElementUploadView(NotLoginView):
         return app.restful.fail('请上传后缀为xls的Excel文件')
 
 
-@ns.route('/')
 class WebUiElementView(LoginRequiredView):
 
     def get(self):
         """ 获取元素 """
-        form = GetElementById()
-        if form.validate():
-            return app.restful.success(data=form.element.to_dict())
-        return app.restful.fail(form.get_error())
+        form = GetElementById().do_validate()
+        return app.restful.success(data=form.element.to_dict())
 
     def post(self):
         """ 新增元素 """
-        form = AddElementForm()
-        if form.validate():
-            form.num.data = Element.get_insert_num(module_id=form.module_id.data)
-            new_element = Element().create(form.data)
-            form.update_page_addr()
-            return app.restful.success(f'元素【{form.name.data}】新建成功', data=new_element.to_dict())
-        return app.restful.fail(form.get_error())
+        form = AddElementForm().do_validate()
+        new_element = ElementBusiness.post(form, Element)
+        return app.restful.success(f'元素【{form.name.data}】新建成功', data=new_element.to_dict())
 
     def put(self):
         """ 修改元素 """
-        form = EditElementForm()
-        if form.validate():
-            form.old.update(form.data)
-            form.update_page_addr()
-            return app.restful.success(f'元素【{form.name.data}】修改成功', form.old.to_dict())
-        return app.restful.fail(form.get_error())
+        form = EditElementForm().do_validate()
+        form.old.update(form.data)
+        form.update_page_addr()
+        return app.restful.success(f'元素【{form.name.data}】修改成功', form.old.to_dict())
 
     def delete(self):
         """ 删除元素 """
-        form = DeleteElementForm()
-        if form.validate():
-            form.element.delete()
-            return app.restful.success(f'元素【{form.element.name}】删除成功')
-        return app.restful.fail(form.get_error())
+        form = DeleteElementForm().do_validate()
+        form.element.delete()
+        return app.restful.success(f'元素【{form.element.name}】删除成功')
+
+
+web_ui_test.add_url_rule('/element', view_func=WebUiElementView.as_view('WebUiElementView'))
+web_ui_test.add_url_rule('/element/upload', view_func=ElementUploadView.as_view('ElementUploadView'))
+web_ui_test.add_url_rule('/element/list', view_func=WebUiGetElementListView.as_view('WebUiGetElementListView'))
+web_ui_test.add_url_rule('/element/sort', view_func=WebUiChangeElementSortView.as_view('WebUiChangeElementSortView'))
+web_ui_test.add_url_rule('/element/changeById',
+                         view_func=WebUiChangeElementByIdView.as_view('WebUiChangeElementByIdView'))
+web_ui_test.add_url_rule('/element/template/download',
+                         view_func=ElementTemplateDownloadView.as_view('ElementTemplateDownloadView'))

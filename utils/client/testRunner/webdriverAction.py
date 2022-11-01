@@ -64,6 +64,9 @@ class Driver:
         self.driver = getattr(GetDriver(browser_driver_path), browser_name)()  # 获取浏览器对象
         self.timeout = 30  # 默认超时的时间设置
 
+    def __del__(self):
+        self.driver.quit()
+
     @classmethod
     def get_class_property(cls, startswith: str):
         """ 获取类属性，startswith：方法的开头 """
@@ -143,7 +146,8 @@ class Driver:
 
     def action_12js_focus_element(self, locator: tuple, wait_time_out=None):
         """ 聚焦元素 """
-        self.driver.execute_script("arguments[0].scrollIntoView();", self.find_element(locator, wait_time_out=wait_time_out))
+        self.driver.execute_script("arguments[0].scrollIntoView();",
+                                   self.find_element(locator, wait_time_out=wait_time_out))
 
     def action_13js_scroll_top(self):
         """ 滚动到顶部 """
@@ -338,11 +342,13 @@ class Driver:
 
     def assert_54is_selected_be(self, locator: tuple, *args):
         """ 元素被选中，返回布尔值"""
-        assert self.web_driver_wait_until(ec.element_located_selection_state_to_be(locator, True)), {'msg': '元素未被选中'}
+        assert self.web_driver_wait_until(ec.element_located_selection_state_to_be(locator, True)), {
+            'msg': '元素未被选中'}
 
     def assert_55is_not_selected_be(self, locator: tuple, *args):
         """ 元素未被选中，返回布尔值"""
-        assert self.web_driver_wait_until(ec.element_located_selection_state_to_be(locator, False)), {'msg': '元素已被选中'}
+        assert self.web_driver_wait_until(ec.element_located_selection_state_to_be(locator, False)), {
+            'msg': '元素已被选中'}
 
     def assert_56text_in_value(self, locator: tuple, value: str, *args):
         """

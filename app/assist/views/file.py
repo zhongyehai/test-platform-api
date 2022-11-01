@@ -5,12 +5,10 @@ import time
 
 from flask import request, send_from_directory, current_app as app
 
-from app.assist import assist
+from app.assist.blueprint import assist
 from app.baseView import LoginRequiredView, NotLoginView
 from utils.util.fileUtil import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, \
     UI_CASE_FILE_ADDRESS, FileUtil
-
-ns = assist.namespace("file", description="文件管理")
 
 folders = {
     'case': CASE_FILE_ADDRESS,
@@ -26,7 +24,6 @@ def format_time(atime):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(atime))
 
 
-@ns.route('/create/download/')
 class CreatFileView(NotLoginView):
 
     def get(self):
@@ -57,7 +54,6 @@ def make_pagination(data_list, pag_size, page_num):
     return data_list[start: end]
 
 
-@ns.route('/list/')
 class GetFileListView(LoginRequiredView):
 
     def get(self):
@@ -82,7 +78,6 @@ class GetFileListView(LoginRequiredView):
         return app.restful.success('获取成功', data={'data': parsed_file_list, 'total': file_list.__len__()})
 
 
-@ns.route('/check/')
 class CheckFileView(LoginRequiredView):
 
     def get(self):
@@ -92,7 +87,6 @@ class CheckFileView(LoginRequiredView):
             os.path.join(folders.get(file_type, 'case'), file_name)) else app.restful.success('文件不存在')
 
 
-@ns.route('/download/')
 class DownloadFileView(LoginRequiredView):
 
     def get(self):
@@ -101,7 +95,6 @@ class DownloadFileView(LoginRequiredView):
         return send_from_directory(addr, request.args.to_dict().get('name'), as_attachment=True)
 
 
-@ns.route('/upload/')
 class FileUploadView(LoginRequiredView):
 
     def post(self):
@@ -111,7 +104,6 @@ class FileUploadView(LoginRequiredView):
         return app.restful.success(msg='上传成功', data=file.filename)
 
 
-@ns.route('/')
 class FileManageView(LoginRequiredView):
 
     def get(self):
@@ -134,3 +126,11 @@ class FileManageView(LoginRequiredView):
         path = os.path.join(addr, name)
         FileUtil.delete_file(path)
         return app.restful.success('删除成功', data={'name': name})
+
+
+assist.add_url_rule('/file', view_func=FileManageView.as_view('FileManageView'))
+assist.add_url_rule('/file/check', view_func=CheckFileView.as_view('CheckFileView'))
+assist.add_url_rule('/file/list', view_func=GetFileListView.as_view('GetFileListView'))
+assist.add_url_rule('/file/upload', view_func=FileUploadView.as_view('FileUploadView'))
+assist.add_url_rule('/file/download', view_func=DownloadFileView.as_view('DownloadFileView'))
+assist.add_url_rule('/file/create/download', view_func=CreatFileView.as_view('CreatFileView'))

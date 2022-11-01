@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import os
+import io
 
-from config.config import basedir
+from config import basedir
 from utils.variables.contentType import CONTENT_TYPE
 
 # 各模块的路径
@@ -64,8 +65,7 @@ class FileUtil:
     @classmethod
     def save_file(cls, path, content):
         """ 保存文件 """
-
-        with open(path, 'w', encoding='utf-8') as file:
+        with io.open(path, 'w', encoding='utf-8') as file:
             if isinstance(content, str):
                 file.write(content)
             else:
@@ -94,7 +94,7 @@ class FileUtil:
     @classmethod
     def save_diff_result(cls, diff_record_id, diff_detail):
         """ 保存对比数据 """
-        with open(os.path.join(DIFF_RESULT, f'{diff_record_id}.json'), 'w', encoding='utf-8') as fp:
+        with io.open(os.path.join(DIFF_RESULT, f'{diff_record_id}.json'), 'w', encoding='utf-8') as fp:
             json.dump(diff_detail, fp, ensure_ascii=False, indent=4)
 
     @classmethod
@@ -106,7 +106,7 @@ class FileUtil:
     @classmethod
     def get_report(cls, file_path, report_id):
         """ 获取自动化测试报告 """
-        with open(os.path.join(file_path, f'{report_id}.txt'), 'r', encoding='utf-8') as file:
+        with io.open(os.path.join(file_path, f'{report_id}.txt'), 'r', encoding='utf-8') as file:
             report_content = json.load(file)
         return report_content
 
@@ -128,9 +128,14 @@ class FileUtil:
     @classmethod
     def get_diff_result(cls, diff_id):
         """ 获取对比数据 """
-        with open(os.path.join(DIFF_RESULT, f'{diff_id}.json'), 'r', encoding='utf-8') as fp:
+        with io.open(os.path.join(DIFF_RESULT, f'{diff_id}.json'), 'r', encoding='utf-8') as fp:
             diff_data = json.load(fp)
         return diff_data
+
+    @classmethod
+    def build_ui_test_file_path(cls, filename):
+        """ 拼装UI自动化要上传文件的路径 """
+        return os.path.join(UI_CASE_FILE_ADDRESS, filename)
 
 
 if __name__ == '__main__':

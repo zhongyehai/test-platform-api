@@ -156,21 +156,3 @@ def get_dict_data(content):
         return json.loads(content)
     except Exception as error:
         return content
-
-# def gen_random_string(str_len):
-#     """ 生成指定长度的随机字符串 """
-#     return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(str_len))
-#
-#
-# def get_timestamp(str_len=13):
-#     """ 获取0~16位的时间戳字符串 """
-#     if isinstance(str_len, integer_types) and 0 < str_len < 17:
-#         return builtin_str(time.time()).replace(".", "")[:str_len]
-#     raise ParamsError("时间戳字符串只能获取到0~16位")
-#
-#
-# def get_current_date(fmt="%Y-%m-%d"):
-#     """ 获取当前日期，默认格式为 %Y-%m-%d """
-#     return datetime.datetime.now().strftime(fmt)
-#
-#

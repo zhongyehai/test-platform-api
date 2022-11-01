@@ -6,16 +6,13 @@ import os
 from flask import request, send_from_directory, current_app as app
 
 from app.baseView import LoginRequiredView
-from app.test_work import test_work
+from app.test_work.blueprint import test_work
 from utils.util.fileUtil import TEMP_FILE_ADDRESS, FileUtil
 from utils.makeData.makeXmind import make_xmind
 from app.test_work.models.kym import KYMModule, db
 from app.config.models.config import Config
 
-ns = test_work.namespace("kym", description="kym管理相关接口")
 
-
-@ns.route('/project/')
 class AddKymProjectView(LoginRequiredView):
 
     def post(self):
@@ -31,16 +28,15 @@ class AddKymProjectView(LoginRequiredView):
         return app.restful.success('新增成功', data=kym.to_dict())
 
 
-@ns.route('/project/list/')
 class GetKymProjectListView(LoginRequiredView):
 
     def get(self):
         """ kym服务列表 """
         project_list = KYMModule.query.with_entities(KYMModule.project).distinct().all()
-        return app.restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
+        return app.restful.success('获取成功',
+                                   data=[{'key': project[0], 'value': project[0]} for project in project_list])
 
 
-@ns.route('/download/')
 class ExportKYMAsXmindView(LoginRequiredView):
 
     def get(self):
@@ -52,7 +48,6 @@ class ExportKYMAsXmindView(LoginRequiredView):
         return send_from_directory(TEMP_FILE_ADDRESS, f'{project.project}.xmind', as_attachment=True)
 
 
-@ns.route('/')
 class KYMView(LoginRequiredView):
     """ KYM管理 """
 
@@ -65,3 +60,9 @@ class KYMView(LoginRequiredView):
         kym = KYMModule.get_first(project=request.json['project'])
         kym.update({'kym': json.dumps(request.json['kym'], ensure_ascii=False, indent=4)})
         return app.restful.success('修改成功', data=kym.to_dict())
+
+
+test_work.add_url_rule('/kym', view_func=KYMView.as_view('KYMView'))
+test_work.add_url_rule('/kym/project', view_func=AddKymProjectView.as_view('AddKymProjectView'))
+test_work.add_url_rule('/kym/download', view_func=ExportKYMAsXmindView.as_view('ExportKYMAsXmindView'))
+test_work.add_url_rule('/kym/project/list', view_func=GetKymProjectListView.as_view('GetKymProjectListView'))

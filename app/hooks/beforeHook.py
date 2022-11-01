@@ -34,8 +34,8 @@ def register_before_hook(app):
 
     @app.before_request
     def save_requests_by_db():
-        """ 存访问日志 """
-        if request.method != 'HEAD':
+        """ 存操作日志 """
+        if request.method in ('POST', 'PUT', 'DELETE'):
             UserOperationLog().create({
                 "ip": g.user_ip,
                 "url": request.path,

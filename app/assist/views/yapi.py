@@ -10,7 +10,7 @@ from flask import request, send_from_directory, g, current_app as app
 from app.api_test.models.api import ApiMsg
 from app.api_test.models.module import ApiModule
 from app.api_test.models.project import ApiProject, ApiProjectEnv
-from app.assist import assist
+from app.assist.blueprint import assist
 from app.assist.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiffRecord
 from app.baseModel import db
 from app.baseView import LoginRequiredView
@@ -18,8 +18,6 @@ from app.config.models.config import Config
 from utils.util.fileUtil import DIFF_RESULT, FileUtil
 from utils.makeData.makeXmind import make_xmind
 from utils.message.sendReport import send_diff_api_message
-
-ns = assist.namespace("yapi", description="yapi数据管理")
 
 
 def assert_coding_format(data):
@@ -387,7 +385,6 @@ def get_is_update_project_list(yapi_host, headers, project_id, group, ignore_pro
     return project_list
 
 
-@ns.route('/pull/all/')
 class YapiPullAll(LoginRequiredView):
 
     def post(self):
@@ -435,7 +432,6 @@ class YapiPullAll(LoginRequiredView):
         return app.restful.success('数据更新完成')
 
 
-@ns.route('/pull/project/')
 class YapiPullProject(LoginRequiredView):
 
     def post(self):
@@ -471,7 +467,6 @@ class YapiPullProject(LoginRequiredView):
         return app.restful.success('数据更新完成')
 
 
-@ns.route('diff/byApi/')
 class DiffByYapi(LoginRequiredView):
 
     def post(self):
@@ -535,7 +530,8 @@ class DiffByYapi(LoginRequiredView):
                     else:
                         diff_is_changed = True
                         diff_summary['project']['add'] += 1
-                        project_detail_add['children'].append({"topic": f'{group_str}下，新增服务【{yapi_project["name"]}】'})
+                        project_detail_add['children'].append(
+                            {"topic": f'{group_str}下，新增服务【{yapi_project["name"]}】'})
                 else:
                     diff_summary['project']['errorCode'] += 1
                     continue
@@ -808,7 +804,6 @@ class DiffByYapi(LoginRequiredView):
         return app.restful.success('对比完成', data=yapi_diff_record.to_dict())
 
 
-@ns.route('/diff/byFront/')
 class DiffByFront(LoginRequiredView):
 
     def post(self):
@@ -816,7 +811,6 @@ class DiffByFront(LoginRequiredView):
         return app.restful.success('对比完成')
 
 
-@ns.route('/diff/download/')
 class ExportDiffRecordAsXmind(LoginRequiredView):
 
     def get(self):
@@ -829,7 +823,6 @@ class ExportDiffRecordAsXmind(LoginRequiredView):
         return send_from_directory(DIFF_RESULT, file_name, as_attachment=True)
 
 
-@ns.route('/diff/record/list/')
 class GetDiffRecordList(LoginRequiredView):
 
     def get(self):
@@ -842,18 +835,27 @@ class GetDiffRecordList(LoginRequiredView):
         }))
 
 
-@ns.route('/diff/record/project/')
 class GetDiffRecordProject(LoginRequiredView):
 
     def get(self):
         """ 获取有对比结果的服务列表 """
         project_list = YapiDiffRecord.query.with_entities(YapiDiffRecord.name).distinct().all()
-        return app.restful.success('获取成功', data=[{'key': project[0], 'value': project[0]} for project in project_list])
+        return app.restful.success('获取成功',
+                                   data=[{'key': project[0], 'value': project[0]} for project in project_list])
 
 
-@ns.route('/diff/record/show/')
 class GetShowDiffRecord(LoginRequiredView):
 
     def get(self):
         """ 展示对比结果详情 """
         return app.restful.success('获取成功', data=FileUtil.get_diff_result(request.args.get("id")))
+
+
+assist.add_url_rule('/yapi/pull/all', view_func=YapiPullAll.as_view('YapiPullAll'))
+assist.add_url_rule('/yapi/diff/byApi', view_func=DiffByYapi.as_view('DiffByYapi'))
+assist.add_url_rule('/yapi/diff/byFront', view_func=DiffByFront.as_view('DiffByFront'))
+assist.add_url_rule('/yapi/pull/project', view_func=YapiPullProject.as_view('YapiPullProject'))
+assist.add_url_rule('/yapi/record/list', view_func=GetDiffRecordList.as_view('GetDiffRecordList'))
+assist.add_url_rule('/yapi/record/show', view_func=GetShowDiffRecord.as_view('GetShowDiffRecord'))
+assist.add_url_rule('/yapi/record/project', view_func=GetDiffRecordProject.as_view('GetDiffRecordProject'))
+assist.add_url_rule('/yapi/diff/download', view_func=ExportDiffRecordAsXmind.as_view('ExportDiffRecordAsXmind'))

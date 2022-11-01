@@ -1,70 +1,46 @@
 # -*- coding: utf-8 -*-
-from threading import Thread
-
-import requests
 from flask import current_app as app, request, g
 
 from app.api_test.models.report import ApiReport as Report
+from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.baseView import LoginRequiredView, NotLoginView
+from app.busines import TaskBusiness, RunCaseBusiness
 from app.system.models.user import User
-from utils.client.runApiTest.runHttpRunner import RunCase
-from app.api_test import api_test
-from app.baseModel import db
+from utils.client.runApiTest import RunCase
+from app.api_test.blueprint import api_test
 from app.api_test.models.task import ApiTask as Task
 from app.api_test.forms.task import RunTaskForm, AddTaskForm, EditTaskForm, HasTaskIdForm, DeleteTaskIdForm, \
     GetTaskListForm
 
-ns = api_test.namespace("task", description="定时任务管理相关接口")
 
-
-@ns.route('/run/')
 class ApiRunTaskView(NotLoginView):
     def post(self):
         """ 运行定时任务 """
-        form = RunTaskForm()
-        if form.validate():
-            task = form.task
-            project_id = task.project_id
-            env = form.env.data.lower() if form.env.data else task.env
-            report = Report.get_new_report(
-                name=task.name,
-                run_type='task',
-                performer=g.user_name or '自动化测试',
-                create_user=g.user_id or User.get_first(account='common').id,
-                project_id=project_id,
-                env=env,
-                trigger_type=form.trigger_type.data
-            )
-
-            # 新起线程运行任务
-            Thread(
-                target=RunCase(
-                    project_id=project_id,
-                    report_id=report.id,
-                    run_name=report.name,
-                    task=task.to_dict(),
-                    case_id=CaseSet.get_case_id(project_id, task.loads(task.set_ids), task.loads(task.case_ids)),
-                    is_async=form.is_async.data,
-                    env=env,
-                    trigger_type=form.trigger_type.data
-                ).run_case
-            ).start()
-            return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
-        return app.restful.fail(form.get_error())
+        form = RunTaskForm().do_validate()
+        report_id = RunCaseBusiness.run(
+            form,
+            form.task.project_id,
+            form.task.name,
+            'task',
+            Report,
+            CaseSet.get_case_id(
+                Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
+            ),
+            RunCase,
+            performer=g.user_name or '自动化测试',
+            create_user=g.user_id or User.get_first(account='common').id,
+        )
+        return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report_id})
 
 
-@ns.route('/list/')
 class ApiTaskListView(LoginRequiredView):
     def get(self):
         """ 任务列表 """
-        form = GetTaskListForm()
-        if form.validate():
-            return app.restful.success(data=Task.make_pagination(form))
-        return app.restful.fail(form.get_error())
+        form = GetTaskListForm().do_validate()
+        return app.restful.success(data=Task.make_pagination(form))
 
 
-@ns.route('/sort/')
 class ApiChangeTaskSortView(LoginRequiredView):
     def put(self):
         """ 更新定时任务的排序 """
@@ -72,109 +48,67 @@ class ApiChangeTaskSortView(LoginRequiredView):
         return app.restful.success(msg='修改排序成功')
 
 
-@ns.route('/copy/')
 class ApiCopyTaskView(LoginRequiredView):
     def post(self):
         """ 复制定时任务 """
-        form = HasTaskIdForm()
-        if form.validate():
-            old_task = form.task
-            with db.auto_commit():
-                new_task = Task()
-                new_task.create(old_task.to_dict())
-                new_task.name = old_task.name + '_copy'
-                new_task.status = 0
-                new_task.num = Task.get_insert_num(project_id=old_task.project_id)
-                db.session.add(new_task)
-            return app.restful.success(msg='复制成功', data=new_task.to_dict())
-        return app.restful.fail(form.get_error())
+        form = HasTaskIdForm().do_validate()
+        new_task = TaskBusiness.copy(form, Task)
+        return app.restful.success(msg='复制成功', data=new_task.to_dict())
 
 
-@ns.route('/')
 class ApiTaskView(LoginRequiredView):
 
     def get(self):
         """ 获取定时任务 """
-        form = HasTaskIdForm()
-        if form.validate():
-            return app.restful.success(data=form.task.to_dict())
-        return app.restful.fail(form.get_error())
+        form = HasTaskIdForm().do_validate()
+        return app.restful.success(data=form.task.to_dict())
 
     def post(self):
         """ 新增定时任务 """
-        form = AddTaskForm()
-        if form.validate():
-            form.num.data = Task.get_insert_num(project_id=form.project_id.data)
-            new_task = Task().create(form.data)
-            return app.restful.success(f'任务【{form.name.data}】新建成功', new_task.to_dict())
-        return app.restful.fail(form.get_error())
+        form = AddTaskForm().do_validate()
+        form.num.data = Task.get_insert_num(project_id=form.project_id.data)
+        new_task = Task().create(form.data)
+        return app.restful.success(f'任务【{form.name.data}】新建成功', new_task.to_dict())
 
     def put(self):
         """ 修改定时任务 """
-        form = EditTaskForm()
-        if form.validate():
-            form.num.data = Task.get_insert_num(project_id=form.project_id.data)
-            form.task.update(form.data)
-            return app.restful.success(f'任务【{form.name.data}】修改成功', form.task.to_dict())
-        return app.restful.fail(form.get_error())
+        form = EditTaskForm().do_validate()
+        form.num.data = Task.get_insert_num(project_id=form.project_id.data)
+        form.task.update(form.data)
+        return app.restful.success(f'任务【{form.name.data}】修改成功', form.task.to_dict())
 
     def delete(self):
         """ 删除定时任务 """
-        form = DeleteTaskIdForm()
-        if form.validate():
-            form.task.delete()
-            return app.restful.success(f'任务【{form.task.name}】删除成功')
-        return app.restful.fail(form.get_error())
+        form = DeleteTaskIdForm().do_validate()
+        form.task.delete()
+        return app.restful.success(f'任务【{form.task.name}】删除成功')
 
 
-@ns.route('/status/')
 class ApiTaskStatusView(LoginRequiredView):
     """ 任务状态修改 """
 
     def post(self):
         """ 启用定时任务 """
-        form = HasTaskIdForm()
-        if form.validate():
-            task = form.task
-            try:
-                res = requests.post(
-                    url='http://localhost:8025/api/job/status',
-                    headers=request.headers,
-                    json={
-                        'userId': g.user_id,
-                        'task': task.to_dict(),
-                        'type': 'api'
-                    }
-                ).json()
-                if res["status"] == 200:
-                    task.enable()
-                    return app.restful.success(f'任务【{form.task.name}】启用成功', data=res)
-                else:
-                    return app.restful.fail(f'任务【{form.task.name}】启用失败', data=res)
-            except Exception as error:
-                return app.restful.fail(f'任务【{form.task.name}】启用失败', data=error)
-        return app.restful.fail(form.get_error())
+        form = HasTaskIdForm().do_validate()
+        res = TaskBusiness.enable(form, 'api')
+        if res["status"] == 1:
+            return app.restful.success(f'任务【{form.task.name}】启用成功', data=res["data"])
+        else:
+            return app.restful.fail(f'任务【{form.task.name}】启用失败', data=res["data"])
 
     def delete(self):
         """ 禁用定时任务 """
-        form = HasTaskIdForm()
-        if form.validate():
-            if form.task.is_disable():
-                return app.restful.fail(f'任务【{form.task.name}】的状态不为启用中')
-            try:
-                res = requests.delete(
-                    url='http://localhost:8025/api/job/status',
-                    headers=request.headers,
-                    json={
-                        'taskId': form.task.id,
-                        'type': 'api'
-                    }
-                ).json()
-                if res["status"] == 200:
-                    form.task.disable()
-                    return app.restful.success(f'任务【{form.task.name}】禁用成功', data=res)
-                else:
-                    return app.restful.fail(f'任务【{form.task.name}】禁用失败', data=res)
-            except Exception as error:
-                return app.restful.fail(f'任务【{form.task.name}】禁用失败', data=error)
-        return app.restful.fail(form.get_error())
+        form = HasTaskIdForm().do_validate()
+        res = TaskBusiness.disable(form, 'api')
+        if res["status"] == 1:
+            return app.restful.success(f'任务【{form.task.name}】禁用成功', data=res["data"])
+        else:
+            return app.restful.fail(f'任务【{form.task.name}】禁用失败', data=res["data"])
+
+
+api_test.add_url_rule('/task', view_func=ApiTaskView.as_view('ApiTaskView'))
+api_test.add_url_rule('/task/run', view_func=ApiRunTaskView.as_view('ApiRunTaskView'))
+api_test.add_url_rule('/task/copy', view_func=ApiCopyTaskView.as_view('ApiCopyTaskView'))
+api_test.add_url_rule('/task/list', view_func=ApiTaskListView.as_view('ApiTaskListView'))
+api_test.add_url_rule('/task/status', view_func=ApiTaskStatusView.as_view('ApiTaskStatusView'))
+api_test.add_url_rule('/task/sort', view_func=ApiChangeTaskSortView.as_view('ApiChangeTaskSortView'))

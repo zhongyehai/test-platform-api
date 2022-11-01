@@ -1,4 +1,4 @@
-# 基于python-flask生态 + HttpRunner 开发的rest风格的测试平台后端
+# 基于python-flask生态开发的rest风格的测试平台后端
 
 ## [体验demo](http://139.196.100.202/#/login) ，  账号：tester、密码：123456
 

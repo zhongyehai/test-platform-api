@@ -2,7 +2,7 @@
 
 import re
 
-from flask import request, g
+from flask import request, g, abort
 from wtforms import Form, ValidationError
 
 from utils.util.jsonUtil import JsonUtil
@@ -16,6 +16,12 @@ class BaseForm(Form, JsonUtil):
         """ 初始化的时候获取所有参数一起传给BaseForm """
         data, args = request.get_json(silent=True) or request.form.to_dict(), request.args.to_dict()
         super(BaseForm, self).__init__(data=data, **args)
+
+    def do_validate(self):
+        """ 进行form实例化和校验，校验不通过则抛400异常 """
+        if not super(BaseForm, self).validate():
+            abort(400, self.get_error())
+        return self
 
     def get_error(self):
         """ 获取form校验不通过的报错 """
@@ -195,8 +201,7 @@ class BaseForm(Form, JsonUtil):
         """ 校验回调信息 """
         if field.data:
             try:
-                call_back_data = self.loads(field.data)
-                if isinstance(call_back_data, list) is False:
+                if isinstance(field.data, list) is False:
                     raise
             except Exception as error:
                 raise ValidationError('回调信息错误，若需要回调，请按示例填写')

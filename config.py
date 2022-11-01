@@ -7,11 +7,10 @@ import six
 import urllib3.fields as f
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
-from utils.util.yamlUtil import load
 from utils.client.testRunner import built_in as assert_func_file
 from utils.client.testRunner.webdriverAction import Driver
 
-# 从 httpRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
+# 从 testRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
 assert_mapping, assert_mapping_list = {}, []
 for func in dir(assert_func_file):
     if func.startswith('_') and not func.startswith('__'):
@@ -45,7 +44,32 @@ skip_if_data_source_mapping = [
     {"label": "运行环境", "value": "run_env"}
 ]
 
-basedir, conf = os.path.abspath('.'), load(os.path.abspath('.') + '/config/config.yaml')
+basedir = os.path.abspath('.')
+
+conf = {
+    "SECRET_KEY": "localhost",  # 配个非空字符串即可,
+
+    "db": {
+        "host": "localhost",
+        "port": 3306,
+        "user": "root",
+        "password": "ApiTes123#qwe",
+        "database": "test_platform"
+    },
+    "token_time_out": 36000,  # token超时时间，单位为秒
+
+    # 分页信息
+    "page": {
+        "pageNum": 1,
+        "pageSize": 20
+    },
+
+    # 即时达推送的 系统错误通道，不接受错误信息可不配置
+    "error_push": {
+        "url": "",
+        "key": ""
+    }
+}
 
 
 def my_format_header_param(name, value):
@@ -72,7 +96,6 @@ class ProductionConfig:
     """ 生产环境配置 """
 
     SECRET_KEY = conf['SECRET_KEY']
-    basedir = os.path.abspath(os.path.dirname(__file__))
     CSRF_ENABLED = True
     UPLOAD_FOLDER = '/upload'
 

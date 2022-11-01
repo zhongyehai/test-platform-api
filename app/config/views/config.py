@@ -8,25 +8,19 @@ from app.config.models.config import Config
 from app.config.forms.config import (
     GetConfigForm, DeleteConfigForm, PostConfigForm, PutConfigForm, GetConfigListForm
 )
-from app.config import config
+from app.config.blueprint import config_blueprint
 from app.web_ui_test.models.project import WebUiProjectEnv
-from config.config import skip_if_type_mapping, skip_if_data_source_mapping
+from config import skip_if_type_mapping, skip_if_data_source_mapping
 from utils.view.required import admin_required
 
-ns = config.namespace("config", description="配置管理相关接口")
 
-
-@ns.route('/list/')
 class GetConfListView(LoginRequiredView):
 
     def get(self):
-        form = GetConfigListForm()
-        if form.validate():
-            return app.restful.success(data=Config.make_pagination(form))
-        return app.restful.error(form.get_error())
+        form = GetConfigListForm().do_validate()
+        return app.restful.success(data=Config.make_pagination(form))
 
 
-@ns.route('/runModel/')
 class GetRunTestModelView(NotLoginView):
 
     def get(self):
@@ -34,7 +28,6 @@ class GetRunTestModelView(NotLoginView):
         return app.restful.success(data={0: "串行执行", 1: "并行执行"})
 
 
-@ns.route('/skipIfType/')
 class GetSkipIfTypeView(NotLoginView):
 
     def get(self):
@@ -42,7 +35,6 @@ class GetSkipIfTypeView(NotLoginView):
         return app.restful.success(data=skip_if_type_mapping)
 
 
-@ns.route('/skipIfDataSource/')
 class GetSkipIfDataSourceView(NotLoginView):
 
     def get(self):
@@ -53,7 +45,6 @@ class GetSkipIfDataSourceView(NotLoginView):
         return app.restful.success(data=skip_if_data_source_mapping)
 
 
-@ns.route('/byName/')
 class GetConfByNameView(NotLoginView):
 
     def get(self):
@@ -61,44 +52,44 @@ class GetConfByNameView(NotLoginView):
         return app.restful.success(data=Config.get_first(name=request.args.get('name')).to_dict())
 
 
-@ns.route('/')
 class ConfigView(LoginRequiredView):
 
     def get(self):
         """ 获取配置 """
-        form = GetConfigForm()
-        if form.validate():
-            return app.restful.success('获取成功', data=form.conf.to_dict())
-        return app.restful.error(form.get_error())
+        form = GetConfigForm().do_validate()
+        return app.restful.success('获取成功', data=form.conf.to_dict())
 
     def post(self):
         """ 新增配置 """
-        form = PostConfigForm()
-        if form.validate():
-            conf = Config().create(form.data)
-            return app.restful.success('新增成功', data=conf.to_dict())
-        return app.restful.error(form.get_error())
+        form = PostConfigForm().do_validate()
+        conf = Config().create(form.data)
+        return app.restful.success('新增成功', data=conf.to_dict())
 
     @admin_required
     def put(self):
         """ 修改配置 """
-        form = PutConfigForm()
-        if form.validate():
-            # 如果key是 run_test_env 则自动同步环境信息
-            if form.name.data == 'run_test_env':
-                new_env_list = Config.get_new_env_list(form)
-                if new_env_list:
-                    ApiProjectEnv.create_env(env_list=new_env_list)
-                    WebUiProjectEnv.create_env(env_list=new_env_list)
-            form.conf.update(form.data)
-            return app.restful.success('修改成功', data=form.conf.to_dict())
-        return app.restful.error(form.get_error())
+        form = PutConfigForm().do_validate()
+        # 如果key是 run_test_env 则自动同步环境信息
+        if form.name.data == 'run_test_env':
+            new_env_list = Config.get_new_env_list(form)
+            if new_env_list:
+                ApiProjectEnv.create_env(env_list=new_env_list)
+                WebUiProjectEnv.create_env(env_list=new_env_list)
+        form.conf.update(form.data)
+        return app.restful.success('修改成功', data=form.conf.to_dict())
 
     @admin_required
     def delete(self):
         """ 删除配置 """
-        form = DeleteConfigForm()
-        if form.validate():
-            form.conf.delete()
-            return app.restful.success('删除成功')
-        return app.restful.error(form.get_error())
+        form = DeleteConfigForm().do_validate()
+        form.conf.delete()
+        return app.restful.success('删除成功')
+
+
+config_blueprint.add_url_rule('/config', view_func=ConfigView.as_view('ConfigView'))
+config_blueprint.add_url_rule('/config/list', view_func=GetConfListView.as_view('GetConfListView'))
+config_blueprint.add_url_rule('/config/byName', view_func=GetConfByNameView.as_view('GetConfByNameView'))
+config_blueprint.add_url_rule('/config/skipIfType', view_func=GetSkipIfTypeView.as_view('GetSkipIfTypeView'))
+config_blueprint.add_url_rule('/config/runModel', view_func=GetRunTestModelView.as_view('GetRunTestModelView'))
+config_blueprint.add_url_rule('/config/skipIfDataSource',
+                              view_func=GetSkipIfDataSourceView.as_view('GetSkipIfDataSourceView'))

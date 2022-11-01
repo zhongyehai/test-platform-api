@@ -1,26 +1,21 @@
 # -*- coding: utf-8 -*-
-import os
 
-from utils.util.fileUtil import UI_CASE_FILE_ADDRESS
+from utils.util.fileUtil import FileUtil
 from utils.util.jsonUtil import JsonUtil
-from config.config import assert_mapping
+from config import assert_mapping
 from utils.client.testRunner.parser import extract_functions, parse_function, extract_variables
 
 
 class BaseParseModel(JsonUtil):
 
-    def build_file_path(self, filename):
-        """ 拼装要上传文件的路径 """
-        return os.path.join(UI_CASE_FILE_ADDRESS, filename)
-
-    def parse_headers(self, headers_list):
-        """ 解析头部信息
+    def parse_list_data(self, data_list):
+        """ 解析头部参数、params参数
         headers_list:
             [{"key": "x-auth-token", "value": "aaa"}, {"key": null, "value": null}]
         :return
             {"x-auth-token": "aaa"}
         """
-        return {header['key']: header['value'] for header in headers_list if header.get('key')}
+        return {data['key']: data['value'] for data in data_list if data.get('key') and data.get('value') is not None}
 
     def parse_variables(self, variables_list):
         """ 解析公用变量
@@ -36,15 +31,6 @@ class BaseParseModel(JsonUtil):
             v['key']: self.build_data(v.get("data_type", "str"), v['value'])
             for v in variables_list if v.get('key') and v.get('value') is not None
         }
-
-    def parse_params(self, params_list):
-        """ 解析查询字符串参数
-        params_list:
-            [{"key": "name", "value": "aaa"}]
-        :return
-            {"name": "aaa"}
-        """
-        return {p['key']: p['value'] for p in params_list if p.get('key') and p.get('value') is not None}
 
     def parse_extracts(self, extracts_list):
         """ 解析要提取的参数
@@ -188,3 +174,140 @@ class BaseParseModel(JsonUtil):
                     files.update({data['key']: data['value']})
 
         return string, files
+
+    def parse_body(self, kwargs):
+        """ 根据请求体数据类型解析请求体 """
+        if self.data_type in ['json', 'raw']:
+            self.data_json = kwargs.get('data_json', {})
+        elif self.data_type in ['form', 'data']:
+            self.data_form, self.data_file = self.parse_form_data(kwargs.get('data_form', {}))
+        elif self.data_type == 'urlencoded':
+            self.data_form = kwargs.get('data_urlencoded', {})
+            self.headers["Content-Type"] = 'application/x-www-form-urlencoded'
+        elif self.data_type in ['xml', 'text']:
+            self.data_form = kwargs.get('data_text', '')
+
+    def parse_send_keys(self, send_keys):
+        """ 解析输入内容 """
+        return FileUtil.build_ui_test_file_path(send_keys) if send_keys and '_is_upload' in send_keys else send_keys
+
+
+class ProjectModel(BaseParseModel):
+    """ 格式化服务信息 """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.name = kwargs.get('name')
+        self.manager = kwargs.get('manager')
+        self.func_files = kwargs.get('func_files')
+        self.create_user = kwargs.get('create_user')
+        self.test = kwargs.get('test')
+        self.host = kwargs.get('host')
+        self.variables = self.parse_variables(kwargs.get('variables', {}))
+        # 接口自动化字段
+        self.headers = self.parse_list_data(kwargs.get('headers', {}))
+
+
+class ApiModel(BaseParseModel):
+    """ 格式化接口信息 """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.num = kwargs.get('num')
+        self.name = kwargs.get('name')
+        self.time_out = kwargs.get('time_out')
+        self.desc = kwargs.get('desc')
+        self.up_func = kwargs.get('up_func')
+        self.down_func = kwargs.get('down_func')
+        self.env = kwargs.get('env')
+        self.method = kwargs.get('method')
+        self.addr = kwargs.get('addr')
+        self.headers = self.parse_list_data(kwargs.get('headers', {}))
+        self.params = self.parse_list_data(kwargs.get('params', {}))
+        self.extracts = self.parse_extracts(kwargs.get('extracts', []))
+        self.validates = self.parse_validates(kwargs.get('validates', {}))
+        self.module_id = kwargs.get('module_id')
+        self.project_id = kwargs.get('project_id')
+        self.create_user = kwargs.get('create_user')
+
+        # 根据数据类型解析请求体
+        self.data_type = kwargs.get('data_type', 'json')
+        self.data_json, self.data_form, self.data_file = {}, {}, {}
+        self.parse_body(kwargs)
+
+
+class ElementModel(BaseParseModel):
+    """ 格式化元素信息 """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.num = kwargs.get('num')
+        self.name = kwargs.get('name')
+        self.desc = kwargs.get('desc')
+        self.by = kwargs.get('by')
+        self.element = kwargs.get('element')
+        self.wait_time_out = kwargs.get('wait_time_out')
+        self.page_id = kwargs.get('page_id')
+        self.module_id = kwargs.get('module_id')
+        self.project_id = kwargs.get('project_id')
+
+
+class CaseModel(BaseParseModel):
+    """ 格式化用例信息 """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.num = kwargs.get('num')
+        self.name = kwargs.get('name')
+        self.desc = kwargs.get('desc')
+        self.env = kwargs.get('env')
+        self.func_files = kwargs.get('func_files')
+        self.variables = self.parse_variables(kwargs.get('variables', {}))
+        self.skip_if = self.parse_skip_if(kwargs.get('skip_if'))
+        self.status = kwargs.get('status')
+        self.run_times = kwargs.get('run_times')
+        self.module_id = kwargs.get('module_id')
+        self.set_id = kwargs.get('set_id')
+        self.create_user = kwargs.get('create_user')
+        # 接口自动化字段
+        self.headers = self.parse_list_data(kwargs.get('headers', {}))
+
+
+class StepModel(BaseParseModel):
+    """ 格式化步骤信息 """
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')
+        self.num = kwargs.get('num')
+        self.name = kwargs.get('name')
+        self.run_times = kwargs.get('run_times')
+        self.up_func = kwargs.get('up_func')
+        self.down_func = kwargs.get('down_func')
+        self.skip_if = self.parse_skip_if(kwargs.get('skip_if'))
+        self.status = kwargs.get('status')
+        self.validates = self.parse_validates(kwargs.get('validates', {}))
+        self.data_driver = kwargs.get('data_driver', {})
+        self.quote_case = kwargs.get('quote_case', {})
+        self.case_id = kwargs.get('case_id')
+        self.project_id = kwargs.get('project_id')
+        self.create_user = kwargs.get('create_user')
+
+        # 接口自动化
+        self.time_out = kwargs.get('time_out')
+        self.replace_host = kwargs.get('replace_host')
+        self.headers = self.parse_list_data(kwargs.get('headers', {}))
+        self.params = self.parse_list_data(kwargs.get('params', {}))
+        self.api_id = kwargs.get('api_id')
+        self.data_type = kwargs.get('data_type', 'json')
+        self.data_json, self.data_form, self.data_file = {}, {}, {}
+        self.parse_body(kwargs)
+
+        # UI自动化
+        self.wait_time_out = kwargs.get('wait_time_out')
+        self.execute_type = kwargs.get('execute_type')
+        self.send_keys = self.parse_send_keys(kwargs.get('send_keys'))
+        self.extracts = kwargs.get('extracts', [])
+        self.page_id = kwargs.get('page_id')
+        self.element_id = kwargs.get('element_id')
+
+        self.extracts = self.parse_extracts(kwargs.get('extracts', [])) if self.api_id else kwargs.get('extracts', [])

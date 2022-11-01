@@ -8,7 +8,7 @@ import requests
 from utils.message.sendEmail import SendEmail
 from utils.report.report import render_html_report
 from app.baseModel import Config
-from config.config import conf
+from config import conf
 
 
 # def by_we_chat(content, webhook, report_id):

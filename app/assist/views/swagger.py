@@ -6,7 +6,7 @@ import os.path
 import requests
 from flask import request, current_app as app
 
-from app.assist import assist
+from app.assist.blueprint import assist
 from app.assist.models.swagger import SwaggerPullLog
 from app.baseView import LoginRequiredView
 from app.config.models.config import Config
@@ -15,8 +15,6 @@ from app.api_test.models.module import ApiModule
 from app.api_test.models.api import ApiMsg
 from utils.util.fileUtil import SWAGGER_FILE_ADDRESS, FileUtil
 from app.baseModel import db
-
-ns = assist.namespace("swagger", description="从swagger拉数据")
 
 
 def get_swagger_data(swagger_addr):
@@ -319,9 +317,9 @@ def parse_openapi3_args(db_api, swagger_api, data_models, is_parse_headers):
 
     # 响应
     ref_model = \
-    swagger_api.get('responses', {}).get('200', {}).get('content', {}).get('*/*', {}).get('schema', {}).get('$ref',
-                                                                                                            '').split(
-        '/')[-1]  # 数据模型
+        swagger_api.get('responses', {}).get('200', {}).get('content', {}).get('*/*', {}).get('schema', {}).get('$ref',
+                                                                                                                '').split(
+            '/')[-1]  # 数据模型
     response_template = parse_openapi3_response(ref_model, data_models)
 
     # 更新api数据
@@ -330,7 +328,6 @@ def parse_openapi3_args(db_api, swagger_api, data_models, is_parse_headers):
     db_api.response = db_api.dumps(response_template)
 
 
-@ns.route('/pull/')
 class SwaggerPullView(LoginRequiredView):
 
     def post(self):
@@ -421,3 +418,6 @@ class SwaggerPullView(LoginRequiredView):
             FileUtil.save_file(swagger_file, swagger_data)
 
         return app.restful.success('数据拉取并更新完成')
+
+
+assist.add_url_rule('/swagger/pull', view_func=SwaggerPullView.as_view('SwaggerPullView'))

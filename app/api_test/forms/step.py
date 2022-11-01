@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired, Length, ValidationError
+from wtforms.validators import DataRequired, Length
 
 from app.baseForm import BaseForm
 from app.assist.models.func import Func
@@ -39,7 +39,7 @@ class AddStepForm(BaseForm):
     up_func = StringField()
     down_func = StringField()
     skip_if = StringField()
-    is_run = IntegerField()
+    status = IntegerField()
     run_times = IntegerField()
     headers = StringField()
     params = StringField()

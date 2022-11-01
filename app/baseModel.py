@@ -63,7 +63,8 @@ naming_convention = {
 db = SQLAlchemy(
     query_class=Qeury,  # 指定使用修改过后的Qeury
     metadata=MetaData(naming_convention=naming_convention),
-    use_native_unicode='utf8')
+    use_native_unicode='utf8'
+)
 
 
 class BaseModel(db.Model, JsonUtil):
@@ -81,7 +82,7 @@ class BaseModel(db.Model, JsonUtil):
     serialization_file_list = [
         'headers', 'variables', 'func_files',
         'params', 'data_form', 'data_json', 'data_urlencoded', 'extracts', 'validates', "data_driver", "skip_if",
-        'set_ids', 'case_ids',
+        'call_back', 'set_ids', 'case_ids',
         'kym', 'task_item',
     ]
 
@@ -135,6 +136,24 @@ class BaseModel(db.Model, JsonUtil):
         """ 删除单条数据 """
         with db.auto_commit():
             db.session.delete(self)
+
+    def enable(self):
+        """ 启用数据 """
+        with db.auto_commit():
+            self.status = 1
+
+    def disable(self):
+        """ 启用数据 """
+        with db.auto_commit():
+            self.status = 0
+
+    def is_enable(self):
+        """ 判断任务是否为启用状态 """
+        return self.status == 1
+
+    def is_disable(self):
+        """ 判断任务是否为禁用状态 """
+        return self.status == 0
 
     def delete_current_and_children(self, child_model, filter_field):
         """ 删除当前数据，并且删除下游数据 """
@@ -210,6 +229,8 @@ class BaseModel(db.Model, JsonUtil):
 
         dict_data = {}
         for column in self.__table__.columns:
+            if column.name == 'call_back':
+                a = 1
             if filter_list:
                 if column.name in filter_list:
                     dict_data[column.name] = self.serialization_data(column.name, to_dict)
@@ -321,8 +342,9 @@ class BaseProjectEnv(BaseModel):
 
     env = db.Column(db.String(255), nullable=True, comment='所属环境')
     host = db.Column(db.String(255), default='', comment='域名')
-    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]',
-                          comment='服务的公共变量')
+    variables = db.Column(
+        db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment='服务的公共变量'
+    )
     project_id = db.Column(db.Integer(), nullable=True, comment='所属的服务id')
 
     @classmethod
@@ -417,6 +439,49 @@ class BaseCaseSet(BaseModel):
             order_by=cls.num.asc()
         )
 
+    @classmethod
+    def create_case_set_by_project(cls, project_id):
+        """ 根据项目id，创建用例集 """
+        for name in ['引用用例集', '流程用例集', '单接口用例集', '辅助测试用例集']:
+            cls().create({'name': name, 'project_id': project_id})
+
+    def get_run_case_id(self, case_model):
+        """ 获取用例集下，状态为要运行的用例id """
+        data = [
+            case.id for case in
+            case_model.query.filter_by(set_id=self.id, status=1).order_by(case_model.num.asc()).all()
+        ]
+        return data
+
+    @classmethod
+    def get_case_id(cls, case_model, project_id: int, set_id: list, case_id: list):
+        """
+        获取要执行的用例的id
+            1、即没选择用例，也没选择用例集
+            2、只选择了用例
+            3、只选了用例集
+            4、选定了用例和用例集
+        """
+        # 1、只选择了用例，则直接返回用例
+        if len(case_id) != 0 and len(set_id) == 0:
+            return case_id
+
+        # 2、没有选择用例集和用例，则视为选择了所有用例集
+        elif len(set_id) == 0 and len(case_id) == 0:
+            set_id = [
+                case_set.id for case_set in cls.query.filter_by(project_id=project_id).order_by(cls.num.asc()).all()
+            ]
+
+        # 解析已选中的用例集，并继承已选中的用例列表，再根据用例id去重
+        case_ids = [
+            case.id for case_set_id in set_id for case in case_model.query.filter_by(
+                set_id=case_set_id,
+                status=1
+            ).order_by(case_model.num.asc()).all() if case and case.status
+        ]
+        case_ids.extend(case_id)
+        return list(set(case_ids))
+
 
 class BaseCase(BaseModel):
     """ 用例基类表 """
@@ -426,11 +491,12 @@ class BaseCase(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment='用例序号')
     name = db.Column(db.String(255), nullable=True, comment='用例名称')
     desc = db.Column(db.Text(), comment='用例描述')
-    is_run = db.Column(db.Boolean(), default=False, comment='是否执行此用例，True执行，False不执行，默认执行')
+    status = db.Column(db.Integer(), default=0, comment='是否执行此用例，1执行，0不执行，默认不执行')
     run_times = db.Column(db.Integer(), default=1, comment='执行次数，默认执行1次')
     func_files = db.Column(db.Text(), default='[]', comment='用例需要引用的函数list')
-    variables = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]',
-                          comment='用例级的公共参数')
+    variables = db.Column(
+        db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment='用例级的公共参数'
+    )
     skip_if = db.Column(
         db.Text(),
         default=BaseModel.dumps([
@@ -474,9 +540,8 @@ class BaseStep(BaseModel):
     __abstract__ = True
 
     num = db.Column(db.Integer(), nullable=True, comment='步骤序号，执行顺序按序号来')
-    is_run = db.Column(db.Boolean(), default=True, comment='是否执行此步骤，True执行，False不执行，默认执行')
+    status = db.Column(db.Integer(), default=1, comment='是否执行此步骤，1执行，0不执行，默认执行')
     run_times = db.Column(db.Integer(), default=1, comment='执行次数，默认执行1次')
-
     name = db.Column(db.String(255), comment='步骤名称')
     up_func = db.Column(db.Text(), default='', comment='步骤执行前的函数')
     down_func = db.Column(db.Text(), default='', comment='步骤执行后的函数')
@@ -520,24 +585,6 @@ class BaseTask(BaseModel):
     set_ids = db.Column(db.Text(), comment='用例集id')
     call_back = db.Column(db.Text(), comment='回调给流水线')
 
-    def is_enable(self):
-        """ 判断任务是否为启用状态 """
-        return self.status == 1
-
-    def is_disable(self):
-        """ 判断任务是否为禁用状态 """
-        return self.status == 0
-
-    def enable(self):
-        """ 启用任务 """
-        with db.auto_commit():
-            self.status = 1
-
-    def disable(self):
-        """ 禁用任务 """
-        with db.auto_commit():
-            self.status = 0
-
     @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """
@@ -557,20 +604,26 @@ class BaseReport(BaseModel):
     __abstract__ = True
 
     name = db.Column(db.String(128), nullable=True, comment='测试报告名称')
-    status = db.Column(db.String(255), nullable=True, default='未读', comment='阅读状态，已读、未读')
+    is_read = db.Column(db.Integer, nullable=True, default=0, comment='阅读状态，1已读、0未读')
     is_passed = db.Column(db.Integer, default=1, comment='是否全部通过，1全部通过，0有报错')
     performer = db.Column(db.String(255), nullable=True, comment='执行者')
     run_type = db.Column(db.String(255), default='task', nullable=True, comment='报告类型，task/case/api')
-    is_done = db.Column(db.Integer, default=0, comment='是否执行完毕，1执行完毕，0执行中')
+    status = db.Column(db.Integer, default=0, comment='是否执行完毕，1执行完毕，0执行中')
     env = db.Column(db.String(255), default='test', comment='运行环境')
-    trigger_type = db.Column(db.String(128), nullable=True, comment='触发类型，流水线触发、页面触发')
+    trigger_type = db.Column(db.String(128), nullable=True, comment='触发类型，pipeline：流水线触发、其余为页面触发')
 
-    def update_status(self, run_result, is_done=1):
+    def update_status(self, run_result, status=1):
         """ 测试运行结束后，更新状态和结果 """
-        self.update({'is_passed': 1 if run_result else 0, 'is_done': is_done})
+        self.update({'is_passed': 1 if run_result else 0, 'status': status})
+
+    def read(self):
+        """ 改为已读状态 """
+        self.update({"is_read": 1})
 
     @classmethod
     def get_new_report(cls, **kwargs):
+        kwargs["performer"] = kwargs["performer"] or g.user_name
+        kwargs["create_user"] = kwargs["create_user"] or g.user_id
         return cls().create(kwargs)
 
     @classmethod
@@ -707,7 +760,6 @@ class Config(BaseModel):
     def get_find_element_option(cls):
         return cls.loads(cls.get_first(name='find_element_option').value)
 
-
     @classmethod
     def get_ui_report_addr(cls):
         return cls.get_first(name='ui_report_addr').value
@@ -723,10 +775,6 @@ class FuncErrorRecord(BaseModel):
 
     name = db.Column(db.String(255), nullable=True, comment='错误title')
     detail = db.Column(db.Text(), default='', comment='错误详情')
-
-    def to_dict(self, *args, **kwargs):
-        """ 自定义序列化器，把模型的每个字段转为字典，方便返回给前端 """
-        return super(FuncErrorRecord, self).to_dict()
 
     @classmethod
     def make_pagination(cls, form):

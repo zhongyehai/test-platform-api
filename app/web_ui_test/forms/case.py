@@ -146,8 +146,11 @@ class RunCaseForm(BaseForm):
     """ 运行用例 """
     caseId = StringField(validators=[DataRequired('请选择用例')])
     env = StringField(validators=[DataRequired('请选择运行环境')])
+    is_async = IntegerField()
 
     def validate_caseId(self, field):
         """ 校验用例id存在 """
-        case = self.validate_data_is_exist(f'id为【{field.data}】的用例不存在', Case, id=field.data)
-        setattr(self, 'case', case)
+        case_list = []
+        for case_id in self.caseId.data:
+            case_list.append(self.validate_data_is_exist(f'id为【{case_id}】的用例不存在', Case, id=case_id))
+        setattr(self, 'case_list', case_list)

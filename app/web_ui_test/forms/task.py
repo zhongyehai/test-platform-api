@@ -100,6 +100,17 @@ class HasTaskIdForm(BaseForm):
         setattr(self, 'task', task)
 
 
+class DisableTaskIdForm(HasTaskIdForm):
+    """ 禁用任务 """
+
+    def validate_id(self, field):
+        """ 校验id存在 """
+        task = self.validate_data_is_exist(f'任务id【{field.data}】不存在', Task, id=field.data)
+        setattr(self, 'task', task)
+
+        self.validate_data_is_true(f'任务【{task.name}】的状态不为启用中', task.is_enable())
+
+
 class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
     env = StringField()

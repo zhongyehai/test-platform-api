@@ -10,6 +10,11 @@ from app.system.models.errorRecord import SystemErrorRecord
 def register_errorhandler_hook(app):
     """ 注册异常捕获钩子函数 """
 
+    @app.errorhandler(400)
+    def forbidden_400(e):
+        """ 捕获400异常 """
+        return _app.restful.fail(e.description)
+
     @app.errorhandler(401)
     def forbidden_401(e):
         """ 捕获401的未登录异常 """
@@ -33,7 +38,7 @@ def register_errorhandler_hook(app):
         error = traceback.format_exc()
         try:
             # 写日志
-            _app.logger.exception(f'系统出错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
+            _app.logger.exception(f'系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
             # 写数据库
             error_record = SystemErrorRecord().create({

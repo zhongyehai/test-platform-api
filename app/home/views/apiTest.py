@@ -4,7 +4,7 @@ import os
 from flask import current_app as app
 
 from app.baseView import LoginRequiredView
-from app.home import home
+from app.home.blueprint import home
 from app.api_test.models.step import ApiStep as Step
 from app.baseModel import db
 from app.api_test.models.project import ApiProject as Project
@@ -16,10 +16,7 @@ from app.api_test.models.report import ApiReport as Report
 from utils.util.fileUtil import CASE_FILE_ADDRESS
 from utils.util.timeUtil import get_now, time_calculate, get_week_start_and_end
 
-ns = home.namespace("apiTest", description="接口自动化统计相关接口")
 
-
-@ns.route('/title/')
 class GetApiTestCountTitleView(LoginRequiredView):
 
     def get(self):
@@ -38,7 +35,6 @@ class GetApiTestCountTitleView(LoginRequiredView):
             })
 
 
-@ns.route('/project/')
 class GetApiTestCountProjectView(LoginRequiredView):
 
     def get(self):
@@ -50,7 +46,6 @@ class GetApiTestCountProjectView(LoginRequiredView):
         })
 
 
-@ns.route('/module/')
 class GetApiTestCountModuleView(LoginRequiredView):
 
     def get(self):
@@ -62,7 +57,6 @@ class GetApiTestCountModuleView(LoginRequiredView):
         })
 
 
-@ns.route('/api/')
 class GetApiTestCountApiView(LoginRequiredView):
 
     def get(self):
@@ -100,15 +94,14 @@ class GetApiTestCountApiView(LoginRequiredView):
         })
 
 
-@ns.route('/case/')
 class GetApiTestCountCaseView(LoginRequiredView):
 
     def get(self):
         """ 统计用例数 """
         data = db.execute_query_sql("""
-            select is_run, count(*) as totle
-                from (select IF(is_run = 0, 'not_run', 'is_run') as is_run from `api_test_case`) as t
-                group by is_run;
+            select status, count(*) as totle
+                from (select IF(status = 0, 'not_run', 'is_run') as status from `api_test_case`) as t
+                group by status;
             """)
 
         last_day_add = len(Case.query.filter(Case.created_time.between(time_calculate(-1), time_calculate(0))).all())
@@ -135,15 +128,14 @@ class GetApiTestCountCaseView(LoginRequiredView):
         })
 
 
-@ns.route('/step/')
 class GetApiTestCountStepView(LoginRequiredView):
 
     def get(self):
         """ 统计步骤数 """
         data = db.execute_query_sql("""
-            select is_run, count(*) as totle
-                from (select IF(is_run = 0, 'not_run', 'is_run') as is_run from `api_test_step`) as t
-                group by is_run;
+            select status, count(*) as totle
+                from (select IF(status = 0, 'not_run', 'is_run') as status from `api_test_step`) as t
+                group by status;
             """)
 
         last_day_add = len(Step.query.filter(Step.created_time.between(time_calculate(-1), time_calculate(0))).all())
@@ -170,8 +162,7 @@ class GetApiTestCountStepView(LoginRequiredView):
         })
 
 
-@ns.route('/task/')
-class GetApiTestCountTitleView(LoginRequiredView):
+class GetApiTestCountTaskView(LoginRequiredView):
 
     def get(self):
         """ 统计定时任务数 """
@@ -220,7 +211,6 @@ class GetApiTestCountTitleView(LoginRequiredView):
         })
 
 
-@ns.route('/report/')
 class GetApiTestCountReportView(LoginRequiredView):
 
     def get(self):
@@ -276,7 +266,6 @@ class GetApiTestCountReportView(LoginRequiredView):
         })
 
 
-@ns.route('/file/')
 class GetApiTestCountFileView(LoginRequiredView):
 
     def get(self):
@@ -286,3 +275,14 @@ class GetApiTestCountFileView(LoginRequiredView):
             'options': ['总数'],
             'data': [len(os.listdir(CASE_FILE_ADDRESS))],
         })
+
+
+home.add_url_rule('/apiTest/api', view_func=GetApiTestCountApiView.as_view('GetApiTestCountApiView'))
+home.add_url_rule('/apiTest/file', view_func=GetApiTestCountFileView.as_view('GetApiTestCountFileView'))
+home.add_url_rule('/apiTest/task', view_func=GetApiTestCountTaskView.as_view('GetApiTestCountTaskView'))
+home.add_url_rule('/apiTest/step', view_func=GetApiTestCountStepView.as_view('GetApiTestCountStepView'))
+home.add_url_rule('/apiTest/case', view_func=GetApiTestCountCaseView.as_view('GetApiTestCountCaseView'))
+home.add_url_rule('/apiTest/title', view_func=GetApiTestCountTitleView.as_view('GetApiTestCountTitleView'))
+home.add_url_rule('/apiTest/module', view_func=GetApiTestCountModuleView.as_view('GetApiTestCountModuleView'))
+home.add_url_rule('/apiTest/report', view_func=GetApiTestCountReportView.as_view('GetApiTestCountReportView'))
+home.add_url_rule('/apiTest/project', view_func=GetApiTestCountProjectView.as_view('GetApiTestCountProjectView'))

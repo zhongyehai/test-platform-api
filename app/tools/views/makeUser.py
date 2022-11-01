@@ -6,16 +6,13 @@ from faker import Faker
 from flask import request, current_app as app
 
 from app.baseView import NotLoginView
-from app.tools import tool
+from app.tools.blueprint import tool
 from utils.makeData import makeUserTools
 from app.config.models.config import Config
-
-ns = tool.namespace("makeUser", description="生成用户相关接口")
 
 fake = Faker('zh_CN')
 
 
-@ns.route('/mapping/')
 class GetMakeUserInfoMappingView(NotLoginView):
 
     def get(self):
@@ -23,7 +20,6 @@ class GetMakeUserInfoMappingView(NotLoginView):
         return app.restful.success('获取成功', data=Config.get_make_user_info_mapping())
 
 
-@ns.route('/')
 class MakeUserInfoView(NotLoginView):
 
     def get(self):
@@ -43,3 +39,7 @@ class MakeUserInfoView(NotLoginView):
                         i += 1
             all_data.append(temp_data)
         return app.restful.success('获取成功', data=[dict(zip(options, data)) for data in zip(*all_data)])
+
+
+tool.add_url_rule('/makeUser', view_func=MakeUserInfoView.as_view('MakeUserInfoView'))
+tool.add_url_rule('/makeUser/mapping', view_func=GetMakeUserInfoMappingView.as_view('GetMakeUserInfoMappingView'))
