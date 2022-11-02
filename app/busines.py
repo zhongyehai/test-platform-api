@@ -21,14 +21,14 @@ class ProjectEnvBusiness:
     """ 项目环境管理业务 """
 
     @classmethod
-    def put(cls, form, env_model):
+    def put(cls, form, env_model, filed_list):
         form.env_data.update(form.data)
 
         # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
         env_list = [
             env.env for env in env_model.get_all(project_id=form.project_id.data) if env.env != form.env_data.env
         ]
-        env_model.synchronization(form.env_data, env_list, ["variables", 'headers'])
+        env_model.synchronization(form.env_data, env_list, filed_list)
 
 
 class ModuleBusiness:

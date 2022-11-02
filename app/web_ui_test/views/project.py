@@ -87,7 +87,7 @@ class WebUiProjectEnvView(LoginRequiredView):
     def put(self):
         """ 修改项目环境 """
         form = EditEnv().do_validate()
-        ProjectEnvBusiness.put(form, ProjectEnv)
+        ProjectEnvBusiness.put(form, ProjectEnv, ["variables"])
         return app.restful.success(f'环境保存成功', form.env_data.to_dict())
 
 

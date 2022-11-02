@@ -89,7 +89,7 @@ class ApiProjectEnvView(LoginRequiredView):
     def put(self):
         """ 修改服务环境 """
         form = EditEnv().do_validate()
-        ProjectEnvBusiness.put(form, ProjectEnv)
+        ProjectEnvBusiness.put(form, ProjectEnv, ["variables", 'headers'])
         return app.restful.success(f'环境修改成功', form.env_data.to_dict())
 
 
