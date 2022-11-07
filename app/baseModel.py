@@ -442,8 +442,8 @@ class BaseCaseSet(BaseModel):
     @classmethod
     def create_case_set_by_project(cls, project_id):
         """ 根据项目id，创建用例集 """
-        for name in ['引用用例集', '流程用例集', '单接口用例集', '辅助测试用例集']:
-            cls().create({'name': name, 'project_id': project_id})
+        for index, name in enumerate(['引用用例集', '流程用例集', '单接口用例集', '辅助测试用例集']):
+            cls().create({'name': name, 'num': index, 'project_id': project_id})
 
     def get_run_case_id(self, case_model):
         """ 获取用例集下，状态为要运行的用例id """
