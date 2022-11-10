@@ -105,7 +105,7 @@ class StepBusiness:
 
     @classmethod
     def copy(cls, step_id, step_model, step_type=None):
-        old = step_model.get_first(step_id).to_dict()
+        old = step_model.get_first(id=step_id).to_dict()
         old['name'] = f"{old['name']}_copy"
         old['num'] = step_model.get_insert_num(case_id=old['case_id'])
         step = step_model().create(old)
