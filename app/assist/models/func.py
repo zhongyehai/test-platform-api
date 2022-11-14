@@ -5,6 +5,7 @@ import types
 from sqlalchemy.dialects.mysql import LONGTEXT
 
 from app.baseModel import BaseModel, db
+from app.config.models.config import Config
 from utils.util.fileUtil import FileUtil
 
 
@@ -18,7 +19,7 @@ class Func(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment='当前函数文件的序号')
 
     @classmethod
-    def create_func_file(cls, env='test'):
+    def create_func_file(cls, env=None):
         """ 创建所有自定义函数 py 文件，默认在第一行加上运行环境，默认为test
         示例：
             # coding:utf-8
@@ -27,12 +28,14 @@ class Func(BaseModel):
 
             脚本内容
         """
+        env = env or Config.get_default_env()
         for func in cls.get_all():
             FileUtil.save_func_data(f'{env}_{func.name}', func.func_data, env)
 
     @classmethod
-    def get_func_by_func_file_name(cls, func_file_id_list, env='test'):
+    def get_func_by_func_file_name(cls, func_file_id_list, env=None):
         """ 获取指定函数文件中的函数 """
+        env = env or Config.get_default_env()
         cls.create_func_file(env)  # 创建所有函数文件
         func_dict = {}
         for func_file_id in func_file_id_list:
