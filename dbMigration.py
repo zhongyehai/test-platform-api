@@ -259,7 +259,7 @@ def init_user():
     for user_info in user_list:
         if User.get_first(account=user_info["account"]) is None:
             user_info["status"] = 1
-            user_info["business_id"] = business.id
+            user_info["business_id"] = [business.id]
             User().create(user_info)
             print_item_delimiter(f'用户【{user_info["name"]}】创建成功')
     print_type_delimiter("用户创建完成")
