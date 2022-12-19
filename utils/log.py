@@ -7,8 +7,8 @@
 
     - 修改日志保存路径，否则使用默认上一层目录的./logs/
     - 使用：from common.log_config import logger     # common表示本文件放在的文件夹
-        logger.info('打印info日志')
-        logger.error('打印error日志')
+        logger.info("打印info日志")
+        logger.error("打印error日志")
 
 
     注意：
@@ -201,7 +201,7 @@ class ConcurrentTimedRotatingFileHandler(TimedRotatingFileHandler):
         while newRolloverAt <= currentTime:
             newRolloverAt = newRolloverAt + self.interval
         # If DST changes and midnight or weekly rollover, adjust for this.
-        if (self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc:
+        if (self.when == "MIDNIGHT" or self.when.startswith("W")) and not self.utc:
             dstAtRollover = time.localtime(newRolloverAt)[-1]
             if dstNow != dstAtRollover:
                 if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
@@ -229,17 +229,17 @@ class GetLogger:
 
     def __init__(self, logs_dir=None, logs_level=logging.INFO):
         self.logs_dir = logs_dir  # 日志路径
-        self.log_name = r'app.log'  # 日志名称
+        self.log_name = r"app.log"  # 日志名称
         self.logs_level = logs_level  # 日志级别
         # 日志的输出格式
         self.log_formatter = logging.Formatter(
-            '%(asctime)s [%(process)d_%(thread)d] [%(filename)s] [%(funcName)s] [%(levelname)s] [%(lineno)d] %(message)s'
+            "%(asctime)s [%(process)d_%(thread)d] [%(filename)s] [%(funcName)s] [%(levelname)s] [%(lineno)d] %(message)s"
         )
 
     def get_logger(self):
         """在logger中添加日志句柄并返回，如果logger已有句柄，则直接返回"""
         # 实例化root日志对象
-        log_logger = logging.getLogger('root')
+        log_logger = logging.getLogger("root")
 
         # 设置日志的输出级别
         log_logger.setLevel(self.logs_level)
@@ -253,8 +253,8 @@ class GetLogger:
 
             # 建立一个循环文件handler来把日志记录在文件里
             file_handler = ConcurrentTimedRotatingFileHandler(
-                filename=self.logs_dir + '/logger',  # 定义日志的存储
-                when="MIDNIGHT",  # 按照日期进行切分when = D： 表示按天进行切分,or self.when == 'MIDNIGHT'
+                filename=self.logs_dir + "/logger",  # 定义日志的存储
+                when="MIDNIGHT",  # 按照日期进行切分when = D： 表示按天进行切分,or self.when == "MIDNIGHT"
                 interval=1,  # interval = 1： 每天都切分。 比如interval = 2就表示两天切分一下。
                 backupCount=30,  # 最多存放日志的数量
                 encoding="UTF-8",  # 使用UTF - 8的编码来写日志
@@ -280,11 +280,11 @@ if __name__ == "__main__":
     logger = GetLogger().get_logger()
 
     # 在具体需要的地方
-    logger.info('INFO日志打印...')
-    logger.error('ERROR日志打印...')
+    logger.info("INFO日志打印...")
+    logger.error("ERROR日志打印...")
 
     # # 打印日志保存路径
     # sep = os.sep
     # set_log_path = os.path.abspath(
     #     os.path.join(__file__, f"..{sep}..{sep}logs{sep}"))
-    # print('测试Log路径：', set_log_path)
+    # print("测试Log路径：", set_log_path)

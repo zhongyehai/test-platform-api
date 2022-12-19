@@ -13,5 +13,5 @@ class SystemErrorRecordListView(AdminRequiredView):
         return SystemErrorRecord.make_pagination(form)
 
 
-system_manage.add_url_rule('/errorRecord/list',
-                           view_func=SystemErrorRecordListView.as_view('SystemErrorRecordListView'))
+system_manage.add_url_rule("/errorRecord/list",
+                           view_func=SystemErrorRecordListView.as_view("SystemErrorRecordListView"))

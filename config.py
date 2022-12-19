@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 import email
 import six
@@ -8,30 +7,30 @@ import urllib3.fields as f
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 from utils.client.testRunner import built_in as assert_func_file
-from utils.client.testRunner.webdriverAction import Driver
+from utils.client.testRunner.webdriverAction import Actions
 
 # 从 testRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
 assert_mapping, assert_mapping_list = {}, []
 for func in dir(assert_func_file):
-    if func.startswith('_') and not func.startswith('__'):
+    if func.startswith("_") and not func.startswith("__"):
         doc = getattr(assert_func_file, func).__doc__.strip()  # 函数注释
         assert_mapping.setdefault(doc, func)
-        assert_mapping_list.append({'value': doc})
+        assert_mapping_list.append({"value": doc})
 
 # UI自动化的行为事件
-action_mapping = Driver.get_action_mapping()
-ui_action_mapping, ui_action_mapping_list = action_mapping['mapping_dict'], action_mapping['mapping_list']
+action_mapping = Actions.get_action_mapping()
+ui_action_mapping, ui_action_mapping_list = action_mapping["mapping_dict"], action_mapping["mapping_list"]
 ui_action_mapping_reverse = dict(zip(ui_action_mapping.values(), ui_action_mapping.keys()))
 
 # UI自动化的断言事件
-ui_assert_mapping = Driver.get_assert_mapping()
-ui_assert_mapping, ui_assert_mapping_list = ui_assert_mapping['mapping_dict'], ui_assert_mapping['mapping_list']
+ui_assert_mapping = Actions.get_assert_mapping()
+ui_assert_mapping, ui_assert_mapping_list = ui_assert_mapping["mapping_dict"], ui_assert_mapping["mapping_list"]
 
 # UI自动化的数据提取事件
-extract_mapping = Driver.get_extract_mapping()
-ui_extract_mapping, ui_extract_mapping_list = extract_mapping['mapping_dict'], extract_mapping['mapping_list']
-ui_extract_mapping.setdefault('自定义函数', 'func')
-ui_extract_mapping_list.append({'label': '自定义函数', 'value': 'func'})
+extract_mapping = Actions.get_extract_mapping()
+ui_extract_mapping, ui_extract_mapping_list = extract_mapping["mapping_dict"], extract_mapping["mapping_list"]
+ui_extract_mapping.setdefault("自定义函数", "func")
+ui_extract_mapping_list.append({"label": "自定义函数", "value": "func"})
 
 # 跳过条件判断类型映射
 skip_if_type_mapping = [
@@ -44,31 +43,12 @@ skip_if_data_source_mapping = [
     {"label": "运行环境", "value": "run_env"}
 ]
 
-basedir = os.path.abspath('.')
+basedir = os.path.abspath(".")
 
-conf = {
-    "SECRET_KEY": "localhost",  # 配个非空字符串即可,
-
-    "db": {
-        "host": "localhost",
-        "port": 3306,
-        "user": "root",
-        "password": "ApiTes123#qwe",
-        "database": "test_platform"
-    },
-    "token_time_out": 36000,  # token超时时间，单位为秒
-
-    # 分页信息
-    "page": {
-        "pageNum": 1,
-        "pageSize": 20
-    },
-
-    # 即时达推送的 系统错误通道，不接受错误信息可不配置
-    "error_push": {
-        "url": "",
-        "key": ""
-    }
+# 即时达推送的 系统错误通道，不接受错误信息可不配置
+error_push = {
+    "url": "http://push.ijingniu.cn/send",
+    "key": ""
 }
 
 
@@ -76,15 +56,15 @@ def my_format_header_param(name, value):
     if not any(ch in value for ch in '"\\\r\n'):
         result = '%s="%s"' % (name, value)
         try:
-            result.encode('utf-8')
+            result.encode("utf-8")
         except (UnicodeEncodeError, UnicodeDecodeError):
             pass
         else:
             return result
     if not six.PY3 and isinstance(value, six.text_type):  # Python 2:
-        value = value.encode('utf-8')
-    value = email.utils.encode_rfc2231(value, 'utf-8')
-    value = '%s*=%s' % (name, value)
+        value = value.encode("utf-8")
+    value = email.utils.encode_rfc2231(value, "utf-8")
+    value = "%s*=%s" % (name, value)
     return value
 
 
@@ -95,23 +75,28 @@ f.format_header_param = my_format_header_param
 class ProductionConfig:
     """ 生产环境配置 """
 
-    SECRET_KEY = conf['SECRET_KEY']
+    SECRET_KEY = ""  # 随便填个字符串
+    TOKEN_TIME_OUT = 36000
     CSRF_ENABLED = True
-    UPLOAD_FOLDER = '/upload'
+
+    # 数据库信息
+    DB_HOST = ""
+    DB_PORT = ""
+    DB_USER = ""
+    DB_PASSWORD = ""
+    DB_DATABASE = ""
+
+    ERROR_PUSH_URL = error_push.get("url")
+    ERROR_PUSH_KEY = error_push.get("key")
 
     # 数据库链接
-    SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://' \
-                              f'{conf["db"]["user"]}:' \
-                              f'{conf["db"]["password"]}@' \
-                              f'{conf["db"]["host"]}:' \
-                              f'{conf["db"]["port"]}/' \
-                              f'{conf["db"]["database"]}?charset=utf8mb4&autocommit=true'
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}?charset=utf8mb4&autocommit=true"
 
     # 关闭数据追踪，避免内存资源浪费
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # 关闭自动提交，若开启自动提交会出现以下报错
-    # sqlalchemy.exc.InvalidRequestError: Can't reconnect until invalid transaction is rolled back
+    # sqlalchemy.exc.InvalidRequestError: Can"t reconnect until invalid transaction is rolled back
     SQLALCHEMY_COMMIT_ON_TEARDOWN = False
 
     # 每次连接从池中检查，如果有错误，监测为断开的状态，连接将被立即回收。
@@ -141,21 +126,21 @@ class ProductionConfig:
 
     # flask_apscheduler 定时任务存储配置
     SCHEDULER_JOBSTORES = {
-        'default': SQLAlchemyJobStore(url=SQLALCHEMY_DATABASE_URI)
+        "default": SQLAlchemyJobStore(url=SQLALCHEMY_DATABASE_URI)
     }
     # flask_apscheduler 线程池配置
     SCHEDULER_EXECUTORS = {
-        'default': {'type': 'threadpool', 'max_workers': 20}
+        "default": {"type": "threadpool", "max_workers": 20}
     }
     SCHEDULER_JOB_DEFAULTS = {
-        'coalesce': False,
-        'max_instances': 2,
-        'misfire_grace_time': None
+        "coalesce": False,
+        "max_instances": 2,
+        "misfire_grace_time": None
     }
-    SCHEDULER_TIMEZONE = 'Asia/Shanghai'  # 时区
+    SCHEDULER_TIMEZONE = "Asia/Shanghai"  # 时区
     SCHEDULER_API_ENABLED = True  # 开启API访问功能
-    SCHEDULER_API_PREFIX = '/api/scheduler'  # api前缀（默认是/scheduler）
+    SCHEDULER_API_PREFIX = "/api/scheduler"  # api前缀（默认是/scheduler）
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

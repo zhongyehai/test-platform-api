@@ -1,4 +1,5 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
+import copy
 import time
 from datetime import datetime
 from urllib import parse
@@ -117,17 +118,17 @@ class HttpSession(requests.Session, BaseSession):
         # 构建请求的url
         url = build_url(self.base_url, url)
 
+        copy_kwargs = copy.deepcopy(kwargs)  # 保留转码前的内容
+        copy_kwargs["files"] = FileUtil.build_request_file(copy_kwargs["files"])  # 构建文件请求对象
         # 如果是 x-www-form-urlencoded 则进行转码
-        if kwargs.get("headers", {}).get("Content-Type", None) == 'application/x-www-form-urlencoded':
-            kwargs["data"] = parse.urlencode(kwargs["data"])
-
-        # 构建文件请求对象
-        kwargs["files"] = FileUtil.build_request_file(kwargs["files"])
+        if copy_kwargs.get("headers", {}).get("Content-Type", None) == 'application/x-www-form-urlencoded':
+            copy_kwargs["headers"].pop("Content-Type")
+            copy_kwargs["data"] = parse.urlencode(copy_kwargs["data"])
 
         # 记录开始请求时间
         request_timestamp = time.time()
 
-        response = self._send_request_safe_mode(method, url, **kwargs)  # 发送请求
+        response = self._send_request_safe_mode(method, url, **copy_kwargs)  # 发送请求
 
         # 记录响应时间
         response_timestamp = time.time()

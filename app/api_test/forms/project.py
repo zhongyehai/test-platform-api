@@ -11,30 +11,30 @@ from app.assist.models.func import Func
 
 class AddProjectForm(BaseForm):
     """ 添加服务参数校验 """
-    name = StringField(validators=[DataRequired('服务名称不能为空'), Length(1, 255, message='服务名长度不可超过255位')])
-    manager = StringField(validators=[DataRequired('请选择负责人')])
+    name = StringField(validators=[DataRequired("服务名称不能为空"), Length(1, 255, message="服务名长度不可超过255位")])
+    manager = StringField(validators=[DataRequired("请选择负责人")])
     num = StringField()
     swagger = StringField()
     func_files = StringField()
 
     def validate_name(self, field):
         """ 校验服务名不重复 """
-        self.validate_data_is_not_exist(f'服务名【{field.data}】已存在', Project, name=field.data)
+        self.validate_data_is_not_exist(f"服务名【{field.data}】已存在", Project, name=field.data)
 
     def validate_manager(self, field):
         """ 校验服务负责人是否存在 """
-        self.validate_data_is_exist(f'id为【{field.data}】的用户不存在', User, id=field.data)
+        self.validate_data_is_exist(f"id为【{field.data}】的用户不存在", User, id=field.data)
 
     def validate_swagger(self, field):
         """ 校验swagger地址是否正确 """
         if field.data:
             self.validate_data_is_true(
-                f'swagger地址不正确，请输入正确地址',
+                f"swagger地址不正确，请输入正确地址",
                 validators.url(field.data) is True
             )
             self.validate_data_is_true(
-                f'swagger地址不正确，请输入获取swagger数据的地址，不要输入swagger-ui地址',
-                'swagger-ui.htm' not in field.data
+                f"swagger地址不正确，请输入获取swagger数据的地址，不要输入swagger-ui地址",
+                "swagger-ui.htm" not in field.data
             )
 
 
@@ -50,21 +50,21 @@ class FindProjectForm(BaseForm):
 
 class GetProjectByIdForm(BaseForm):
     """ 获取具体服务信息 """
-    id = IntegerField(validators=[DataRequired('服务id必传')])
+    id = IntegerField(validators=[DataRequired("服务id必传")])
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
-        setattr(self, 'project', project)
+        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
+        setattr(self, "project", project)
 
 
 class DeleteProjectForm(GetProjectByIdForm):
     """ 删除服务 """
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
-        self.validate_data_is_true('不能删除别人负责的服务', Project.is_can_delete(project.id, project))
-        self.validate_data_is_false('请先去【接口管理】删除服务下的接口模块', project.modules)
-        setattr(self, 'project', project)
+        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
+        self.validate_data_is_true("不能删除别人负责的服务", Project.is_can_delete(project.id, project))
+        self.validate_data_is_false("请先去【接口管理】删除服务下的接口模块", project.modules)
+        setattr(self, "project", project)
 
 
 class EditProjectForm(GetProjectByIdForm, AddProjectForm):
@@ -73,34 +73,34 @@ class EditProjectForm(GetProjectByIdForm, AddProjectForm):
     def validate_name(self, field):
         """ 校验服务名不重复 """
         self.validate_data_is_not_repeat(
-            f'服务名【{field.data}】已存在',
+            f"服务名【{field.data}】已存在",
             Project,
             self.id.data,
             name=field.data
         )
         # old_project = ApiProject.get_first(name=field.data)
         # if old_project and old_project.name == field.data and old_project.id != self.id.data:
-        #     raise ValidationError(f'服务名【{field.data}】已存在')
+        #     raise ValidationError(f"服务名【{field.data}】已存在")
 
 
 class AddEnv(BaseForm):
     """ 添加环境 """
-    project_id = IntegerField(validators=[DataRequired('服务id必传')])
-    env = StringField(validators=[DataRequired('所属环境必传'), Length(1, 255, message='所属环境长度为1~255位')])
-    host = StringField(validators=[DataRequired('域名必传'), Length(2, 255, message='域名长度为2~255位')])
+    project_id = IntegerField(validators=[DataRequired("服务id必传")])
+    env = StringField(validators=[DataRequired("所属环境必传"), Length(1, 255, message="所属环境长度为1~255位")])
+    host = StringField(validators=[DataRequired("域名必传"), Length(2, 255, message="域名长度为2~255位")])
     variables = StringField()
     headers = StringField()
     all_func_name = {}
 
     def validate_project_id(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
+        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
         self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files))
-        setattr(self, 'project', project)
+        setattr(self, "project", project)
 
     def validate_host(self, field):
         """ 校验地址是否正确 """
         if field.data and validators.url(field.data) is not True:
-            raise ValidationError(f'环境地址【{field.data}】不正确')
+            raise ValidationError(f"环境地址【{field.data}】不正确")
 
     def validate_variables(self, field):
         """ 校验公共变量 """
@@ -112,7 +112,7 @@ class AddEnv(BaseForm):
 
         # 校验存在使用自定义变量，但是没有声明的情况
         self.validate_variable({
-            variable.get('key'): variable.get('value') for variable in field.data if variable.get('key')
+            variable.get("key"): variable.get("value") for variable in field.data if variable.get("key")
         }, self.dumps(field.data))  # 公共变量
 
     def validate_headers(self, field):
@@ -125,43 +125,43 @@ class AddEnv(BaseForm):
 
         # 校验存在使用自定义变量，但是没有声明的情况
         self.validate_variable({
-            variable.get('key'): variable.get('value') for variable in self.variables.data if variable.get('key')
+            variable.get("key"): variable.get("value") for variable in self.variables.data if variable.get("key")
         }, self.dumps(field.data))
 
 
 class EditEnv(AddEnv):
     """ 修改环境 """
-    id = IntegerField(validators=[DataRequired('环境id必传')])
+    id = IntegerField(validators=[DataRequired("环境id必传")])
 
     def validate_env(self, field):
         env_data = self.validate_data_is_exist(
-            '当前环境不存在',
+            "当前环境不存在",
             ProjectEnv,
             project_id=self.project_id.data,
             env=field.data
         )
-        setattr(self, 'env_data', env_data)
+        setattr(self, "env_data", env_data)
 
 
 class FindEnvForm(BaseForm):
     """ 查找服务环境form """
-    projectId = IntegerField(validators=[DataRequired('服务id必传')])
+    projectId = IntegerField(validators=[DataRequired("服务id必传")])
     env = StringField()
 
     def validate_projectId(self, field):
         env_data = ProjectEnv.get_first(project_id=field.data, env=self.env.data)
         if not env_data:  # 如果没有就插入一条记录
             env_data = ProjectEnv().create({"env": self.env.data, "project_id": field.data})
-            setattr(self, 'env_data', env_data)
-        setattr(self, 'env_data', env_data)
+            setattr(self, "env_data", env_data)
+        setattr(self, "env_data", env_data)
 
 
 class SynchronizationEnvForm(BaseForm):
     """ 同步环境form """
-    projectId = IntegerField(validators=[DataRequired('服务id必传')])
-    envFrom = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
-    envTo = StringField(validators=[DataRequired('所属环境必传'), Length(1, 10, message='所属环境长度为1~10位')])
+    projectId = IntegerField(validators=[DataRequired("服务id必传")])
+    envFrom = StringField(validators=[DataRequired("所属环境必传"), Length(1, 10, message="所属环境长度为1~10位")])
+    envTo = StringField(validators=[DataRequired("所属环境必传"), Length(1, 10, message="所属环境长度为1~10位")])
 
     def validate_projectId(self, field):
-        project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在',Project, id=field.data)
-        setattr(self, 'project', project)
+        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在",Project, id=field.data)
+        setattr(self, "project", project)

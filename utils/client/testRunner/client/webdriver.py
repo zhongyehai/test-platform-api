@@ -1,10 +1,10 @@
+# -*- coding: utf-8 -*-
 import time
 
 from selenium.common.exceptions import SessionNotCreatedException, InvalidArgumentException
 
 from utils.client.testRunner import logger
 from utils.client.testRunner.client import BaseSession
-from utils.client.testRunner.webdriverAction import Driver
 from utils.client.testRunner.exceptions import TimeoutException, RunTimeException
 
 
@@ -13,7 +13,6 @@ class WebDriverSession(BaseSession):
 
     def __init__(self):
         self.driver = None
-
         self.init_meta_data()
 
     def do_action(self, driver, name=None, variables_mapping={}, **kwargs):
@@ -43,7 +42,7 @@ class WebDriverSession(BaseSession):
     def _do_action(self, driver, **kwargs):
         """ 发送HTTP请求，并捕获由于连接问题而可能发生的任何异常。 """
         try:
-            doc = getattr(Driver, kwargs.get('action')).__doc__.split('，')[0]
+            doc = getattr(driver, kwargs.get('action')).__doc__.split('，')[0]
             msg = f"解析后的执行数据:\n> 执行动作：{doc}，定位方式：{kwargs.get('by_type')}，定位元素：{kwargs.get('element')}，文本内容：{kwargs.get('text')}\n"
             logger.log_debug(msg)
 
@@ -87,8 +86,4 @@ class WebDriverSession(BaseSession):
 
 
 if __name__ == '__main__':
-    # print(Driver.get_action_mapping())
-    # print(Driver.get_assert_mapping())
-    driver_path = r'D:\PycharmProjects\ui-auto-test-master\browserdriver\chromedriver.exe'
-    driver = Driver(driver_path, 'chrome')
-    driver.action_01open('https://www.baidu.com/')
+    pass

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 class BaseSession:
 
     def init_meta_data(self):

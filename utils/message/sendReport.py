@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from datetime import datetime
 from threading import Thread
 
@@ -8,10 +7,10 @@ import requests
 from utils.message.sendEmail import SendEmail
 from utils.report.report import render_html_report
 from app.baseModel import Config
-from config import conf
+from app.assist.models.callBack import CallBack
+from config import error_push
 
 
-# def by_we_chat(content, webhook, report_id):
 def by_we_chat(content, kwargs):
     """ 通过企业微信器人发送测试报告 """
     msg = {
@@ -28,10 +27,11 @@ def by_we_chat(content, kwargs):
         }
     }
     print(msg)
-    try:
-        print(f'测试结果通过企业微信机器人发送：{requests.post(kwargs["we_chat"], json=msg, verify=False).json()}')
-    except Exception as error:
-        print(f'向企业微信发送测试报告失败，错误信息：\n{error}')
+    for url in kwargs["we_chat"].strip().split(';'):
+        try:
+            print(f'测试结果通过企业微信机器人发送：{requests.post(url, json=msg, verify=False).json()}')
+        except Exception as error:
+            print(f'向企业微信发送测试报告失败，错误信息：\n{error}')
 
 
 def by_ding_ding(content, kwargs):
@@ -54,34 +54,35 @@ def by_ding_ding(content, kwargs):
         }
     }
     print(msg)
-    try:
-        print(f'测试结果通过钉钉机器人发送：{requests.post(kwargs["ding_ding"], json=msg, verify=False).json()}')
-    except Exception as error:
-        print(f'向钉钉机器人发送测试报告失败，错误信息：\n{error}')
+    for url in kwargs["ding_ding"].strip().split(';'):
+        try:
+            print(f'测试结果通过钉钉机器人发送：{requests.post(url, json=msg, verify=False).json()}')
+        except Exception as error:
+            print(f'向钉钉机器人发送测试报告失败，错误信息：\n{error}')
 
 
 def by_email(content, kwargs):
     """ 通过邮件发送测试报告 """
     SendEmail(
-        kwargs.get('email_server'),
-        kwargs.get('email_from').strip(),
-        kwargs.get('email_pwd'),
-        [email.strip() for email in kwargs.get('email_to').split(';') if email],
+        kwargs.get("email_server"),
+        kwargs.get("email_from").strip(),
+        kwargs.get("email_pwd"),
+        [email.strip() for email in kwargs.get("email_to").split(";") if email],
         render_html_report(content)
     ).send_email()
 
 
 def send_report(**kwargs):
     """ 封装发送测试报告提供给多线程使用 """
-    is_send, send_type, content = kwargs.get('is_send'), kwargs.get('send_type'), kwargs.get('content')
-    if is_send == '2' or (is_send == '3' and content['success'] is False):
-        if send_type == 'we_chat':
+    is_send, send_type, content = kwargs.get("is_send"), kwargs.get("send_type"), kwargs.get("content")
+    if is_send == "2" or (is_send == "3" and content["success"] is False):
+        if send_type == "we_chat":
             by_we_chat(content, kwargs)
-        elif send_type == 'ding_ding':
+        elif send_type == "ding_ding":
             by_ding_ding(content, kwargs)
-        elif send_type == 'email':
+        elif send_type == "email":
             by_email(content, kwargs)
-        elif send_type == 'all':
+        elif send_type == "all":
             by_we_chat(content, kwargs)
             by_ding_ding(content, kwargs)
             by_email(content, kwargs)
@@ -89,37 +90,67 @@ def send_report(**kwargs):
 
 def async_send_report(**kwargs):
     """ 多线程发送测试报告 """
-    print('开始多线程发送测试报告')
+    print("开始多线程发送测试报告")
     Thread(target=send_report, kwargs=kwargs).start()
-    print('多线程发送测试报告完毕')
+    print("多线程发送测试报告完毕")
 
 
-def call_back_for_pipeline(call_back_info: list, status):
+def call_back_for_pipeline(task_id, call_back_info: list, extend: dict, status):
     """ 把测试结果回调给流水线 """
-    print('开始执行回调')
+    print("开始执行回调")
     for call_back in call_back_info:
+        print(f'开始回调{call_back.get("url")}')
+        call_back.get('json', {})["status"] = status
+        call_back.get('json', {})["taskId"] = task_id
+        call_back.get('json', {})["extend"] = extend
+
+        call_back_obj = CallBack().create({
+            "ip": None,
+            "url": call_back.get("url", None),
+            "method": call_back.get("method", None),
+            "headers": call_back.get("headers", {}),
+            "params": call_back.get("args", {}),
+            "data_form": call_back.get("form", {}),
+            "data_json": call_back.get("json", {}),
+        })
+
         try:
-            print(f'开始回调{call_back.get("url")}')
-            for key, value in call_back.get('json', {}).items():
-                if value == '$status':
-                    call_back.get('json', {})[key] = status
-            call_back_res = requests.request(**call_back).json()
+            call_back_res = requests.request(**call_back).text
+            call_back_obj.success(call_back_res)
             print(f'回调{call_back.get("url")}结束: \n{call_back_res}')
+            send_call_back_webhook(call_back.get("json", {}))
         except Exception as error:
             print(f'回调{call_back.get("url")}失败')
+            call_back_obj.fail()
             # 发送即时通讯通知
             try:
                 requests.post(
-                    url=conf['error_push']['url'],
+                    url=error_push.get("url"),
                     json={
-                        'key': conf['error_push']['key'],
-                        'head': f'回调{call_back.get("url")}报错了',
-                        'body': f'{error}'
+                        "key": error_push.get("key"),
+                        "head": f'回调{call_back.get("url")}报错了',
+                        "body": f'{error}'
                     }
                 )
             except Exception as error:
-                print(f'发送回调错误消息失败')
-    print('回调执行结束')
+                print("发送回调错误消息失败")
+    print("回调执行结束")
+
+
+def send_call_back_webhook(data):
+    """ 发送回调数据消息到即时通讯 """
+    print("开始发送回调消息到钉钉")
+    try:
+        requests.post(url=Config.get_call_back_msg_addr(), json={
+            "msgtype": "markdown",
+            "markdown": {
+                "title": "测试平台回调",
+                "text": data
+            }
+        }, verify=False).json()
+        print("发送回调消息到钉钉成功")
+    except Exception as error:
+        print(f'发送回调消息到钉钉失败: \n{error}'"")
 
 
 def send_diff_api_message(content, report_id, addr):
@@ -148,7 +179,7 @@ def send_diff_api_message(content, report_id, addr):
                     f'##### 删除接口:<font color=#E74C3C> {content["api"]["remove"]} </font>个 \n> '
                     f'##### 乱码:<font color=#E74C3C> {content["api"]["errorCode"]} </font>个 \n> '
                     f'##### \n> '
-                    f'#### 请登录[测试平台]({Config.get_diff_api_addr()}{str(report_id)})查看详情，并确认是否更新\n'
+                    f'#### 请登录[测试平台]({Config.get_report_host()}{Config.get_diff_api_addr()}{str(report_id)})查看详情，并确认是否更新\n'
         }
     }
     try:
@@ -163,27 +194,31 @@ def send_run_time_error_message(content, addr):
         "msgtype": "markdown",
         "markdown": {
             "title": content.get("title"),
-            "text": content.get("detail") + f'#### 详情请登录[测试平台]({Config.get_func_error_addr()})查看\n'
+            "text": content.get(
+                "detail") + f"#### 详情请登录[测试平台]({Config.get_report_host()}{Config.get_func_error_addr()})查看\n"
         }
     }
     print(msg)
     try:
-        print(f'发送错误通知：{requests.post(addr, json=msg, verify=False).json()}')
+        print(f"发送错误通知：{requests.post(addr, json=msg, verify=False).json()}")
     except Exception as error:
-        print(f'向钉钉机器人发送错误通知失败，错误信息：\n{error}')
+        print(f"向钉钉机器人发送错误通知失败，错误信息：\n{error}")
 
 
 def async_send_run_time_error_message(**kwargs):
     """ 多线程发送错误信息 """
-    print('开始多线程发送错误信息')
+    print("开始多线程发送错误信息")
     Thread(target=send_run_time_error_message, kwargs=kwargs).start()
-    print('多线程发送错误信息完毕')
+    print("多线程发送错误信息完毕")
 
 
 def send_run_func_error_message(content):
     """ 运行自定义函数错误通知 """
-    async_send_run_time_error_message(content=content, addr=Config.get_run_time_error_message_send_addr())
+    async_send_run_time_error_message(
+        content=content,
+        addr=f'{Config.get_report_host()}{Config.get_run_time_error_message_send_addr()}'
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

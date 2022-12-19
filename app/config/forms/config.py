@@ -14,11 +14,11 @@ class GetConfigTypeListForm(BaseForm):
 
 class ConfigTypeIdForm(BaseForm):
     """ 配置类型id存在 """
-    id = IntegerField(validators=[DataRequired('配置类型id必传')])
+    id = IntegerField(validators=[DataRequired("配置类型id必传")])
 
     def validate_id(self, field):
-        conf_type = self.validate_data_is_exist(f'id为 {field.data} 的配置类型不存在', ConfigType, id=field.data)
-        setattr(self, 'conf_type', conf_type)
+        conf_type = self.validate_data_is_exist(f"id为 {field.data} 的配置类型不存在", ConfigType, id=field.data)
+        setattr(self, "conf_type", conf_type)
 
 
 class DeleteConfigTypeForm(ConfigTypeIdForm):
@@ -31,11 +31,11 @@ class GetConfigTypeForm(DeleteConfigTypeForm):
 
 class PostConfigTypeForm(BaseForm):
     """ 新增配置类型表单校验 """
-    name = StringField(validators=[DataRequired('请输入配置类型')])
+    name = StringField(validators=[DataRequired("请输入配置类型")])
     desc = StringField()
 
     def validate_name(self, field):
-        self.validate_data_is_not_exist(f'名为 {field.data} 的配置类型已存在', ConfigType, name=field.data)
+        self.validate_data_is_not_exist(f"名为 {field.data} 的配置类型已存在", ConfigType, name=field.data)
 
 
 class PutConfigTypeForm(ConfigTypeIdForm, PostConfigTypeForm):
@@ -43,7 +43,7 @@ class PutConfigTypeForm(ConfigTypeIdForm, PostConfigTypeForm):
 
     def validate_name(self, field):
         self.validate_data_is_not_repeat(
-            f'名为 {field.data} 的配置类型已存在',
+            f"名为 {field.data} 的配置类型已存在",
             ConfigType,
             self.id.data,
             name=field.data
@@ -59,11 +59,11 @@ class GetConfigListForm(BaseForm):
 
 class ConfigIdForm(BaseForm):
     """ 配置id存在 """
-    id = IntegerField(validators=[DataRequired('配置id必传')])
+    id = IntegerField(validators=[DataRequired("配置id必传")])
 
     def validate_id(self, field):
-        conf = self.validate_data_is_exist(f'id为 {field.data} 的配置不存在', Config, id=field.data)
-        setattr(self, 'conf', conf)
+        conf = self.validate_data_is_exist(f"id为 {field.data} 的配置不存在", Config, id=field.data)
+        setattr(self, "conf", conf)
 
 
 class DeleteConfigForm(ConfigIdForm):
@@ -76,13 +76,13 @@ class GetConfigForm(DeleteConfigForm):
 
 class PostConfigForm(BaseForm):
     """ 新增配置表单校验 """
-    name = StringField(validators=[DataRequired('请输入配置名')])
-    value = StringField(validators=[DataRequired('请输入配置的值')])
-    type = StringField(validators=[DataRequired('请输入配置的类型')])
+    name = StringField(validators=[DataRequired("请输入配置名")])
+    value = StringField(validators=[DataRequired("请输入配置的值")])
+    type = StringField(validators=[DataRequired("请输入配置的类型")])
     desc = StringField()
 
     def validate_name(self, field):
-        self.validate_data_is_not_exist(f'名为 {field.data} 的配置已存在', Config, name=field.data)
+        self.validate_data_is_not_exist(f"名为 {field.data} 的配置已存在", Config, name=field.data)
 
 
 class PutConfigForm(ConfigIdForm, PostConfigForm):
@@ -90,7 +90,7 @@ class PutConfigForm(ConfigIdForm, PostConfigForm):
 
     def validate_name(self, field):
         self.validate_data_is_not_repeat(
-            f'名为 {field.data} 的配置已存在',
+            f"名为 {field.data} 的配置已存在",
             Config,
             self.id.data,
             name=field.data

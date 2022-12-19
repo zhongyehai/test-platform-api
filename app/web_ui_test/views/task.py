@@ -19,20 +19,26 @@ class WebUiRunTaskView(NotLoginView):
     def post(self):
         """ 单次运行定时任务 """
         form = RunTaskForm().do_validate()
-        report_id = RunCaseBusiness.run(
-            form,
-            form.task.project_id,
-            form.task.name,
-            'task',
-            Report,
-            CaseSet.get_case_id(
+        case_id = CaseSet.get_case_id(
                 Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
-            ),
-            RunCase,
-            performer=g.user_name or '自动化测试',
-            create_user=g.user_id or User.get_first(account='common').id,
+            )
+        report_id = RunCaseBusiness.run(
+            env=form.env.data or form.task.env,
+            browser=form.browser.data if hasattr(form, 'browser') else form.task.browser,
+            trigger_type=form.trigger_type.data,
+            is_async=form.is_async.data,
+            project_id=form.task.project_id,
+            report_name=form.task.name,
+            task_type="task",
+            report_model=Report,
+            case_id=case_id,
+            run_type="web_ui",
+            run_func=RunCase,
+            task=form.task.to_dict(),
+            performer=g.user_name or "自动化测试",
+            create_user=g.user_id or User.get_first(account="common").id
         )
-        return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report_id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})
 
 
 class WebUiGetTaskListView(LoginRequiredView):
@@ -47,8 +53,8 @@ class WebUiChangeTaskSortView(LoginRequiredView):
 
     def put(self):
         """ 更新定时任务的排序 """
-        Task.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
-        return app.restful.success(msg='修改排序成功')
+        Task.change_sort(request.json.get("List"), request.json.get("pageNum"), request.json.get("pageSize"))
+        return app.restful.success(msg="修改排序成功")
 
 
 class WebUiTaskCopyView(LoginRequiredView):
@@ -57,7 +63,7 @@ class WebUiTaskCopyView(LoginRequiredView):
         """ 复制任务 """
         form = HasTaskIdForm().do_validate()
         new_task = TaskBusiness.copy(form, Task)
-        return app.restful.success(msg='复制成功', data=new_task.to_dict())
+        return app.restful.success(msg="复制成功", data=new_task.to_dict())
 
 
 class WebUiTaskView(LoginRequiredView):
@@ -72,20 +78,19 @@ class WebUiTaskView(LoginRequiredView):
         form = AddTaskForm().do_validate()
         form.num.data = Task.get_insert_num(project_id=form.project_id.data)
         new_task = Task().create(form.data)
-        return app.restful.success(f'任务【{form.name.data}】新建成功', new_task.to_dict())
+        return app.restful.success(f"任务【{form.name.data}】新建成功", new_task.to_dict())
 
     def put(self):
         """ 修改定时任务 """
         form = EditTaskForm().do_validate()
-        form.num.data = Task.get_insert_num(project_id=form.project_id.data)
         form.task.update(form.data)
-        return app.restful.success(f'任务【{form.name.data}】修改成功', form.task.to_dict())
+        return app.restful.success(f"任务【{form.name.data}】修改成功", form.task.to_dict())
 
     def delete(self):
         """ 删除定时任务 """
         form = DeleteTaskIdForm().do_validate()
         form.task.delete()
-        return app.restful.success(f'任务【{form.task.name}】删除成功')
+        return app.restful.success(f"任务【{form.task.name}】删除成功")
 
 
 class WebUiTaskStatusView(LoginRequiredView):
@@ -93,25 +98,25 @@ class WebUiTaskStatusView(LoginRequiredView):
     def post(self):
         """ 启用任务 """
         form = HasTaskIdForm().do_validate()
-        res = TaskBusiness.enable(form, 'webUi')
+        res = TaskBusiness.enable(form, "webUi")
         if res["status"] == 1:
-            return app.restful.success(f'任务【{form.task.name}】启用成功', data=res["data"])
+            return app.restful.success(f"任务【{form.task.name}】启用成功", data=res["data"])
         else:
-            return app.restful.fail(f'任务【{form.task.name}】启用失败', data=res["data"])
+            return app.restful.fail(f"任务【{form.task.name}】启用失败", data=res["data"])
 
     def delete(self):
         """ 禁用任务 """
         form = DisableTaskIdForm().do_validate()
-        res = TaskBusiness.disable(form, 'webUi')
+        res = TaskBusiness.disable(form, "webUi")
         if res["status"] == 1:
-            return app.restful.success(f'任务【{form.task.name}】禁用成功', data=res["data"])
+            return app.restful.success(f"任务【{form.task.name}】禁用成功", data=res["data"])
         else:
-            return app.restful.fail(f'任务【{form.task.name}】禁用失败', data=res["data"])
+            return app.restful.fail(f"任务【{form.task.name}】禁用失败", data=res["data"])
 
 
-web_ui_test.add_url_rule('/task', view_func=WebUiTaskView.as_view('WebUiTaskView'))
-web_ui_test.add_url_rule('/task/run', view_func=WebUiRunTaskView.as_view('WebUiRunTaskView'))
-web_ui_test.add_url_rule('/task/copy', view_func=WebUiTaskCopyView.as_view('WebUiTaskCopyView'))
-web_ui_test.add_url_rule('/task/list', view_func=WebUiGetTaskListView.as_view('WebUiGetTaskListView'))
-web_ui_test.add_url_rule('/task/status', view_func=WebUiTaskStatusView.as_view('WebUiTaskStatusView'))
-web_ui_test.add_url_rule('/task/sort', view_func=WebUiChangeTaskSortView.as_view('WebUiChangeTaskSortView'))
+web_ui_test.add_url_rule("/task", view_func=WebUiTaskView.as_view("WebUiTaskView"))
+web_ui_test.add_url_rule("/task/run", view_func=WebUiRunTaskView.as_view("WebUiRunTaskView"))
+web_ui_test.add_url_rule("/task/copy", view_func=WebUiTaskCopyView.as_view("WebUiTaskCopyView"))
+web_ui_test.add_url_rule("/task/list", view_func=WebUiGetTaskListView.as_view("WebUiGetTaskListView"))
+web_ui_test.add_url_rule("/task/status", view_func=WebUiTaskStatusView.as_view("WebUiTaskStatusView"))
+web_ui_test.add_url_rule("/task/sort", view_func=WebUiChangeTaskSortView.as_view("WebUiChangeTaskSortView"))

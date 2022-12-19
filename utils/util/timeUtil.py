@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import datetime
 from datetime import date, timedelta
 
@@ -26,6 +25,6 @@ def time_calculate(days=0, str_format="%Y-%m-%d %H:%M:%S"):
 
 if __name__ == "__main__":
     start_time, end_time = get_week_start_and_end(1)
-    print(f'start_time = {start_time}; end_time = {end_time}')
+    print(f"start_time = {start_time}; end_time = {end_time}")
     print(time_calculate(1))
     print(get_now())

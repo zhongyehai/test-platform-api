@@ -1,4 +1,4 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 import copy
 from unittest.case import SkipTest
 
@@ -6,7 +6,7 @@ from . import exceptions, logger, response, extract
 from utils.client.testRunner.client.http import HttpSession
 from utils.client.testRunner.client.webdriver import WebDriverSession
 from .runnerContext import SessionContext
-from .webdriverAction import Driver
+from .webdriverAction import GetWebDriver, GetAppDriver
 
 
 class Runner(object):
@@ -33,7 +33,7 @@ class Runner(object):
 
     """
 
-    def __init__(self, config, functions, run_type='api'):
+    def __init__(self, config, functions, task_type='api'):
         """ run testcase or testsuite.
 
         Args:
@@ -58,15 +58,19 @@ class Runner(object):
         testcase_setup_hooks = config.get("setup_hooks", [])  # 用例级别的前置条件
         self.testcase_teardown_hooks = config.get("teardown_hooks", [])  # 用例级别的后置条件
 
-        if self.run_type == 'api':
+        if self.run_type == "api":
             self.client_session = HttpSession(base_url)
-        else:
+        elif self.run_type == "web_ui":
             self.client_session = WebDriverSession()
             # 每一次执行用例时会先实例化Runner，此时实例化driver
-            self.driver = Driver(
+            self.driver = GetWebDriver(
                 browser_driver_path=config.get('browser_path'),
                 browser_name=config.get('browser_type')
             )
+        else:
+            self.client_session = WebDriverSession()
+            # 每一次执行用例时会先实例化Runner，此时实例化driver
+            self.driver = GetAppDriver(**config.get("appium_config", {}))
 
         self.session_context = SessionContext(self.functions)
 
@@ -185,7 +189,7 @@ class Runner(object):
         self._handle_skip_feature(step_dict)
 
         # 解析请求，替换变量、自定义函数
-        if self.run_type == 'api':
+        if self.run_type == "api":
             request_data = step_dict.get('request', {})
             # 把上一个步骤提取出来需要更新到头部信息的数据更新到请求上
             request_data['headers'] = self.session_context.update_filed_to_header(request_data['headers'])
@@ -210,7 +214,7 @@ class Runner(object):
         self.session_context.test_variables_mapping['request'] = copy_request
 
         step_name, extractors = step_dict.get("name", ""), step_dict.get("extract", {})
-        if self.run_type == 'api':
+        if self.run_type == "api":
             # 发送请求
             url, method = parsed_step.pop('url'), parsed_step.pop('method')
             parsed_step.setdefault("verify", self.verify)
@@ -239,7 +243,7 @@ class Runner(object):
         self.client_session.meta_data['data'][0]['extract_msgs'] = extracted_variables_mapping
         self.session_context.update_session_variables(extracted_variables_mapping)  # 把提取到的数据更新到变量中
 
-        if self.run_type == 'api':
+        if self.run_type == "api":
             # 把需要更新到头部信息的数据保存下来
             self.session_context.save_update_to_header_filed(
                 extractors.get("update_to_header_filed_list", []),
@@ -254,7 +258,7 @@ class Runner(object):
         # 断言
         validators = step_dict.get("validate", [])
         try:
-            if self.run_type == 'api':
+            if self.run_type == "api":
                 self.session_context.validate(validators, self.resp_obj)
             else:
                 self.session_context.validate(validators, self.driver)

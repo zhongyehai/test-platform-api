@@ -1,4 +1,4 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 from selenium.common.exceptions import WebDriverException, TimeoutException
 
 

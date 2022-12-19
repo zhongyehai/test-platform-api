@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 
 variable_regexp = r"\$([\w_]+)"  # 变量

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 
 from wtforms import IntegerField
@@ -12,36 +11,35 @@ from app.web_ui_test.models.report import WebUiReport as Report
 
 class DownloadReportForm(BaseForm):
     """ 报告下载 """
-    id = IntegerField(validators=[DataRequired('请选择报告')])
+    id = IntegerField(validators=[DataRequired("请选择报告")])
 
     def validate_id(self, field):
         """ 校验报告是否存在 """
-        report = self.validate_data_is_exist('报告不存在', Report, id=field.data)
-        report_path = os.path.join(WEB_UI_REPORT_ADDRESS, f'{report.id}.txt')
-        self.validate_data_is_true('报告文件不存在', os.path.exists(report_path))
-        setattr(self, 'report', report)
-        setattr(self, 'report_path', report_path)
-        setattr(self, 'report_content', FileUtil.get_web_ui_test_report(field.data))
+        report = self.validate_data_is_exist("报告不存在", Report, id=field.data)
+        report_path = os.path.join(WEB_UI_REPORT_ADDRESS, f"{report.id}.txt")
+        self.validate_data_is_true("报告文件不存在", os.path.exists(report_path))
+        setattr(self, "report", report)
+        setattr(self, "report_path", report_path)
+        setattr(self, "report_content", FileUtil.get_web_ui_test_report(field.data))
 
 
-class GetReportForm(DownloadReportForm):
+class GetReportDetailForm(DownloadReportForm):
     """ 查看报告 """
 
 
-class DeleteReportForm(BaseForm):
+class GetReportForm(BaseForm):
     """ 删除报告 """
-    id = IntegerField(validators=[DataRequired('请选择报告')])
+    id = IntegerField(validators=[DataRequired("请选择报告")])
 
     def validate_id(self, field):
-        report = self.validate_data_is_exist('报告不存在', Report, id=field.data)
-        report_path = os.path.join(WEB_UI_REPORT_ADDRESS, f'{report.id}.txt')
-        self.validate_data_is_true('报告文件不存在', os.path.exists(report_path))
-        setattr(self, 'report', report)
-        setattr(self, 'report_path', report_path)
+        report = self.validate_data_is_exist("报告不存在", Report, id=field.data)
+        report_path = os.path.join(WEB_UI_REPORT_ADDRESS, f"{report.id}.txt")
+        setattr(self, "report", report)
+        setattr(self, "report_path", report_path)
 
 
 class FindReportForm(BaseForm):
     """ 查找报告 """
-    projectId = IntegerField(validators=[DataRequired('请选择服务')])
+    projectId = IntegerField(validators=[DataRequired("请选择服务")])
     pageNum = IntegerField()
     pageSize = IntegerField()

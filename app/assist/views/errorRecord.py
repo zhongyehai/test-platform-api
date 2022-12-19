@@ -15,4 +15,4 @@ class GetErrorRecordListView(NotLoginView):
         return app.restful.success(data=FuncErrorRecord.make_pagination(form))
 
 
-assist.add_url_rule('/errorRecord/list', view_func=GetErrorRecordListView.as_view('GetErrorRecordListView'))
+assist.add_url_rule("/errorRecord/list", view_func=GetErrorRecordListView.as_view("GetErrorRecordListView"))

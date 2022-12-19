@@ -39,7 +39,7 @@ class Excel:
                 title_field_list.append(col.value)
             else:
                 break
-        return {'title_list': title_field_list, 'total': index}
+        return {"title_list": title_field_list, "total": index}
 
     def get_sheet_rows(self, sheet_obj):
         """ 获取表格有数据的行数 """
@@ -55,18 +55,18 @@ class Excel:
                 row_list.append(row)
             else:
                 break
-        return {'row_list': row_list, 'total': index}
+        return {"row_list": row_list, "total": index}
 
     def get_sheet_data(self, sheet_name):
         sheet = self.get_sheet_obj(sheet_name)
 
         # 列数据
         cols = self.get_sheet_cols(sheet)
-        col_list, col_total = cols['title_list'], cols['total']
+        col_list, col_total = cols["title_list"], cols["total"]
 
         # 行数据
         rows = self.get_sheet_rows(sheet)
-        row_list, row_total = rows['row_list'], rows['total']
+        row_list, row_total = rows["row_list"], rows["total"]
 
         # 压缩并转为字典
         return [dict(zip(col_list, [row[i].value for i in range(col_total)])) for row in row_list]
@@ -80,7 +80,7 @@ class Excel:
 
             # 获取当前列下的所有数据，取单元格值最长的为单元格最大值
             for row in range(max_row):
-                content_length = len(sheet[f'{col_name}{row + 1}'].value or '')
+                content_length = len(sheet[f'{col_name}{row + 1}'].value or "")
                 max_widths = content_length if content_length > max_widths else max_widths
 
             # 把当前列所有单元格的长度设为最大长度

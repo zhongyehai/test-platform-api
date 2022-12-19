@@ -1,20 +1,19 @@
 # -*- coding: utf-8 -*-
-
 from app.baseModel import BaseModel, db
 
 
 class AccountModel(BaseModel):
     """ 测试账号表 """
-    __tablename__ = 'test_work_account'
+    __tablename__ = "test_work_account"
 
-    project = db.Column(db.String(255), comment='服务名')
-    name = db.Column(db.String(255), comment='账户名')
-    account = db.Column(db.String(255), comment='登录账号')
-    password = db.Column(db.String(255), comment='登录密码')
-    desc = db.Column(db.Text(), comment='备注')
-    event = db.Column(db.String(50), comment='环境')
-    role = db.Column(db.String(50), comment='角色')
-    permission = db.Column(db.String(50), comment='权限')
+    project = db.Column(db.String(255), comment="服务名")
+    name = db.Column(db.String(255), comment="账户名")
+    account = db.Column(db.String(255), comment="登录账号")
+    password = db.Column(db.String(255), comment="登录密码")
+    desc = db.Column(db.Text(), comment="备注")
+    event = db.Column(db.String(50), comment="环境")
+    role = db.Column(db.String(50), comment="角色")
+    permission = db.Column(db.String(50), comment="权限")
 
     @classmethod
     def make_pagination(cls, filter):

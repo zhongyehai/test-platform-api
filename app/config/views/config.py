@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-
 from flask import current_app as app, request
 
 from app.api_test.models.project import ApiProjectEnv
+from app.app_ui_test.models.project import AppUiProjectEnv
 from app.baseView import LoginRequiredView, NotLoginView
 from app.config.models.config import Config
 from app.config.forms.config import (
@@ -39,7 +39,7 @@ class GetSkipIfDataSourceView(NotLoginView):
 
     def get(self):
         """ 获取跳过条件数据源 """
-        if request.args.get('type') == 'step':
+        if request.args.get("type") == "step":
             step_skip = [{"label": "自定义变量", "value": "variable"}, {"label": "自定义函数", "value": "func"}]
             return app.restful.success(data=skip_if_data_source_mapping + step_skip)
         return app.restful.success(data=skip_if_data_source_mapping)
@@ -49,7 +49,7 @@ class GetConfByNameView(NotLoginView):
 
     def get(self):
         """ 根据配置名获取配置，不需要登录 """
-        return app.restful.success(data=Config.get_first(name=request.args.get('name')).to_dict())
+        return app.restful.success(data=Config.get_first(name=request.args.get("name")).to_dict())
 
 
 class ConfigView(LoginRequiredView):
@@ -57,39 +57,40 @@ class ConfigView(LoginRequiredView):
     def get(self):
         """ 获取配置 """
         form = GetConfigForm().do_validate()
-        return app.restful.success('获取成功', data=form.conf.to_dict())
+        return app.restful.success("获取成功", data=form.conf.to_dict())
 
     def post(self):
         """ 新增配置 """
         form = PostConfigForm().do_validate()
         conf = Config().create(form.data)
-        return app.restful.success('新增成功', data=conf.to_dict())
+        return app.restful.success("新增成功", data=conf.to_dict())
 
     @admin_required
     def put(self):
         """ 修改配置 """
         form = PutConfigForm().do_validate()
         # 如果key是 run_test_env 则自动同步环境信息
-        if form.name.data == 'run_test_env':
+        if form.name.data == "run_test_env":
             new_env_list = Config.get_new_env_list(form)
             if new_env_list:
                 ApiProjectEnv.create_env(env_list=new_env_list)
                 WebUiProjectEnv.create_env(env_list=new_env_list)
+                AppUiProjectEnv.create_env(env_list=new_env_list)
         form.conf.update(form.data)
-        return app.restful.success('修改成功', data=form.conf.to_dict())
+        return app.restful.success("修改成功", data=form.conf.to_dict())
 
     @admin_required
     def delete(self):
         """ 删除配置 """
         form = DeleteConfigForm().do_validate()
         form.conf.delete()
-        return app.restful.success('删除成功')
+        return app.restful.success("删除成功")
 
 
-config_blueprint.add_url_rule('/config', view_func=ConfigView.as_view('ConfigView'))
-config_blueprint.add_url_rule('/config/list', view_func=GetConfListView.as_view('GetConfListView'))
-config_blueprint.add_url_rule('/config/byName', view_func=GetConfByNameView.as_view('GetConfByNameView'))
-config_blueprint.add_url_rule('/config/skipIfType', view_func=GetSkipIfTypeView.as_view('GetSkipIfTypeView'))
-config_blueprint.add_url_rule('/config/runModel', view_func=GetRunTestModelView.as_view('GetRunTestModelView'))
-config_blueprint.add_url_rule('/config/skipIfDataSource',
-                              view_func=GetSkipIfDataSourceView.as_view('GetSkipIfDataSourceView'))
+config_blueprint.add_url_rule("/config", view_func=ConfigView.as_view("ConfigView"))
+config_blueprint.add_url_rule("/config/list", view_func=GetConfListView.as_view("GetConfListView"))
+config_blueprint.add_url_rule("/config/byName", view_func=GetConfByNameView.as_view("GetConfByNameView"))
+config_blueprint.add_url_rule("/config/skipIfType", view_func=GetSkipIfTypeView.as_view("GetSkipIfTypeView"))
+config_blueprint.add_url_rule("/config/runModel", view_func=GetRunTestModelView.as_view("GetRunTestModelView"))
+config_blueprint.add_url_rule("/config/skipIfDataSource",
+                              view_func=GetSkipIfDataSourceView.as_view("GetSkipIfDataSourceView"))

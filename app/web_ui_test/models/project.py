@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from app.baseModel import BaseProject, BaseProjectEnv, db, Config
 
 
@@ -7,18 +6,18 @@ class WebUiProject(BaseProject):
     """ 服务表 """
     __abstract__ = False
 
-    __tablename__ = 'web_ui_test_project'
+    __tablename__ = "web_ui_test_project"
 
     def delete_current_and_env(self):
         """ 删除服务及服务下的环境 """
-        return self.delete_current_and_children(WebUiProjectEnv, 'project_id')
+        return self.delete_current_and_children(WebUiProjectEnv, "project_id")
 
 
 class WebUiProjectEnv(BaseProjectEnv):
     """ 服务环境表 """
     __abstract__ = False
 
-    __tablename__ = 'web_ui_test_project_env'
+    __tablename__ = "web_ui_test_project_env"
 
     @classmethod
     def create_env(cls, project_id=None, env_list=None):

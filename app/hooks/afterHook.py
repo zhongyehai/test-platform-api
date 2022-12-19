@@ -11,9 +11,9 @@ def save_response_log(app, result):
     run请求不打日志
     获取报告详情不打日志
     """
-    if request.method == 'HEAD' \
-            or ('run' in request.path) \
-            or (request.method == 'GET' and request.path.endswith('report')):
+    if request.method == "HEAD" or request.path.endswith("report/detail"):
+            # or ("run" in request.path) \
+            # or request.path.endswith("report/detail"):
         return
     else:
         app.logger.info(f'【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.url}】, \n响应数据:{json.loads(result[0])}\n')
@@ -25,7 +25,7 @@ def register_after_hook(app):
     @app.after_request
     def after_request_save_response_log(response_obj):
         """ 后置钩子函数，每个请求最后都会经过此函数 """
-        if 'download' in request.path or '.' in request.path or request.path.endswith('swagger'):
+        if "download" in request.path or "." in request.path or request.path.endswith("swagger"):
             return response_obj
         result = copy.copy(response_obj.response)
         if isinstance(result[0], bytes):

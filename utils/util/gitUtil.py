@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
-
 import os
 
 from git.repo import Repo
 from git.repo.fun import is_git_dir
 
-GIT_FILE_ADDRESS = os.path.abspath(os.path.join(os.path.abspath('...'), '../../../' + r'/git_files/'))
+GIT_FILE_ADDRESS = os.path.abspath(os.path.join(os.path.abspath("..."), "../../../" + r"/git_files/"))
 print(GIT_FILE_ADDRESS)
 
 
 class GitRepository:
     """ git仓库管理 """
 
-    def __init__(self, local_path, repo_url, branch='master'):
+    def __init__(self, local_path, repo_url, branch="master"):
         self.local_path = local_path
         self.repo_url = repo_url
         self.repo = None
@@ -23,7 +22,7 @@ class GitRepository:
         if not os.path.exists(self.local_path):
             os.makedirs(self.local_path)
 
-        git_local_path = os.path.join(self.local_path, '.git')
+        git_local_path = os.path.join(self.local_path, ".git")
         if not is_git_dir(git_local_path):
             self.repo = Repo.clone_from(repo_url, to_path=self.local_path, branch=branch)
         else:
@@ -36,14 +35,14 @@ class GitRepository:
     def branches(self):
         """ 获取所有分支 """
         branches = self.repo.remote().refs
-        return [item.remote_head for item in branches if item.remote_head not in ['HEAD', ]]
+        return [item.remote_head for item in branches if item.remote_head not in ["HEAD", ]]
 
     def commits(self):
         """ 获取所有提交记录 """
         commit_log = self.repo.git.log(
             '--pretty={"commit":"%h","author":"%an","summary":"%s","date":"%cd"}',
             max_count=50,
-            date='format:%Y-%m-%d %H:%M'
+            date="format:%Y-%m-%d %H:%M"
         )
         log_list = commit_log.split("\n")
         return [eval(item) for item in log_list]
@@ -59,23 +58,23 @@ class GitRepository:
     def change_to_commit(self, branch, commit):
         """ 切换commit """
         self.change_to_branch(branch=branch)
-        self.repo.git.reset('--hard', commit)
+        self.repo.git.reset("--hard", commit)
 
     def change_to_tag(self, tag):
         """ 切换tag """
         self.repo.git.checkout(tag)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # repo = GitRepository(
     #     GIT_FILE_ADDRESS,
-    #     'https://codeup.aliyun.com/5fbe3118672533690be72b12/xintech-fms/xintech-fms-admin-front.git'
+    #     "https://codeup.aliyun.com/5fbe3118672533690be72b12/xintech-fms/xintech-fms-admin-front.git"
     # )
     # branch_list = repo.branches()
     # print(branch_list)
-    # repo.change_to_branch('dev')
+    # repo.change_to_branch("dev")
     # repo.pull()
 
-    services_path = GIT_FILE_ADDRESS + '/src/services'
+    services_path = GIT_FILE_ADDRESS + "/src/services"
     for path in os.listdir(services_path):
         print(f'path: {path},  isfile: {os.path.isfile(services_path + "/" + path)}')

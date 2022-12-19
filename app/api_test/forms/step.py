@@ -12,30 +12,30 @@ from app.api_test.models.step import ApiStep as Step
 
 class GetStepListForm(BaseForm):
     """ 根据用例id获取步骤列表 """
-    caseId = IntegerField(validators=[DataRequired('用例id必传')])
+    caseId = IntegerField(validators=[DataRequired("用例id必传")])
 
     def validate_caseId(self, field):
-        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', Case, id=field.data)
-        setattr(self, 'case', case)
+        case = self.validate_data_is_exist(f"id为 {field.data} 的用例不存在", Case, id=field.data)
+        setattr(self, "case", case)
 
 
 class GetStepForm(BaseForm):
     """ 根据步骤id获取步骤 """
-    id = IntegerField(validators=[DataRequired('步骤id必传')])
+    id = IntegerField(validators=[DataRequired("步骤id必传")])
 
     def validate_id(self, field):
-        step = self.validate_data_is_exist(f'id为 {field.data} 的步骤不存在', Step, id=field.data)
-        setattr(self, 'step', step)
+        step = self.validate_data_is_exist(f"id为 {field.data} 的步骤不存在", Step, id=field.data)
+        setattr(self, "step", step)
 
 
 class AddStepForm(BaseForm):
     """ 添加步骤校验 """
     project_id = IntegerField()
-    case_id = IntegerField(validators=[DataRequired('用例id必传')])
+    case_id = IntegerField(validators=[DataRequired("用例id必传")])
     api_id = IntegerField()
     quote_case = IntegerField()
 
-    name = StringField(validators=[DataRequired('步骤名称不能为空'), Length(1, 255, message='步骤名长度为1~255位')])
+    name = StringField(validators=[DataRequired("步骤名称不能为空"), Length(1, 255, message="步骤名长度为1~255位")])
     up_func = StringField()
     down_func = StringField()
     skip_if = StringField()
@@ -57,24 +57,24 @@ class AddStepForm(BaseForm):
     def validate_project_id(self, field):
         """ 校验服务id """
         if not self.quote_case.data:
-            project = self.validate_data_is_exist(f'id为【{field.data}】的服务不存在', Project, id=field.data)
-            setattr(self, 'project', project)
+            project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
+            setattr(self, "project", project)
 
     def validate_case_id(self, field):
         """ 校验用例存在 """
-        case = self.validate_data_is_exist(f'id为 {field.data} 的用例不存在', Case, id=field.data)
-        setattr(self, 'case', case)
+        case = self.validate_data_is_exist(f"id为 {field.data} 的用例不存在", Case, id=field.data)
+        setattr(self, "case", case)
 
     def validate_api_id(self, field):
         """ 校验接口存在 """
         if not self.quote_case.data:
-            api = self.validate_data_is_exist(f'id为【{field.data}】的接口不存在', Api, id=field.data)
-            setattr(self, 'api', api)
+            api = self.validate_data_is_exist(f"id为【{field.data}】的接口不存在", Api, id=field.data)
+            setattr(self, "api", api)
 
     def validate_quote_case(self, field):
         """ 不能自己引用自己 """
         if field.data:
-            self.validate_data_is_true(f'不能自己引用自己', field.data != self.case_id.data)
+            self.validate_data_is_true(f"不能自己引用自己", field.data != self.case_id.data)
 
     def validate_extracts(self, field):
         """ 校验数据提取信息 """
@@ -87,12 +87,15 @@ class AddStepForm(BaseForm):
             func_container = Func.get_func_by_func_file_name(self.loads(self.project.func_files))
             self.validate_base_validates(field.data, func_container)
 
+    def validate_data_form(self, field):
+        self.validate_variable_format(field.data, msg_title='form-data')
+
 
 class EditStepForm(AddStepForm):
     """ 修改步骤校验 """
-    id = IntegerField(validators=[DataRequired('用例id必传')])
+    id = IntegerField(validators=[DataRequired("用例id必传")])
 
     def validate_id(self, field):
         """ 校验步骤id已存在 """
-        step = self.validate_data_is_exist(f'id为 {field.data} 的步骤不存在', Step, id=field.data)
-        setattr(self, 'step', step)
+        step = self.validate_data_is_exist(f"id为 {field.data} 的步骤不存在", Step, id=field.data)
+        setattr(self, "step", step)

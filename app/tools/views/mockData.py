@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import json
 import os
 import time
@@ -19,7 +18,7 @@ def send_msg_by_webhook(msg_type, msg):
     msg_format = {
         "msgtype": "text",
         "text": {
-            "content": f"{msg}"
+            "content": f'{msg}'
         }
     }
     try:
@@ -31,9 +30,9 @@ def send_msg_by_webhook(msg_type, msg):
 
 def actions(action):
     """ 根据action执行不同的操作 """
-    if action == 'error':
-        raise Exception('使用action参数触发的服务器内部错误')
-    elif action == 'time_out':
+    if action == "error":
+        raise Exception("使用action参数触发的服务器内部错误")
+    elif action == "time_out":
         time.sleep(40)
 
 
@@ -51,16 +50,16 @@ def get_auto_test_mock_data():
     datas = request.json
 
     # action参数事件
-    actions(datas.get('action'))
+    actions(datas.get("action"))
 
     # 根据是否有json参数判断是否为异步回调
-    if datas and datas.get('is_async'):
-        api_record_id, rating_request_id = datas.get('apiRecordId'), datas.get('ratingRequestId')
+    if datas and datas.get("is_async"):
+        api_record_id, rating_request_id = datas.get("apiRecordId"), datas.get("ratingRequestId")
         try:
             # 发送异步回调
             res = requests.post(
-                url=datas.get('addr', Config.get_data_source_callback_addr()),
-                headers={'x-auth-token': datas.get('token', Config.get_data_source_callback_token())},
+                url=datas.get("addr", Config.get_data_source_callback_addr()),
+                headers={"x-auth-token": datas.get("token", Config.get_data_source_callback_token())},
                 json={
                     "applyType": 1,
                     "code": 200,
@@ -111,16 +110,16 @@ def get_mock_data():
     datas = request.json
 
     # action参数事件
-    actions(datas.get('action'))
+    actions(datas.get("action"))
 
     # 根据是否有json参数判断是否为异步回调
-    if datas and datas.get('is_async'):
-        api_record_id, rating_request_id = datas.get('apiRecordId'), datas.get('ratingRequestId')
+    if datas and datas.get("is_async"):
+        api_record_id, rating_request_id = datas.get("apiRecordId"), datas.get("ratingRequestId")
         try:
             # 发送异步回调
             res = requests.post(
                 url=Config.get_data_source_callback_addr(),
-                headers={'x-auth-token': Config.get_data_source_callback_token()},
+                headers={"x-auth-token": Config.get_data_source_callback_token()},
                 json={
                     "applyType": 1,
                     "code": 200,
@@ -134,9 +133,9 @@ def get_mock_data():
             msg = {"message": "异步数据源回调成功", "status": 200, "apiRecordId": api_record_id, "data": res.json()}
         except Exception as error:
             msg = {"message": "异步数据源回调失败", "status": 500, "apiRecordId": api_record_id, "data": str(error)}
-        send_msg_by_webhook('数据源回调结果', msg)
+        send_msg_by_webhook("数据源回调结果", msg)
         return jsonify(msg)
-    send_msg_by_webhook('数据源回调结果', {"message": "同步数据源回调成功", "status": 200})
+    send_msg_by_webhook("数据源回调结果", {"message": "同步数据源回调成功", "status": 200})
     return jsonify(datas)
 
 
@@ -165,7 +164,7 @@ def call_back():
     # 存回调数据
     name = f'callBack{datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")}.json'
     FileUtil.save_file(os.path.join(CALL_BACK_ADDRESS, name), json_data or form_data or params)
-    send_msg_by_webhook('回调结果', f'已收到回调数据，保存文件名：{name}')
+    send_msg_by_webhook("回调结果", f"已收到回调数据，保存文件名：{name}")
 
     # 如果有配置返回数据，则返回回调数据，否则返回默认数据
     response = Config.get_call_back_response()
@@ -173,7 +172,7 @@ def call_back():
         return jsonify(json.loads(response.value))
 
     return jsonify({
-        "timestamp": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())),
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
         "status": 200,
         "message": "请求成功",
         "data": name})
@@ -201,7 +200,7 @@ def mock_api():
     """ mock_api， 收到什么就返回什么 """
     params, json_data, form_data = request.args.to_dict(), request.get_json(silent=True), request.form.to_dict()
     return jsonify({
-        "timestamp": time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())),
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
         "status": 200,
         "message": "请求成功",
         "data": json_data or form_data or params
@@ -226,7 +225,7 @@ class MockApiView(NotLoginView):
         return mock_api()
 
 
-tool.add_url_rule('/mock', view_func=MockApiView.as_view('MockApiView'))
-tool.add_url_rule('/mock/common', view_func=MockDataCommonView.as_view('MockDataCommonView'))
-tool.add_url_rule('/mock/callBack', view_func=GetCallBackMockDataView.as_view('GetCallBackMockDataView'))
-tool.add_url_rule('/mock/autoTest', view_func=GetAutoTestMockDataView.as_view('GetAutoTestMockDataView'))
+tool.add_url_rule("/mock", view_func=MockApiView.as_view("MockApiView"))
+tool.add_url_rule("/mock/common", view_func=MockDataCommonView.as_view("MockDataCommonView"))
+tool.add_url_rule("/mock/callBack", view_func=GetCallBackMockDataView.as_view("GetCallBackMockDataView"))
+tool.add_url_rule("/mock/autoTest", view_func=GetAutoTestMockDataView.as_view("GetAutoTestMockDataView"))

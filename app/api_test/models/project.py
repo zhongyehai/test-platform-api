@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from app.baseModel import BaseProject, BaseProjectEnv, db, Config
 
 
@@ -7,15 +6,15 @@ class ApiProject(BaseProject):
     """ 服务表 """
     __abstract__ = False
 
-    __tablename__ = 'api_test_project'
+    __tablename__ = "api_test_project"
 
-    swagger = db.Column(db.String(255), default='', comment='服务对应的swagger地址')
-    last_pull_status = db.Column(db.Integer(), default=None, comment='最近一次swagger拉取状态，0拉取失败，2拉取成功')
-    yapi_id = db.Column(db.Integer(), default=None, comment='对应YapiProject表里面的原始数据在yapi平台的id')
+    swagger = db.Column(db.String(255), default="", comment="服务对应的swagger地址")
+    last_pull_status = db.Column(db.Integer(), default=None, comment="最近一次swagger拉取状态，0拉取失败，2拉取成功")
+    yapi_id = db.Column(db.Integer(), default=None, comment="对应YapiProject表里面的原始数据在yapi平台的id")
 
     def delete_current_and_env(self):
         """ 删除服务及服务下的环境 """
-        return self.delete_current_and_children(ApiProjectEnv, 'project_id')
+        return self.delete_current_and_children(ApiProjectEnv, "project_id")
 
     def last_pull_is_fail(self):
         """ 最近一次从swagger拉取失败 """
@@ -30,9 +29,9 @@ class ApiProjectEnv(BaseProjectEnv):
     """ 服务环境表 """
     __abstract__ = False
 
-    __tablename__ = 'api_test_project_env'
+    __tablename__ = "api_test_project_env"
 
-    headers = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment='服务的公共头部信息')
+    headers = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment="服务的公共头部信息")
 
     @classmethod
     def create_env(cls, project_id=None, env_list=None):

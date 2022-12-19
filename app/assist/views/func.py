@@ -20,15 +20,15 @@ class GetFuncListView(LoginRequiredView):
     def get(self):
         """ 自定义函数文件列表 """
         form = GetFuncFileForm().do_validate()
-        return app.restful.success('获取成功', data=Func.make_pagination(form))
+        return app.restful.success("获取成功", data=Func.make_pagination(form))
 
 
 class FuncChangeSortView(LoginRequiredView):
 
     def put(self):
         """ 更新服务的排序 """
-        Func.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
-        return app.restful.success(msg='修改排序成功')
+        Func.change_sort(request.json.get("List"), request.json.get("pageNum"), request.json.get("pageSize"))
+        return app.restful.success(msg="修改排序成功")
 
 
 class DebugFuncView(LoginRequiredView):
@@ -49,12 +49,12 @@ class DebugFuncView(LoginRequiredView):
                                      isinstance(item, types.FunctionType)}
             ext_func = extract_functions(debug_data)
             func = parse_function(ext_func[0])
-            result = module_functions_dict[func['func_name']](*func['args'], **func['kwargs'])
-            return app.restful.success(msg='执行成功，请查看执行结果', result=result)
+            result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])
+            return app.restful.success(msg="执行成功，请查看执行结果", result=result)
         except Exception as e:
             app.logger.info(str(e))
-            error_data = '\n'.join('{}'.format(traceback.format_exc()).split('↵'))
-            return app.restful.fail(msg='语法错误，请检查', result=error_data)
+            error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
+            return app.restful.fail(msg="语法错误，请检查", result=error_data)
 
 
 class SaveFuncDataView(LoginRequiredView):
@@ -62,8 +62,8 @@ class SaveFuncDataView(LoginRequiredView):
     def put(self):
         """ 保存函数文件内容 """
         form = SaveFuncDataForm().do_validate()
-        form.func.update({'func_data': form.func_data.data})
-        return app.restful.success(f'保存成功')
+        form.func.update({"func_data": form.func_data.data})
+        return app.restful.success("保存成功")
 
 
 class FuncView(LoginRequiredView):
@@ -71,7 +71,7 @@ class FuncView(LoginRequiredView):
     def get(self):
         """ 获取函数文件 """
         form = HasFuncForm().do_validate()
-        return app.restful.success(msg='获取成功', func_data=form.func.func_data)
+        return app.restful.success(msg="获取成功", func_data=form.func.func_data)
 
     def post(self):
         """ 新增函数文件 """
@@ -93,8 +93,8 @@ class FuncView(LoginRequiredView):
         return app.restful.success(f'函数文件 {form.func.name} 删除成功')
 
 
-assist.add_url_rule('/func', view_func=FuncView.as_view('FuncView'))
-assist.add_url_rule('/func/debug', view_func=DebugFuncView.as_view('DebugFuncView'))
-assist.add_url_rule('/func/list', view_func=GetFuncListView.as_view('GetFuncListView'))
-assist.add_url_rule('/func/data', view_func=SaveFuncDataView.as_view('SaveFuncDataView'))
-assist.add_url_rule('/func/sort', view_func=FuncChangeSortView.as_view('FuncChangeSortView'))
+assist.add_url_rule("/func", view_func=FuncView.as_view("FuncView"))
+assist.add_url_rule("/func/debug", view_func=DebugFuncView.as_view("DebugFuncView"))
+assist.add_url_rule("/func/list", view_func=GetFuncListView.as_view("GetFuncListView"))
+assist.add_url_rule("/func/data", view_func=SaveFuncDataView.as_view("SaveFuncDataView"))
+assist.add_url_rule("/func/sort", view_func=FuncChangeSortView.as_view("FuncChangeSortView"))

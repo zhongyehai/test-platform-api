@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 import time
 import os
 
+from appium import webdriver as appium_webdriver
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as chromeOptions
 from selenium.webdriver.firefox.options import Options as firefoxOptions
@@ -12,68 +14,23 @@ from selenium.webdriver.support.ui import WebDriverWait
 from .utils import get_dict_data
 
 
-class GetDriver:
-    """ 浏览器对象管理 """
-
-    def __init__(self, browser_driver_path: str):
-        """ 实例化浏览器对象
-        browser_driver_path: 浏览器驱动地址
-        """
-        self.browser_driver_path = browser_driver_path
-
-    def chrome(self):
-        chrome_options = chromeOptions()
-
-        # 设置配置信息:试了下这个变量还必须是prefs，不然会报错，想不通
-        prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'd:\\'}
-        chrome_options.add_experimental_option('prefs', prefs)
-
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
-        # return webdriver.Chrome(executable_path=self.browser_driver_path)
-
-    def firefox(self):
-        firefox_options = firefoxOptions()
-
-        firefox_options.set_preference('browser.download.folderList', 2)  # 置成0代表下载到浏览器默认下载路径，设置成2则可以保存到指定的目录
-        firefox_options.set_preference('browser.download.dir', 'd:\\')  # 指定存放目录
-        firefox_options.set_preference('browser.download.manager.showWhenStarting',
-                                       False)  # 是否显示开始：True为显示开始，False为不显示开始
-        firefox_options.set_preference('browser.helperApps.neverAsk.saveToDisk',
-                                       'application/octet-stream')  # 对所给文件类型不再弹出框进行询问
-
-        firefox_options.add_argument('--headless')
-        firefox_options.add_argument('--no-sandbox')
-        firefox_options.add_argument('--disable-dev-shm-usage')
-        return webdriver.Firefox(executable_path=self.browser_driver_path, firefox_profile=firefox_options)
-
-
-class Driver:
+class Actions:
     """
     基于原生的selenium框架做了二次封装
     action_开头的为浏览器页面行为，assert_开头的为元素判断
     """
 
-    def __init__(self, browser_driver_path: str, browser_name: str):
-        """ 启动浏览器参数化
-        browser_driver_path: 浏览器驱动地址
-        browser_name: 要实例化的浏览器类型，用于反射GetDriver获取，详见 GetDriver 的方法
-        """
-        self.driver = getattr(GetDriver(browser_driver_path), browser_name)()  # 获取浏览器对象
+    def __init__(self, driver):
+        self.driver = driver
         self.timeout = 30  # 默认超时的时间设置
-
-    def __del__(self):
-        self.driver.quit()
 
     @classmethod
     def get_class_property(cls, startswith: str):
         """ 获取类属性，startswith：方法的开头 """
         mapping_dict, mapping_list = {}, []
-        for func_name in dir(Driver):
+        for func_name in dir(cls):
             if func_name.startswith(startswith):
-                doc = getattr(Driver, func_name).__doc__.strip().split('，')[0]  # 函数注释
+                doc = getattr(cls, func_name).__doc__.strip().split('，')[0]  # 函数注释
                 mapping_dict.setdefault(doc, func_name)
                 mapping_list.append({'label': doc, 'value': func_name})
         return {"mapping_dict": mapping_dict, "mapping_list": mapping_list}
@@ -425,9 +382,86 @@ class Driver:
         return self.driver.get_screenshot_as_png()
 
 
+class GetWebDriver(Actions):
+    """ 浏览器对象管理 """
+
+    def __init__(self, browser_driver_path: str, browser_name: str):
+        """ 实例化浏览器对象
+        browser_driver_path: 浏览器驱动地址
+        """
+        self.browser_driver_path = browser_driver_path
+        self.browser_name = browser_name
+        self.driver = self.get_driver()
+        super().__init__(self.driver)
+
+    def __del__(self):
+        try:
+            self.driver.close()
+        except:
+            pass
+        try:
+            self.driver.quit()
+        except:
+            pass
+
+    def get_driver(self):
+        """ 获取浏览器实例 """
+        return getattr(self, self.browser_name)()  # 获取浏览器对象
+
+    def chrome(self):
+        chrome_options = chromeOptions()
+
+        # 设置配置信息
+        prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'd:\\'}
+        chrome_options.add_experimental_option('prefs', prefs)
+
+        # chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
+        # return webdriver.Chrome(executable_path=self.browser_driver_path)
+
+    def gecko(self):
+        firefox_options = firefoxOptions()
+
+        # 置成0代表下载到浏览器默认下载路径，设置成2则可以保存到指定的目录
+        firefox_options.set_preference('browser.download.folderList', 2)
+        # 指定存放目录
+        firefox_options.set_preference('browser.download.dir', 'd:\\')
+        # 是否显示开始：True为显示开始，False为不显示开始
+        firefox_options.set_preference('browser.download.manager.showWhenStarting', False)
+        # 对所给文件类型不再弹出框进行询问
+        firefox_options.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/octet-stream')
+
+        firefox_options.add_argument('--headless')
+        firefox_options.add_argument('--no-sandbox')
+        firefox_options.add_argument('--disable-dev-shm-usage')
+        return webdriver.Firefox(executable_path=self.browser_driver_path, firefox_profile=firefox_options)
+
+
+class GetAppDriver(Actions):
+    """ appium对象管理 """
+
+    def __init__(self, **kwargs):
+        """ 获取appium操作对象
+        {
+            "platformName": "iOS" / "Android",
+            "platformVersion": "14.5",
+            "deviceName": "iPhone Simulator" / other,
+            appPackage='com.taobao.taobao',
+            appActivity='com.taobao.tao.TBMainActivity',
+            noReset=True
+        }
+        """
+
+        self.host, self.port = kwargs.pop('host'), kwargs.pop('port')
+        self.appium_webdriver = appium_webdriver.Remote(f'http://{self.host}:{self.port}/wd/hub', kwargs)  # 启动app
+        super().__init__(self.appium_webdriver)
+
+
 if __name__ == '__main__':
     # print(Driver.get_action_mapping())
     # print(Driver.get_assert_mapping())
-    driver_path = r'D:\PycharmProjects\ui-auto-test-master\browserdriver\chromedriver.exe'
-    driver = Driver(driver_path, 'chrome')
+    driver_path = r'D:\项目\test-platform\base\api\browser_drivers\chromedriver.exe'
+    driver = GetWebDriver(driver_path, 'chrome')
     driver.action_01open('https://www.baidu.com/')

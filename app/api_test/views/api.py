@@ -26,7 +26,7 @@ class ApiAssertMappingView(LoginRequiredView):
 
     def get(self):
         """ 获取断言类型 """
-        return app.restful.success('获取成功', data=assert_mapping_list)
+        return app.restful.success("获取成功", data=assert_mapping_list)
 
 
 class ApiMethodsMappingView(LoginRequiredView):
@@ -34,8 +34,8 @@ class ApiMethodsMappingView(LoginRequiredView):
     def get(self):
         """ 获取配置的请求方法列表 """
         return app.restful.success(
-            '获取成功',
-            data=[{'value': method} for method in Config.get_http_methods().split(',')]
+            "获取成功",
+            data=[{"value": method} for method in Config.get_http_methods().split(",")]
         )
 
 
@@ -52,7 +52,7 @@ class ApiGetApiBelongToView(LoginRequiredView):
     def get(self):
         """ 根据接口地址获取接口的归属信息 """
         form = ApiBelongToForm().do_validate()
-        res_msg = '此接口归属：'
+        res_msg = "此接口归属："
         for api in form.api_list:  # 多个服务存在同一个接口地址的情况
             project = Project.get_first(id=api.project_id)
             module = Module.get_first(id=api.module_id)
@@ -65,7 +65,7 @@ class ApiGetApiBelongToStepView(LoginRequiredView):
     def get(self):
         """ 查询哪些用例下的步骤引用了当前接口 """
         form = ApiBelongToForm().do_validate()
-        res_msg = '以下步骤由当前接口转化：'
+        res_msg = "以下步骤由当前接口转化："
         case_dict, case_set_dict, project_dict = {}, {}, {}  # 可能存在重复获取数据的请，获取到就存下来，一条数据只查一次库
         for api in form.api_list:  # 多个服务存在同一个接口地址的情况
             steps = Step.get_all(api_id=api.id)  # 存在一个接口在多个步骤调用的情况
@@ -93,32 +93,32 @@ class ApiGetApiUploadView(NotLoginView):
 
     def post(self):
         """ 从excel中导入接口 """
-        file, module, user_id = request.files.get('file'), Module.get_first(id=request.form.get('id')), g.user_id
+        file, module, user_id = request.files.get("file"), Module.get_first(id=request.form.get("id")), g.user_id
         if not module:
-            return app.restful.fail('模块不存在')
-        if file and file.filename.endswith('xls'):
-            excel_data = parse_file_content(file.read())  # [{'请求类型': 'get', '接口名称': 'xx接口', 'addr': '/api/v1/xxx'}]
+            return app.restful.fail("模块不存在")
+        if file and file.filename.endswith("xls"):
+            excel_data = parse_file_content(file.read())  # [{"请求类型": "get", "接口名称": "xx接口", "addr": "/api/v1/xxx"}]
             with db.auto_commit():
                 for api_data in excel_data:
                     new_api = Api()
                     for key, value in api_data.items():
                         if hasattr(new_api, key):
                             setattr(new_api, key, value)
-                    new_api.method = api_data.get('method', 'post').upper()
+                    new_api.method = api_data.get("method", "post").upper()
                     new_api.num = new_api.get_insert_num(module_id=module.id)
                     new_api.project_id = module.project_id
                     new_api.module_id = module.id
                     new_api.create_user = user_id
                     db.session.add(new_api)
-            return app.restful.success('接口导入成功')
-        return app.restful.fail('请上传后缀为xls的Excel文件')
+            return app.restful.success("接口导入成功")
+        return app.restful.fail("请上传后缀为xls的Excel文件")
 
 
 class ApiTemplateDownloadView(LoginRequiredView):
 
     def get(self):
         """ 下载接口导入模板 """
-        return send_from_directory(STATIC_ADDRESS, '接口导入模板.xls', as_attachment=True)
+        return send_from_directory(STATIC_ADDRESS, "接口导入模板.xls", as_attachment=True)
 
 
 class ApiRunApiMsgView(LoginRequiredView):
@@ -129,7 +129,7 @@ class ApiRunApiMsgView(LoginRequiredView):
         api, api_list = form.api_list[0], form.api_list
         report = Report.get_new_report(
             name=api.name,
-            run_type='api',
+            run_type="api",
             performer=g.user_name,
             create_user=g.user_id,
             project_id=form.projectId.data
@@ -145,15 +145,15 @@ class ApiRunApiMsgView(LoginRequiredView):
                 env=form.env.data
             ).run_case
         ).start()
-        return app.restful.success(msg='触发执行成功，请等待执行完毕', data={'report_id': report.id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report.id})
 
 
 class ApiChangeApiSortView(LoginRequiredView):
 
     def put(self):
         """ 修改接口的排序 """
-        Api.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
-        return app.restful.success(msg='修改排序成功')
+        Api.change_sort(request.json.get("List"), request.json.get("pageNum"), request.json.get("pageSize"))
+        return app.restful.success(msg="修改排序成功")
 
 
 class ApiMsgView(LoginRequiredView):
@@ -185,13 +185,13 @@ class ApiMsgView(LoginRequiredView):
         return app.restful.success(f'接口【{form.api.name}】删除成功')
 
 
-api_test.add_url_rule('/apiMsg', view_func=ApiMsgView.as_view('ApiMsgView'))
-api_test.add_url_rule('/apiMsg/run', view_func=ApiRunApiMsgView.as_view('ApiRunApiMsgView'))
-api_test.add_url_rule('/apiMsg/list', view_func=ApiGetApiListView.as_view('ApiGetApiListView'))
-api_test.add_url_rule('/apiMsg/sort', view_func=ApiChangeApiSortView.as_view('ApiChangeApiSortView'))
-api_test.add_url_rule('/apiMsg/upload', view_func=ApiGetApiUploadView.as_view('ApiGetApiUploadView'))
-api_test.add_url_rule('/apiMsg/methods', view_func=ApiMethodsMappingView.as_view('ApiMethodsMappingView'))
-api_test.add_url_rule('/apiMsg/belongTo', view_func=ApiGetApiBelongToView.as_view('ApiGetApiBelongToView'))
-api_test.add_url_rule('/apiMsg/assertMapping', view_func=ApiAssertMappingView.as_view('ApiAssertMappingView'))
-api_test.add_url_rule('/apiMsg/belongToStep', view_func=ApiGetApiBelongToStepView.as_view('ApiGetApiBelongToStepView'))
-api_test.add_url_rule('/apiMsg/template/download', view_func=ApiTemplateDownloadView.as_view('ApiTemplateDownloadView'))
+api_test.add_url_rule("/apiMsg", view_func=ApiMsgView.as_view("ApiMsgView"))
+api_test.add_url_rule("/apiMsg/run", view_func=ApiRunApiMsgView.as_view("ApiRunApiMsgView"))
+api_test.add_url_rule("/apiMsg/list", view_func=ApiGetApiListView.as_view("ApiGetApiListView"))
+api_test.add_url_rule("/apiMsg/sort", view_func=ApiChangeApiSortView.as_view("ApiChangeApiSortView"))
+api_test.add_url_rule("/apiMsg/upload", view_func=ApiGetApiUploadView.as_view("ApiGetApiUploadView"))
+api_test.add_url_rule("/apiMsg/methods", view_func=ApiMethodsMappingView.as_view("ApiMethodsMappingView"))
+api_test.add_url_rule("/apiMsg/belongTo", view_func=ApiGetApiBelongToView.as_view("ApiGetApiBelongToView"))
+api_test.add_url_rule("/apiMsg/assertMapping", view_func=ApiAssertMappingView.as_view("ApiAssertMappingView"))
+api_test.add_url_rule("/apiMsg/belongToStep", view_func=ApiGetApiBelongToStepView.as_view("ApiGetApiBelongToStepView"))
+api_test.add_url_rule("/apiMsg/template/download", view_func=ApiTemplateDownloadView.as_view("ApiTemplateDownloadView"))

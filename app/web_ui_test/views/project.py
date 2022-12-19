@@ -31,8 +31,8 @@ class WebUiProjectChangeSortView(LoginRequiredView):
 
     def put(self):
         """ 更新服务的排序 """
-        Project.change_sort(request.json.get('List'), request.json.get('pageNum'), request.json.get('pageSize'))
-        return app.restful.success(msg='修改排序成功')
+        Project.change_sort(request.json.get("List"), request.json.get("pageNum"), request.json.get("pageSize"))
+        return app.restful.success(msg="修改排序成功")
 
 
 class WebProjectView(LoginRequiredView):
@@ -46,19 +46,19 @@ class WebProjectView(LoginRequiredView):
         """ 新增项目 """
         form = AddUiProjectForm().do_validate()
         project = ProjectBusiness.post(form, Project, ProjectEnv, CaseSet)
-        return app.restful.success(f'项目【{form.name.data}】新建成功', project.to_dict())
+        return app.restful.success(f"项目【{form.name.data}】新建成功", project.to_dict())
 
     def put(self):
         """ 修改项目 """
         form = EditUiProjectForm().do_validate()
         form.project.update(form.data)
-        return app.restful.success(f'项目【{form.name.data}】修改成功', form.project.to_dict())
+        return app.restful.success(f"项目【{form.name.data}】修改成功", form.project.to_dict())
 
     def delete(self):
         """ 删除项目 """
         form = DeleteUiProjectForm().do_validate()
         form.project.delete_current_and_env()
-        return app.restful.success(msg=f'项目【{form.project.name}】删除成功')
+        return app.restful.success(msg=f"项目【{form.project.name}】删除成功")
 
 
 class WebUiProjectEnvSynchronizationView(LoginRequiredView):
@@ -68,7 +68,7 @@ class WebUiProjectEnvSynchronizationView(LoginRequiredView):
         form = SynchronizationEnvForm().do_validate()
         from_env = ProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
         synchronization_result = ProjectEnv.synchronization(from_env, form.envTo.data, ["variables"])
-        return app.restful.success('同步成功', data=synchronization_result)
+        return app.restful.success("同步成功", data=synchronization_result)
 
 
 class WebUiProjectEnvView(LoginRequiredView):
@@ -82,19 +82,19 @@ class WebUiProjectEnvView(LoginRequiredView):
         """ 新增项目环境 """
         form = AddEnv().do_validate()
         env = ProjectEnv().create(form.data)
-        return app.restful.success(f'环境新建成功', env.to_dict())
+        return app.restful.success(f"环境新建成功", env.to_dict())
 
     def put(self):
         """ 修改项目环境 """
         form = EditEnv().do_validate()
         ProjectEnvBusiness.put(form, ProjectEnv, ["variables"])
-        return app.restful.success(f'环境保存成功', form.env_data.to_dict())
+        return app.restful.success(f"环境保存成功", form.env_data.to_dict())
 
 
-web_ui_test.add_url_rule('/project', view_func=WebProjectView.as_view('WebProjectView'))
-web_ui_test.add_url_rule('/project/env', view_func=WebUiProjectEnvView.as_view('WebUiProjectEnvView'))
-web_ui_test.add_url_rule('/project/all', view_func=WebUiProjectAllView.as_view('WebUiProjectAllView'))
-web_ui_test.add_url_rule('/project/list', view_func=WebUiProjectListView.as_view('WebUiProjectListView'))
-web_ui_test.add_url_rule('/project/sort', view_func=WebUiProjectChangeSortView.as_view('WebUiProjectChangeSortView'))
-web_ui_test.add_url_rule('/project/env/synchronization',
-                         view_func=WebUiProjectEnvSynchronizationView.as_view('WebUiProjectEnvSynchronizationView'))
+web_ui_test.add_url_rule("/project", view_func=WebProjectView.as_view("WebProjectView"))
+web_ui_test.add_url_rule("/project/env", view_func=WebUiProjectEnvView.as_view("WebUiProjectEnvView"))
+web_ui_test.add_url_rule("/project/all", view_func=WebUiProjectAllView.as_view("WebUiProjectAllView"))
+web_ui_test.add_url_rule("/project/list", view_func=WebUiProjectListView.as_view("WebUiProjectListView"))
+web_ui_test.add_url_rule("/project/sort", view_func=WebUiProjectChangeSortView.as_view("WebUiProjectChangeSortView"))
+web_ui_test.add_url_rule("/project/env/synchronization",
+                         view_func=WebUiProjectEnvSynchronizationView.as_view("WebUiProjectEnvSynchronizationView"))

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -19,12 +18,12 @@ class SendEmail:
     def send_email(self):
         """ 使用第三方SMTP服务发送邮件 """
         message = MIMEMultipart()
-        body = MIMEText(_text=self.file, _subtype='html', _charset='utf-8')  # 邮件正文内容为报告附件body
+        body = MIMEText(_text=self.file, _subtype="html", _charset="utf-8")  # 邮件正文内容为报告附件body
         message.attach(body)
-        message['From'] = Header("测试报告", 'utf-8')
-        message['To'] = Header(''.join(self.to_list), 'utf-8')
-        subject = '接口自动化测试报告邮件' if '>失败</th>' not in self.file else '接口自动化测试报告邮件，有执行失败的用例，请查看附件或登录平台查看'
-        message['Subject'] = Header(subject, 'utf-8')
+        message["From"] = Header("测试报告", "utf-8")
+        message["To"] = Header("".join(self.to_list), "utf-8")
+        subject = "接口自动化测试报告邮件" if ">失败</th>" not in self.file else "接口自动化测试报告邮件，有执行失败的用例，请查看附件或登录平台查看"
+        message["Subject"] = Header(subject, "utf-8")
 
         # 添加附件
         att = MIMEText(self.file, "base64", "utf-8")

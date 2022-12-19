@@ -1,18 +1,12 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseModel, db
+from app.baseModel import db, SaveRequestLog
 
 
-class SystemErrorRecord(BaseModel):
+class SystemErrorRecord(SaveRequestLog):
     """ 系统错误记录表 """
-    __tablename__ = 'system_error_record'
+    __tablename__ = "system_error_record"
 
-    url = db.Column(db.String(256), nullable=True, comment='请求地址')
-    method = db.Column(db.String(10), nullable=True, comment='请求方法')
-    headers = db.Column(db.Text, nullable=True, comment='头部参数')
-    params = db.Column(db.String(256), nullable=True, comment='查询字符串参数')
-    data_form = db.Column(db.Text, nullable=True, comment='form_data参数')
-    data_json = db.Column(db.Text, nullable=True, comment='json参数')
-    detail = db.Column(db.Text, nullable=True, comment='错误详情')
+    detail = db.Column(db.Text, nullable=True, comment="错误详情")
 
     @classmethod
     def make_pagination(cls, form):

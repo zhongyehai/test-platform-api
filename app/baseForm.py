@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-
 import re
 
+import validators
 from flask import request, g, abort
 from wtforms import Form, ValidationError
 
@@ -51,123 +51,125 @@ class BaseForm(Form, JsonUtil):
             if hasattr(self, key):
                 getattr(self, key).data = value
 
-    def validate_func(self, func_container: dict, content: str, message=''):
+    def validate_func(self, func_container: dict, content: str, message=""):
 
         functions = extract_functions(content)
 
         # 使用了自定义函数，但是没有引用函数文件的情况
         if functions and not func_container:
-            raise ValidationError(f'{message}要使用自定义函数则需引用对应的函数文件')
+            raise ValidationError(f"{message}要使用自定义函数则需引用对应的函数文件")
 
         # 使用了自定义函数，但是引用的函数文件中没有当前函数的情况
         for function in functions:
-            func_name = parse_function(function)['func_name']
+            func_name = parse_function(function)["func_name"]
             if func_name not in func_container:
-                raise ValidationError(f'{message}引用的自定义函数【{func_name}】在引用的函数文件中均未找到')
+                raise ValidationError(f"{message}引用的自定义函数【{func_name}】在引用的函数文件中均未找到")
 
     def validate_is_regexp(self, regexp):
         """ 校验字符串是否为正则表达式 """
         return re.compile(r".*\(.*\).*").match(regexp)
 
-    def validate_variable(self, variables_container: dict, content: str, message=''):
+    def validate_variable(self, variables_container: dict, content: str, message=""):
         """ 引用的变量需存在 """
         for variable in extract_variables(content):
             if variable not in variables_container:
-                raise ValidationError(f'{message}引用的变量【{variable}】不存在')
+                raise ValidationError(f"{message}引用的变量【{variable}】不存在")
 
     def validate_header_format(self, content: list):
         """ 头部信息，格式校验 """
         for index, data in enumerate(content):
-            title, key, value = f'头部信息设置，第【{index + 1}】行', data.get("key"), data.get("value")
+            title, key, value = f"头部信息设置，第【{index + 1}】行", data.get("key"), data.get("value")
             if not ((key and value) or (not key and not value)):
-                raise ValidationError(f'{title}，要设置头部信息，则key和value都需设置')
+                raise ValidationError(f"{title}，要设置头部信息，则key和value都需设置")
 
-    def validate_variable_format(self, content: list):
+    def validate_variable_format(self, content: list, msg_title='自定义变量'):
         """ 自定义变量，格式校验 """
         for index, data in enumerate(content):
-            title = f'自定义变量设置，第【{index + 1}】行'
+            title = f"{msg_title}设置，第【{index + 1}】行"
             key, value, data_type = data.get("key"), data.get("value"), data.get("data_type")
             # 校验格式
             if not ((key and value and data_type) or (not key and not value)):
-                raise ValidationError(f'{title}，要设置自定义变量，则【key、value、数据类型】都需设置')
+                raise ValidationError(f"{title}，要设置{msg_title}，则【key、value、数据类型】都需设置")
 
             # 检验数据类型
             if value and self.validate_data_format(value, data_type) is False:
-                raise ValidationError(f'{title}，自定义变量值与数据类型不匹配')
+                raise ValidationError(f"{title}，{msg_title}值与数据类型不匹配")
 
     def validate_data_format(self, value, data_type):
         """ 校验数据格式 """
         try:
-            if data_type in ["variable", "func", 'str']:
+            if data_type in ["variable", "func", "str", "file"]:
                 pass
-            elif data_type == 'json':
+            elif data_type == "json":
                 self.dumps(self.loads(value))
             else:  # python数据类型
-                eval(f'{data_type}({value})')
+                eval(f"{data_type}({value})")
         except Exception as error:
             return False
 
     def validate_base_validates(self, data, func_container):
         """ 校验断言信息 """
         for index, validate in enumerate(data):
-            row = f'断言，第【{index + 1}】行，'
-            data_source, key = validate.get('data_source'), validate.get('key')
-            validate_type = validate.get('validate_type')
-            data_type, value = validate.get('data_type'), validate.get('value')
+            row_msg = f"断言，第【{index + 1}】行，"
+            data_source, key = validate.get("data_source"), validate.get("key")
+            validate_type = validate.get("validate_type")
+            data_type, value = validate.get("data_type"), validate.get("value")
 
             # 实际结果数据源和预期结果数据类型必须同时存在或者同时不存在
             if (data_source and not data_type) or (not data_source and data_type):
-                raise ValidationError(f'{row}若要进行断言，则实际结果数据源和预期结果数据类型需同时存在，若不进行断言，则实际结果数据源和预期结果数据类型需同时不存在')
+                raise ValidationError(
+                    f"{row_msg}若要进行断言，则实际结果数据源和预期结果数据类型需同时存在，若不进行断言，则实际结果数据源和预期结果数据类型需同时不存在")
             elif not data_source and not data_type:  # 都没有，此条断言无效，不解析
                 continue
             else:  # 有效的断言
                 # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
-                if data_source == 'regexp' and not self.validate_is_regexp(key):
-                    raise ValidationError(f'{row}正则表达式【{key}】错误')
+                if data_source == "regexp" and not self.validate_is_regexp(key):
+                    raise ValidationError(f"{row_msg}正则表达式【{key}】错误")
 
                 if not validate_type:  # 没有选择断言类型
-                    raise ValidationError(f'{row}请选择断言类型')
+                    raise ValidationError(f"{row_msg}请选择断言类型")
 
                 if value is None:  # 要进行断言，则预期结果必须有值
-                    raise ValidationError(f'{row}预期结果需填写')
+                    raise ValidationError(f"{row_msg}预期结果需填写")
 
-                self.validate_data_type_(func_container, row, data_type, value)  # 校验预期结果的合法性
+                self.validate_data_type_(func_container, row_msg, data_type, value)  # 校验预期结果的合法性
 
     def validate_data_type_(self, func_container, row, data_type, value):
         """ 校验数据类型 """
-        if data_type == "str":  # 普通字符串，无需解析，填的是什么就用什么
+        if data_type in ["str", "file"]:  # 普通字符串和文件，不校验
             pass
         elif data_type == "variable":  # 预期结果为自定义变量，能解析出变量即可
             if extract_variables(value).__len__() < 1:
-                raise ValidationError(f'{row}引用的变量表达式【{value}】错误')
+                raise ValidationError(f"{row}引用的变量表达式【{value}】错误")
         elif data_type == "func":  # 预期结果为自定义函数，校验校验预期结果表达式、实际结果表达式
             self.validate_func(func_container, value, message=row)  # 实际结果表达式是否引用自定义函数
-        elif data_type == 'json':  # 预期结果为json
+        elif data_type == "json":  # 预期结果为json
             try:
                 self.dumps(self.loads(value))
             except Exception as error:
-                raise ValidationError(f'{row}预期结果【{value}】，不可转为【{data_type}】')
+                raise ValidationError(f"{row}预期结果【{value}】，不可转为【{data_type}】")
         else:  # python数据类型
             try:
-                eval(f'{data_type}({value})')
+                eval(f"{data_type}({value})")
             except Exception as error:
-                raise ValidationError(f'{row}预期结果【{value}】，不可转为【{data_type}】')
+                raise ValidationError(f"{row}预期结果【{value}】，不可转为【{data_type}】")
 
     def validate_base_extracts(self, data):
         """ 校验数据提取表达式 """
         for index, validate in enumerate(data):
-            row = f'数据提取，第【{index + 1}】行，'
-            data_source, key, value = validate.get('data_source'), validate.get('key'), validate.get('value')
+            row = f"数据提取，第【{index + 1}】行，"
+            data_source, key, value = validate.get("data_source"), validate.get("key"), validate.get("value")
 
             # 实际结果数据源和预期结果数据类型必须同时存在或者同时不存在
             if (data_source and not key) or (not data_source and key):
-                raise ValidationError(f'{row}若要进行数据提取，则自定义变量名和提取数据源需同时存在，若不进行提取，则自定义变量名和提取数据源需同时不存在')
+                raise ValidationError(
+                    f"{row}若要进行数据提取，则自定义变量名和提取数据源需同时存在，若不进行提取，则自定义变量名和提取数据源需同时不存在")
             elif not data_source and not key:  # 都没有，此条数据无效，不解析
                 continue
             else:  # 有效的数据提取
                 # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
-                if data_source == 'regexp' and not self.validate_is_regexp(value):
-                    raise ValidationError(f'{row}正则表达式【{value}】错误')
+                if data_source == "regexp" and not self.validate_is_regexp(value):
+                    raise ValidationError(f"{row}正则表达式【{value}】错误")
 
     def validate_data_is_exist(self, error_msg, model, **kwargs):
         """ 校验数据已存在，存在则返回数据模型 """
@@ -204,11 +206,11 @@ class BaseForm(Form, JsonUtil):
                 if isinstance(field.data, list) is False:
                     raise
             except Exception as error:
-                raise ValidationError('回调信息错误，若需要回调，请按示例填写')
+                raise ValidationError("回调信息错误，若需要回调，请按示例填写")
 
     def validate_skip_if(self, field):
         """ 校验跳过条件 """
-        if hasattr(self, 'quote_case'):
+        if hasattr(self, "quote_case"):
             if self.quote_case.data:
                 return
         for index, skip_if in enumerate(field.data):
@@ -218,18 +220,36 @@ class BaseForm(Form, JsonUtil):
             data_type, expect = skip_if.get("data_type"), skip_if.get("expect")
             if any((skip_type, data_source, check_value, comparator, data_type, expect)):
                 if skip_type and data_source and comparator and data_type and expect:
-                    if data_source != 'run_env' and not check_value:
-                        raise ValidationError(f'【跳过条件】第【{index}】行设置的条件错误，请检查')
+                    if data_source != "run_env" and not check_value:
+                        raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
                     else:
                         try:
-                            if data_type in ["variable", "func", 'str']:
+                            if data_type in ["variable", "func", "str"]:
                                 continue
-                            elif data_type == 'json':
+                            elif data_type == "json":
                                 self.dumps(self.loads(expect))
                                 continue
                             else:  # python数据类型
-                                eval(f'{data_type}({expect})')
+                                eval(f"{data_type}({expect})")
                                 continue
                         except Exception as error:
-                            raise ValidationError(f'【跳过条件】第【{index}】行设置的条件错误，请检查')
-                raise ValidationError(f'【跳过条件】第【{index}】行设置的条件错误，请检查')
+                            raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
+                raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
+
+    def validate_email(self, email_server, email_from, email_pwd, email_to):
+        """ 发件邮箱、发件人、收件人、密码 """
+        if not email_server:
+            raise ValidationError("选择了要邮件接收，则发件邮箱服务器必填")
+
+        if not email_to or not email_from or not email_pwd:
+            raise ValidationError("选择了要邮件接收，则发件人、收件人、密码3个必须有值")
+
+        # 校验发件邮箱
+        if email_from and not validators.email(email_from.strip()):
+            raise ValidationError(f"发件人邮箱【{email_from}】格式错误")
+
+        # 校验收件邮箱
+        for mail in email_to.split(";"):
+            mail = mail.strip()
+            if mail and not validators.email(mail):
+                raise ValidationError(f"收件人邮箱【{mail}】格式错误")

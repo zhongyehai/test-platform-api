@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import xlrd
 
 
@@ -9,10 +8,10 @@ def parse_file_content(file_contents):
     for row in range(1, sheet.nrows):
         row_data = {}
         for col in range(sheet.ncols):
-            row_data[sheet.cell_value(0, col)] = sheet.cell_value(row, col)  # {'列title': '列值'}
+            row_data[sheet.cell_value(0, col)] = sheet.cell_value(row, col)  # {"列title": "列值"}
         all_data.append(row_data)
     return all_data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

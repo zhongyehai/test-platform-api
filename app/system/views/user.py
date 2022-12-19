@@ -24,7 +24,7 @@ class GetUserListView(LoginRequiredView):
         if form.detail.data:  # 获取用户详情列表
             return app.restful.success(data=User.make_pagination(form))
         return app.restful.success(
-            data={"data": [user.to_dict(filter_list=['id', 'name']) for user in User.get_all()]})
+            data={"data": [user.to_dict(filter_list=["id", "name"]) for user in User.get_all()]})
 
 
 class UserLoginView(NotLoginView):
@@ -34,15 +34,15 @@ class UserLoginView(NotLoginView):
         form = LoginForm().do_validate()
         user = form.user
         user_info = user.to_dict()
-        user_info['token'] = user.generate_reset_token()
-        return app.restful.success('登录成功', user_info)
+        user_info["token"] = user.generate_reset_token()
+        return app.restful.success("登录成功", user_info)
 
 
 class UserLogoutView(NotLoginView):
 
     def get(self):
         """ 登出 """
-        return app.restful.success(msg='登出成功')
+        return app.restful.success(msg="登出成功")
 
 
 class ChangeUserPasswordView(AdminRequiredView):
@@ -50,7 +50,7 @@ class ChangeUserPasswordView(AdminRequiredView):
     def put(self):
         """ 修改密码 """
         form = ChangePasswordForm().do_validate()
-        form.user.update({'password': form.newPassword.data})
+        form.user.update({"password": form.newPassword.data})
         return app.restful.success(f'密码已修改为 {form.newPassword.data}')
 
 
@@ -69,7 +69,7 @@ class UserView(AdminRequiredView):
     def get(self):
         """ 获取用户 """
         form = GetUserEditForm().do_validate()
-        data = {'account': form.user.account, 'name': form.user.name, 'role_id': form.user.role_id}
+        data = {"account": form.user.account, "name": form.user.name, "role_id": form.user.role_id}
         return app.restful.success(data=data)
 
     def post(self):
@@ -89,13 +89,13 @@ class UserView(AdminRequiredView):
     #     form = DeleteUserForm()
     #     if form.validate():
     #         form.user.delete()
-    #         return app.restful.success('删除成功')
+    #         return app.restful.success("删除成功")
     #     return app.restful.fail(form.get_error())
 
 
-system_manage.add_url_rule('/user', view_func=UserView.as_view('UserView'))
-system_manage.add_url_rule('/user/login', view_func=UserLoginView.as_view('UserLoginView'))
-system_manage.add_url_rule('/user/logout', view_func=UserLogoutView.as_view('UserLogoutView'))
-system_manage.add_url_rule('/user/list', view_func=GetUserListView.as_view('GetUserListView'))
-system_manage.add_url_rule('/user/status', view_func=ChangeUserStatusView.as_view('ChangeUserStatusView'))
-system_manage.add_url_rule('/user/password', view_func=ChangeUserPasswordView.as_view('ChangeUserPasswordView'))
+system_manage.add_url_rule("/user", view_func=UserView.as_view("UserView"))
+system_manage.add_url_rule("/user/login", view_func=UserLoginView.as_view("UserLoginView"))
+system_manage.add_url_rule("/user/logout", view_func=UserLogoutView.as_view("UserLogoutView"))
+system_manage.add_url_rule("/user/list", view_func=GetUserListView.as_view("GetUserListView"))
+system_manage.add_url_rule("/user/status", view_func=ChangeUserStatusView.as_view("ChangeUserStatusView"))
+system_manage.add_url_rule("/user/password", view_func=ChangeUserPasswordView.as_view("ChangeUserPasswordView"))

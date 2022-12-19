@@ -1,4 +1,4 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
 import types
 
 from utils.variables.runner import extract_exp_start

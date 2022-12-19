@@ -9,13 +9,14 @@ from utils.util.jsonUtil import JsonUtil
 from app.baseModel import db
 from app.system.models.user import User, Permission, Role
 from app.config.models.config import Config, ConfigType
+from app.system.models.business import BusinessLine
 from app.assist.models.func import Func
 from main import app
 
 manager = Manager(app)
 
 Migrate(app, db)
-manager.add_command('db', MigrateCommand)
+manager.add_command("db", MigrateCommand)
 
 
 def print_start_delimiter(content):
@@ -137,6 +138,12 @@ kym_keword = [
     }
 ]
 
+# 默认分页信息
+pagination_size = {
+    "page_num": 1,
+    "page_size": 20,
+}
+
 # 响应数据源
 response_data_source_mapping = [
     {"label": "响应体", "value": "content"},
@@ -155,8 +162,14 @@ data_type_mapping = [
     {"label": "列表", "value": "list"},
     {"label": "字典", "value": "dict"},
     {"label": "自定义函数", "value": "func"},
-    {"label": "自定义变量", "value": "variable"},
+    {"label": "自定义变量", "value": "variable"}
 ]
+
+# ui自动化支持的浏览器
+browser_name = {
+    "chrome": "chrome",
+    "gecko": "火狐"
+}
 
 # ui自动化元素定位方式
 find_element_option = [
@@ -181,14 +194,33 @@ run_type = {
     "task": "任务",
 }
 
+# 测试类型
+test_type = [
+    {"key": "api", "label": "接口测试"},
+    {"key": "appUi", "label": "app测试"},
+    {"key": "webUi", "label": "ui测试"}
+]
+
+# 运行app自动化的服务器设备系统映射
+server_os_mapping = ["Windows", "Mac", "Linux"]
+
+# 运行app自动化的手机设备系统映射
+phone_os_mapping = ["Android", "iOS"]
+
+# 创建项目/服务时，默认要同时创建的用例集列表
+case_set_list = ["引用用例集", "流程用例集", "单接口用例集", "辅助测试用例集"]
+
+# 回调流水线消息内容
+call_back_msg_addr = ""
+
 
 @manager.command
 def init_role():
     """ 初始化权限、角色 """
     print_type_delimiter("开始创建角色")
     roles_permissions_map = OrderedDict()
-    roles_permissions_map[u'测试人员'] = ['COMMON']
-    roles_permissions_map[u'管理员'] = ['COMMON', 'ADMINISTER']
+    roles_permissions_map["测试人员"] = ["COMMON"]
+    roles_permissions_map["管理员"] = ["COMMON", "ADMINISTER"]
     for role_name in roles_permissions_map:
         role = Role.get_first(name=role_name)
         if role is None:
@@ -208,13 +240,26 @@ def init_role():
 @manager.command
 def init_user():
     """ 初始化用户 """
+
+    # 创建业务线
+    print_type_delimiter("开始创建业务线")
+    business_dict = {"name": "公共业务线", "desc": "公共业务线，所有人都可见、可操作", "num": 0}
+    business = BusinessLine.get_first(name=business_dict["name"])
+    if business is None:
+        business = BusinessLine().create(business_dict)
+        print_item_delimiter(f'业务线【{business.name}】创建成功')
+    print_type_delimiter("业务线创建完成")
+
+    # 创建用户
     print_type_delimiter("开始创建用户")
     user_list = [
-        {'account': 'admin', 'password': '123456', 'name': '管理员', 'status': 1, 'role_id': 2},
-        {'account': 'common', 'password': 'common', 'name': '公用账号', 'status': 1, 'role_id': 1}
+        {"account": "admin", "password": "123456", "name": "管理员", "role_id": 2},
+        {"account": "common", "password": "common", "name": "公用账号", "role_id": 1}
     ]
     for user_info in user_list:
-        if User.get_first(account=user_info['account']) is None:
+        if User.get_first(account=user_info["account"]) is None:
+            user_info["status"] = 1
+            user_info["business_id"] = business.id
             User().create(user_info)
             print_item_delimiter(f'用户【{user_info["name"]}】创建成功')
     print_type_delimiter("用户创建完成")
@@ -225,10 +270,11 @@ def init_config_type():
     """ 初始化配置类型 """
     print_type_delimiter("开始创建配置类型")
     config_type_list = [
-        {'name': '系统配置', 'desc': '全局配置'},
-        {'name': '邮箱', 'desc': '邮箱服务器'},
-        {'name': '接口自动化', 'desc': '接口自动化测试'},
-        {'name': 'webUi自动化', 'desc': 'webUi自动化测试'}
+        {"name": "系统配置", "desc": "全局配置"},
+        {"name": "邮箱", "desc": "邮箱服务器"},
+        {"name": "接口自动化", "desc": "接口自动化测试"},
+        {"name": "webUi自动化", "desc": "webUi自动化测试"},
+        {"name": "appUi自动化", "desc": "appUi自动化测试"}
     ]
     for data in config_type_list:
         if ConfigType.get_first(name=data["name"]) is None:
@@ -241,59 +287,109 @@ def init_config_type():
 def init_config():
     """ 初始化配置 """
 
-    type_dict = {config_type.name: config_type.id for config_type in ConfigType.get_all()}  # 所有配置类型
     print_type_delimiter("开始创建配置")
+
+    # 配置
+    type_dict = {config_type.name: config_type.id for config_type in ConfigType.get_all()}  # 所有配置类型
     conf_dict = {
-        '邮箱': [
-            {'name': 'QQ邮箱', 'value': 'smtp.qq.com', 'desc': 'QQ邮箱服务器'}
+        "邮箱": [
+            {"name": "QQ邮箱", "value": "smtp.qq.com", "desc": "QQ邮箱服务器"}
         ],
 
-        '系统配置': [
-            {'name': 'platform_name', 'value': '极测平台', 'desc': '测试平台名字'},
-            {'name': 'run_test_env', 'value': JsonUtil.dumps(env_dict), 'desc': '测试平台支持的环境'},
-            {'name': 'default_env', 'value': list(env_dict.keys())[0], 'desc': '编辑、运行时，默认选择的环境'},
-            {'name': 'run_type', 'value': JsonUtil.dumps(run_type), 'desc': '运行测试的类型'},
-            {'name': 'make_user_info_mapping', 'value': JsonUtil.dumps(make_user_info_mapping),
-             'desc': '生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）'},
-            {'name': 'data_type_mapping', 'value': JsonUtil.dumps(data_type_mapping), 'desc': 'python数据类型映射'},
-            {'name': 'yapi_host', 'value': '', 'desc': 'yapi域名'},
-            {'name': 'yapi_account', 'value': '', 'desc': 'yapi账号'},
-            {'name': 'yapi_password', 'value': '', 'desc': 'yapi密码'},
-            {'name': 'ignore_keyword_for_group', 'value': '[]', 'desc': '不需要从yapi同步的分组关键字'},
-            {'name': 'ignore_keyword_for_project', 'value': '[]', 'desc': '不需要从yapi同步的服务关键字'},
-            {'name': 'kym', 'value': JsonUtil.dumps(kym_keword), 'desc': 'KYM分析项'},
-            {'name': 'default_diff_message_send_addr', 'value': '', 'desc': 'yapi接口监控报告默认发送钉钉机器人地址'},
-            {'name': 'run_time_out', 'value': '60', 'desc': '前端运行测试时，等待的超时时间，秒'},
-            {'name': 'call_back_response', 'value': '', 'desc': '回调接口的响应信息，若没有设置值，则回调代码里面的默认响应'},
-            {'name': 'callback_webhook', 'value': '', 'desc': '接口收到回调请求后即时通讯通知的地址'},
-            {'name': 'func_error_addr', 'value': 'http://localhost/#/assist/errorRecord',
-             'desc': '展示自定义函数错误记录的前端地址（用于即时通讯通知）'}
+        "系统配置": [
+            {"name": "platform_name", "value": "极测平台", "desc": "测试平台名字"},
+            {"name": "run_test_env", "value": JsonUtil.dumps(env_dict), "desc": "测试平台支持的环境"},
+            {"name": "default_env", "value": list(env_dict.keys())[0], "desc": "编辑、运行时，默认选择的环境"},
+            {"name": "run_type", "value": JsonUtil.dumps(run_type), "desc": "运行测试的类型"},
+            {"name": "case_set_list", "value": JsonUtil.dumps(case_set_list), "desc": "运行测试的类型"},
+            {"name": "data_type_mapping", "value": JsonUtil.dumps(data_type_mapping), "desc": "python数据类型映射"},
+            {"name": "yapi_host", "value": "", "desc": "yapi域名"},
+            {"name": "yapi_account", "value": "", "desc": "yapi账号"},
+            {"name": "yapi_password", "value": "", "desc": "yapi密码"},
+            {"name": "ignore_keyword_for_group", "value": "[]", "desc": "不需要从yapi同步的分组关键字"},
+            {"name": "ignore_keyword_for_project", "value": "[]", "desc": "不需要从yapi同步的服务关键字"},
+            {"name": "kym", "value": JsonUtil.dumps(kym_keword), "desc": "KYM分析项"},
+            {"name": "default_diff_message_send_addr", "value": "", "desc": "yapi接口监控报告默认发送钉钉机器人地址"},
+            {"name": "run_time_out", "value": "60", "desc": "前端运行测试时，等待的超时时间，秒"},
+            {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名"},
+            {"name": "pagination_size", "value": JsonUtil.dumps(pagination_size), "desc": "默认分页信息"},
+            {"name": "callback_webhook", "value": "", "desc": "接口收到回调请求后即时通讯通知的地址"},
+            {"name": "test_type", "value": JsonUtil.dumps(test_type), "desc": "测试类型"},
+            {"name": "call_back_msg_addr", "value": call_back_msg_addr, "desc": "发送回调流水线消息内容地址"},
+            {"name": "save_func_permissions", "value": "0",
+             "desc": "是否只允许管理员保存自定义函数，0所有人都可以，1管理员"},
+            {
+                "name": "call_back_response",
+                "value": "",
+                "desc": "回调接口的响应信息，若没有设置值，则回调代码里面的默认响应"
+            },
+            {
+                "name": "func_error_addr",
+                "value": "/#/assist/errorRecord",
+                "desc": "展示自定义函数错误记录的前端地址（用于即时通讯通知）"
+            },
+            {
+                "name": "make_user_info_mapping",
+                "value": JsonUtil.dumps(make_user_info_mapping),
+                "desc": "生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）"
+            },
         ],
 
-        '接口自动化': [
-            {'name': 'http_methods', 'value': 'GET,POST,PUT,DELETE', 'desc': 'http请求方式，以英文的 "," 隔开'},
-            {'name': 'response_data_source_mapping', 'value': JsonUtil.dumps(response_data_source_mapping),
-             'desc': '响应对象数据源映射'},
-            {'name': 'run_time_error_message_send_addr', 'value': '', 'desc': '运行测试用例时，有错误信息实时通知地址'},
-            {'name': 'request_time_out', 'value': 60, 'desc': '运行测试步骤时，request超时时间'},
-            {'name': 'is_parse_headers_by_swagger', 'value': "1", 'desc': '从swagger拉取数据时，是否解析头部参数, 1为要同步'},
-            {'name': 'api_report_addr', 'value': 'http://localhost/#/apiTest/reportShow?id=',
-             'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'},
-            {'name': 'diff_api_addr', 'value': 'http://localhost/#/assist/diffRecordShow?id=',
-             'desc': '展示yapi监控报告页面的前端地址（用于即时通讯通知）'}
+        "接口自动化": [
+            {"name": "http_methods", "value": "GET,POST,PUT,DELETE", "desc": "http请求方式，以英文的 ',' 隔开"},
+            {"name": "run_time_error_message_send_addr", "value": "", "desc": "运行测试用例时，有错误信息实时通知地址"},
+            {"name": "request_time_out", "value": 60, "desc": "运行测试步骤时，request超时时间"},
+            {
+                "name": "response_data_source_mapping",
+                "value": JsonUtil.dumps(response_data_source_mapping),
+                "desc": "响应对象数据源映射"
+            },
+            {
+                "name": "is_parse_headers_by_swagger",
+                "value": "1",
+                "desc": "从swagger拉取数据时，是否解析头部参数, 1为要同步"
+            },
+            {
+                "name": "api_report_addr",
+                "value": "/#/apiTest/reportShow?id=",
+                "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
+            },
+            {
+                "name": "diff_api_addr",
+                "value": "/#/assist/diffRecordShow?id=",
+                "desc": "展示yapi监控报告页面的前端地址（用于即时通讯通知）"
+            }
         ],
 
-        'webUi自动化': [
-            {'name': 'find_element_option', 'value': JsonUtil.dumps(find_element_option), 'desc': 'ui自动化定位元素方式'},
-            {'name': 'wait_time_out', 'value': 10, 'desc': '等待元素出现时间'},
-            {'name': 'ui_report_addr', 'value': 'http://localhost/#/webUiTest/reportShow?id=',
-             'desc': '展示测试报告页面的前端地址（用于即时通讯通知）'}
+        "webUi自动化": [
+            {"name": "wait_time_out", "value": 10, "desc": "等待元素出现时间"},
+            {"name": "browser_name", "value": JsonUtil.dumps(browser_name), "desc": "支持的浏览器"},
+            {
+                "name": "find_element_option",
+                "value": JsonUtil.dumps(find_element_option),
+                "desc": "ui自动化定位元素方式"
+            },
+            {
+                "name": "web_ui_report_addr",
+                "value": "/#/webUiTest/reportShow?id=",
+                "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
+            }
+        ],
+
+        "appUi自动化": [
+            {"name": "server_os_mapping", "value": JsonUtil.dumps(server_os_mapping), "desc": "appium服务器系统类型"},
+            {"name": "phone_os_mapping", "value": JsonUtil.dumps(phone_os_mapping), "desc": "运行app自动化的手机系统"},
+            {
+                "name": "app_ui_report_addr",
+                "value": "/#/appUiTest/reportShow?id=",
+                "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
+            }
         ]
     }
     for conf_type, conf_list in conf_dict.items():
         for conf in conf_list:
             if Config.get_first(name=conf["name"]) is None:
-                conf['type'] = type_dict[conf_type]
+                conf["type"] = type_dict[conf_type]
                 Config().create(conf)
                 print_item_delimiter(f'配置【{conf["name"]}】创建成功')
     print_type_delimiter("配置创建完成")
@@ -304,13 +400,13 @@ def init_func_files():
     """ 初始化函数文件模板 """
     print_type_delimiter("开始创建函数文件模板")
     func_file_list = [
-        {'name': 'base_template', 'desc': '自定义函数文件使用规范说明'},
-        {'name': 'utils_template', 'desc': '工具类自定义函数操作模板'},
-        {'name': 'database_template', 'desc': '数据库操作类型的自定义函数文件模板'}
+        {"name": "base_template", "desc": "自定义函数文件使用规范说明"},
+        {"name": "utils_template", "desc": "工具类自定义函数操作模板"},
+        {"name": "database_template", "desc": "数据库操作类型的自定义函数文件模板"}
     ]
     for data in func_file_list:
         if Func.get_first(name=data["name"]) is None:
-            with open(os.path.join('static', f'{data["name"]}.py'), 'r', encoding='utf-8') as fp:
+            with open(os.path.join("static", f'{data["name"]}.py'), "r", encoding="utf-8") as fp:
                 func_data = fp.read()
             data["func_data"] = func_data
             Func().create(data)
@@ -340,5 +436,5 @@ python dbMigration.py db upgrade
 python dbMigration.py init
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     manager.run()

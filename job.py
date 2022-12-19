@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import requests
 from flask import request
 from flask.views import MethodView
@@ -21,7 +20,7 @@ host = "http://localhost:8024"
 
 def login():
     response = requests.post(
-        url=f"{host}/api/system/user/login",
+        url=f'{host}/api/system/user/login',
         json={
             "account": "common",
             "password": "common"
@@ -36,7 +35,8 @@ def run_task(task_id, task_type):
         url=f'{host}/api/{task_type}Test/task/run',
         headers=login(),
         json={
-            "id": task_id
+            "id": task_id,
+            "trigger_type": "cron"
         }
     )
     job.logger.info(f'{"*" * 20} 定时任务触发完毕 {"*" * 20}')
@@ -53,7 +53,7 @@ class JobStatus(MethodView):
         with job.db.auto_commit():
             scheduler.add_job(
                 func=run_task,  # 异步执行任务
-                trigger='cron',
+                trigger="cron",
                 misfire_grace_time=60,
                 coalesce=False,
                 kwargs={"task_id": task["id"], "task_type": task_type},

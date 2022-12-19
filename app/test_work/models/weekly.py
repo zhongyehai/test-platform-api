@@ -6,11 +6,11 @@ from app.baseModel import BaseModel, db
 
 class WeeklyConfigModel(BaseModel):
     """ 周报配置表 """
-    __tablename__ = 'test_work_weekly_config'
+    __tablename__ = "test_work_weekly_config"
 
-    name = db.Column(db.Text(), comment='名字')
-    parent = db.Column(db.Integer(), nullable=True, default=None, comment='上一级的id，有上一级则为项目，否则为产品')
-    desc = db.Column(db.Text(), comment='备注')
+    name = db.Column(db.Text(), comment="名字")
+    parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级的id，有上一级则为项目，否则为产品")
+    desc = db.Column(db.Text(), comment="备注")
 
     @classmethod
     def get_data_dict(cls):
@@ -42,14 +42,14 @@ class WeeklyConfigModel(BaseModel):
 
         # 获取所有产品
         for index, data in enumerate(product_list):
-            if not data['parent']:
+            if not data["parent"]:
                 cls.build_project_product(container, data)
-                cls.build_project_container(container[data['id']], data)
+                cls.build_project_container(container[data["id"]], data)
 
         # 根据产品id获取所有项目
         for product_id, product_data in container.items():
             for index, data in enumerate(product_list):
-                if data['parent'] == product_id:
+                if data["parent"] == product_id:
                     cls.build_project_container(product_data, data)
 
         return container
@@ -57,21 +57,21 @@ class WeeklyConfigModel(BaseModel):
     @classmethod
     def build_project_product(cls, container, data):
         """ 插入项目 """
-        container[data['id']] = {
-            'total': 0,
-            'name': data['name'],
-            'project': {}
+        container[data["id"]] = {
+            "total": 0,
+            "name": data["name"],
+            "project": {}
         }
 
     @classmethod
     def build_project_container(cls, container, data):
         """ 插入项目 """
-        container['project'][data['id']] = {
-            'name': data['name'],
-            'total': 0,
-            'version': {}
+        container["project"][data["id"]] = {
+            "name": data["name"],
+            "total": 0,
+            "version": {}
         }
-        container['total'] += 1
+        container["total"] += 1
 
     @classmethod
     def make_pagination(cls, form):
@@ -79,8 +79,8 @@ class WeeklyConfigModel(BaseModel):
         filters = []
         if form.name.data:
             filters.append(WeeklyConfigModel.name == form.name.data)
-        if form.parent.data and form.parent.data != 'all':
-            data = None if form.parent.data == 'null' else form.parent.data
+        if form.parent.data and form.parent.data != "all":
+            data = None if form.parent.data == "null" else form.parent.data
             filters.append(WeeklyConfigModel.parent == data)
         return cls.pagination(
             page_num=form.pageNum.data,
@@ -92,15 +92,15 @@ class WeeklyConfigModel(BaseModel):
 
 class WeeklyModel(BaseModel):
     """ 周报明细表 """
-    __tablename__ = 'test_work_weekly'
+    __tablename__ = "test_work_weekly"
 
-    product_id = db.Column(db.String(5), comment='产品id')
-    project_id = db.Column(db.String(5), comment='项目id')
-    version = db.Column(db.String(255), comment='版本号')
-    task_item = db.Column(db.Text(), comment='任务明细和进度')
-    start_time = db.Column(db.DateTime, default=datetime.now, comment='开始时间')
-    end_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, comment='结束时间')
-    desc = db.Column(db.Text(), comment='备注')
+    product_id = db.Column(db.String(5), comment="产品id")
+    project_id = db.Column(db.String(5), comment="项目id")
+    version = db.Column(db.String(255), comment="版本号")
+    task_item = db.Column(db.Text(), comment="任务明细和进度")
+    start_time = db.Column(db.DateTime, default=datetime.now, comment="开始时间")
+    end_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, comment="结束时间")
+    desc = db.Column(db.Text(), comment="备注")
 
     @classmethod
     def make_pagination(cls, form):
@@ -113,7 +113,7 @@ class WeeklyModel(BaseModel):
         if form.version.data:
             filters.append(WeeklyModel.version == form.version.data)
         if form.task_item.data:
-            filters.append(WeeklyModel.task_item.like(f'%{form.task_item.data}%'))
+            filters.append(WeeklyModel.task_item.like(f"%{form.task_item.data}%"))
         if form.start_time.data:
             filters.append(WeeklyModel.start_time >= form.start_time.data)
         if form.end_time.data:

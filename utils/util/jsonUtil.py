@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import json
 
 
@@ -9,15 +8,15 @@ class JsonUtil:
     @classmethod
     def dump(cls, obj, fp, *args, **kwargs):
         """ json.dump """
-        kwargs.setdefault('ensure_ascii', False)
-        kwargs.setdefault('indent', 4)
+        kwargs.setdefault("ensure_ascii", False)
+        kwargs.setdefault("indent", 4)
         return json.dump(obj, fp, *args, **kwargs)
 
     @classmethod
     def dumps(cls, obj, *args, **kwargs):
         """ json.dumps """
-        kwargs.setdefault('ensure_ascii', False)
-        kwargs.setdefault('indent', 4)
+        kwargs.setdefault("ensure_ascii", False)
+        kwargs.setdefault("indent", 4)
         return json.dumps(obj, *args, **kwargs)
 
     @classmethod
@@ -39,8 +38,8 @@ class JsonUtil:
         return dict_data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     d = {
-        'a': {'a1': 'b2'},
-        'b': {'b1', 'b2'}
+        "a": {"a1": "b2"},
+        "b": {"b1", "b2"}
     }
