@@ -409,19 +409,21 @@ class GetWebDriver(Actions):
         return getattr(self, self.browser_name)()  # 获取浏览器对象
 
     def chrome(self):
+        """ chrome浏览器 """
         chrome_options = chromeOptions()
 
         # 设置配置信息
         prefs = {'profile.default_content_settings.popups': 0, 'download.default_directory': 'd:\\'}
         chrome_options.add_experimental_option('prefs', prefs)
 
-        # chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
         # return webdriver.Chrome(executable_path=self.browser_driver_path)
 
     def gecko(self):
+        """ 火狐浏览器 """
         firefox_options = firefoxOptions()
 
         # 置成0代表下载到浏览器默认下载路径，设置成2则可以保存到指定的目录

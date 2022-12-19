@@ -5,6 +5,7 @@ from wtforms.validators import Length, DataRequired
 from app.baseForm import BaseForm
 from app.api_test.models.project import ApiProject as Project
 from app.api_test.models.module import ApiModule as Module
+from app.api_test.models.api import ApiMsg as Api
 
 
 class AddModelForm(BaseForm):
@@ -65,7 +66,7 @@ class DeleteModelForm(ModuleIdForm):
     def validate_id(self, field):
         module = self.validate_data_is_exist(f"id为【{field.data}】的模块不存在", Module, id=field.data)
         self.validate_data_is_true("不能删除别人服务下的模块", Project.is_can_delete(module.project_id, module))
-        self.validate_data_is_false("请先删除模块下的接口", module.apis)
+        self.validate_data_is_false("请先删除模块下的接口",  Api.get_first(module_id=module.id))
         self.validate_data_is_false("请先删除当前模块下的子模块", Module.get_first(parent=module.id))
         setattr(self, "module", module)
 
