@@ -130,7 +130,6 @@ class ApiRunApiMsgView(LoginRequiredView):
         report = Report.get_new_report(
             name=api.name,
             run_type="api",
-            performer=g.user_name,
             create_user=g.user_id,
             project_id=form.projectId.data
         )

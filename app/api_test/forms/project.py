@@ -13,6 +13,7 @@ class AddProjectForm(BaseForm):
     """ 添加服务参数校验 """
     name = StringField(validators=[DataRequired("服务名称不能为空"), Length(1, 255, message="服务名长度不可超过255位")])
     manager = StringField(validators=[DataRequired("请选择负责人")])
+    business_id = StringField(validators=[DataRequired("请选择业务线")])
     num = StringField()
     swagger = StringField()
     func_files = StringField()

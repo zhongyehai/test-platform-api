@@ -242,14 +242,12 @@ class RunCaseBusiness:
             task={},
             appium_config={},
             extend_data={},
-            performer=None,
             create_user=None
     ):
         """ 运行用例/任务 """
         report = report_id or report_model.get_new_report(
             name=report_name,
             run_type=task_type,
-            performer=performer,
             create_user=create_user,
             project_id=project_id,
             env=env,

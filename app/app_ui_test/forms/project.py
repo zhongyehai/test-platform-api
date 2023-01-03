@@ -16,6 +16,7 @@ class AddUiProjectForm(BaseForm):
     manager = StringField(validators=[DataRequired("请选择负责人")])
     app_package = StringField(validators=[DataRequired("app包名不能为空")])
     app_activity = StringField(validators=[DataRequired("activity不能为空")])
+    business_id = StringField(validators=[DataRequired("请选择业务线")])
     func_files = StringField()
     num = StringField()
 

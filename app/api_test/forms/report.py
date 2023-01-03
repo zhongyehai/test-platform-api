@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from wtforms import IntegerField
+from wtforms import IntegerField, StringField
 from wtforms.validators import DataRequired
 
 from utils.util.fileUtil import API_REPORT_ADDRESS, FileUtil
@@ -43,3 +43,5 @@ class FindReportForm(BaseForm):
     projectId = IntegerField(validators=[DataRequired("请选择服务")])
     pageNum = IntegerField()
     pageSize = IntegerField()
+    projectName = StringField()
+    createUser = StringField()

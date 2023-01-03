@@ -13,6 +13,13 @@ class AppUiRunServer(BaseModel):
     os = db.Column(db.String(255), nullable=True, comment="服务器系统类型：windows/mac/linux")
     ip = db.Column(db.String(255), nullable=True, comment="服务器ip地址")
     port = db.Column(db.String(255), default="4723", nullable=True, comment="服务器端口号")
+    status = db.Column(db.Integer(), default=0, comment="最近一次访问状态，0:未访问，1:访问失败，2:访问成功")
+
+    def request_fail(self):
+        self.update({"status": 1})
+
+    def request_success(self):
+        self.update({"status": 2})
 
     @classmethod
     def make_pagination(cls, form):

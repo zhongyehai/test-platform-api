@@ -14,6 +14,7 @@ class AddUiProjectForm(BaseForm):
     """ 添加项目参数校验 """
     name = StringField(validators=[DataRequired("项目名称不能为空"), Length(1, 255, message="项目名长度不可超过255位")])
     manager = StringField(validators=[DataRequired("请选择负责人")])
+    business_id = StringField(validators=[DataRequired("请选择业务线")])
     func_files = StringField()
     num = StringField()
 

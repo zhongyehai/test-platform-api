@@ -263,6 +263,10 @@ class BaseModel(db.Model, JsonUtil):
             return self.str_created_time
         elif column_name == "update_time":
             return self.str_update_time
+        elif column_name == "start_time":
+            return self.str_start_time
+        elif column_name == "end_time":
+            return self.str_end_time
         else:
             data = getattr(self, column_name)
             # 字段有值且在要转json的列表里面，就转为json
@@ -306,6 +310,7 @@ class BaseProject(BaseModel):
     manager = db.Column(db.Integer(), nullable=True, default=1, comment="服务管理员id，默认为admin")
     func_files = db.Column(db.Text(), nullable=True, default="[]", comment="引用的函数文件")
     num = db.Column(db.Integer(), nullable=True, comment="当前服务的序号")
+    business_id = db.Column(db.Integer(), comment="所属业务线")
 
     def is_not_manager(self):
         """ 判断用户非服务负责人 """
@@ -346,6 +351,7 @@ class BaseProject(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
+        filters.append(cls.business_id.in_(g.business_id))
         if form.name.data:
             filters.append(cls.name.like(f'%{form.name.data}%'))
         if form.projectId.data:
@@ -474,11 +480,13 @@ class BaseCaseSet(BaseModel):
         for index, name in enumerate(Config.get_case_set_list()):
             cls().create({"name": name, "num": index, "project_id": project_id})
 
-    def get_run_case_id(self, case_model):
+    def get_run_case_id(self, case_model, business_id):
         """ 获取用例集下，状态为要运行的用例id """
         data = [
             case.id for case in
-            case_model.query.filter_by(set_id=self.id, status=1).order_by(case_model.num.asc()).all()
+            case_model.query.filter_by(
+                set_id=self.id, status=1, business_id=business_id
+            ).order_by(case_model.num.asc()).all()
         ]
         return data
 
@@ -655,13 +663,13 @@ class BaseReport(BaseModel):
 
     name = db.Column(db.String(128), nullable=True, comment="测试报告名称")
     is_passed = db.Column(db.Integer, default=1, comment="是否全部通过，1全部通过，0有报错")
-    performer = db.Column(db.String(255), nullable=True, comment="执行者")
     run_type = db.Column(db.String(255), default="task", nullable=True, comment="报告类型，task/case/api")
     status = db.Column(db.Integer, default=1, comment="是否执行完毕，1执行中，2执行完毕")
     retry_count = db.Column(db.Integer, default=0, comment="已经执行重试的次数")
     env = db.Column(db.String(255), default="test", comment="运行环境")
     process = db.Column(db.Integer, default=1, comment="进度, 1: 解析数据、2: 执行测试、3: 写入报告")
-    trigger_type = db.Column(db.String(128), nullable=True, comment="触发类型，pipeline：流水线触发、其余为页面触发")
+    trigger_type = db.Column(
+        db.String(128), nullable=True, default="page", comment="触发类型，pipeline:流水线、page:页面、cron:定时任务")
     project_id = db.Column(db.Integer, comment="所属的服务id")
 
     def update_status(self, run_result, status=2):
@@ -704,7 +712,6 @@ class BaseReport(BaseModel):
 
     @classmethod
     def get_new_report(cls, **kwargs):
-        kwargs["performer"] = kwargs["performer"] or g.user_name
         kwargs["create_user"] = kwargs["create_user"] or g.user_id
         return cls().create(kwargs)
 
@@ -712,6 +719,10 @@ class BaseReport(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
+        if form.projectName.data:
+            filters.append(cls.name.like(f"%{form.projectName.data}%"))
+        if form.createUser.data:
+            filters.append(cls.create_user == form.createUser.data)
         if form.projectId.data:
             filters.append(cls.project_id == form.projectId.data)
         return cls.pagination(
@@ -869,6 +880,10 @@ class Config(BaseModel):
     @classmethod
     def get_run_type(cls):
         return cls.loads(cls.get_first(name="run_type").value)
+
+    @classmethod
+    def get_sync_mock_data(cls):
+        return cls.loads(cls.get_first(name="sync_mock_data").value)
 
     @classmethod
     def get_save_func_permissions(cls):

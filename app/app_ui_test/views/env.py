@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import request, current_app as app
+import requests
 
 from app.baseView import LoginRequiredView
 from app.app_ui_test.blueprint import app_ui_test
@@ -35,28 +36,45 @@ class AppUiRunServerCopyView(LoginRequiredView):
         return app.restful.success(msg="复制成功", data=new_server.to_dict())
 
 
+class AppUiRunServer(LoginRequiredView):
+
+    def get(self):
+        """ 调appium服务器 """
+        form = HasServerIdForm().do_validate()
+        try:
+            status_code = requests.get(f'http://{form.server.ip}:{form.server.port}', timeout=5).status_code
+        except Exception as error:
+            form.server.request_fail()
+            return app.restful.fail(msg="设置的appium服务器地址不能访问，请检查")
+        if status_code > 499:  # 5开头的
+            form.server.request_fail()
+            return app.restful.fail(msg=f'设置的appium服务器地址响应状态码为 {status_code}，请检查')
+        form.server.request_success()
+        return app.restful.success(msg=f'服务器访问成功，响应为：状态码为 {status_code}')
+
+
 class AppUiRunServerView(LoginRequiredView):
 
     def get(self):
-        """ 获取定时任务 """
+        """ 获取服务 """
         form = HasServerIdForm().do_validate()
         return app.restful.success(data=form.server.to_dict())
 
     def post(self):
-        """ 新增定时任务 """
+        """ 新增服务 """
         form = AddServerForm().do_validate()
         form.num.data = Server.get_insert_num()
         new_server = Server().create(form.data)
         return app.restful.success(f"服务器【{form.name.data}】新建成功", new_server.to_dict())
 
     def put(self):
-        """ 修改定时任务 """
+        """ 修改服务 """
         form = EditServerForm().do_validate()
         form.server.update(form.data)
         return app.restful.success(f"服务器【{form.name.data}】修改成功", form.server.to_dict())
 
     def delete(self):
-        """ 删除定时任务 """
+        """ 删除服务 """
         form = HasServerIdForm().do_validate()
         form.server.delete()
         return app.restful.success(f"服务器【{form.server.name}】删除成功")
@@ -114,6 +132,7 @@ class AppUiRunPhoneView(LoginRequiredView):
         return app.restful.success(f"手机【{form.phone.name}】删除成功")
 
 
+app_ui_test.add_url_rule("/env/server/run", view_func=AppUiRunServer.as_view("AppUiRunServer"))
 app_ui_test.add_url_rule("/env/server", view_func=AppUiRunServerView.as_view("AppUiRunServerView"))
 app_ui_test.add_url_rule("/env/server/copy", view_func=AppUiRunServerCopyView.as_view("AppUiRunServerCopyView"))
 app_ui_test.add_url_rule("/env/server/list", view_func=AppUiGetRunServerListView.as_view("AppUiGetRunServerListView"))

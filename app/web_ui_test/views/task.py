@@ -35,7 +35,6 @@ class WebUiRunTaskView(NotLoginView):
             run_type="web_ui",
             run_func=RunCase,
             task=form.task.to_dict(),
-            performer=g.user_name or "自动化测试",
             create_user=g.user_id or User.get_first(account="common").id
         )
         return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})

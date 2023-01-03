@@ -35,7 +35,6 @@ class AppUiRunTaskView(NotLoginView):
             run_type="app",
             run_func=RunCase,
             task=form.task.to_dict(),
-            performer=g.user_name or "自动化测试",
             create_user=g.user_id or User.get_first(account="common").id,
             appium_config=appium_config
         )

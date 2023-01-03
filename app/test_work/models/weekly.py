@@ -102,6 +102,14 @@ class WeeklyModel(BaseModel):
     end_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, comment="结束时间")
     desc = db.Column(db.Text(), comment="备注")
 
+    @property
+    def str_start_time(self):
+        return datetime.strftime(self.start_time, "%Y-%m-%d %H:%M:%S")
+
+    @property
+    def str_end_time(self):
+        return datetime.strftime(self.end_time, "%Y-%m-%d %H:%M:%S")
+
     @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """

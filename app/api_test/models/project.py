@@ -9,7 +9,7 @@ class ApiProject(BaseProject):
     __tablename__ = "api_test_project"
 
     swagger = db.Column(db.String(255), default="", comment="服务对应的swagger地址")
-    last_pull_status = db.Column(db.Integer(), default=None, comment="最近一次swagger拉取状态，0拉取失败，2拉取成功")
+    last_pull_status = db.Column(db.Integer(), default=1, comment="最近一次swagger拉取状态，0拉取失败，1未拉取，2拉取成功")
     yapi_id = db.Column(db.Integer(), default=None, comment="对应YapiProject表里面的原始数据在yapi平台的id")
 
     def delete_current_and_env(self):

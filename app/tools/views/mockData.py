@@ -96,65 +96,23 @@ class GetAutoTestMockDataView(NotLoginView):
         return get_auto_test_mock_data()
 
 
-def get_mock_data():
-    """ 模拟数据源
-    1.json参数接收什么就返回什么
-    2.args.action：查询字符串传参（非必传），在需要指定场景时使用，error、time_out、空
-    {
-        "action": "", # 指定事件，error为报错， time_out为等待40秒
-        "is_async": "1",  # 判断数据源是同步还是异步
-        "addr": "",  # 异步回调地址
-        "token": "",  # 异步回调地址的token
-    }
-    """
-    datas = request.json
-
-    # action参数事件
-    actions(datas.get("action"))
-
-    # 根据是否有json参数判断是否为异步回调
-    if datas and datas.get("is_async"):
-        api_record_id, rating_request_id = datas.get("apiRecordId"), datas.get("ratingRequestId")
-        try:
-            # 发送异步回调
-            res = requests.post(
-                url=Config.get_data_source_callback_addr(),
-                headers={"x-auth-token": Config.get_data_source_callback_token()},
-                json={
-                    "applyType": 1,
-                    "code": 200,
-                    "apiRecordId": api_record_id,
-                    "ratingRequestId": rating_request_id,
-                    "message": "成功",
-                    "content": datas,
-                    "status": 200
-                }
-            )
-            msg = {"message": "异步数据源回调成功", "status": 200, "apiRecordId": api_record_id, "data": res.json()}
-        except Exception as error:
-            msg = {"message": "异步数据源回调失败", "status": 500, "apiRecordId": api_record_id, "data": str(error)}
-        send_msg_by_webhook("数据源回调结果", msg)
-        return jsonify(msg)
-    send_msg_by_webhook("数据源回调结果", {"message": "同步数据源回调成功", "status": 200})
-    return jsonify(datas)
+def get_sync_mock_data():
+    """ 模拟数据源(同步) """
+    return Config.get_sync_mock_data()
 
 
-class MockDataCommonView(NotLoginView):
+class MockDataSyncView(NotLoginView):
     def get(self):
-        """自动化测试模拟数据源"""
-        return get_mock_data()
+        return get_sync_mock_data()
 
     def post(self):
-        """自动化测试模拟数据源"""
-        return get_mock_data()
+        return get_sync_mock_data()
 
     def put(self):
-        """自动化测试模拟数据源"""
-        return get_mock_data()
+        return get_sync_mock_data()
 
     def delete(self):
-        """自动化测试模拟数据源"""
-        return get_mock_data()
+        return get_sync_mock_data()
 
 
 def call_back():
@@ -226,6 +184,6 @@ class MockApiView(NotLoginView):
 
 
 tool.add_url_rule("/mock", view_func=MockApiView.as_view("MockApiView"))
-tool.add_url_rule("/mock/common", view_func=MockDataCommonView.as_view("MockDataCommonView"))
+tool.add_url_rule("/mock/sync", view_func=MockDataSyncView.as_view("MockDataSyncView"))
 tool.add_url_rule("/mock/callBack", view_func=GetCallBackMockDataView.as_view("GetCallBackMockDataView"))
 tool.add_url_rule("/mock/autoTest", view_func=GetAutoTestMockDataView.as_view("GetAutoTestMockDataView"))

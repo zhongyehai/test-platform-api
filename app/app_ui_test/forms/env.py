@@ -23,12 +23,12 @@ class AddServerForm(BaseForm):
     name = StringField(validators=[DataRequired("服务器名字不能为空")])
     os = StringField(validators=[DataRequired("服务器系统类型不能为空")])
     ip = StringField(validators=[DataRequired("服务器ip地址不能为空")])
-    port = StringField()
+    port = StringField(validators=[DataRequired("服务器端口不能为空")])
     num = StringField()
 
     def validate_ip(self, field):
         """ 校验ip格式 """
-        self.validate_data_is_true("服务器ip错误", validators.ipv4(field.data) or validators.ipv6(field.data))
+        self.validate_data_is_true("服务器ip地址错误", validators.ipv4(field.data) or validators.ipv6(field.data))
 
     def validate_name(self, field):
         """ 校验服务器名不重复 """
