@@ -10,6 +10,8 @@ class GetConfigTypeListForm(BaseForm):
     """ 获取配置类型列表 """
     pageNum = IntegerField()
     pageSize = IntegerField()
+    create_user = StringField()
+    name = StringField()
 
 
 class ConfigTypeIdForm(BaseForm):
@@ -52,9 +54,12 @@ class PutConfigTypeForm(ConfigTypeIdForm, PostConfigTypeForm):
 
 class GetConfigListForm(BaseForm):
     """ 获取配置列表 """
-    type = StringField()
+    queryType = StringField()
     pageNum = IntegerField()
     pageSize = IntegerField()
+    create_user = StringField()
+    name = StringField()
+    value = StringField()
 
 
 class ConfigIdForm(BaseForm):

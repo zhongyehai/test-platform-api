@@ -11,6 +11,8 @@ class GetBusinessListForm(BaseForm):
     name = StringField()
     pageNum = IntegerField()
     pageSize = IntegerField()
+    create_user = StringField()
+    code = StringField()
 
 
 class BusinessIdForm(BaseForm):
@@ -33,10 +35,15 @@ class GetBusinessForm(BusinessIdForm):
 class PostBusinessForm(BaseForm):
     """ 新增业务线表单校验 """
     name = StringField(validators=[DataRequired("请输业务线名字")])
+    code = StringField(validators=[DataRequired("请输业务线code")])
+    num = StringField()
     desc = StringField()
 
     def validate_name(self, field):
         self.validate_data_is_not_exist(f"名为 {field.data} 的业务线名字已存在", BusinessLine, name=field.data)
+
+    def validate_code(self, field):
+        self.validate_data_is_not_exist(f"业务线code {field.data} 已存在", BusinessLine, code=field.data)
 
 
 class PutBusinessForm(BusinessIdForm, PostBusinessForm):
@@ -48,4 +55,12 @@ class PutBusinessForm(BusinessIdForm, PostBusinessForm):
             BusinessLine,
             self.id.data,
             name=field.data
+        )
+
+    def validate_code(self, field):
+        self.validate_data_is_not_repeat(
+            f"业务线code {field.data} 已存在",
+            BusinessLine,
+            self.id.data,
+            code=field.data
         )

@@ -90,6 +90,7 @@ class CaseBusiness:
             step_dict = step.to_dict()
             step_dict["case_id"], step_dict["num"] = to_case.id, num_start + index + 1
             step_list.append(step_model().create(step_dict).to_dict())
+            step.add_api_quote_count()
         return step_list
 
     @classmethod
@@ -118,6 +119,9 @@ class CaseBusiness:
             else:
                 step_dict["case_id"] = case_id
                 step_model().create(step_dict)
+
+            if step in from_list:
+                step.add_api_quote_count()
 
     @classmethod
     def put(cls, form, project_model, case_set_model, case_model, step_model):

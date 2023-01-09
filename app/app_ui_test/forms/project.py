@@ -41,7 +41,6 @@ class FindUiProjectForm(BaseForm):
     name = StringField()
     manager = StringField()
     create_user = StringField()
-    projectId = StringField()
     pageNum = IntegerField()
     pageSize = IntegerField()
 

@@ -354,8 +354,6 @@ class BaseProject(BaseModel):
         filters.append(cls.business_id.in_(g.business_id))
         if form.name.data:
             filters.append(cls.name.like(f'%{form.name.data}%'))
-        if form.projectId.data:
-            filters.append(cls.id == form.projectId.data)
         if form.manager.data:
             filters.append(cls.manager == form.manager.data)
         if form.create_user.data:
@@ -745,6 +743,11 @@ class ConfigType(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
+        if form.create_user.data:
+            filters.append(cls.create_user == form.create_user.data)
+        if form.name.data:
+            filters.append(cls.name.like(f'%{form.name.data}%'))
+
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
@@ -767,8 +770,15 @@ class Config(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        if form.type.data:
-            filters.append(cls.type == form.type.data)
+        if form.queryType.data:
+            filters.append(cls.type == form.queryType.data)
+        if form.create_user.data:
+            filters.append(cls.create_user == form.create_user.data)
+        if form.name.data:
+            filters.append(cls.name.like(f'%{form.name.data}%'))
+        if form.value.data:
+            filters.append(cls.value.like(f'%{form.value.data}%'))
+
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,

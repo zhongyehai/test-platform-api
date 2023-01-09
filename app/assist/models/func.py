@@ -51,6 +51,13 @@ class Func(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
+        if form.create_user.data:
+            filters.append(cls.create_user == form.create_user.data)
+        if form.update_user.data:
+            filters.append(cls.update_user == form.update_user.data)
+        if form.file_name.data:
+            filters.append(cls.name.like(f'%{form.file_name.data}%'))
+
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,

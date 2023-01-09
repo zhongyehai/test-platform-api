@@ -19,6 +19,9 @@ class GetFuncFileForm(BaseForm):
     """ 获取函数文件列表 """
     pageNum = IntegerField()
     pageSize = IntegerField()
+    create_user = StringField()
+    update_user = StringField()
+    file_name = StringField()
 
 
 class HasFuncForm(BaseForm):

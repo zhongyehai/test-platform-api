@@ -19,24 +19,25 @@ class GetBusinessListView(LoginRequiredView):
 class BusinessView(AdminRequiredView):
 
     def get(self):
-        """ 获取配置类型 """
+        """ 获取业务线 """
         form = GetBusinessForm().do_validate()
         return app.restful.success("获取成功", data=form.conf.to_dict())
 
     def post(self):
-        """ 新增配置类型 """
+        """ 新增业务线 """
         form = PostBusinessForm().do_validate()
+        form.num.data = BusinessLine.get_insert_num()
         business = BusinessLine().create(form.data)
         return app.restful.success("新增成功", data=business.to_dict())
 
     def put(self):
-        """ 修改配置类型 """
+        """ 修改业务线 """
         form = PutBusinessForm().do_validate()
         form.business.update(form.data)
         return app.restful.success("修改成功", data=form.business.to_dict())
 
     def delete(self):
-        """ 删除配置类型 """
+        """ 删除业务线 """
         form = DeleteBusinessForm().do_validate()
         form.business.delete()
         return app.restful.success("删除成功")
