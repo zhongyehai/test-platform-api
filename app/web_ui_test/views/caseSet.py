@@ -26,7 +26,7 @@ class WebUiRunCaseSetView(LoginRequiredView):
         """ 运行用例集下的用例 """
         form = RunCaseSetForm().do_validate()
         report_id = RunCaseBusiness.run(
-            env=form.env.data,
+            env_code=form.env_code.data,
             browser=form.browser.data,
             is_async=form.is_async.data,
             project_id=form.set.project_id,
@@ -34,7 +34,7 @@ class WebUiRunCaseSetView(LoginRequiredView):
             task_type="set",
             report_model=Report,
             case_id=form.set.get_run_case_id(Case),
-            run_type="web_ui",
+            run_type="webUi",
             run_func=RunCase
         )
         return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})

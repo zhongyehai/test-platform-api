@@ -157,7 +157,7 @@ def update_project(yapi_project):
             data_type = "add"
             db.session.add(project)
     if data_type == "add":
-        ApiProjectEnv.create_env(project.id, Config.get_run_test_env())  # 创建环境
+        ApiProjectEnv.create_env(project.id)  # 创建环境
     app.logger.info(f'解析yapi后的服务信息：\n{project.to_dict()}')
     return project
 

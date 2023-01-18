@@ -23,7 +23,7 @@ class WebUiRunTaskView(NotLoginView):
                 Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
             )
         report_id = RunCaseBusiness.run(
-            env=form.env.data or form.task.env,
+            env_code=form.env.data or form.task.env,
             browser=form.browser.data if hasattr(form, 'browser') else form.task.browser,
             trigger_type=form.trigger_type.data,
             is_async=form.is_async.data,
@@ -32,7 +32,7 @@ class WebUiRunTaskView(NotLoginView):
             task_type="task",
             report_model=Report,
             case_id=case_id,
-            run_type="web_ui",
+            run_type="webUi",
             run_func=RunCase,
             task=form.task.to_dict(),
             create_user=g.user_id or User.get_first(account="common").id

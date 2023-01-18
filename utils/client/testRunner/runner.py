@@ -54,13 +54,14 @@ class Runner(object):
         self.validation_results = []
         self.run_type = config.get("run_type") or "api"
         self.resp_obj = None
+        self.driver = None
 
         testcase_setup_hooks = config.get("setup_hooks", [])  # 用例级别的前置条件
         self.testcase_teardown_hooks = config.get("teardown_hooks", [])  # 用例级别的后置条件
 
         if self.run_type == "api":
             self.client_session = HttpSession(base_url)
-        elif self.run_type == "web_ui":
+        elif self.run_type == "webUi":
             self.client_session = WebDriverSession()
             # 每一次执行用例时会先实例化Runner，此时实例化driver
             self.driver = GetWebDriver(
@@ -117,7 +118,7 @@ class Runner(object):
                 if skip_if["data_source"] == "run_env":
                     skip_if["check_value"] = self.run_env
                     try:
-                        skip_if_result = self.session_context.do_validation(skip_if)  # 借用断言来判断条件是否为真
+                        skip_if_result = self.session_context.do_api_validation(skip_if)  # 借用断言来判断条件是否为真
                     except Exception as error:
                         skip_if_result = error
                     if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
@@ -238,6 +239,7 @@ class Runner(object):
                 variables_mapping=copy.deepcopy(variables_mapping),
                 **parsed_step
             )
+            # 数据提取
             extracted_variables_mapping = extract.extract_data(self.session_context, self.driver, extractors)
 
         self.client_session.meta_data['data'][0]['extract_msgs'] = extracted_variables_mapping
@@ -258,10 +260,12 @@ class Runner(object):
         # 断言
         validators = step_dict.get("validate", [])
         try:
-            if self.run_type == "api":
-                self.session_context.validate(validators, self.resp_obj)
-            else:
-                self.session_context.validate(validators, self.driver)
+            self.session_context.validate(
+                validators,
+                self.run_type,
+                resp_obj=self.resp_obj,
+                driver=self.driver
+            )
         except (exceptions.ParamsError, exceptions.ValidationFailure, exceptions.ExtractFailure):
             raise
         finally:

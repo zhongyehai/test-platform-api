@@ -39,7 +39,7 @@ class DebugFuncView(LoginRequiredView):
         name, debug_data = form.func.name, form.debug_data.data
 
         # 把自定义函数脚本内容写入到python脚本中
-        FileUtil.save_func_data(name, form.func.func_data, Config.get_default_env())
+        FileUtil.save_func_data(name, form.func.func_data)
 
         # 动态导入脚本
         try:

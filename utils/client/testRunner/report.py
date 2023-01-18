@@ -3,7 +3,10 @@ import platform
 import time
 import unittest
 from base64 import b64encode
-from collections import Iterable
+try:
+    from collections import Iterable
+except:
+    from collections.abc import Iterable
 
 import requests
 

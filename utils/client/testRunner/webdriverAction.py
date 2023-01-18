@@ -22,7 +22,7 @@ class Actions:
 
     def __init__(self, driver):
         self.driver = driver
-        self.timeout = 30  # 默认超时的时间设置
+        self.wait_time_out = 5  # 默认超时的时间设置
 
     @classmethod
     def get_class_property(cls, startswith: str):
@@ -52,15 +52,21 @@ class Actions:
 
     def web_driver_wait_until(self, *args, **kwargs):
         """ 基于 WebDriverWait().until()封装base方法 """
-        return WebDriverWait(self.driver, kwargs.get('wait_time_out', self.timeout), 1).until(*args)
+        return WebDriverWait(self.driver, kwargs.get('wait_time_out', self.wait_time_out), 1).until(*args)
 
     def find_element(self, locator: tuple, wait_time_out=None):
         """ 定位一个元素，参数locator是元祖类型，(定位方式, 定位元素)，如('id', 'username')，详见By的用法 """
-        return self.web_driver_wait_until(ec.presence_of_element_located(locator), wait_time_out=wait_time_out)
+        return self.web_driver_wait_until(
+            ec.presence_of_element_located(locator),
+            wait_time_out=wait_time_out or self.wait_time_out
+        )
 
     def find_elements(self, locator: tuple, wait_time_out=None):
         """ 定位一组元素 """
-        return self.web_driver_wait_until(ec.presence_of_all_elements_located(locator), wait_time_out=wait_time_out)
+        return self.web_driver_wait_until(
+            ec.presence_of_all_elements_located(locator),
+            wait_time_out=wait_time_out or self.wait_time_out
+        )
 
     def action_01open(self, url: str):
         """ 打开url """
@@ -103,8 +109,10 @@ class Actions:
 
     def action_12js_focus_element(self, locator: tuple, wait_time_out=None):
         """ 聚焦元素 """
-        self.driver.execute_script("arguments[0].scrollIntoView();",
-                                   self.find_element(locator, wait_time_out=wait_time_out))
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView();",
+            self.find_element(locator, wait_time_out=wait_time_out)
+        )
 
     def action_13js_scroll_top(self):
         """ 滚动到顶部 """
@@ -277,89 +285,124 @@ class Actions:
         """ 获取指定属性 """
         return self.find_element(locator, wait_time_out=wait_time_out).get_attribute(name)
 
-    def assert_50is_exists(self, locator: tuple, *args):
-        """ 元素存在 """
-        assert self.assert_61is_located(locator)
+    # def assert_50is_exists(self, locator: tuple, *args):
+    #     """ 元素存在 """
+    #     assert self.assert_61is_located(locator)
 
-    def assert_51_element_value_equal_to(self, locator: tuple, content, *args):
-        """ 元素value值等于 """
-        expect_value = self.extract_09_value(locator)
-        # assert expect_value == content, {'expect_value': expect_value}
-        assert expect_value == content, expect_value
-
-    def assert_52_element_value_larger_than(self, locator: tuple, content, *args):
-        """ 元素value值大于 """
-        expect_value = self.extract_09_value(locator)
-        assert float(self.extract_09_value(locator)) > content, {'expect_value': expect_value}
-
-    def assert_53_element_value_smaller_than(self, locator: tuple, content, *args):
-        """ 元素value值小于 """
-        expect_value = self.extract_09_value(locator)
-        assert float(self.extract_09_value(locator)) < content, {'expect_value': expect_value}
-
-    def assert_54is_selected_be(self, locator: tuple, *args):
-        """ 元素被选中，返回布尔值"""
-        assert self.web_driver_wait_until(ec.element_located_selection_state_to_be(locator, True)), {
-            'msg': '元素未被选中'}
-
-    def assert_55is_not_selected_be(self, locator: tuple, *args):
-        """ 元素未被选中，返回布尔值"""
-        assert self.web_driver_wait_until(ec.element_located_selection_state_to_be(locator, False)), {
-            'msg': '元素已被选中'}
-
-    def assert_56text_in_value(self, locator: tuple, value: str, *args):
+    def assert_50str_in_value(self, locator: tuple, value: str, *args):
         """
         元素value值包含，没定位到元素返回false,定位到返回判断结果布尔值
         result = driver.text_in_element(locator, text)
         """
         expect_value = self.extract_09_value(locator)
         assert value in expect_value, {'expect_value': expect_value}
-        # assert self.web_driver_wait_until(ec.text_to_be_present_in_element_value(locator, value))
+
+    def assert_51_element_value_equal_to(self, locator: tuple, content, *args):
+        """ 元素value值等于 """
+        expect_value = self.extract_09_value(locator)
+        # assert expect_value == content, {'expect_value': expect_value}
+        assert expect_value == content, f'实际结果：{expect_value}'
+
+    def assert_52_element_value_larger_than(self, locator: tuple, content, *args):
+        """ 元素value值大于 """
+        expect_value = self.extract_09_value(locator)
+        assert float(expect_value) > content, {'expect_value': expect_value}
+
+    def assert_53_element_value_smaller_than(self, locator: tuple, content, *args):
+        """ 元素value值小于 """
+        expect_value = self.extract_09_value(locator)
+        assert float(expect_value) < content, {'expect_value': expect_value}
+
+    def assert_54is_selected_be(self, locator: tuple, *args, wait_time_out=None):
+        """ 元素被选中，返回布尔值"""
+        assert self.web_driver_wait_until(
+            ec.element_located_selection_state_to_be(locator, True),
+            wait_time_out=wait_time_out or self.wait_time_out
+        ), {'msg': '元素未被选中'}
+
+    def assert_55is_not_selected_be(self, locator: tuple, *args, wait_time_out=None):
+        """ 元素未被选中，返回布尔值"""
+        assert self.web_driver_wait_until(
+            ec.element_located_selection_state_to_be(locator, False),
+            wait_time_out=wait_time_out or self.wait_time_out
+        ), {
+            'msg': '元素已被选中'}
+
+    def assert_56_element_txt_equal_to(self, locator: tuple, content, *args):
+        """ 元素txt值等于 """
+        expect_value = self.extract_09_text(locator)
+        # assert expect_value == content, {'expect_value': expect_value}
+        assert expect_value == content, f'实际结果：{expect_value}'
+
+    def assert_56_element_txt_larger_than(self, locator: tuple, content, *args):
+        """ 元素txt值大于 """
+        expect_value = self.extract_09_text(locator)
+        assert float(expect_value) > content, {'expect_value': expect_value}
+
+    def assert_56_element_txt_smaller_than(self, locator: tuple, content, *args):
+        """ 元素txt值小于 """
+        expect_value = self.extract_09_text(locator)
+        assert float(expect_value) < content, {'expect_value': expect_value}
 
     def assert_57text_in_element(self, locator: tuple, text: str, *args):
         """
-        文本在元素里面，没定位到元素返回False，定位到返回判断结果布尔值
+        元素txt值包含，没定位到元素返回False，定位到返回判断结果布尔值
         result = driver.text_in_element(locator, text)
         """
         expect_value = self.extract_09_text(locator)
         assert text in expect_value, {'expect_value': expect_value}
-        # assert self.web_driver_wait_until(ec.text_to_be_present_in_element(locator, text))
 
-    def assert_58is_visibility(self, locator: tuple, *args):
+    def assert_58is_visibility(self, locator: tuple, *args, wait_time_out=None):
         """ 元素可见，不可见返回False """
-        assert self.web_driver_wait_until(ec.visibility_of_element_located(locator)), {'msg': '元素可见'}
+        assert self.web_driver_wait_until(
+            ec.visibility_of_element_located(locator),
+            wait_time_out=wait_time_out or self.wait_time_out
+        ), {'msg': '元素可见'}
 
-    def assert_59is_invisibility(self, locator: tuple, *args):
-        """ 元素不存在，不存在、不可见返回True """
-        assert self.web_driver_wait_until(ec.invisibility_of_element_located(locator)), {'msg': '元素存在'}
+    # def assert_59is_invisibility(self, locator: tuple, *args, wait_time_out=None):
+    #     """ 元素不存在，不存在、不可见返回True """
+    #     assert self.web_driver_wait_until(
+    #         ec.invisibility_of_element_located(locator),
+    #         wait_time_out=wait_time_out or self.wait_time_out
+    #     ), {'msg': '元素存在'}
 
-    def assert_60is_clickable(self, locator: tuple, *args):
+    def assert_60is_clickable(self, locator: tuple, *args, wait_time_out=None):
         """ 元素可点击，元素可以点击is_enabled返回本身，不可点击返回False """
-        assert self.web_driver_wait_until(ec.element_to_be_clickable(locator)), {'msg': '元素不可点击'}
+        assert self.web_driver_wait_until(
+            ec.element_to_be_clickable(locator),
+            wait_time_out=wait_time_out or self.wait_time_out
+        ), {'msg': '元素不可点击'}
 
-    def assert_61is_located(self, locator: tuple, *args):
+    def assert_61is_located(self, locator: tuple, *args, wait_time_out=None):
         """ 元素被定为到，（并不意味着可见），定为到返回element, 没定位到返回False """
-        assert self.web_driver_wait_until(ec.presence_of_element_located(locator)), {'msg': '元素未被定为到'}
+        assert self.web_driver_wait_until(
+            ec.presence_of_element_located(locator),
+            wait_time_out=wait_time_out or self.wait_time_out
+        ), {'msg': '元素未被定为到'}
 
     def assert_62is_title(self, text: str, *args):
         """ 页面title等于 """
         expect_value = self.extract_08_title()
         assert text == expect_value, {'expect_value': expect_value}
-        # assert self.web_driver_wait_until(ec.title_is(text))
 
     def assert_63is_title_contains(self, text: str, *args):
         """ 页面title包含 """
         expect_value = self.extract_08_title()
         assert text in expect_value, {'expect_value': expect_value}
-        # assert self.web_driver_wait_until(ec.title_contains(text))
 
-    def assert_64is_alert_present(self, *args):
+    def assert_64is_alert_present(self, *args, wait_time_out=None):
         """ 页面有alert，有返回alert对象，没有返回False """
-        assert self.web_driver_wait_until(ec.alert_is_present()), {'msg': '页面没有alert'}
+        assert self.web_driver_wait_until(
+            ec.alert_is_present(),
+            wait_time_out=wait_time_out or self.wait_time_out
+        ), {'msg': '页面没有alert'}
 
-    def assert_65is_iframe(self, locator: tuple, *args):
+    def assert_65is_iframe(self, locator: tuple, *args, wait_time_out=None):
         """ 元素为iframe， locator是tuple类型，locator也可以是id和name名称,返回布尔值 """
-        assert self.web_driver_wait_until(ec.frame_to_be_available_and_switch_to_it(locator)), {'msg': '元素不为iframe'}
+        assert self.web_driver_wait_until(
+            ec.frame_to_be_available_and_switch_to_it(locator),
+            wait_time_out=wait_time_out or self.wait_time_out
+        ), {'msg': '元素不为iframe'}
 
     # def is_selected_(self, locator):
     #     """ 元素被选中，返回布尔值 """

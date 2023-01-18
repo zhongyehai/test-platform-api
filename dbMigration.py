@@ -9,6 +9,7 @@ from utils.util.jsonUtil import JsonUtil
 from app.baseModel import db
 from app.system.models.user import User, Permission, Role
 from app.config.models.config import Config, ConfigType
+from app.config.models.runEnv import RunEnv
 from app.system.models.business import BusinessLine
 from app.assist.models.func import Func
 from main import app
@@ -49,7 +50,7 @@ make_user_info_mapping = {
     "ipv6": "ipv6"
 }
 
-kym_keword = [
+kym_keyword = [
     {
         "topic": "使用群体",
         "children": [
@@ -183,9 +184,6 @@ find_element_option = [
     {"label": "页面地址", "value": "url"}
 ]
 
-# 环境配置，可根据实际需求自行修改，但环境不可重复
-env_dict = {"dev": "开发环境", "test": "测试环境", "uat": "uat环境", "production": "生产环境"}
-
 # 运行测试的类型
 run_type = {
     "api": "接口",
@@ -243,8 +241,8 @@ def init_user():
 
     # 创建业务线
     print_type_delimiter("开始创建业务线")
-    business_dict = {"name": "公共业务线", "desc": "公共业务线，所有人都可见、可操作", "num": 0}
-    business = BusinessLine.get_first(name=business_dict["name"])
+    business_dict = {"name": "公共业务线", "code": "common", "desc": "公共业务线，所有人都可见、可操作", "num": 0}
+    business = BusinessLine.get_first(code=business_dict["code"])
     if business is None:
         business = BusinessLine().create(business_dict)
         print_item_delimiter(f'业务线【{business.name}】创建成功')
@@ -298,8 +296,6 @@ def init_config():
 
         "系统配置": [
             {"name": "platform_name", "value": "极测平台", "desc": "测试平台名字"},
-            {"name": "run_test_env", "value": JsonUtil.dumps(env_dict), "desc": "测试平台支持的环境"},
-            {"name": "default_env", "value": list(env_dict.keys())[0], "desc": "编辑、运行时，默认选择的环境"},
             {"name": "run_type", "value": JsonUtil.dumps(run_type), "desc": "运行测试的类型"},
             {"name": "case_set_list", "value": JsonUtil.dumps(case_set_list), "desc": "运行测试的类型"},
             {"name": "data_type_mapping", "value": JsonUtil.dumps(data_type_mapping), "desc": "python数据类型映射"},
@@ -308,9 +304,11 @@ def init_config():
             {"name": "yapi_password", "value": "", "desc": "yapi密码"},
             {"name": "ignore_keyword_for_group", "value": "[]", "desc": "不需要从yapi同步的分组关键字"},
             {"name": "ignore_keyword_for_project", "value": "[]", "desc": "不需要从yapi同步的服务关键字"},
-            {"name": "kym", "value": JsonUtil.dumps(kym_keword), "desc": "KYM分析项"},
+            {"name": "kym", "value": JsonUtil.dumps(kym_keyword), "desc": "KYM分析项"},
+            {"name": "sync_mock_data", "value": JsonUtil.dumps({}), "desc": "同步回调数据源"},
+            {"name": "async_mock_data", "value": JsonUtil.dumps({}), "desc": "异步回调数据源"},
             {"name": "default_diff_message_send_addr", "value": "", "desc": "yapi接口监控报告默认发送钉钉机器人地址"},
-            {"name": "run_time_out", "value": "60", "desc": "前端运行测试时，等待的超时时间，秒"},
+            {"name": "run_time_out", "value": "600", "desc": "前端运行测试时，等待的超时时间，秒"},
             {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名"},
             {"name": "pagination_size", "value": JsonUtil.dumps(pagination_size), "desc": "默认分页信息"},
             {"name": "callback_webhook", "value": "", "desc": "接口收到回调请求后即时通讯通知的地址"},
@@ -415,6 +413,28 @@ def init_func_files():
 
 
 @manager.command
+def init_run_env():
+    """ 初始化运行环境 """
+    print_type_delimiter("开始创建运行环境")
+    test_type_list = ["api", "webUi", "app"]
+    env_dict = [
+        {"name": "开发环境", "code": "dev", "addr": "http://127.0.0.1:8080", "desc": "开发环境"},
+        {"name": "测试环境", "code": "test", "addr": "http://127.0.0.1:8081", "desc": "测试环境"},
+        {"name": "uat环境", "code": "uat", "addr": "http://127.0.0.1:8082", "desc": "uat环境"},
+        {"name": "生产环境", "code": "production", "addr": "http://127.0.0.1:8083", "desc": "生产环境"},
+    ]
+
+    for test_type in test_type_list:
+        for index, env in enumerate(env_dict):
+            if RunEnv.get_first(code=env["code"], test_type=env["test_type"]) is None:
+                env["num"] = index
+                env["test_type"] = test_type
+                RunEnv().create(env)
+                print_item_delimiter(f'运行环境【{env["name"]}】创建成功')
+    print_type_delimiter("运行环境创建完成")
+
+
+@manager.command
 def init():
     """ 初始化 权限、角色、管理员 """
     print_start_delimiter("开始初始化数据")
@@ -423,6 +443,7 @@ def init():
     init_config_type()
     init_config()
     init_func_files()
+    init_run_env()
     print_start_delimiter("数据初始化完毕")
 
 

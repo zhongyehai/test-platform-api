@@ -22,7 +22,7 @@ class ApiRunTaskView(NotLoginView):
                 Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
             )
         report_id = RunCaseBusiness.run(
-            env=form.env.data or form.task.env,
+            env_code=form.env.data or form.task.env,
             trigger_type=form.trigger_type.data,
             is_async=form.is_async.data,
             project_id=form.task.project_id,

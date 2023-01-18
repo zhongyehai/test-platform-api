@@ -155,7 +155,7 @@ class PullCaseStepForm(BaseForm):
 class RunCaseForm(BaseForm):
     """ 运行用例 """
     caseId = StringField(validators=[DataRequired("请选择用例")])
-    env = StringField(validators=[DataRequired("请选择运行环境")])
+    env_code = StringField(validators=[DataRequired("请选择运行环境")])
     browser = StringField(validators=[DataRequired("请选择运行浏览器")])
     is_async = IntegerField()
 

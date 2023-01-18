@@ -27,7 +27,7 @@ class AppUiRunCaseSetView(LoginRequiredView):
         form = RunCaseSetForm().do_validate()
         appium_config = RunCaseBusiness.get_appium_config(form.set.project_id, form)
         report_id = RunCaseBusiness.run(
-            env=form.env.data,
+            env_code=form.env_code.data,
             is_async=form.is_async.data,
             project_id=form.set.project_id,
             report_name=form.set.name,

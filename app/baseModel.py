@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import time
 from datetime import datetime
 from werkzeug.exceptions import abort
 
@@ -369,15 +370,16 @@ class BaseProjectEnv(BaseModel):
     """ 服务环境基类表 """
     __abstract__ = True
 
-    env = db.Column(db.String(255), nullable=True, comment="所属环境")
-    host = db.Column(db.String(255), default="", comment="域名")
+    host = db.Column(db.String(255), default="", comment="服务地址")
     variables = db.Column(
         db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment="服务的公共变量"
     )
+
+    env_id = db.Column(db.Integer(), nullable=True, comment="对应环境id")
     project_id = db.Column(db.Integer(), nullable=True, comment="所属的服务id")
 
     @classmethod
-    def synchronization(cls, from_env, to_env_list: list, filed_list: list):
+    def synchronization(cls, from_env, to_env_id_list: list, filed_list: list):
         """ 把当前环境同步到其他环境
         from_env: 从哪个环境
         to_env_list: 同步到哪些环境
@@ -393,8 +395,8 @@ class BaseProjectEnv(BaseModel):
         synchronization_result = {}
 
         # 同步至指定环境
-        for to_env in to_env_list:
-            to_env_data = cls.get_first(project_id=from_env.project_id, env=to_env)
+        for to_env in to_env_id_list:
+            to_env_data = cls.get_first(project_id=from_env.project_id, env_id=to_env)
             new_env_data = {}
             for filed in filed_list:
                 from_data, to_data = from_env_dict[filed], cls.loads(getattr(to_env_data, filed))
@@ -790,16 +792,6 @@ class Config(BaseModel):
     def get_kym(cls):
         """ 获取kym配置项 """
         return cls.loads(cls.get_first(name="kym").value)
-
-    @classmethod
-    def get_run_test_env(cls):
-        """ 获取运行环境配置项 """
-        return cls.loads(cls.get_first(name="run_test_env").value)
-
-    @classmethod
-    def get_default_env(cls):
-        """ 获取默认环境 """
-        return cls.get_first(name="default_env").value
 
     @classmethod
     def get_http_methods(cls):

@@ -25,6 +25,7 @@ from app.app_ui_test.models.caseSet import AppUiCaseSet
 from app.app_ui_test.models.case import AppUiCase
 from app.app_ui_test.models.step import AppUiStep
 from app.app_ui_test.models.report import AppUiReport
+from app.config.models.runEnv import RunEnv
 
 from app.assist.models.func import Func
 from app.config.models.config import Config
@@ -45,13 +46,13 @@ class RunTestRunner:
             project_id=None,
             name=None,
             report_id=None,
-            env=None,
+            env_code=None,
             trigger_type="page",
             is_rollback=False,
             run_type="api",
             extend={}
     ):
-        self.environment = env  # 运行环境
+        self.env_code = env_code  # 运行环境id
         self.extend = extend
         self.project_id = project_id
         self.run_name = name
@@ -71,7 +72,7 @@ class RunTestRunner:
             self.step_model = ApiStep
             self.report_model = ApiReport
             self.report_addr = f'{Config.get_report_host()}{Config.get_api_report_addr()}'
-        elif self.run_type == "web_ui":  # web-ui自动化
+        elif self.run_type == "webUi":  # web-ui自动化
             self.project_model = WebUiProject
             self.project_env_model = WebUiProjectEnv
             self.element_model = WebUiElement
@@ -100,7 +101,9 @@ class RunTestRunner:
         self.api_set = set()
         self.element_set = set()
 
-        Func.create_func_file(self.environment)  # 创建所有函数文件
+        self.run_env = RunEnv.get_first(code=self.env_code, test_type=self.run_type).to_dict()
+
+        Func.create_func_file(self.env_code)  # 创建所有函数文件
 
         # testRunner需要的数据格式
         self.DataTemplate = {
@@ -122,10 +125,10 @@ class RunTestRunner:
             project = self.project_model.get_first(id=project_id).to_dict()
             self.parse_functions(project["func_files"])
 
-            env = self.project_env_model.get_first(env=self.environment, project_id=project["id"]).to_dict()
-            env.update(project)
-
-            self.parsed_project_dict.update({project_id: ProjectModel(**env)})
+            project_env = self.project_env_model.get_first(env_id=self.run_env["id"], project_id=project["id"]).to_dict()
+            project_env.update(project)
+            project_env.update(self.run_env)
+            self.parsed_project_dict.update({project_id: ProjectModel(**project_env)})
         return self.parsed_project_dict[project_id]
 
     def get_format_case(self, case_id):
@@ -157,7 +160,7 @@ class RunTestRunner:
         """ 获取自定义函数 """
         for func_file_id in func_list:
             func_file_name = Func.get_first(id=func_file_id).name
-            func_file_data = importlib.reload(importlib.import_module(f'func_list.{self.environment}_{func_file_name}'))
+            func_file_data = importlib.reload(importlib.import_module(f'func_list.{self.env_code}_{func_file_name}'))
             self.DataTemplate["project_mapping"]["functions"].update({
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
@@ -167,7 +170,7 @@ class RunTestRunner:
         for skip_if in skip_if_list:
             skip_type = skip_if["skip_type"]
             if skip_if["data_source"] == "run_env":
-                skip_if["check_value"] = self.environment
+                skip_if["check_value"] = self.env_code
                 try:
                     comparator = getattr(built_in, skip_if["comparator"])
                     skip_if_result = comparator(skip_if["check_value"], skip_if["expect"])  # 借用断言来判断条件是否为真
@@ -208,7 +211,7 @@ class RunTestRunner:
         """ 保存测试报告文件 """
         if self.run_type == "api":
             FileUtil.save_api_test_report(report_id, result)
-        elif self.run_type == "web_ui":
+        elif self.run_type == "webUi":
             FileUtil.save_web_ui_test_report(report_id, result)
         else:
             FileUtil.save_app_ui_test_report(report_id, result)
@@ -262,7 +265,7 @@ class RunTestRunner:
         summary["time"]["start_at"] = datetime.fromtimestamp(summary["time"]["start_at"]).strftime("%Y-%m-%d %H:%M:%S")
         summary["run_type"] = self.run_type
         summary["is_async"] = self.DataTemplate.get("is_async", 0)
-        summary["run_env"] = self.environment
+        summary["run_env"] = self.env_code
         summary["count_step"] = self.count_step
         summary["count_api"] = len(self.api_set)
         summary["count_element"] = len(self.element_set)
@@ -278,7 +281,7 @@ class RunTestRunner:
             all_summary = run_dict[0]
             all_summary["run_type"] = self.run_type
             all_summary["is_async"] = self.DataTemplate.get("is_async", 0)
-            all_summary["run_env"] = self.environment
+            all_summary["run_env"] = self.env_code
             all_summary["count_step"] = self.count_step
             all_summary["count_api"] = len(self.api_set)
             summary["count_element"] = len(self.element_set)
@@ -296,10 +299,11 @@ class RunTestRunner:
             self.save_report(jump_res)
 
             # 如果没通过，则触发重试机制，
-            # 测试报告状态为不通过、测试类型为任务、触发类型为流水线、测试报告重试次数字段 < 任务设置的重试次数
+            # 触发类型为流水线、测试报告状态为不通过、测试报告重试次数字段 < 任务设置的重试次数
             # 初始化改变测试报告状态: 1, 1
-            #
-            # if all_summary["success"] is False and self.report.retry_count < self.task.retry_count:
+            # if self.trigger_type == 'pipeline' \
+            #         and all_summary["success"] is False \
+            #         and self.report_model.get_first(id=self.report_id).retry_count < self.task.retry_count:
             #     pass
 
             self.send_report(jump_res)

@@ -8,6 +8,7 @@ from app.config.models.config import Config
 from app.app_ui_test.models.task import AppUiTask as Task
 from app.app_ui_test.models.project import AppUiProject as Project
 from app.app_ui_test.models.env import AppUiRunServer as Server, AppUiRunPhone as Phone
+from app.config.models.runEnv import RunEnv
 
 
 class AddTaskForm(BaseForm):
@@ -101,7 +102,7 @@ class RunTaskForm(HasTaskIdForm):
     def validate_env(self, field):
         """ 检验环境 """
         if field.data:
-            self.validate_data_is_true(f"环境【{field.data}】不存在", field.data.lower() in Config.get_run_test_env())
+            self.validate_data_is_true(f"环境【{field.data}】不存在",  RunEnv.get_first(code=field.data))
 
     def validate_server_id(self, field):
         """ 校验服务id存在 """

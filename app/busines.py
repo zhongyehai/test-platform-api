@@ -4,7 +4,8 @@ from threading import Thread
 import requests
 from flask import g, request
 
-from app.app_ui_test.models.project import AppUiProject as Project
+from app.app_ui_test.models.project import AppUiProject
+from app.config.models.runEnv import RunEnv
 
 
 class ProjectBusiness:
@@ -14,7 +15,7 @@ class ProjectBusiness:
     def post(cls, form, project_model, env_model, case_set_model):
         form.num.data = project_model.get_insert_num()
         project = project_model().create(form.data)
-        env_model.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
+        env_model.create_env(project.id, project.service_addr)  # 新增服务的时候，一并把环境设置齐全
         case_set_model.create_case_set_by_project(project.id)  # 新增服务的时候，一并把用例集设置齐全
         return project
 
@@ -28,7 +29,7 @@ class ProjectEnvBusiness:
 
         # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
         env_list = [
-            env.env for env in env_model.get_all(project_id=form.project_id.data) if env.env != form.env_data.env
+            env.env_id for env in env_model.get_all(project_id=form.project_id.data) if env.env_id != form.env_data.env_id
         ]
         env_model.synchronization(form.env_data, env_list, filed_list)
 
@@ -231,7 +232,7 @@ class RunCaseBusiness:
     @classmethod
     def run(
             cls,
-            env,
+            env_code,
             is_async,
             project_id,
             report_name,
@@ -248,13 +249,14 @@ class RunCaseBusiness:
             extend_data={},
             create_user=None
     ):
+        env = RunEnv.get_data_byid_or_code(env_code)
         """ 运行用例/任务 """
         report = report_id or report_model.get_new_report(
             name=report_name,
             run_type=task_type,
             create_user=create_user,
             project_id=project_id,
-            env=env,
+            env=env.code,
             trigger_type=trigger_type
         )
         # 新起线程运行任务
@@ -265,7 +267,7 @@ class RunCaseBusiness:
                 run_name=report.name,
                 case_id=case_id,
                 is_async=is_async,
-                env=env,
+                env_code=env.code,
                 browser=browser,
                 task=task,
                 trigger_type=trigger_type,
@@ -279,7 +281,7 @@ class RunCaseBusiness:
     @classmethod
     def get_appium_config(cls, project_id, form):
         """ 获取appium配置 """
-        project = Project.get_first(id=project_id).to_dict()  # app配置
+        project = AppUiProject.get_first(id=project_id).to_dict()  # app配置
         server = form.server.to_dict()  # appium服务器配置
         phone = form.phone.to_dict()  # 运行手机配置
         return {

@@ -82,9 +82,8 @@ class AddStepForm(BaseForm):
                 except Exception as error:
                     raise ValidationError(f"【{self.send_keys.data}】不能转为json，请确认")
 
-    def validate_extracts(self, field):
-        """ 校验数据提取信息 """
-        # 获取项目配置的函数
+    def validate_validates(self, field):
+        """ 校验断言信息 """
         if not self.quote_case.data:
             self.func_file_container = self.loads(self.project.func_files)
 
@@ -92,19 +91,6 @@ class AddStepForm(BaseForm):
         self.func_file_container.extend(self.loads(self.case.func_files))
         self.func_container = Func.get_func_by_func_file_name(self.func_file_container)
 
-        # 校验值
-        if not self.quote_case.data:
-            for index, validate in enumerate(field.data):
-                row = f"数据提取，第【{index + 1}】行，"
-                extract_type, key, value = validate.get("extract_type"), validate.get("key"), validate.get("value")
-
-                if (extract_type and not key) or (not extract_type and key):  # 提取数据源和变量名需同时存在或同时不存在
-                    raise ValidationError(f"{row}，数据异常，请检查")
-                else:  # 都设置了值，有可能是自定义函数，也有可能是自定义变量
-                    pass
-
-    def validate_validates(self, field):
-        """ 校验断言信息 """
         if not self.quote_case.data:
             for index, validate in enumerate(field.data):
                 row = f"断言，第【{index + 1}】行，"
@@ -113,12 +99,12 @@ class AddStepForm(BaseForm):
 
                 if validate_type and element and data_type and value:  # 都存在
                     self.validate_data_type_(self.func_container, row, data_type, value)  # 校验预期结果
-                elif not validate_type and not element and not data_type and not value:  # 都不存在
+                elif validate_type and not element and data_type and not value:  # 仅断言方式和数据类型存在
+                    continue
+                elif not validate_type and not element and not data_type and not value:  # 所有数据都不存在
                     continue
                 else:
                     raise ValidationError(f"{row}，数据异常，请检查")
-
-            # self.validate_base_validates(field.data, self.func_file_container)
 
 
 class EditStepForm(AddStepForm):

@@ -59,7 +59,7 @@ class ApiRunCaseView(LoginRequiredView):
         case = form.case_list[0]
         project_id = CaseSet.get_first(id=case.set_id).project_id
         report_id = RunCaseBusiness.run(
-            env=form.env.data,
+            env_code=form.env_code.data,
             is_async=form.is_async.data,
             project_id=project_id,
             report_name=case.name,

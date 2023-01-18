@@ -24,7 +24,8 @@ class GetUserListView(LoginRequiredView):
         if form.detail.data:  # 获取用户详情列表
             return app.restful.success(data=User.make_pagination(form))
         return app.restful.success(
-            data={"data": [user.to_dict(filter_list=["id", "name"]) for user in User.get_all()]})
+            data={"data": [user.to_dict(filter_list=["id", "name"]) for user in User.get_all()]}
+        )
 
 
 class UserLoginView(NotLoginView):

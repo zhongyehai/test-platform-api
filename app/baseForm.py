@@ -107,20 +107,21 @@ class BaseForm(Form, JsonUtil):
         except Exception as error:
             return False
 
-    def validate_base_validates(self, data, func_container):
-        """ 校验断言信息 """
+    def validate_api_validates(self, data, func_container):
+        """ 校验断言信息，全都有才视为有效 """
         for index, validate in enumerate(data):
             row_msg = f"断言，第【{index + 1}】行，"
             data_source, key = validate.get("data_source"), validate.get("key")
             validate_type = validate.get("validate_type")
             data_type, value = validate.get("data_type"), validate.get("value")
 
-            # 实际结果数据源和预期结果数据类型必须同时存在或者同时不存在
-            if (data_source and not data_type) or (not data_source and data_type):
-                raise ValidationError(
-                    f"{row_msg}若要进行断言，则实际结果数据源和预期结果数据类型需同时存在，若不进行断言，则实际结果数据源和预期结果数据类型需同时不存在")
-            elif not data_source and not data_type:  # 都没有，此条断言无效，不解析
+            if (not data_source and not data_type) or (data_source and not key and validate_type and data_type and not value):
                 continue
+            elif (data_source and not data_type) or (not data_source and data_type):
+                raise ValidationError(
+                    f"{row_msg}若要进行断言，则实际结果数据源和预期结果数据类型需同时存在，若不进行断言，则实际结果数据源和预期结果数据类型需同时不存在"
+                )
+
             else:  # 有效的断言
                 # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
                 if data_source == "regexp" and not self.validate_is_regexp(key):
@@ -154,22 +155,15 @@ class BaseForm(Form, JsonUtil):
             except Exception as error:
                 raise ValidationError(f"{row}预期结果【{value}】，不可转为【{data_type}】")
 
-    def validate_base_extracts(self, data):
+    def validate_api_extracts(self, data):
         """ 校验数据提取表达式 """
         for index, validate in enumerate(data):
             row = f"数据提取，第【{index + 1}】行，"
             data_source, key, value = validate.get("data_source"), validate.get("key"), validate.get("value")
 
-            # 实际结果数据源和预期结果数据类型必须同时存在或者同时不存在
-            if (data_source and not key) or (not data_source and key):
-                raise ValidationError(
-                    f"{row}若要进行数据提取，则自定义变量名和提取数据源需同时存在，若不进行提取，则自定义变量名和提取数据源需同时不存在")
-            elif not data_source and not key:  # 都没有，此条数据无效，不解析
-                continue
-            else:  # 有效的数据提取
-                # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
-                if data_source == "regexp" and not self.validate_is_regexp(value):
-                    raise ValidationError(f"{row}正则表达式【{value}】错误")
+            # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
+            if key and data_source == "regexp" and value and not self.validate_is_regexp(value):
+                raise ValidationError(f"{row}正则表达式【{value}】错误")
 
     def validate_data_is_exist(self, error_msg, model, **kwargs):
         """ 校验数据已存在，存在则返回数据模型 """

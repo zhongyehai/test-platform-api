@@ -25,7 +25,7 @@ class RunCase(RunTestRunner):
             report_id=None,
             is_async=True,
             browser=True,
-            env="test",
+            env_code="test",
             trigger_type="page",
             is_rollback=False,
             appium_config={},
@@ -36,14 +36,14 @@ class RunCase(RunTestRunner):
             project_id=project_id,
             name=run_name,
             report_id=report_id,
-            env=env,
+            env_code=env_code,
             trigger_type=trigger_type,
             is_rollback=is_rollback,
             run_type=run_type,
             extend=extend
         )
         self.task = task
-        if run_type == "web_ui":
+        if run_type == "webUi":
             self.case_set_model = WebUiCaseSet
             self.step_model = WebUiStep
             self.browser = browser
@@ -194,7 +194,7 @@ class RunCase(RunTestRunner):
                 },
                 "teststeps": []
             }
-            if self.run_type == 'web_ui':
+            if self.run_type == 'webUi':
                 # 用例格式模板, # 火狐：geckodriver
                 case_template["config"]["browser_type"] = self.browser
                 case_template["config"]["browser_path"] = FileUtil.get_driver_path(self.browser)

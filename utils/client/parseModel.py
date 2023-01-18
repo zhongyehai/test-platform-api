@@ -31,7 +31,7 @@ class FormatModel(JsonUtil):
             for v in variables_list if v.get("key") and v.get("value") is not None
         }
 
-    def parse_extracts(self, extracts_list):
+    def parse_extracts(self, extracts_list, is_api=True):
         """ 解析要提取的参数
         extracts_list:
             [
@@ -47,20 +47,39 @@ class FormatModel(JsonUtil):
                 "update_to_header_filed_list": ["project_id"]
             }
         """
-        parsed = {
-            "extractors": [],
-            "update_to_header_filed_list": []
-        }
-        for extract in extracts_list:
-            if extract.get("key") and extract.get("value"):
-                parsed["extractors"].append({
-                    extract["key"]: self.build_extract_expression(extract.get("data_source"), extract["value"])
-                })
-                if extract.get("update_to_header"):
-                    parsed["update_to_header_filed_list"].append(extract["key"])
-        return parsed
+        if is_api:
+            parsed = {
+                "extractors": [],
+                "update_to_header_filed_list": []
+            }
+            for extract in extracts_list:
+                if extract.get("key") and extract.get("data_source"):  # 有设置key和数据源的，则视为有效提取表达式
+                    parsed["extractors"].append({
+                        extract["key"]: self.build_extract_expression(extract.get("data_source"), extract["value"])
+                    })
+                    if extract.get("update_to_header"):
+                        parsed["update_to_header_filed_list"].append(extract["key"])
+            return parsed
+        else:
+            """ 解析ui自动化要提取的参数，key、element、extract_type均有值才有效
+            value: 元素id
+            extracts_list:
+                [
+                    {"key": "project_id", "value": "1", "extract_type": "123"},
+                    {"key": "project_id1", "value": "", "extract_type": "123"},
+                    {"key": "project_id2", "value": "1", "extract_type": ""},
+                    {"key": "", "value": "1", "extract_type": "123"},
+                    {"key": "", "value": "", "extract_type": ""},
+                ]
+            return:
+                [{"key": "project_id", "element": "id", "extract_type": "123"}]
+            """
+            return [
+                extract for extract in extracts_list
+                if extract.get("key") and extract.get("value") and extract.get("extract_type")
+            ]
 
-    def parse_validates(self, validates_list):
+    def parse_validates(self, validates_list, is_api=True):
         """ 解析断言
         validates:
             [
@@ -79,15 +98,20 @@ class FormatModel(JsonUtil):
         parsed_validate = []
         for validate in validates_list:
             data_source, key = validate.get("data_source"), validate.get("key")
-            validate_type = validate.get("validate_type")
+            validate_type, element = validate.get("validate_type"), validate.get("element")
             data_type, value = validate.get("data_type"), validate.get("value")
-            if data_source and data_type:
-                parsed_validate.append({
-                    assert_mapping[validate_type]: [
-                        self.build_actual_result(data_source, key),  # 实际结果
-                        self.build_data(data_type, value)  # 预期结果
-                    ]
-                })
+            if is_api:  # 接口
+                if data_source and data_type and validate_type and value:
+                    parsed_validate.append({
+                        assert_mapping[validate_type]: [
+                            self.build_actual_result(data_source, key),  # 实际结果
+                            self.build_data(data_type, value)  # 预期结果
+                        ]
+                    })
+            else:  # UI
+                if validate_type and element and data_type and value:
+                    parsed_validate.append(validate)
+
         return parsed_validate
 
     def build_data(self, data_type, value):
@@ -168,14 +192,6 @@ class FormatModel(JsonUtil):
                     files.update({data["key"]: data["value"]})
                 else:  # 其他数据类型
                     string.update({data["key"]: self.build_data(data.get("data_type"), data.get("value"))})
-                # # 字符串
-                # if data["data_type"] == "string":
-                #     string.update({data["key"]: data["value"]})
-                #
-                # # 上传文件，防止内存中有大对象，先把名字存下来，真正发请求的时候再读取文件
-                # elif data["data_type"] == "file":
-                #     files.update({data["key"]: data["value"]})
-
         return string, files
 
     def parse_body(self, kwargs):
@@ -194,6 +210,12 @@ class FormatModel(JsonUtil):
         """ 解析输入内容 """
         return FileUtil.build_ui_test_file_path(send_keys) if send_keys and "_is_upload" in send_keys else send_keys
 
+    def parse_host(self, use_host, project_host, env_host, user_service, project_service_addr, env_service_addr):
+        """ 解析host，根据服务/项目处的设置使用对应的host """
+        host = env_host if use_host == "env" else project_host
+        service_addr = project_service_addr if user_service == "project" else env_service_addr
+        return host + service_addr
+
 
 class ProjectModel(FormatModel):
     """ 格式化服务信息 """
@@ -204,8 +226,10 @@ class ProjectModel(FormatModel):
         self.manager = kwargs.get("manager")
         self.func_files = kwargs.get("func_files")
         self.create_user = kwargs.get("create_user")
-        self.test = kwargs.get("test")
-        self.host = kwargs.get("host")
+        self.host = self.parse_host(
+            kwargs.get("use_host"), kwargs.get("host"), kwargs.get("addr"),
+            kwargs.get("use_service"), kwargs.get("service_addr"), kwargs.get("env_service_addr")
+        )
         self.variables = self.parse_variables(kwargs.get("variables", {}))
         # 接口自动化字段
         self.headers = self.parse_list_data(kwargs.get("headers", {}))
@@ -291,7 +315,6 @@ class StepModel(FormatModel):
         self.down_func = kwargs.get("down_func")
         self.skip_if = self.parse_skip_if(kwargs.get("skip_if"))
         self.status = kwargs.get("status")
-        self.validates = self.parse_validates(kwargs.get("validates", {}))
         self.data_driver = kwargs.get("data_driver", {})
         self.quote_case = kwargs.get("quote_case", {})
         self.case_id = kwargs.get("case_id")
@@ -316,4 +339,5 @@ class StepModel(FormatModel):
         self.page_id = kwargs.get("page_id")
         self.element_id = kwargs.get("element_id")
 
-        self.extracts = self.parse_extracts(kwargs.get("extracts", [])) if self.api_id else kwargs.get("extracts", [])
+        self.validates = self.parse_validates(kwargs.get("validates", {}), self.api_id)
+        self.extracts = self.parse_extracts(kwargs.get("extracts", []), self.api_id)

@@ -26,7 +26,7 @@ class ApiCaseSetRunView(LoginRequiredView):
         """ 运行用例集下的用例 """
         form = RunCaseSetForm().do_validate()
         report_id = RunCaseBusiness.run(
-            env=form.env.data,
+            env_code=form.env_code.data,
             is_async=form.is_async.data,
             project_id=form.set.project_id,
             report_name=form.set.name,

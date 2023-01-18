@@ -11,8 +11,8 @@ from app.app_ui_test.models.module import AppUiModule as Module
 
 
 class AddUiProjectForm(BaseForm):
-    """ 添加项目参数校验 """
-    name = StringField(validators=[DataRequired("项目名称不能为空"), Length(1, 255, message="项目名长度不可超过255位")])
+    """ 添加app参数校验 """
+    name = StringField(validators=[DataRequired("app名称不能为空"), Length(1, 255, message="app名长度不可超过255位")])
     manager = StringField(validators=[DataRequired("请选择负责人")])
     app_package = StringField(validators=[DataRequired("app包名不能为空")])
     app_activity = StringField(validators=[DataRequired("activity不能为空")])
@@ -21,11 +21,11 @@ class AddUiProjectForm(BaseForm):
     num = StringField()
 
     def validate_name(self, field):
-        """ 校验项目名不重复 """
-        self.validate_data_is_not_exist(f"项目名【{field.data}】已存在", Project, name=field.data)
+        """ 校验app名不重复 """
+        self.validate_data_is_not_exist(f"app名【{field.data}】已存在", Project, name=field.data)
 
     def validate_manager(self, field):
-        """ 校验项目负责人是否存在 """
+        """ 校验app负责人是否存在 """
         self.validate_data_is_exist(f"id为【{field.data}】的用户不存在", User, id=field.data)
 
     def validate_swagger(self, field):
@@ -37,7 +37,7 @@ class AddUiProjectForm(BaseForm):
 
 
 class FindUiProjectForm(BaseForm):
-    """ 查找项目form """
+    """ 查找appform """
     name = StringField()
     manager = StringField()
     create_user = StringField()
@@ -46,31 +46,31 @@ class FindUiProjectForm(BaseForm):
 
 
 class GetUiProjectByIdForm(BaseForm):
-    """ 获取具体项目信息 """
-    id = IntegerField(validators=[DataRequired("项目id必传")])
+    """ 获取具体app信息 """
+    id = IntegerField(validators=[DataRequired("appid必传")])
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的项目不存在", Project, id=field.data)
+        project = self.validate_data_is_exist(f"id为【{field.data}】的app不存在", Project, id=field.data)
         setattr(self, "project", project)
 
 
 class DeleteUiProjectForm(GetUiProjectByIdForm):
-    """ 删除项目 """
+    """ 删除app """
 
     def validate_id(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的项目不存在", Project, id=field.data)
-        self.validate_data_is_true("不能删除别人负责的项目", self.is_can_delete(project.id, project))
-        self.validate_data_is_not_exist("请先去【页面管理】删除项目下的模块", Module, project_id=field.data)
+        project = self.validate_data_is_exist(f"id为【{field.data}】的app不存在", Project, id=field.data)
+        self.validate_data_is_true("不能删除别人负责的app", self.is_can_delete(project.id, project))
+        self.validate_data_is_not_exist("请先去【页面管理】删除app下的模块", Module, project_id=field.data)
         setattr(self, "project", project)
 
 
 class EditUiProjectForm(GetUiProjectByIdForm, AddUiProjectForm):
-    """ 修改项目参数校验 """
+    """ 修改app参数校验 """
 
     def validate_name(self, field):
-        """ 校验项目名不重复 """
+        """ 校验app名不重复 """
         self.validate_data_is_not_repeat(
-            f"项目名【{field.data}】已存在",
+            f"app名【{field.data}】已存在",
             Project,
             self.id.data,
             name=field.data
@@ -79,21 +79,15 @@ class EditUiProjectForm(GetUiProjectByIdForm, AddUiProjectForm):
 
 class AddEnv(BaseForm):
     """ 添加环境 """
-    project_id = IntegerField(validators=[DataRequired("项目id必传")])
-    env = StringField(validators=[DataRequired("所属环境必传"), Length(1, 255, message="所属环境长度为1~255位")])
-    # host = StringField()
+    project_id = IntegerField(validators=[DataRequired("appid必传")])
     variables = StringField()
     all_func_name = {}
     all_variables = {}
 
     def validate_project_id(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的项目不存在", Project, id=field.data)
+        project = self.validate_data_is_exist(f"id为【{field.data}】的app不存在", Project, id=field.data)
         self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files))
         setattr(self, "project", project)
-
-    # def validate_host(self, field):
-    #     """ 校验地址是否正确 """
-    #     self.validate_data_is_true(f"环境地址【{field.data}】不正确", field.data and validators.url(field.data) is True)
 
     def validate_variables(self, field):
         """ 校验公共变量 """
@@ -106,35 +100,22 @@ class EditEnv(AddEnv):
     """ 修改环境 """
     id = IntegerField(validators=[DataRequired("环境id必传")])
 
-    def validate_env(self, field):
+    def validate_id(self, field):
         env_data = self.validate_data_is_exist(
             "当前环境不存在",
             ProjectEnv,
-            project_id=self.project_id.data,
-            env=field.data
+            id=field.data
         )
         setattr(self, "env_data", env_data)
 
 
 class FindEnvForm(BaseForm):
-    """ 查找项目环境form """
-    projectId = IntegerField(validators=[DataRequired("项目id必传")])
-    env = StringField()
+    """ 查找app环境form """
+    projectId = IntegerField(validators=[DataRequired("appid必传")])
 
     def validate_projectId(self, field):
-        env_data = ProjectEnv.get_first(project_id=field.data, env=self.env.data)
+        env_data = ProjectEnv.get_first(project_id=field.data)
         if not env_data:  # 如果没有就插入一条记录
-            env_data = ProjectEnv().create({"env": self.env.data, "project_id": field.data})
+            env_data = ProjectEnv().create({"project_id": field.data})
             setattr(self, "env_data", env_data)
         setattr(self, "env_data", env_data)
-
-
-class SynchronizationEnvForm(BaseForm):
-    """ 同步环境form """
-    projectId = IntegerField(validators=[DataRequired("项目id必传")])
-    envFrom = StringField(validators=[DataRequired("所属环境必传"), Length(1, 10, message="所属环境长度为1~10位")])
-    envTo = StringField(validators=[DataRequired("所属环境必传"), Length(1, 10, message="所属环境长度为1~10位")])
-
-    def validate_projectId(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的项目不存在", Project, id=field.data)
-        setattr(self, "project", project)

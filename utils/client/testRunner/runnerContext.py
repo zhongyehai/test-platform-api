@@ -60,6 +60,19 @@ class SessionContext(object):
         self.session_variables_mapping.update(variables_mapping)
         self.test_variables_mapping.update(self.session_variables_mapping)
 
+    def save_update_to_header_filed(self, filed_list: list, extracted_variables_mapping: dict):
+        """ 把提取后需要更新到头部信息的数据保存下来
+        filed_list: ['data']
+        extracted_variables_mapping: {'data': 123, 'data2': 456}
+        """
+        for filed in filed_list:
+            self.update_to_header[filed] = extracted_variables_mapping[filed]
+
+    def update_filed_to_header(self, headers: dict):
+        """ 把保存下来的需要更新到头部信息的字段更新到头部信息 """
+        headers.update(self.update_to_header)
+        return headers
+
     def eval_content(self, content):
         """ 递归解析内容中的每个变量和函数。内容可以是任何数据结构，包括字典、列表、元组、数字、字符串等。"""
         return parser.parse_data(
@@ -115,7 +128,7 @@ class SessionContext(object):
         validator["check_result"] = "unchecked"
         return validator
 
-    def do_validation(self, validator_dict):
+    def do_api_validation(self, validator_dict):
         """ 根据断言数据执行断言方法
         Args:
             validator_dict (dict): validator dict
@@ -160,7 +173,39 @@ class SessionContext(object):
             validator_dict["check_result"] = "fail"
             raise exceptions.ValidationFailure(error_msg)
 
-    def validate(self, validators, resp_obj):
+    def do_ui_validation(self, driver, validator_dict):
+        """ 根据断言数据执行断言方法
+        Args:
+            validator_dict (dict): validator dict
+            {
+                'comparator': 'assert_50is_exists',
+                'check': ('xpath', '//*[@id="app"]/div/form/button/span'),
+                'expect': '123123'
+            }
+        """
+        check, expect, comparator = validator_dict["check"], validator_dict["expect"], validator_dict["comparator"]
+        validate_func = getattr(driver, comparator)
+        try:
+            validator_dict["check_result"] = "pass"
+            validate_func(check, expect)
+            logger.log_debug(f"断言: "
+                             f"预期结果：{expect} "
+                             f"断言方式：{validate_func.__doc__} "
+                             f"断言元素：{check}"
+                             f"==> 通过")
+        except (AssertionError, TypeError) as error:
+            error_msg = f"""
+            断言不通过\n
+            断言方式: {validate_func.__doc__}\n
+            预期结果: {expect}\n
+            断言元素: {check}\n
+            描述：{error}
+            """
+            # 断言结果: {error}  # 断言未通过，断言方式为相等
+            validator_dict["check_result"] = "fail"
+            raise exceptions.ValidationFailure(error_msg)
+
+    def validate(self, validators, test_type, resp_obj=None, driver=None):
         """ 执行断言 """
         self.validation_results = []
         if not validators:
@@ -173,9 +218,15 @@ class SessionContext(object):
 
         for validator in validators:
             # evaluate validators with context variable mapping.
-            evaluated_validator = self.__eval_check_item(parser.parse_validator(validator), resp_obj)
+            if test_type == "api":
+                evaluated_validator = self.__eval_check_item(parser.parse_validator(validator), resp_obj)
+            else:
+                evaluated_validator = validator
             try:
-                self.do_validation(evaluated_validator)
+                if test_type == "api":
+                    self.do_api_validation(evaluated_validator)
+                else:
+                    self.do_ui_validation(driver, evaluated_validator)
             except exceptions.ValidationFailure as ex:
                 validate_pass = False
                 failures.append(str(ex))
@@ -185,16 +236,3 @@ class SessionContext(object):
         if not validate_pass:  # 断言未通过
             failures_string = "\n".join([failure for failure in failures])
             raise exceptions.ValidationFailure(failures_string)
-
-    def save_update_to_header_filed(self, filed_list: list, extracted_variables_mapping: dict):
-        """ 把提取后需要更新到头部信息的数据保存下来
-        filed_list: ['data']
-        extracted_variables_mapping: {'data': 123, 'data2': 456}
-        """
-        for filed in filed_list:
-            self.update_to_header[filed] = extracted_variables_mapping[filed]
-
-    def update_filed_to_header(self, headers: dict):
-        """ 把保存下来的需要更新到头部信息的字段更新到头部信息 """
-        headers.update(self.update_to_header)
-        return headers

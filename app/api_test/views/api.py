@@ -141,7 +141,7 @@ class ApiRunApiMsgView(LoginRequiredView):
                 run_name=report.name,
                 api_ids=api_list,
                 report_id=report.id,
-                env=form.env.data
+                env_code=form.env_code.data
             ).run_case
         ).start()
         return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report.id})

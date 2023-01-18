@@ -13,9 +13,9 @@ class RunApi(RunTestRunner):
     """ 接口调试 """
 
     def __init__(
-            self, project_id=None, run_name=None, api_ids=None, report_id=None, task=None, env="test", run_type="api"
+            self, project_id=None, run_name=None, api_ids=None, report_id=None, task=None, env_code=None, run_type="api"
     ):
-        super().__init__(project_id=project_id, name=run_name, report_id=report_id, env=env, run_type=run_type)
+        super().__init__(project_id=project_id, name=run_name, report_id=report_id, env_code=env_code, run_type=run_type)
 
         self.task = task
         self.api_ids = api_ids  # 要执行的接口id
@@ -69,7 +69,7 @@ class RunCase(RunTestRunner):
             task={},
             report_id=None,
             is_async=0,
-            env="test",
+            env_code="test",
             trigger_type="page",
             is_rollback=False,
             run_type="api",
@@ -80,7 +80,7 @@ class RunCase(RunTestRunner):
             project_id=project_id,
             name=run_name,
             report_id=report_id,
-            env=env,
+            env_code=env_code,
             trigger_type=trigger_type,
             is_rollback=is_rollback,
             run_type=run_type,
@@ -172,7 +172,7 @@ class RunCase(RunTestRunner):
                     "variables": {},
                     "headers": {},
                     "name": current_case.name,
-                    "run_env": self.environment
+                    "run_env": self.env_code
                 },
                 "teststeps": []
             }

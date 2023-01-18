@@ -59,7 +59,7 @@ class WebUiRunCaseView(LoginRequiredView):
         case = form.case_list[0]
         project_id = CaseSet.get_first(id=case.set_id).project_id
         report_id = RunCaseBusiness.run(
-            env=form.env.data,
+            env_code=form.env_code.data,
             browser=form.browser.data,
             is_async=form.is_async.data,
             project_id=project_id,
@@ -67,7 +67,7 @@ class WebUiRunCaseView(LoginRequiredView):
             task_type="case",
             report_model=Report,
             case_id=form.caseId.data,
-            run_type="web_ui",
+            run_type="webUi",
             run_func=RunCase
         )
         return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})

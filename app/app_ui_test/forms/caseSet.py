@@ -20,7 +20,7 @@ class GetCaseSetForm(BaseForm):
 class RunCaseSetForm(GetCaseSetForm):
     """ 运行用例集 """
     is_async = IntegerField()
-    env = StringField(validators=[DataRequired("请选择运行环境")])
+    env_code = StringField(validators=[DataRequired("请选择运行环境")])
     server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])
     phone_id = IntegerField(validators=[DataRequired("请选择执行手机")])
 

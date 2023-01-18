@@ -60,7 +60,7 @@ class AppUiRunCaseView(LoginRequiredView):
         project_id = CaseSet.get_first(id=case.set_id).project_id
         appium_config = RunCaseBusiness.get_appium_config(project_id, form)
         report_id = RunCaseBusiness.run(
-            env=form.env.data,
+            env_code=form.env_code.data,
             is_async=form.is_async.data,
             project_id=project_id,
             report_name=case.name,
