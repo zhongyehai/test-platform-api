@@ -15,7 +15,7 @@ class ProjectBusiness:
     def post(cls, form, project_model, env_model, case_set_model):
         form.num.data = project_model.get_insert_num()
         project = project_model().create(form.data)
-        env_model.create_env(project.id, project.service_addr)  # 新增服务的时候，一并把环境设置齐全
+        env_model.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
         case_set_model.create_case_set_by_project(project.id)  # 新增服务的时候，一并把用例集设置齐全
         return project
 

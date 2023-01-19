@@ -15,8 +15,6 @@ class AddProjectForm(BaseForm):
     name = StringField(validators=[DataRequired("服务名称不能为空"), Length(1, 255, message="服务名长度不可超过255位")])
     manager = StringField(validators=[DataRequired("请选择负责人")])
     business_id = StringField(validators=[DataRequired("请选择业务线")])
-    use_host = StringField()
-    service_addr = StringField(validators=[DataRequired("服务地址必填")])
     num = StringField()
     swagger = StringField()
     func_files = StringField()
@@ -90,17 +88,19 @@ class AddEnv(BaseForm):
     """ 添加环境 """
     env_id = IntegerField(validators=[DataRequired("所属环境必传")])
     project_id = IntegerField(validators=[DataRequired("服务id必传")])
-    host = StringField()
+    host = StringField(validators=[DataRequired("域名必传")])
     variables = StringField()
     headers = StringField()
-    use_service = StringField()
-    env_service_addr = StringField()
     all_func_name = {}
 
     def validate_project_id(self, field):
         project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
         self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files), self.env_id.data)
         setattr(self, "project", project)
+
+    def validate_host(self, field):
+        if validators.url(field.data) is not True:
+            raise ValidationError(f"环境地址【{field.data}】不正确，请输入正确的格式")
 
     def validate_variables(self, field):
         """ 校验公共变量 """
@@ -128,16 +128,10 @@ class AddEnv(BaseForm):
             variable.get("key"): variable.get("value") for variable in self.variables.data if variable.get("key")
         }, self.dumps(field.data))
 
-    def validate_env_service_addr(self, field):
-        """ 选择使用环境设置的服务地址，则必填 """
-        if self.use_service.data == "env":
-            self.validate_data_is_true("选择了使用环境设置的服务地址，则服务地址必填", field.data)
-
 
 class EditEnv(AddEnv):
     """ 修改环境 """
     id = IntegerField(validators=[DataRequired("环境id必传")])
-    host = StringField()
 
     def validate_id(self, field):
         env_data = self.validate_data_is_exist(
@@ -146,14 +140,6 @@ class EditEnv(AddEnv):
             id=field.data
         )
         setattr(self, "env_data", env_data)
-
-    def validate_host(self, field):
-        """ 如果选择了使用服务的域名，则校验域名是否正确 """
-        if Project.get_first(id=self.project_id.data).use_host != "env":
-            if not field.data:
-                raise ValidationError(f"此服务设置的使用项目设置的域名，则域名环境必填")
-            if validators.url(field.data) is not True:
-                raise ValidationError(f"环境地址【{field.data}】不正确，请输入正确的格式")
 
 
 class FindEnvForm(BaseForm):

@@ -210,12 +210,6 @@ class FormatModel(JsonUtil):
         """ 解析输入内容 """
         return FileUtil.build_ui_test_file_path(send_keys) if send_keys and "_is_upload" in send_keys else send_keys
 
-    def parse_host(self, use_host, project_host, env_host, user_service, project_service_addr, env_service_addr):
-        """ 解析host，根据服务/项目处的设置使用对应的host """
-        host = env_host if use_host == "env" else project_host
-        service_addr = project_service_addr if user_service == "project" else env_service_addr
-        return host + service_addr
-
 
 class ProjectModel(FormatModel):
     """ 格式化服务信息 """
@@ -226,10 +220,7 @@ class ProjectModel(FormatModel):
         self.manager = kwargs.get("manager")
         self.func_files = kwargs.get("func_files")
         self.create_user = kwargs.get("create_user")
-        self.host = self.parse_host(
-            kwargs.get("use_host"), kwargs.get("host"), kwargs.get("addr"),
-            kwargs.get("use_service"), kwargs.get("service_addr"), kwargs.get("env_service_addr")
-        )
+        self.host = kwargs.get("host")
         self.variables = self.parse_variables(kwargs.get("variables", {}))
         # 接口自动化字段
         self.headers = self.parse_list_data(kwargs.get("headers", {}))

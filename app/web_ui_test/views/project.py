@@ -66,7 +66,7 @@ class WebUiProjectEnvSynchronizationView(LoginRequiredView):
     def post(self):
         """ 同步环境数据 """
         form = SynchronizationEnvForm().do_validate()
-        from_env = ProjectEnv.get_first(project_id=form.projectId.data, env=form.envFrom.data)
+        from_env = ProjectEnv.get_first(project_id=form.projectId.data, env_id=form.envFrom.data)
         synchronization_result = ProjectEnv.synchronization(from_env, form.envTo.data, ["variables"])
         return app.restful.success("同步成功", data=synchronization_result)
 

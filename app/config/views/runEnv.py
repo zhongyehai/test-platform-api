@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app, request
 
-from app.baseView import LoginRequiredView, AdminRequiredView
+from app.baseView import LoginRequiredView, AdminRequiredView, NotLoginView
 from app.config.models.runEnv import RunEnv
 from app.config.forms.runEnv import (
     GetRunEnvForm, DeleteRunEnvForm, PostRunEnvForm, PutRunEnvForm, GetRunEnvListForm
@@ -9,7 +9,7 @@ from app.config.forms.runEnv import (
 from app.config.blueprint import config_blueprint
 
 
-class GetRunEnvListView(LoginRequiredView):
+class GetRunEnvListView(NotLoginView):
 
     def get(self):
         form = GetRunEnvListForm().do_validate()
@@ -24,7 +24,7 @@ class RunEnvChangeSortView(LoginRequiredView):
         return app.restful.success(msg="修改排序成功")
 
 
-class RunEnvView(AdminRequiredView):
+class RunEnvView(LoginRequiredView):
 
     def get(self):
         """ 获取域名 """
@@ -34,9 +34,9 @@ class RunEnvView(AdminRequiredView):
     def post(self):
         """ 新增域名 """
         form = PostRunEnvForm().do_validate()
-        form.num.data = RunEnv.get_insert_num(test_type=form.test_type.data)
-        config_type = RunEnv().create(form.data)
-        return app.restful.success("新增成功", data=config_type.to_dict())
+        form.num.data = RunEnv.get_insert_num()
+        run_env = RunEnv().create(form.data)
+        return app.restful.success("新增成功", data=run_env.to_dict())
 
     def put(self):
         """ 修改域名 """

@@ -101,7 +101,7 @@ class RunTestRunner:
         self.api_set = set()
         self.element_set = set()
 
-        self.run_env = RunEnv.get_first(code=self.env_code, test_type=self.run_type).to_dict()
+        self.run_env = RunEnv.get_first(code=self.env_code).to_dict()
 
         Func.create_func_file(self.env_code)  # 创建所有函数文件
 

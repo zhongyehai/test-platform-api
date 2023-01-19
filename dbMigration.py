@@ -416,21 +416,17 @@ def init_func_files():
 def init_run_env():
     """ 初始化运行环境 """
     print_type_delimiter("开始创建运行环境")
-    test_type_list = ["api", "webUi", "app"]
     env_dict = [
-        {"name": "开发环境", "code": "dev", "addr": "http://127.0.0.1:8080", "desc": "开发环境"},
-        {"name": "测试环境", "code": "test", "addr": "http://127.0.0.1:8081", "desc": "测试环境"},
-        {"name": "uat环境", "code": "uat", "addr": "http://127.0.0.1:8082", "desc": "uat环境"},
-        {"name": "生产环境", "code": "production", "addr": "http://127.0.0.1:8083", "desc": "生产环境"},
+        {"name": "开发环境", "code": "dev", "desc": "开发环境"},
+        {"name": "测试环境", "code": "test", "desc": "测试环境"},
+        {"name": "uat环境", "code": "uat", "desc": "uat环境"},
+        {"name": "生产环境", "code": "production", "desc": "生产环境"},
     ]
-
-    for test_type in test_type_list:
-        for index, env in enumerate(env_dict):
-            if RunEnv.get_first(code=env["code"], test_type=env["test_type"]) is None:
-                env["num"] = index
-                env["test_type"] = test_type
-                RunEnv().create(env)
-                print_item_delimiter(f'运行环境【{env["name"]}】创建成功')
+    for index, env in enumerate(env_dict):
+        if RunEnv.get_first(code=env["code"]) is None:
+            env["num"] = index
+            RunEnv().create(env)
+            print_item_delimiter(f'运行环境【{env["name"]}】创建成功')
     print_type_delimiter("运行环境创建完成")
 
 
