@@ -22,9 +22,9 @@ class AppUiRunTaskView(NotLoginView):
         case_id = CaseSet.get_case_id(
                 Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
             )
-        appium_config = RunCaseBusiness.get_appium_config(form.set.project_id, form)
+        appium_config = RunCaseBusiness.get_appium_config(form.task.project_id, form)
         report_id = RunCaseBusiness.run(
-            env=form.env.data or form.task.env,
+            env_code=form.env.data or form.task.env,
             trigger_type=form.trigger_type.data,
             is_async=form.is_async.data,
             project_id=form.task.project_id,

@@ -23,3 +23,6 @@ class WebUiStep(BaseStep):
 
     page_id = db.Column(db.Integer(), comment="步骤所在的元素对应的页面的id")
     element_id = db.Column(db.Integer(), comment="步骤所引用的元素的id")
+
+    def add_quote_count(self):
+        pass

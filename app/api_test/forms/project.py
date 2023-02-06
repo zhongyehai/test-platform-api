@@ -5,9 +5,9 @@ from wtforms.validators import ValidationError, Length, DataRequired
 
 from app.baseForm import BaseForm
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
+from app.api_test.models.module import ApiModule as Module
 from app.system.models.user import User
 from app.assist.models.func import Func
-from app.config.models.runEnv import RunEnv
 
 
 class AddProjectForm(BaseForm):
@@ -64,7 +64,7 @@ class DeleteProjectForm(GetProjectByIdForm):
     def validate_id(self, field):
         project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
         self.validate_data_is_true("不能删除别人负责的服务", Project.is_can_delete(project.id, project))
-        self.validate_data_is_false("请先去【接口管理】删除服务下的接口模块", project.modules)
+        self.validate_data_is_not_exist("请先去【页面管理】删除服务下的模块", Module, project_id=field.data)
         setattr(self, "project", project)
 
 

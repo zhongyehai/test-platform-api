@@ -32,7 +32,7 @@ class ApiStep(BaseStep):
 
     api_id = db.Column(db.Integer(), comment="步骤所引用的接口的id")
 
-    def add_api_quote_count(self, api=None):
+    def add_quote_count(self, api=None):
         """ 步骤对应的接口被引用次数+1 """
         if not self.quote_case:
             if not api:

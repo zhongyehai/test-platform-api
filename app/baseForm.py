@@ -87,18 +87,21 @@ class BaseForm(Form, JsonUtil):
         for index, data in enumerate(content):
             title = f"{msg_title}设置，第【{index + 1}】行"
             key, value, data_type = data.get("key"), data.get("value"), data.get("data_type")
+
             # 校验格式
-            if not ((key and value and data_type) or (not key and not value)):
-                raise ValidationError(f"{title}，要设置{msg_title}，则【key、value、数据类型】都需设置")
+            # key 和 数据类型必传
+            if not ((key and data_type) or (not key and not data_type)):
+                raise ValidationError(f"{title}，要设置{msg_title}，则【key、数据类型】都需设置")
 
             # 检验数据类型
-            if value and self.validate_data_format(value, data_type) is False:
-                raise ValidationError(f"{title}，{msg_title}值与数据类型不匹配")
+            if key:
+                if self.validate_data_format(value, data_type) is False:
+                    raise ValidationError(f"{title}，{msg_title}值与数据类型不匹配")
 
     def validate_data_format(self, value, data_type):
         """ 校验数据格式 """
         try:
-            if data_type in ["variable", "func", "str", "file"]:
+            if data_type in ["variable", "func", "str", "file", "True", "False"]:
                 pass
             elif data_type == "json":
                 self.dumps(self.loads(value))
@@ -115,7 +118,8 @@ class BaseForm(Form, JsonUtil):
             validate_type = validate.get("validate_type")
             data_type, value = validate.get("data_type"), validate.get("value")
 
-            if (not data_source and not data_type) or (data_source and not key and validate_type and data_type and not value):
+            if (not data_source and not data_type) or (
+                    data_source and not key and validate_type and data_type and not value):
                 continue
             elif (data_source and not data_type) or (not data_source and data_type):
                 raise ValidationError(

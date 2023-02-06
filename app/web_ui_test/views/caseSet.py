@@ -33,7 +33,7 @@ class WebUiRunCaseSetView(LoginRequiredView):
             report_name=form.set.name,
             task_type="set",
             report_model=Report,
-            case_id=form.set.get_run_case_id(Case),
+            case_id=form.set.get_run_case_id(Case, form.business_id.data),
             run_type="webUi",
             run_func=RunCase
         )

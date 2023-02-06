@@ -77,7 +77,7 @@ class CaseBusiness:
             step["case_id"] = new_case.id
             new_step = step_model().create(step)
             if step_type == "api":
-                new_step.add_api_quote_count()
+                new_step.add_quote_count()
             step_list.append(new_step.to_dict())
         return {"case": new_case.to_dict(), "steps": step_list}
 
@@ -91,7 +91,7 @@ class CaseBusiness:
             step_dict = step.to_dict()
             step_dict["case_id"], step_dict["num"] = to_case.id, num_start + index + 1
             step_list.append(step_model().create(step_dict).to_dict())
-            step.add_api_quote_count()
+            step.add_quote_count()
         return step_list
 
     @classmethod
@@ -122,7 +122,7 @@ class CaseBusiness:
                 step_model().create(step_dict)
 
             if step in from_list:
-                step.add_api_quote_count()
+                step.add_quote_count()
 
     @classmethod
     def put(cls, form, project_model, case_set_model, case_model, step_model):
@@ -155,7 +155,7 @@ class StepBusiness:
         form.num.data = step_model.get_insert_num(case_id=form.case_id.data)
         step = step_model().create(form.data)
         if step_type == "api":
-            step.add_api_quote_count()
+            step.add_quote_count()
         case_model.merge_variables(step.quote_case, step.case_id)
         return step
 
@@ -169,7 +169,7 @@ class StepBusiness:
             old["case_id"] = case_id
         step = step_model().create(old)
         if step_type == "api":
-            step.add_api_quote_count()
+            step.add_quote_count()
         return step
 
 

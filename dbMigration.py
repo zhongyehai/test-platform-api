@@ -162,6 +162,8 @@ data_type_mapping = [
     {"label": "小数", "value": "float"},
     {"label": "列表", "value": "list"},
     {"label": "字典", "value": "dict"},
+    {"label": "布尔值True", "value": "true"},
+    {"label": "布尔值False", "value": "false"},
     {"label": "自定义函数", "value": "func"},
     {"label": "自定义变量", "value": "variable"}
 ]

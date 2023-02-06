@@ -372,7 +372,7 @@ class BaseProjectEnv(BaseModel):
 
     host = db.Column(db.String(255), default="", comment="服务地址")
     variables = db.Column(
-        db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment="服务的公共变量"
+        db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="服务的公共变量"
     )
 
     env_id = db.Column(db.Integer(), nullable=True, comment="对应环境id")
@@ -482,11 +482,12 @@ class BaseCaseSet(BaseModel):
 
     def get_run_case_id(self, case_model, business_id):
         """ 获取用例集下，状态为要运行的用例id """
+        query = {"set_id": self.id, "status": 1}
+        if business_id:
+            query["business_id"] = business_id
         data = [
             case.id for case in
-            case_model.query.filter_by(
-                set_id=self.id, status=1, business_id=business_id
-            ).order_by(case_model.num.asc()).all()
+            case_model.query.filter_by(**query).order_by(case_model.num.asc()).all()
         ]
         return data
 
@@ -546,7 +547,7 @@ class BaseCase(BaseModel):
     run_times = db.Column(db.Integer(), default=1, comment="执行次数，默认执行1次")
     func_files = db.Column(db.Text(), default="[]", comment="用例需要引用的函数list")
     variables = db.Column(
-        db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": "str"}]', comment="用例级的公共参数"
+        db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="用例级的公共参数"
     )
     skip_if = db.Column(
         db.Text(),
