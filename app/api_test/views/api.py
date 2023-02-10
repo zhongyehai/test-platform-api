@@ -18,7 +18,7 @@ from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.models.step import ApiStep as Step
 from app.config.models.config import Config
 from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, \
-    ApiBelongToForm
+    ApiFromForm
 from config import assert_mapping_list
 
 
@@ -47,11 +47,11 @@ class ApiGetApiListView(LoginRequiredView):
         return app.restful.success(data=Api.make_pagination(form))
 
 
-class ApiGetApiBelongToView(LoginRequiredView):
+class ApiGetApiFromView(LoginRequiredView):
 
     def get(self):
         """ 根据接口地址获取接口的归属信息 """
-        form = ApiBelongToForm().do_validate()
+        form = ApiFromForm().do_validate()
         res_msg = "此接口归属："
         for api in form.api_list:  # 多个服务存在同一个接口地址的情况
             project = Project.get_first(id=api.project_id)
@@ -60,11 +60,11 @@ class ApiGetApiBelongToView(LoginRequiredView):
         return app.restful.success(msg=res_msg)
 
 
-class ApiGetApiBelongToStepView(LoginRequiredView):
+class ApiGetApiToStepView(LoginRequiredView):
 
     def get(self):
         """ 查询哪些用例下的步骤引用了当前接口 """
-        form = ApiBelongToForm().do_validate()
+        form = ApiFromForm().do_validate()
         res_msg = "以下步骤由当前接口转化："
         case_dict, case_set_dict, project_dict = {}, {}, {}  # 可能存在重复获取数据的请，获取到就存下来，一条数据只查一次库
         for api in form.api_list:  # 多个服务存在同一个接口地址的情况
@@ -191,7 +191,7 @@ api_test.add_url_rule("/apiMsg/list", view_func=ApiGetApiListView.as_view("ApiGe
 api_test.add_url_rule("/apiMsg/sort", view_func=ApiChangeApiSortView.as_view("ApiChangeApiSortView"))
 api_test.add_url_rule("/apiMsg/upload", view_func=ApiGetApiUploadView.as_view("ApiGetApiUploadView"))
 api_test.add_url_rule("/apiMsg/methods", view_func=ApiMethodsMappingView.as_view("ApiMethodsMappingView"))
-api_test.add_url_rule("/apiMsg/belongTo", view_func=ApiGetApiBelongToView.as_view("ApiGetApiBelongToView"))
+api_test.add_url_rule("/apiMsg/from", view_func=ApiGetApiFromView.as_view("ApiGetApiFromView"))
 api_test.add_url_rule("/apiMsg/assertMapping", view_func=ApiAssertMappingView.as_view("ApiAssertMappingView"))
-api_test.add_url_rule("/apiMsg/belongToStep", view_func=ApiGetApiBelongToStepView.as_view("ApiGetApiBelongToStepView"))
+api_test.add_url_rule("/apiMsg/toStep", view_func=ApiGetApiToStepView.as_view("ApiGetApiToStepView"))
 api_test.add_url_rule("/apiMsg/template/download", view_func=ApiTemplateDownloadView.as_view("ApiTemplateDownloadView"))

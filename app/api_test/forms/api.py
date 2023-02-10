@@ -120,14 +120,17 @@ class ApiListForm(BaseForm):
     pageSize = IntegerField()
 
 
-class ApiBelongToForm(BaseForm):
+class ApiFromForm(BaseForm):
     """ 查询api归属 """
-    addr = StringField(validators=[DataRequired("接口地址必传")])
+    addr = StringField()
+    id = StringField()
 
     def validate_addr(self, field):
-        api_list = Api.get_all(addr=field.data)
+        """ 根据接口地址查 """
+        self.validate_data_is_true("请传入接口地址或接口id", field.data or self.id.data)
+        api_list = Api.get_all(addr=field.data) if field.data else Api.get_all(id=self.id.data)
         if not api_list:
-            raise ValidationError(f"地址为【{field.data}】的接口不存在")
+            raise ValidationError(f"地址为【{field.data}】" if field.data else f"id为【{self.id.data}】" + "的接口不存在")
         setattr(self, "api_list", api_list)
 
 

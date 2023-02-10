@@ -20,9 +20,9 @@ class SQLAlchemy(_SQLAlchemy):
         """ 自定义上下文处理数据提交和异常回滚 """
         try:
             yield
-            self.session.commit()  # 提交到数据库，修改数据
+            self.session.commit()
         except Exception as error:
-            self.session.rollback()  # 事务如果发生异常，执行回滚
+            self.session.rollback()
             raise error
         finally:
             self.session.rollback()
@@ -831,10 +831,6 @@ class Config(BaseModel):
     @classmethod
     def get_request_time_out(cls):
         return cls.get_first(name="request_time_out").value
-
-    @classmethod
-    def get_is_parse_headers_by_swagger(cls):
-        return cls.get_first(name="is_parse_headers_by_swagger").value
 
     @classmethod
     def get_wait_time_out(cls):

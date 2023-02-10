@@ -17,7 +17,8 @@ class AddElementForm(BaseForm):
 
     name = StringField(validators=[DataRequired("元素名字必传"), Length(1, 255, "元素名字长度为1~255位")])
     by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
-    element = StringField(validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
+    element = StringField(
+        validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
     desc = StringField()
     num = StringField()
     wait_time_out = IntegerField()
@@ -105,7 +106,8 @@ class ChangeElementById(BaseForm):
     """ 根据id更新元素 """
     id = IntegerField(validators=[DataRequired("元素id必传")])
     by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
-    element = StringField(validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
+    element = StringField(
+        validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
 
     def validate_id(self, field):
         """ 校验元素id已存在 """
@@ -135,12 +137,18 @@ class DeleteElementForm(GetElementById):
 
     def validate_id(self, field):
         element = self.validate_data_is_exist(f"id为【{field.data}】的元素不存在", Element, id=field.data)
-
-        # 校验接口是否被测试用例引用
-        # case_data = Step.get_first(api_id=field.data)
-        # if case_data:
-        #     case = Case.get_first(id=case_data.case_id)
-        #     raise ValidationError(f"用例【{case.name}】已引用此接口，请先解除引用")
-
         self.validate_data_is_true("不能删除别人项目下的元素", Project.is_can_delete(element.project_id, element))
         setattr(self, "element", element)
+
+
+class ElementFromForm(BaseForm):
+    """ 查询元素归属 """
+    element = StringField()
+    id = StringField()
+
+    def validate_element(self, field):
+        """ 根据接口地址查 """
+        self.validate_data_is_true("请传入元素信息或元素id", field.data or self.id.data)
+        element_list = Element.get_all(element=field.data) if field.data else Element.get_all(id=self.id.data)
+        self.validate_data_is_true("元素不存在", element_list)
+        setattr(self, "element_list", element_list)

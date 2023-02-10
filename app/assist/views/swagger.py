@@ -8,7 +8,6 @@ from flask import request, current_app as app
 from app.assist.blueprint import assist
 from app.assist.models.swagger import SwaggerPullLog
 from app.baseView import LoginRequiredView
-from app.config.models.config import Config
 from app.api_test.models.project import ApiProject
 from app.api_test.models.module import ApiModule
 from app.api_test.models.api import ApiMsg
@@ -55,16 +54,16 @@ def get_request_data_type(content_type):
         return "text"
 
 
-def assert_is_update(api_msg):
+def assert_is_update(api_msg, options):
     """ 判断参数是否需要更新 """
     header_update, params_update, data_json_update, data_form_update = False, False, False, False
-    if not api_msg.headers or not json.loads(api_msg.headers)[0]["key"]:
+    if "headers" in options and not api_msg.headers or not json.loads(api_msg.headers)[0]["key"]:
         header_update = True
-    if not api_msg.params or not json.loads(api_msg.params)[0]["key"]:
+    if "query" in options and not api_msg.params or not json.loads(api_msg.params)[0]["key"]:
         params_update = True
-    if not api_msg.data_json or not json.loads(api_msg.data_json):
+    if "data_json" in options and not api_msg.data_json or not json.loads(api_msg.data_json):
         data_json_update = True
-    if not api_msg.data_form or not json.loads(api_msg.data_form)[0]["key"]:
+    if "data_form" in options and not api_msg.data_form or not json.loads(api_msg.data_form)[0]["key"]:
         data_form_update = True
     return header_update, params_update, data_json_update, data_form_update
 
@@ -75,9 +74,9 @@ def update_obj(obj, field, data, is_update):
         setattr(obj, field, json.dumps(data, ensure_ascii=False, indent=4))
 
 
-def parse_swagger2_args(api_msg, api_detail, swagger_data):
+def parse_swagger2_args(api_msg, api_detail, swagger_data, options):
     """ 解析 swagger2 的参数 """
-    header_update, params_update, data_json_update, data_form_update = assert_is_update(api_msg)  # 判断是否需要更新
+    update_header, update_params, update_data_json, update_data_form = assert_is_update(api_msg, options)  # 判断是否需要更新
 
     # 解析参数
     query = [{"key": None, "value": ""}]
@@ -86,26 +85,25 @@ def parse_swagger2_args(api_msg, api_detail, swagger_data):
     json_data = {}
     for arg in api_detail.get("parameters", []):
         required = "必填" if arg.get("required") else "非必填"
-        if arg["in"] == "query" and params_update:  # 查询字符串参数
+        if update_params and arg["in"] == "query":  # 查询字符串参数
             query.insert(0, {
                 "key": arg["name"],
                 "value": f'{arg.get("description", "")} {arg["type"]} {required}'
             })
-        # 若要同步头部信息，则打开此处的注释即可
-        # elif arg["in"] == "header" and header_update:  # 头部参数
-        #     header.insert(0, {
-        #         "key": arg["name"],
-        #         "value": "",
-        #         "remark": f"{arg.get("description", "")} {arg["type"]} {required}"
-        #     })
-        elif arg["in"] == "formData" and data_form_update:  # form-data参数
+        elif update_header and arg["in"] == "header":  # 头部参数
+            header.insert(0, {
+                "key": arg["name"],
+                "value": "",
+                "remark": f'{arg.get("description", "")} {arg["type"]} {required}'
+            })
+        elif update_data_form and arg["in"] == "formData":  # form-data参数
             form_data.insert(0, {
                 "key": arg["name"],
                 "data_type": f'{arg.get("type")}',
                 "value": "",
                 "remark": f'{arg.get("description", "")} {required}'
             })
-        elif arg["in"] == "body" and data_json_update:  # json参数
+        elif update_data_json and arg["in"] == "body":  # json参数
             # properties = arg.get("schema", {}).get("properties", {})
             # for key, value in properties.items():
             #     json_data[key] = f"{value.get("description", "")} {value.get("type", "")}"
@@ -114,13 +112,13 @@ def parse_swagger2_args(api_msg, api_detail, swagger_data):
             for key, value in properties.items():
                 json_data[key] = f'{value.get("description", "")} {value.get("type", "")}'
 
-    update_obj(api_msg, "headers", header, header_update)
-    update_obj(api_msg, "params", query, params_update)
-    update_obj(api_msg, "data_json", json_data, data_json_update)
-    update_obj(api_msg, "data_form", form_data, data_form_update)
+    update_obj(api_msg, "headers", header, update_header)
+    update_obj(api_msg, "params", query, update_params)
+    update_obj(api_msg, "data_json", json_data, update_data_json)
+    update_obj(api_msg, "data_form", form_data, update_data_form)
 
 
-def parse_openapi3_parameters(parameters, is_parse_headers):
+def parse_openapi3_parameters(parameters):
     """ 解析 openapi3 parameters字段 """
     headers, querys = {}, {}
     for arg_dict in parameters:
@@ -128,8 +126,7 @@ def parse_openapi3_parameters(parameters, is_parse_headers):
         arg_value = f'{arg_dict.get("description", "")} {arg_dict.get("schema", {}).get("type")} {required}'
 
         if arg_dict["in"] == "header":  # 头部参数
-            if is_parse_headers == "1":
-                headers[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
+            headers[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
         elif arg_dict["in"] == "query":  # 查询字符串参数
             querys[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
     return headers, querys
@@ -298,29 +295,30 @@ def list_to_dict(data: list):
     return {} if data is None else {item["key"]: item for item in data if item["key"] is not None}
 
 
-def parse_openapi3_args(db_api, swagger_api, data_models, is_parse_headers):
+def parse_openapi3_args(db_api, swagger_api, data_models, options):
     """ 解析 openapi3 的参数 """
+    headers, query, json_data, form_data, response_template = [], [], {}, [], {}
 
-    # 请求头和查询字符串参数
-    swagger_headers_dict, swagger_query_dict = parse_openapi3_parameters(
-        swagger_api.get("parameters", []), is_parse_headers
-    )
-    headers = dict_to_list(merge_dict(list_to_dict(db_api.headers), swagger_headers_dict))
-    query = dict_to_list(merge_dict(list_to_dict(db_api.params), swagger_query_dict))
+    swagger_headers_dict, swagger_query_dict = parse_openapi3_parameters(swagger_api.get("parameters", []))
+    if "headers" in options:  # 请求头
+        headers = dict_to_list(merge_dict(list_to_dict(db_api.headers), swagger_headers_dict))
+    if "query" in options:  # 查询字符串参数
+        query = dict_to_list(merge_dict(list_to_dict(db_api.params), swagger_query_dict))
 
-    # 请求体
     swagger_request_body_content = swagger_api.get("requestBody", {}).get("content", {})
     swagger_json_data, swagger_form_data = parse_openapi3_request_body(swagger_request_body_content, data_models)
-    json_data = merge_data_json(db_api.data_json, swagger_json_data)
-    form_data = dict_to_list(merge_dict(list_to_dict(db_api.data_form), swagger_form_data))
+    if "json" in options:  # json参数
+        json_data = merge_data_json(db_api.data_json, swagger_json_data)
+    if "form" in options:  # form-data参数
+        form_data = dict_to_list(merge_dict(list_to_dict(db_api.data_form), swagger_form_data))
 
-    # 响应
-    ref_model = \
-        swagger_api.get("responses",
-                        {}).get("200",
-                                {}).get("content",
-                                        {}).get("*/*", {}).get("schema", {}).get("$ref", "").split("/")[-1]  # 数据模型
-    response_template = parse_openapi3_response(ref_model, data_models)
+    if "response" in options:  # 响应
+        ref_model = \
+            swagger_api.get("responses",
+                            {}).get("200",
+                                    {}).get("content",
+                                            {}).get("*/*", {}).get("schema", {}).get("$ref", "").split("/")[-1]  # 数据模型
+        response_template = parse_openapi3_response(ref_model, data_models)
 
     # 更新api数据
     db_api.headers, db_api.params = db_api.dumps(headers), db_api.dumps(query)
@@ -332,21 +330,23 @@ class SwaggerPullView(LoginRequiredView):
 
     def post(self):
         """ 根据指定服务的swagger拉取所有数据 """
-        project, module_dict = ApiProject.get_first(id=request.json.get("id")), {}
+        options, project, module_dict = request.json.get("options"), ApiProject.get_first(id=request.json.get("id")), {}
         pull_log = SwaggerPullLog().create({"project_id": project.id})
+        swagger_data = {}
         try:
             swagger_data = get_swagger_data(project.swagger)  # swagger数据
-            if swagger_data.get("status") == 500:
+            status = swagger_data.get("status")
+            if status and status >= 400:
                 pull_log.pull_fail(project, swagger_data)
-                app.logger.info(f"swagger数据拉取失败: \n{swagger_data}")
-                raise
+                fail_str = f"swagger数据拉取失败，响应结果为: \n{swagger_data}"
+                app.logger.info(fail_str)
+                return app.restful.fail(fail_str)
         except Exception as error:
-            pull_log.pull_fail(project, error)
-            app.logger.error(error)
-            return app.restful.error("swagger数据拉取失败，详见日志")
+            pull_log.pull_fail(project, swagger_data)
+            fail_str = f"swagger数据拉取报错，结果为: \n{error.doc}"
+            app.logger.info(fail_str)
+            return app.restful.fail(fail_str)
         pull_log.pull_success(project)
-
-        is_parse_headers = Config.get_is_parse_headers_by_swagger()
 
         # 解析已有的controller描述
         controller_tags = {tag["name"]: tag.get("description", tag["name"]) for tag in swagger_data.get("tags", [])}
@@ -391,12 +391,12 @@ class SwaggerPullView(LoginRequiredView):
                     # swagger2和openapi3格式不一样，处理方法不一样
                     if "2" in swagger_data.get("swagger", ""):  # swagger2
                         content_type = swagger_api.get("consumes", ["json"])[0]  # 请求数据类型
-                        parse_swagger2_args(db_api, swagger_api, swagger_data)  # 处理参数
+                        parse_swagger2_args(db_api, swagger_api, swagger_data, options)  # 处理参数
                     elif "3" in swagger_data.get("openapi", ""):  # openapi 3
                         content_types = swagger_api.get("requestBody", {}).get("content", {"application/json": ""})
                         content_type = list(content_types.keys())[0]
                         data_models = swagger_data.get("components", {}).get("schemas", {})
-                        parse_openapi3_args(db_api, swagger_api, data_models, is_parse_headers)  # 处理参数
+                        parse_openapi3_args(db_api, swagger_api, data_models, options)  # 处理参数
 
                     # 处理请求参数类型
                     api_template["data_type"] = get_request_data_type(content_type)

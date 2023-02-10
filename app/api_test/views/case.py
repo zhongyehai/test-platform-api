@@ -98,7 +98,7 @@ class ApiCopyCaseStepView(LoginRequiredView):
         return app.restful.success("步骤复制成功", data=step_list)
 
 
-class ApiGetQuoteCaseBelongToView(LoginRequiredView):
+class ApiGetQuoteCaseFromView(LoginRequiredView):
 
     def get(self):
         """ 获取用例的归属 """
@@ -153,4 +153,4 @@ api_test.add_url_rule("/case/pull/step", view_func=ApiPullCaseStepView.as_view("
 api_test.add_url_rule("/case/name", view_func=ApiGetCaseNameByIdView.as_view("ApiGetCaseNameByIdView"))
 api_test.add_url_rule("/case/quote", view_func=ApiChangeCaseQuoteView.as_view("ApiChangeCaseQuoteView"))
 api_test.add_url_rule("/case/changeIsRun", view_func=ApiChangeCaseStatusView.as_view("ApiChangeCaseStatusView"))
-api_test.add_url_rule("/case/from", view_func=ApiGetQuoteCaseBelongToView.as_view("ApiGetQuoteCaseBelongToView"))
+api_test.add_url_rule("/case/from", view_func=ApiGetQuoteCaseFromView.as_view("ApiGetQuoteCaseFromView"))

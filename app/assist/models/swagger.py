@@ -43,7 +43,7 @@ class SwaggerPullLog(BaseModel):
 
     def pull_fail(self, project, desc=None):
         """ 拉取失败 """
-        self.update({"is_success": 0, "desc": desc})
+        self.update({"is_success": 0, "desc": self.dumps(desc)})
         project.last_pull_is_fail()
 
     def pull_success(self, project):

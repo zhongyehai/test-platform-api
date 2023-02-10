@@ -8,7 +8,7 @@ from app.web_ui_test.blueprint import web_ui_test
 from app.web_ui_test.models.page import WebUiPage as Page, db
 from app.web_ui_test.models.element import WebUiElement as Element
 from app.web_ui_test.forms.element import AddElementForm, EditElementForm, DeleteElementForm, ElementListForm, \
-    GetElementById, ChangeElementById
+    GetElementById, ChangeElementById, ElementFromForm
 from utils.parse.parseExcel import parse_file_content
 from utils.util.fileUtil import STATIC_ADDRESS
 
@@ -19,6 +19,19 @@ class WebUiGetElementListView(LoginRequiredView):
         """ 根据模块查接口list """
         form = ElementListForm().do_validate()
         return app.restful.success(data=Element.make_pagination(form))
+
+
+class WebUiGetElementFromView(LoginRequiredView):
+
+    def get(self):
+        """ 获取元素的归属信息 """
+        form = ElementFromForm().do_validate()
+        res_msg = "此元素归属："
+        # for api in form.api_list:  # 多个服务存在同一个接口地址的情况
+        #     project = Project.get_first(id=api.project_id)
+        #     module = Module.get_first(id=api.module_id)
+        #     res_msg += f'【{project.name}_{module.name}_{api.name}】、'
+        return app.restful.success(msg=res_msg)
 
 
 class WebUiChangeElementSortView(LoginRequiredView):
@@ -107,6 +120,7 @@ web_ui_test.add_url_rule("/element", view_func=WebUiElementView.as_view("WebUiEl
 web_ui_test.add_url_rule("/element/upload", view_func=ElementUploadView.as_view("ElementUploadView"))
 web_ui_test.add_url_rule("/element/list", view_func=WebUiGetElementListView.as_view("WebUiGetElementListView"))
 web_ui_test.add_url_rule("/element/sort", view_func=WebUiChangeElementSortView.as_view("WebUiChangeElementSortView"))
+web_ui_test.add_url_rule("/element/from", view_func=WebUiGetElementFromView.as_view("WebUiGetElementFromView"))
 web_ui_test.add_url_rule("/element/changeById",
                          view_func=WebUiChangeElementByIdView.as_view("WebUiChangeElementByIdView"))
 web_ui_test.add_url_rule("/element/template/download",
