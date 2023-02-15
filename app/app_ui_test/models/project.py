@@ -25,8 +25,27 @@ class AppUiProjectEnv(BaseProjectEnv):
 
     @classmethod
     def create_env(cls, project_id=None, env_list=None):
-        """ 自动创建环境 """
+        """
+        当环境配置更新时，自动给项目/环境增加环境信息
+        如果指定了项目id，则只更新该项目的id，否则更新所有项目的id
+        如果已有当前项目的信息，则用该信息创建到指定的环境
+        """
         if not project_id and not env_list:
             return
 
-        cls().create({"project_id": project_id})
+        env_id_list = env_list or RunEnv.get_id_list()
+
+        if project_id:
+            current_project_env = cls.get_first(project_id=project_id)
+            if current_project_env:
+                data = current_project_env.to_dict()
+            else:
+                data = {"project_id": project_id}
+
+            for env_id in env_id_list:
+                data["env_id"] = env_id
+                cls().create(data)
+        else:
+            all_project = cls.get_all()
+            for project in all_project:
+                cls.create_env(project.id, env_id_list)
