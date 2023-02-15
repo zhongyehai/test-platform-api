@@ -6,13 +6,12 @@ import traceback
 from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView
-from app.config.models.config import Config
 from utils.util.fileUtil import FileUtil
 from utils.client.testRunner.parser import parse_function, extract_functions
 from app.assist.blueprint import assist
 from app.assist.models.func import Func
-from app.assist.forms.func import HasFuncForm, SaveFuncDataForm, CreatFuncForm, EditFuncForm, DebuggerFuncForm, \
-    DeleteFuncForm, GetFuncFileForm
+from app.assist.forms.func import HasFuncForm, CreatFuncForm, EditFuncForm, DebuggerFuncForm, DeleteFuncForm, \
+    GetFuncFileForm
 
 
 class GetFuncListView(LoginRequiredView):
@@ -36,7 +35,7 @@ class DebugFuncView(LoginRequiredView):
     def post(self):
         """ 函数调试 """
         form = DebuggerFuncForm().do_validate()
-        name, debug_data = form.func.name, form.debug_data.data
+        name, expression = form.func.name, form.expression.data
 
         # 把自定义函数脚本内容写入到python脚本中
         FileUtil.save_func_data(name, form.func.func_data)
@@ -47,7 +46,7 @@ class DebugFuncView(LoginRequiredView):
             func_list = importlib.reload(importlib.import_module(import_path))
             module_functions_dict = {name: item for name, item in vars(func_list).items() if
                                      isinstance(item, types.FunctionType)}
-            ext_func = extract_functions(debug_data)
+            ext_func = extract_functions(expression)
             func = parse_function(ext_func[0])
             result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])
             return app.restful.success(msg="执行成功，请查看执行结果", result=result)
@@ -55,15 +54,6 @@ class DebugFuncView(LoginRequiredView):
             app.logger.info(str(e))
             error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
             return app.restful.fail(msg="语法错误，请检查", result=error_data)
-
-
-class SaveFuncDataView(LoginRequiredView):
-
-    def put(self):
-        """ 保存函数文件内容 """
-        form = SaveFuncDataForm().do_validate()
-        form.func.update({"func_data": form.func_data.data})
-        return app.restful.success("保存成功")
 
 
 class FuncView(LoginRequiredView):
@@ -96,5 +86,4 @@ class FuncView(LoginRequiredView):
 assist.add_url_rule("/func", view_func=FuncView.as_view("FuncView"))
 assist.add_url_rule("/func/debug", view_func=DebugFuncView.as_view("DebugFuncView"))
 assist.add_url_rule("/func/list", view_func=GetFuncListView.as_view("GetFuncListView"))
-assist.add_url_rule("/func/data", view_func=SaveFuncDataView.as_view("SaveFuncDataView"))
 assist.add_url_rule("/func/sort", view_func=FuncChangeSortView.as_view("FuncChangeSortView"))

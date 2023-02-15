@@ -126,11 +126,12 @@ class ApiFromForm(BaseForm):
     id = StringField()
 
     def validate_addr(self, field):
-        """ 根据接口地址查 """
+        """ 根据接口地址/ip查 """
         self.validate_data_is_true("请传入接口地址或接口id", field.data or self.id.data)
         api_list = Api.get_all(addr=field.data) if field.data else Api.get_all(id=self.id.data)
         if not api_list:
-            raise ValidationError(f"地址为【{field.data}】" if field.data else f"id为【{self.id.data}】" + "的接口不存在")
+            title = f"地址为【{field.data}】" if field.data else f"id为【{self.id.data}】"
+            raise ValidationError(f"{title}的接口不存在")
         setattr(self, "api_list", api_list)
 
 

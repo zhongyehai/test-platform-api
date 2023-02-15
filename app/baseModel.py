@@ -99,11 +99,17 @@ class BaseModel(db.Model, JsonUtil):
 
     @property
     def str_created_time(self):
-        return datetime.strftime(self.created_time, "%Y-%m-%d %H:%M:%S")
+        try:
+            return datetime.strftime(self.created_time, "%Y-%m-%d %H:%M:%S")
+        except:
+            return self.created_time
 
     @property
     def str_update_time(self):
-        return datetime.strftime(self.update_time, "%Y-%m-%d %H:%M:%S")
+        try:
+            return datetime.strftime(self.update_time, "%Y-%m-%d %H:%M:%S")
+        except:
+            return self.created_time
 
     def create(self, attrs_dict: dict, *args):
         """ 插入数据，若指定了字段，则把该字段的值转为json """
@@ -370,7 +376,7 @@ class BaseProjectEnv(BaseModel):
     """ 服务环境基类表 """
     __abstract__ = True
 
-    host = db.Column(db.String(255), default="", comment="服务地址")
+    host = db.Column(db.String(255), default="http://localhost:8023", comment="服务地址")
     variables = db.Column(
         db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="服务的公共变量"
     )
@@ -803,10 +809,6 @@ class Config(BaseModel):
     def get_default_diff_message_send_addr(cls):
         """ 配置的对比结果通知地址 """
         return cls.get_first(name="default_diff_message_send_addr").value
-
-    @classmethod
-    def get_make_user_info_mapping(cls):
-        return cls.get_first(name="make_user_info_mapping").value
 
     @classmethod
     def get_callback_webhook(cls):

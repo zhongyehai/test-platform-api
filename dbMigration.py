@@ -37,17 +37,17 @@ def print_detail_delimiter(content):
 
 
 make_user_info_mapping = {
-    "姓名": "name",
-    "身份证号": "ssn",
-    "手机号": "phone_number",
-    "银行卡": "credit_card_number",
-    "地址": "address",
-    "公司名": "company",
-    "统一社会信用代码": "credit_code",
-    "邮箱": "company_email",
-    "工作": "job",
-    "ipv4": "ipv4",
-    "ipv6": "ipv6"
+    "name": "姓名",
+    "ssn": "身份证号",
+    "phone_number": "手机号",
+    "credit_card_number": "银行卡",
+    "address": "地址",
+    "company": "公司名",
+    "credit_code": "统一社会信用代码",
+    "company_email": "公司邮箱",
+    "job": "工作",
+    "ipv4": "ipv4地址",
+    "ipv6": "ipv6地址"
 }
 
 kym_keyword = [
@@ -138,6 +138,50 @@ kym_keyword = [
         ]
     }
 ]
+
+make_user_language_mapping = {
+    'zh_CN': '简体中文',
+    'en_US': '英语-美国',
+    'ja_JP': '日语-日本',
+    'hi_IN': '印地语-印度',
+    'ko_KR': '朝鲜语-韩国',
+    'es_ES': '西班牙语-西班牙',
+    'pt_PT': '葡萄牙语-葡萄牙',
+    'es_MX': '西班牙语-墨西哥',
+    # 'ar_EG': '阿拉伯语-埃及',
+    # 'ar_PS': '阿拉伯语-巴勒斯坦',
+    # 'ar_SA': '阿拉伯语-沙特阿拉伯',
+    # 'bg_BG': '保加利亚语-保加利亚',
+    # 'cs_CZ': '捷克语-捷克',
+    # 'de_DE': '德语-德国',
+    # 'dk_DK': '丹麦语-丹麦',
+    # 'el_GR': '希腊语-希腊',
+    # 'en_AU': '英语-澳大利亚',
+    # 'en_CA': '英语-加拿大',
+    # 'en_GB': '英语-英国',
+    # 'et_EE': '爱沙尼亚语-爱沙尼亚',
+    # 'fa_IR': '波斯语-伊朗',
+    # 'fi_FI': '芬兰语-芬兰',
+    # 'fr_FR': '法语-法国',
+    # 'hr_HR': '克罗地亚语-克罗地亚',
+    # 'hu_HU': '匈牙利语-匈牙利',
+    # 'hy_AM': '亚美尼亚语-亚美尼亚',
+    # 'it_IT': '意大利语-意大利',
+    # 'ka_GE': '格鲁吉亚语-格鲁吉亚',
+    # 'lt_LT': '立陶宛语-立陶宛',
+    # 'lv_LV': '拉脱维亚语-拉脱维亚',
+    # 'ne_NP': '尼泊尔语-尼泊尔',
+    # 'nl_NL': '德语-荷兰',
+    # 'no_NO': '挪威语-挪威',
+    # 'pl_PL': '波兰语-波兰',
+    # 'pt_BR': '葡萄牙语-巴西',
+    # 'ru_RU': '俄语-俄国',
+    # 'sl_SI': '斯诺文尼亚语-斯诺文尼亚',
+    # 'sv_SE': '瑞典语-瑞典',
+    # 'tr_TR': '土耳其语-土耳其',
+    # 'uk_UA': '乌克兰语-乌克兰',
+    # 'zh_TW': '繁体中文'
+}
 
 # 默认分页信息
 pagination_size = {
@@ -333,21 +377,22 @@ def init_config():
                 "value": JsonUtil.dumps(make_user_info_mapping),
                 "desc": "生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）"
             },
+            {
+                "name": "make_user_language_mapping",
+                "value": JsonUtil.dumps(make_user_language_mapping),
+                "desc": "生成用户信息的可选语言，映射faker的模块（不了解faker模块勿改）"
+            },
         ],
 
         "接口自动化": [
-            {"name": "http_methods", "value": "GET,POST,PUT,DELETE", "desc": "http请求方式，以英文的 ',' 隔开"},
+            {"name": "http_methods", "value": "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS",
+             "desc": "http请求方式，以英文的 ',' 隔开"},
             {"name": "run_time_error_message_send_addr", "value": "", "desc": "运行测试用例时，有错误信息实时通知地址"},
             {"name": "request_time_out", "value": 60, "desc": "运行测试步骤时，request超时时间"},
             {
                 "name": "response_data_source_mapping",
                 "value": JsonUtil.dumps(response_data_source_mapping),
                 "desc": "响应对象数据源映射"
-            },
-            {
-                "name": "is_parse_headers_by_swagger",
-                "value": "1",
-                "desc": "从swagger拉取数据时，是否解析头部参数, 1为要同步"
             },
             {
                 "name": "api_report_addr",
