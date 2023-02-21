@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from wtforms import StringField, IntegerField
+from wtforms import StringField, IntegerField, BooleanField
 from wtforms.validators import ValidationError, DataRequired
 
 from app.assist.models.func import Func
@@ -15,12 +15,12 @@ class AddCaseForm(BaseForm):
     name = StringField(validators=[DataRequired("用例名称不能为空")])
     desc = StringField()
     func_files = StringField()
+    skip_if = StringField()
     variables = StringField()
     run_times = IntegerField()
     set_id = IntegerField(validators=[DataRequired("请选择用例集")])
     steps = StringField()
     num = StringField()
-    business_id = StringField(validators=[DataRequired("请选择业务线")])
 
     all_func_name = {}
     all_variables = {}
@@ -157,6 +157,7 @@ class RunCaseForm(BaseForm):
     env_code = StringField(validators=[DataRequired("请选择运行环境")])
     server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])
     phone_id = IntegerField(validators=[DataRequired("请选择执行手机")])
+    no_reset = BooleanField()
     is_async = IntegerField()
 
     def validate_caseId(self, field):

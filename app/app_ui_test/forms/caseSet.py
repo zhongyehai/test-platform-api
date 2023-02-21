@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from wtforms import StringField, IntegerField
+from wtforms import StringField, IntegerField, BooleanField
 from wtforms.validators import Length, DataRequired
 
 from app.baseForm import BaseForm
@@ -20,6 +20,7 @@ class GetCaseSetForm(BaseForm):
 class RunCaseSetForm(GetCaseSetForm):
     """ 运行用例集 """
     is_async = IntegerField()
+    no_reset = BooleanField()
     env_code = StringField(validators=[DataRequired("请选择运行环境")])
     server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])
     phone_id = IntegerField(validators=[DataRequired("请选择执行手机")])

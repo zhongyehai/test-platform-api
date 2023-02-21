@@ -101,6 +101,7 @@ class FileUtil:
     @classmethod
     def save_func_data(cls, name, content, env="test"):
         """ 保存自定义函数数据 """
+        content = content or ''
         func_data = "# coding:utf-8\n\n" + f'env = "{env}"\n\n' + content
         cls.save_file(os.path.join(FUNC_ADDRESS, f'{name}.py'), func_data)
 

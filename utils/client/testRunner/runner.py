@@ -117,17 +117,17 @@ class Runner(object):
                 skip_type = skip_if["skip_type"]
                 if skip_if["data_source"] == "run_env":
                     skip_if["check_value"] = self.run_env
-                    try:
-                        skip_if_result = self.session_context.do_api_validation(skip_if)  # 借用断言来判断条件是否为真
-                    except Exception as error:
-                        skip_if_result = error
-                    if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
-                        raise SkipTest(f"{skip_if_condition} skipIf触发跳过用例")
+                try:
+                    skip_if_result = self.session_context.do_api_validation(skip_if)  # 借用断言来判断条件是否为真
+                except Exception as error:
+                    skip_if_result = error
+                if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
+                    raise SkipTest(f"{skip_if_condition} skipIf触发跳过")
 
         elif test_dict.get("skipUnless"):
             skip_unless_condition = test_dict["skipUnless"]
             if not self.session_context.eval_content(skip_unless_condition):
-                raise SkipTest(f'{skip_unless_condition} skipUnless触发跳过用例')
+                raise SkipTest(f'{skip_unless_condition} skipUnless触发跳过')
 
     def do_hook_actions(self, actions, hook_type='setup'):
         """ 执行前置/后置自定义函数

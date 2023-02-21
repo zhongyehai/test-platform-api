@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import time
 
-from selenium.common.exceptions import SessionNotCreatedException, InvalidArgumentException
+from selenium.common.exceptions import SessionNotCreatedException, InvalidArgumentException, WebDriverException
 
 from utils.client.testRunner import logger
 from utils.client.testRunner.client import BaseSession
-from utils.client.testRunner.exceptions import TimeoutException, RunTimeException
+from utils.client.testRunner.exceptions import TimeoutException, RunTimeException, InvalidElementStateException
 
 
 class WebDriverSession(BaseSession):
@@ -55,17 +55,7 @@ class WebDriverSession(BaseSession):
 
             elif any(key in action_name for key in ['close', 'quit']):  # 不需要定位元素、不需要输入数据的方法，直接执行
                 return action_func()
-
-            elif any(key in action_name for key in ['click']):  # 需要定位元素、不需要输入数据的方法
-                return action_func(
-                    (
-                        kwargs.get('by_type'),
-                        kwargs.get('element')
-                    ),
-                    wait_time_out=kwargs.get('wait_time_out')
-                )
-
-            else:  # 需要定位元素、需要输入数据的方法
+            else:
                 return action_func(
                     (
                         kwargs.get('by_type'),
@@ -75,14 +65,39 @@ class WebDriverSession(BaseSession):
                     wait_time_out=kwargs.get('wait_time_out')
                 )
 
-        except TimeoutException:
+            # elif any(key in action_name for key in ['click', 'focus']):  # 需要定位元素、不需要输入数据的方法
+            #     return action_func(
+            #         (
+            #             kwargs.get('by_type'),
+            #             kwargs.get('element')
+            #         ),
+            #         wait_time_out=kwargs.get('wait_time_out')
+            #     )
+            #
+            # else:  # 需要定位元素、需要输入数据的方法
+            #     return action_func(
+            #         (
+            #             kwargs.get('by_type'),
+            #             kwargs.get('element')
+            #         ),
+            #         kwargs.get('text'),
+            #         wait_time_out=kwargs.get('wait_time_out')
+            #     )
+
+        except TimeoutException as error:
             raise RunTimeException('浏览器等待元素超时')
 
-        except InvalidArgumentException:
-            raise RunTimeException('元素与操作事件不匹配，请检查元素和操作事件')
+        except InvalidArgumentException as error:
+            raise RunTimeException('元素与操作事件不匹配，请检查元素和操作事件，异常代码【InvalidArgumentException】')
 
-        except SessionNotCreatedException:
-            raise RunTimeException('实例化浏览器失败，请联系管理员检查驱动与浏览器是否匹配')
+        except InvalidElementStateException as error:
+            raise RunTimeException(f'元素与操作事件不匹配，请检查元素和操作事件\n异常代码【InvalidElementStateException】\n异常内容{error.msg}')
+
+        except SessionNotCreatedException as error:
+            raise RunTimeException('实例化浏览器失败，请联系管理员检查驱动与浏览器是否匹配，异常代码【SessionNotCreatedException】')
+
+        except WebDriverException as error:
+            raise RunTimeException('事件驱动异常，请查看日志')
 
 
 if __name__ == '__main__':

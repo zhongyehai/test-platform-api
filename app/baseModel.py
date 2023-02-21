@@ -285,6 +285,11 @@ class BaseModel(db.Model, JsonUtil):
             else:
                 return data
 
+    def change_status(self):
+        """ 修改状态 """
+        if hasattr(self, 'status'):
+            self.update({"status": 1 if self.status == 0 else 0})
+
     @classmethod
     def pagination(cls, page_num, page_size, filters: list = [], order_by=None):
         """ 分页, 如果没有传页码和页数，则根据查询条件获取全部数据
@@ -358,7 +363,8 @@ class BaseProject(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        filters.append(cls.business_id.in_(g.business_id))
+        if g.user_role != 2:  # 非管理员则校验业务线权限
+            filters.append(cls.business_id.in_(g.business_id))
         if form.name.data:
             filters.append(cls.name.like(f'%{form.name.data}%'))
         if form.manager.data:
@@ -486,7 +492,7 @@ class BaseCaseSet(BaseModel):
         for index, name in enumerate(Config.get_case_set_list()):
             cls().create({"name": name, "num": index, "project_id": project_id})
 
-    def get_run_case_id(self, case_model, business_id):
+    def get_run_case_id(self, case_model, business_id=None):
         """ 获取用例集下，状态为要运行的用例id """
         query = {"set_id": self.id, "status": 1}
         if business_id:
@@ -563,14 +569,11 @@ class BaseCase(BaseModel):
         comment="是否跳过的判断条件"
     )
     set_id = db.Column(db.Integer(), comment="所属的用例集id")
-    business_id = db.Column(db.Integer(), comment="所属业务线")
 
     @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        filters.append(cls.business_id.in_(g.business_id))
-
         if form.setId.data:
             filters.append(cls.set_id == form.setId.data)
         if form.name.data:

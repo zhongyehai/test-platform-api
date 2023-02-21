@@ -32,7 +32,7 @@ class ApiCaseSetRunView(LoginRequiredView):
             report_name=form.set.name,
             task_type="set",
             report_model=Report,
-            case_id=form.set.get_run_case_id(Case, form.business_id.data),
+            case_id=form.set.get_run_case_id(Case),
             run_type="api",
             run_func=RunCase
         )

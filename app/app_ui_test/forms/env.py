@@ -28,6 +28,7 @@ class AddServerForm(BaseForm):
 
     def validate_ip(self, field):
         """ 校验ip格式 """
+        self.validate_data_is_true('服务器ip地址请去除协议标识', field.data.lower().startswith(('http', 'https')) is False)
         self.validate_data_is_true("服务器ip地址错误", validators.ipv4(field.data) or validators.ipv6(field.data))
 
     def validate_name(self, field):

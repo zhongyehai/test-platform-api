@@ -17,7 +17,7 @@ class AddElementForm(BaseForm):
 
     name = StringField(validators=[DataRequired("元素名字必传"), Length(1, 255, "元素名字长度为1~255位")])
     by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
-    element = StringField(validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
+    element = StringField(validators=[DataRequired("定位元素表达式必传"), Length(1, 512, "定位元素表达式长度为1~512位")])
     desc = StringField()
     num = StringField()
     wait_time_out = IntegerField()
@@ -41,6 +41,14 @@ class AddElementForm(BaseForm):
             "一个页面只能有一个地址",
             field.data == "url" and Element.get_first(page_id=self.page_id.data, by="url")
         )
+
+        # 如果是坐标定位，校验坐标值
+        if field.data == "coordinate":
+            try:
+                if isinstance(eval(self.element.data), (tuple, list)) is False:
+                    raise
+            except:
+                raise ValueError("元素表达式错误，请参照示例填写")
 
     def validate_name(self, field):
         """ 校验同一页面元素名不重复 """
@@ -91,6 +99,13 @@ class EditElementForm(AddElementForm):
                 by="url"
             )
 
+        # 如果是坐标定位，校验坐标值
+        if field.data == "coordinate":
+            try:
+                if isinstance(eval(self.element.data), (tuple, list)) is False:
+                    raise
+            except:
+                raise ValueError("元素表达式错误，请参照示例填写")
 
 class ValidateProjectId(BaseForm):
     """ 校验项目id """

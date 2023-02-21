@@ -45,6 +45,7 @@ class AddStepForm(BaseForm):
     down_func = StringField()
     status = IntegerField()
     run_times = IntegerField()
+    skip_if = StringField()
     extracts = StringField()
     validates = StringField()
     data_driver = StringField()

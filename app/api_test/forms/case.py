@@ -34,7 +34,6 @@ class AddCaseForm(BaseForm):
     steps = StringField()
     num = StringField()
     desc = StringField()
-    business_id = StringField(validators=[DataRequired("请选择业务线")])
 
     all_func_name = {}
     all_variables = {}

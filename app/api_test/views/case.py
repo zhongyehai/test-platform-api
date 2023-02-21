@@ -76,7 +76,7 @@ class ApiChangeCaseStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改用例状态（是否执行） """
-        Case.get_first(id=request.json.get("id")).update(request.json)
+        Case.get_first(id=request.json.get("id")).change_status()
         return app.restful.success("运行状态修改成功")
 
 

@@ -16,12 +16,12 @@ class AddCaseForm(BaseForm):
     name = StringField(validators=[DataRequired("用例名称不能为空")])
     desc = StringField()
     func_files = StringField()
+    skip_if = StringField()
     variables = StringField()
     run_times = IntegerField()
     set_id = IntegerField(validators=[DataRequired("请选择用例集")])
     steps = StringField()
     num = StringField()
-    business_id = StringField(validators=[DataRequired("请选择业务线")])
 
     all_func_name = {}
     all_variables = {}

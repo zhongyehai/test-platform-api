@@ -21,7 +21,6 @@ class RunCaseSetForm(GetCaseSetForm):
     """ 运行用例集 """
     is_async = IntegerField()
     env_code = StringField()
-    business_id = StringField()
 
     def validate_id(self, field):
         set = self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSet, id=field.data)

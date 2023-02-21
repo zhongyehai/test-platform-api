@@ -18,7 +18,7 @@ class AddElementForm(BaseForm):
     name = StringField(validators=[DataRequired("元素名字必传"), Length(1, 255, "元素名字长度为1~255位")])
     by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
     element = StringField(
-        validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
+        validators=[DataRequired("定位元素表达式必传"), Length(1, 512, "定位元素表达式长度为1~512位")])
     desc = StringField()
     num = StringField()
     wait_time_out = IntegerField()

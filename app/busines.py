@@ -29,7 +29,8 @@ class ProjectEnvBusiness:
 
         # 更新环境的时候，把环境的头部信息、变量的key一并同步到其他环境
         env_list = [
-            env.env_id for env in env_model.get_all(project_id=form.project_id.data) if env.env_id != form.env_data.env_id
+            env.env_id for env in env_model.get_all(project_id=form.project_id.data) if
+            env.env_id != form.env_data.env_id
         ]
         env_model.synchronization(form.env_data, env_list, filed_list)
 
@@ -292,5 +293,10 @@ class RunCaseBusiness:
             "deviceName": phone["name"],
             "appPackage": project["app_package"],
             "appActivity": project["app_activity"],
-            "noReset": True
+            "unicodeKeyboard": True,  # 使用Unicode编码方式发送字符串
+            "resetKeyboard": True,  # 是否调用appium键盘
+            "noReset": form.no_reset.data,  # 控制APP记录的信息是否不重置
+            # "app": "",  # 安装路径
+            # "browserName": "",  # 直接测web用, Chrome
+            # "autoWebview": "",  # 开机进入webview模式
         }

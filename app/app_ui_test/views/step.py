@@ -44,7 +44,7 @@ class AppUiChangeStepStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改步骤状态（是否执行） """
-        Step.get_first(id=request.json.get("id")).update(request.json)
+        Step.get_first(id=request.json.get("id")).change_status()
         return app.restful.success("运行状态修改成功")
 
 

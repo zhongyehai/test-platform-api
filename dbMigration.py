@@ -183,6 +183,46 @@ make_user_language_mapping = {
     # 'zh_TW': '繁体中文'
 }
 
+# 模拟键盘输入的code
+app_key_code = {
+    "7": "按键'0'",
+    "8": "按键'1'",
+    "9": "按键'2'",
+    "10": "按键'3'",
+    "11": "按键'4'",
+    "12": "按键'5'",
+    "13": "按键'6'",
+    "14": "按键'7'",
+    "15": "按键'8'",
+    "16": "按键'9'",
+    "29": "按键'A'",
+    "30": "按键'B'",
+    "31": "按键'C'",
+    "32": "按键'D'",
+    "33": "按键'E'",
+    "34": "按键'F'",
+    "35": "按键'G'",
+    "36": "按键'H'",
+    "37": "按键'I'",
+    "38": "按键'J'",
+    "39": "按键'K'",
+    "40": "按键'L'",
+    "41": "按键'M'",
+    "42": "按键'N'",
+    "43": "按键'O'",
+    "44": "按键'P'",
+    "45": "按键'Q'",
+    "46": "按键'R'",
+    "47": "按键'S'",
+    "48": "按键'T'",
+    "49": "按键'U'",
+    "50": "按键'V'",
+    "51": "按键'W'",
+    "52": "按键'X'",
+    "53": "按键'Y'",
+    "54": "按键'Z'"
+}
+
 # 默认分页信息
 pagination_size = {
     "page_num": 1,
@@ -227,7 +267,8 @@ find_element_option = [
     {"label": "根据name属性定位", "value": "name"},
     {"label": "根据tag名字定位 ", "value": "tag name"},
     {"label": "根据超链接文本定位", "value": "link text"},
-    {"label": "页面地址", "value": "url"}
+    {"label": "页面地址", "value": "url"},
+    {"label": "坐标定位(APP)", "value": "coordinate"}
 ]
 
 # 运行测试的类型
@@ -424,6 +465,7 @@ def init_config():
         "appUi自动化": [
             {"name": "server_os_mapping", "value": JsonUtil.dumps(server_os_mapping), "desc": "appium服务器系统类型"},
             {"name": "phone_os_mapping", "value": JsonUtil.dumps(phone_os_mapping), "desc": "运行app自动化的手机系统"},
+            {"name": "app_key_code", "value": JsonUtil.dumps(app_key_code), "desc": "模拟手机键盘输入code"},
             {
                 "name": "app_ui_report_addr",
                 "value": "/#/appUiTest/reportShow?id=",

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from wtforms import StringField, IntegerField
+from wtforms import StringField, IntegerField, BooleanField
 from wtforms.validators import ValidationError, DataRequired
 from crontab import CronTab
 
@@ -94,6 +94,7 @@ class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
     env = StringField()
     is_async = IntegerField()
+    no_reset = BooleanField()
     trigger_type = StringField()  # pipeline 代表是流水线触发，跑完过后会发送测试报告
     extend = StringField()  # 运维传过来的扩展字段，接收的什么就返回什么
     server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])

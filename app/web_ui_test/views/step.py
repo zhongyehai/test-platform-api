@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from selenium.webdriver.common.keys import Keys
 from flask import request, current_app as app
 
 from app.baseView import LoginRequiredView
@@ -26,6 +27,14 @@ class WebUiGetCaseExecuteListView(LoginRequiredView):
         return app.restful.success("获取成功", data=ui_action_mapping_list)
 
 
+class WebUiGetKeyBoardCodeListView(LoginRequiredView):
+
+    def get(self):
+        """ 获取键盘映射 """
+        data = {key: f'按键【{key}】' for key in dir(Keys) if key.startswith('_') is False}
+        return app.restful.success("获取成功", data=data)
+
+
 class WebUiGetExtractMappingListView(LoginRequiredView):
 
     def get(self):
@@ -44,7 +53,7 @@ class WebUiChangeStepStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改步骤状态（是否执行） """
-        Step.get_first(id=request.json.get("id")).update(request.json)
+        Step.get_first(id=request.json.get("id")).change_status()
         return app.restful.success("运行状态修改成功")
 
 
@@ -100,6 +109,8 @@ web_ui_test.add_url_rule("/step", view_func=WebUiStepMethodViewView.as_view("Web
 web_ui_test.add_url_rule("/step/sort", view_func=WebUiChangeStepSortView.as_view("WebUiChangeStepSortView"))
 web_ui_test.add_url_rule("/step/changeIsRun", view_func=WebUiChangeStepStatusView.as_view("WebUiChangeStepStatusView"))
 web_ui_test.add_url_rule("/step/execute", view_func=WebUiGetCaseExecuteListView.as_view("WebUiGetCaseExecuteListView"))
+web_ui_test.add_url_rule("/step/keyBoardCode",
+                         view_func=WebUiGetKeyBoardCodeListView.as_view("WebUiGetKeyBoardCodeListView"))
 web_ui_test.add_url_rule("/step/assertMapping",
                          view_func=WebUiGetAssertMappingListView.as_view("WebUiGetAssertMappingListView"))
 web_ui_test.add_url_rule("/step/extractMapping",
