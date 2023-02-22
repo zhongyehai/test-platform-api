@@ -171,13 +171,13 @@ class RunTestRunner:
             skip_type = skip_if["skip_type"]
             if skip_if["data_source"] == "run_env":
                 skip_if["check_value"] = self.env_code
-                try:
-                    comparator = getattr(built_in, skip_if["comparator"])
-                    skip_if_result = comparator(skip_if["check_value"], skip_if["expect"])  # 借用断言来判断条件是否为真
-                except Exception as error:
-                    skip_if_result = error
-                if ("true" in skip_type and not skip_if_result) or ("false" in skip_type and skip_if_result):
-                    return True
+            try:
+                comparator = getattr(built_in, skip_if["comparator"])
+                skip_if_result = comparator(skip_if["check_value"], skip_if["expect"])  # 借用断言来判断条件是否为真
+            except Exception as error:
+                skip_if_result = error
+            if ("true" in skip_type and not skip_if_result) or ("false" in skip_type and skip_if_result):
+                return True
 
     def parse_ui_test_step(self, project, element, step):
         """ 解析 UI自动化测试步骤

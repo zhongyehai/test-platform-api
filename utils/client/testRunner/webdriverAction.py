@@ -184,7 +184,11 @@ class Actions:
 
     def action_14app_scroll_coordinate_end(self, *args, **kwargs):
         """ 滚动到手机底部 """
+        before_swipe = self.driver.page_source  # 滚动前的页面资源
         self.action_14app_scroll_coordinate_is_input1({"y1": 3 / 4, "y2": -1 / 9999})
+        after_swipe = self.driver.page_source  # 滚动后的页面资源
+        if before_swipe != after_swipe:  # 如果滚动前和滚动后的页面不一致，说明进行了滚动，则继续滚动，否则证明已经滚动到底，不再滚动
+            self.action_14app_scroll_coordinate_end()
 
     def action_15select_by_index_is_input(self, locator: tuple, index: int = 0, wait_time_out=None):
         """ 通过索引选中，index是索引第几个，从0开始，默认选第一个， is_input标识为输入内容 """
