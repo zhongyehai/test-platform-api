@@ -151,7 +151,7 @@ class Runner(object):
                 self.session_context.eval_content(action)
 
     def _run_test(self, step_dict):
-        """ 单个teststep运行。
+        """ 单个测试步骤运行。
 
         Args:
             step_dict (dict): teststep info
@@ -229,7 +229,8 @@ class Runner(object):
             self.resp_obj = response.ResponseObject(resp)
 
             # 数据提取
-            extracted_variables_mapping = self.resp_obj.extract_response(self.session_context, extractors.get("extractors", []))
+            extracted_variables_mapping = self.resp_obj.extract_response(self.session_context,
+                                                                         extractors.get("extractors", []))
             self.session_context.update_test_variables("response", self.resp_obj)
         else:
             # 执行测试步骤浏览器操作
@@ -272,7 +273,7 @@ class Runner(object):
             self.validation_results = self.session_context.validation_results
 
     def run_test(self, step_dict):
-        """ 运行testcase的单个测试步骤。test_dict可以有3种类型。
+        """ 运行用例的单个测试步骤
         Args:
             step_dict (dict):{
                     "name": "teststep description",
@@ -286,7 +287,10 @@ class Runner(object):
         self.meta_datas = None
         try:
             self._run_test(step_dict)
-        except Exception:
+        except Exception as error:  # 捕获步骤运行中报错(报错、断言不通过、跳过测试)
+            # 如果不是跳过测试的异常，则把当前测试用例运行结果标识为失败，后续步骤可根据此状态判断是否继续执行
+            if isinstance(error, SkipTest) is False:
+                self.session_context.update_session_variables({"case_run_result": "fail"})
             raise
         finally:
             self.meta_datas = self.__get_test_data()

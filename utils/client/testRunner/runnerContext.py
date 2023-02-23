@@ -19,7 +19,8 @@ class SessionContext(object):
 
     """
     def __init__(self, functions, variables=None):
-        self.session_variables_mapping = utils.list_to_dict(variables or {})
+        # 初始化时把当前测试用例运行结果标识为成功，后续步骤可根据此状态判断是否继续执行
+        self.session_variables_mapping = utils.list_to_dict(variables or {"case_run_result": "success"})
         self.FUNCTIONS_MAPPING = functions
         self.init_test_variables()
         self.validation_results = []

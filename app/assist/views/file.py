@@ -7,7 +7,7 @@ from flask import request, send_from_directory, current_app as app
 from app.assist.blueprint import assist
 from app.baseView import LoginRequiredView, NotLoginView
 from utils.util.fileUtil import CASE_FILE_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, \
-    UI_CASE_FILE_ADDRESS, FileUtil
+    UI_CASE_FILE_ADDRESS, BROWSER_DRIVER_ADDRESS, FileUtil
 
 folders = {
     "case": CASE_FILE_ADDRESS,
@@ -15,6 +15,7 @@ folders = {
     "cfca": CFCA_FILE_ADDRESS,
     "callBack": CALL_BACK_ADDRESS,
     "temp": TEMP_FILE_ADDRESS,
+    "driver": BROWSER_DRIVER_ADDRESS,
 }
 
 

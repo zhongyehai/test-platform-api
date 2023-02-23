@@ -49,6 +49,8 @@ class AddStepForm(BaseForm):
     data_urlencoded = StringField()
     data_text = StringField()
     extracts = StringField()
+    replace_host = IntegerField()
+    skip_on_fail = IntegerField()
     validates = StringField()
     data_driver = StringField()
     num = StringField()

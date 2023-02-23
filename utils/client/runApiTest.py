@@ -124,7 +124,7 @@ class RunCase(RunTestRunner):
             "times": step.run_times,  # 运行次数
             "extract": step.extracts,  # 接口要提取的信息
             "validate": step.validates,  # 接口断言信息
-            "base_url": current_project.host if step.replace_host else project.host,
+            "base_url": current_project.host if step.replace_host == 1 else project.host,
             "request": {
                 "method": api["request"]["method"],
                 "url": api["request"]["url"],

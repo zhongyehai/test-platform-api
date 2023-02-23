@@ -617,7 +617,7 @@ class BaseStep(BaseModel):
         ]),
         comment="是否跳过的判断条件"
     )
-
+    skip_on_fail = db.Column(db.Integer(), default=1, comment="当用例有失败的步骤时，是否跳过此步骤，1跳过，0不跳过，默认跳过")
     data_driver = db.Column(db.Text(), default="[]", comment="数据驱动，若此字段有值，则走数据驱动的解析")
     quote_case = db.Column(db.String(5), default="", comment="引用用例的id")
     project_id = db.Column(db.Integer(), comment="步骤所在的服务的id")
@@ -672,15 +672,15 @@ class BaseReport(BaseModel):
     __abstract__ = True
 
     name = db.Column(db.String(128), nullable=True, comment="测试报告名称")
-    is_passed = db.Column(db.Integer, default=1, comment="是否全部通过，1全部通过，0有报错")
+    is_passed = db.Column(db.Integer(), default=1, comment="是否全部通过，1全部通过，0有报错")
     run_type = db.Column(db.String(255), default="task", nullable=True, comment="报告类型，task/case/api")
-    status = db.Column(db.Integer, default=1, comment="是否执行完毕，1执行中，2执行完毕")
-    retry_count = db.Column(db.Integer, default=0, comment="已经执行重试的次数")
+    status = db.Column(db.Integer(), default=1, comment="是否执行完毕，1执行中，2执行完毕")
+    retry_count = db.Column(db.Integer(), default=0, comment="已经执行重试的次数")
     env = db.Column(db.String(255), default="test", comment="运行环境")
-    process = db.Column(db.Integer, default=1, comment="进度, 1: 解析数据、2: 执行测试、3: 写入报告")
+    process = db.Column(db.Integer(), default=1, comment="进度, 1: 解析数据、2: 执行测试、3: 写入报告")
     trigger_type = db.Column(
         db.String(128), nullable=True, default="page", comment="触发类型，pipeline:流水线、page:页面、cron:定时任务")
-    project_id = db.Column(db.Integer, comment="所属的服务id")
+    project_id = db.Column(db.Integer(), comment="所属的服务id")
 
     def update_status(self, run_result, status=2):
         """ 测试运行结束后，更新状态和结果 """

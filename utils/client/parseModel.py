@@ -174,7 +174,7 @@ class FormatModel(JsonUtil):
 
         return "${" + f'{func_name}({",".join(args_and_kwargs)})' + "}"
 
-    def parse_skip_if(self, skip_if_list):
+    def parse_skip_if(self, skip_if_list, skip_on_fail=0):
         """ 判断 skip_if 是否要执行 """
         data_list = []
         for skip_if in skip_if_list:
@@ -182,6 +182,17 @@ class FormatModel(JsonUtil):
                 skip_if["expect"] = self.build_data(skip_if["data_type"], skip_if["expect"])
                 skip_if["comparator"] = assert_mapping[skip_if["comparator"]]
                 data_list.append(skip_if)
+
+        if skip_on_fail == 1:  # 如果设置了失败则跳过
+            data_list.append({
+                'skip_type': 'skip_if_true',
+                'data_source': 'variable',
+                'check_value': '$case_run_result',
+                'comparator': '_01equals',
+                'data_type': 'str',
+                'expect': 'fail'
+            })
+
         return data_list
 
     def parse_form_data(self, form_data_list):
@@ -306,7 +317,7 @@ class StepModel(FormatModel):
         self.run_times = kwargs.get("run_times")
         self.up_func = kwargs.get("up_func")
         self.down_func = kwargs.get("down_func")
-        self.skip_if = self.parse_skip_if(kwargs.get("skip_if"))
+        self.skip_if = self.parse_skip_if(kwargs.get("skip_if"), kwargs.get("skip_on_fail", 1))
         self.status = kwargs.get("status")
         self.data_driver = kwargs.get("data_driver", {})
         self.quote_case = kwargs.get("quote_case", {})
