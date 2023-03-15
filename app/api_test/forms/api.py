@@ -22,14 +22,20 @@ class GetApiByIdForm(BaseForm):
 
 class AddApiForm(BaseForm):
     """ 添加接口信息的校验 """
+    name_length = Api.name.property.columns[0].type.length
+    method_length = Api.method.property.columns[0].type.length
+
     project_id = StringField(validators=[DataRequired("服务id必传")])
     module_id = StringField(validators=[DataRequired("模块id必传")])
-
-    name = StringField(validators=[DataRequired("接口名必传"), Length(1, 255, "接口名长度为1~255位")])
+    name = StringField(
+        validators=[DataRequired("接口名必传"), Length(1, name_length, f"接口名长度不可超过{name_length}位")])
     desc = StringField()
     up_func = StringField()  # 前置条件
     down_func = StringField()  # 后置条件
-    method = StringField(validators=[DataRequired("请求方法必传"), Length(1, 10, message="请求方法长度为1~10位")])
+    method = StringField(validators=[
+        DataRequired("请求方法必传"),
+        Length(1, method_length, f"请求方法长度不可超过{method_length}位")
+    ])
     addr = StringField(validators=[DataRequired("接口地址必传")])
     headers = StringField()
     params = StringField()
@@ -152,3 +158,13 @@ class DeleteApiForm(GetApiByIdForm):
             Project.is_can_delete(Module.get_first(id=api.module_id).project_id, api)
         )
         setattr(self, "api", api)
+
+
+class ChangeLevel(GetApiByIdForm):
+
+    level = StringField()  # 接口等级
+
+
+class ChangeStatus(GetApiByIdForm):
+
+    deprecated = StringField()  # 接口是否废弃

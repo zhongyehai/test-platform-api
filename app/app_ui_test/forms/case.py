@@ -23,7 +23,6 @@ class AddCaseForm(BaseForm):
     num = StringField()
 
     all_func_name = {}
-    all_variables = {}
     project = None
 
     def validate_variables(self, field):
@@ -46,8 +45,11 @@ class AddCaseForm(BaseForm):
         # 公共变量
         variables = env["variables"]
         variables.extend(field.data)
+        all_variables = {
+            variable.get("key"): variable.get("value") for variable in variables if variable.get("key")
+        }
         self.validate_variable_format(field.data)
-        self.validate_variable(self.all_variables, variables, self.dumps(field.data))
+        self.validate_variable(all_variables, self.dumps(field.data), "自定义变量")
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """
@@ -154,7 +156,6 @@ class PullCaseStepForm(BaseForm):
 class RunCaseForm(BaseForm):
     """ 运行用例 """
     caseId = StringField(validators=[DataRequired("请选择用例")])
-    env_code = StringField(validators=[DataRequired("请选择运行环境")])
     server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])
     phone_id = IntegerField(validators=[DataRequired("请选择执行手机")])
     no_reset = BooleanField()

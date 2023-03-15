@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from wtforms import StringField, IntegerField
-from wtforms.validators import ValidationError, DataRequired
+from wtforms.validators import ValidationError, Length, DataRequired
 from crontab import CronTab
 
 from app.baseForm import BaseForm
@@ -11,11 +11,15 @@ from app.config.models.runEnv import RunEnv
 
 class AddTaskForm(BaseForm):
     """ 添加定时任务的校验 """
+    name_length = Task.name.property.columns[0].type.length
     project_id = IntegerField(validators=[DataRequired("请选择服务")])
     set_ids = StringField()
     case_ids = StringField()
     env = StringField(validators=[DataRequired("请选择要运行的环境")])
-    name = StringField(validators=[DataRequired("任务名不能为空")])
+    name = StringField(validators=[
+        DataRequired("任务名不能为空"),
+        Length(1, name_length, f"步骤长度不可超过{name_length}位")
+    ])
     we_chat = StringField()
     ding_ding = StringField()
     is_send = StringField(validators=[DataRequired("请选择是否发送报告")])
@@ -26,6 +30,7 @@ class AddTaskForm(BaseForm):
     email_pwd = StringField()
     cron = StringField()
     num = StringField()
+    conf = StringField()
     call_back = StringField()
     is_async = IntegerField()
 

@@ -22,6 +22,17 @@ class GetFuncListView(LoginRequiredView):
         return app.restful.success("获取成功", data=Func.make_pagination(form))
 
 
+class CopyFuncView(LoginRequiredView):
+
+    def post(self):
+        """ 复制自定义函数文件 """
+        form = HasFuncForm().do_validate()
+        data = form.func.to_dict()
+        data["name"] += '_copy'
+        func = Func().create(data)
+        return app.restful.success("复制成功", data=func.to_dict())
+
+
 class FuncChangeSortView(LoginRequiredView):
 
     def put(self):
@@ -34,11 +45,12 @@ class DebugFuncView(LoginRequiredView):
 
     def post(self):
         """ 函数调试 """
+        env = "debug"
         form = DebuggerFuncForm().do_validate()
-        name, expression = form.func.name, form.expression.data
+        name, expression = f'{env}_{form.func.name}', form.expression.data
 
         # 把自定义函数脚本内容写入到python脚本中
-        FileUtil.save_func_data(name, form.func.func_data)
+        FileUtil.save_func_data(name, form.func.func_data, env=env)
 
         # 动态导入脚本
         try:
@@ -57,6 +69,7 @@ class DebugFuncView(LoginRequiredView):
 
 
 class FuncView(LoginRequiredView):
+    default_env = "debug"
 
     def get(self):
         """ 获取函数文件 """
@@ -67,8 +80,8 @@ class FuncView(LoginRequiredView):
         """ 新增函数文件 """
         form = CreatFuncForm().do_validate()
         form.num.data = Func.get_insert_num()
-        Func().create(form.data)
-        return app.restful.success(f'函数文件 {form.name.data} 创建成功')
+        func = Func().create(form.data)
+        return app.restful.success(f'函数文件 {form.name.data} 创建成功', data=func.to_dict())
 
     def put(self):
         """ 修改函数文件 """
@@ -84,6 +97,7 @@ class FuncView(LoginRequiredView):
 
 
 assist.add_url_rule("/func", view_func=FuncView.as_view("FuncView"))
+assist.add_url_rule("/func/copy", view_func=CopyFuncView.as_view("CopyFuncView"))
 assist.add_url_rule("/func/debug", view_func=DebugFuncView.as_view("DebugFuncView"))
 assist.add_url_rule("/func/list", view_func=GetFuncListView.as_view("GetFuncListView"))
 assist.add_url_rule("/func/sort", view_func=FuncChangeSortView.as_view("FuncChangeSortView"))

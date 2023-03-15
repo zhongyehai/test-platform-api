@@ -4,11 +4,9 @@ from wtforms.validators import ValidationError, DataRequired
 from crontab import CronTab
 
 from app.baseForm import BaseForm
-from app.config.models.config import Config
 from app.app_ui_test.models.task import AppUiTask as Task
 from app.app_ui_test.models.project import AppUiProject as Project
 from app.app_ui_test.models.env import AppUiRunServer as Server, AppUiRunPhone as Phone
-from app.config.models.runEnv import RunEnv
 
 
 class AddTaskForm(BaseForm):
@@ -16,7 +14,6 @@ class AddTaskForm(BaseForm):
     project_id = IntegerField(validators=[DataRequired("请选择项目")])
     set_ids = StringField()
     case_ids = StringField()
-    env = StringField(validators=[DataRequired("请选择要运行的环境")])
     name = StringField(validators=[DataRequired("任务名不能为空")])
     we_chat = StringField()
     ding_ding = StringField()
@@ -28,6 +25,7 @@ class AddTaskForm(BaseForm):
     email_pwd = StringField()
     cron = StringField()
     num = StringField()
+    conf = StringField()
     call_back = StringField()
     is_async = IntegerField()
 
@@ -58,6 +56,12 @@ class AddTaskForm(BaseForm):
             CronTab(field.data)
         except Exception as error:
             raise ValidationError(f"时间配置【{field.data}】错误，需为cron格式, 请检查")
+
+    def validate_conf(self, field):
+        """ 校验任务运行配置 """
+        self.validate_data_is_true('请选择运行服务器', field.data.get("server_id"))
+        self.validate_data_is_true('请选择运行手机', field.data.get("phone_id"))
+        field.data["no_reset"] = field.data.get("no_reset") if field.data.get("no_reset") is not None else True
 
     def validate_name(self, field):
         """ 校验任务名不重复 """
@@ -92,27 +96,30 @@ class DisableTaskIdForm(HasTaskIdForm):
 
 class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
-    env = StringField()
     is_async = IntegerField()
     no_reset = BooleanField()
     trigger_type = StringField()  # pipeline 代表是流水线触发，跑完过后会发送测试报告
     extend = StringField()  # 运维传过来的扩展字段，接收的什么就返回什么
-    server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])
-    phone_id = IntegerField(validators=[DataRequired("请选择执行手机")])
+    server_id = IntegerField()
+    phone_id = IntegerField()
 
-    def validate_env(self, field):
-        """ 检验环境 """
-        if field.data:
-            self.validate_data_is_true(f"环境【{field.data}】不存在",  RunEnv.get_first(code=field.data))
+    def validate_no_reset(self, field):
+        """ 是否重置app """
+        if not field.data:
+            field.data = self.loads(self.task.conf)["no_reset"]
 
     def validate_server_id(self, field):
         """ 校验服务id存在 """
-        server = self.validate_data_is_exist(f"id为【{field.data}】的服务器不存在", Server, id=field.data)
+        data = field.data or self.loads(self.task.conf)["server_id"]
+        self.validate_data_is_true('请设置运行服务器', data)
+        server = self.validate_data_is_exist(f"id为【{field.data}】的服务器不存在", Server, id=data)
         setattr(self, "server", server)
 
     def validate_phone_id(self, field):
         """ 校验手机id存在 """
-        phone = self.validate_data_is_exist(f"id为【{field.data}】的手机不存在", Phone, id=field.data)
+        data = field.data or self.loads(self.task.conf)["phone_id"]
+        self.validate_data_is_true('请设置运行手机', data)
+        phone = self.validate_data_is_exist(f"id为【{field.data}】的手机不存在", Phone, id=data)
         setattr(self, "phone", phone)
 
 

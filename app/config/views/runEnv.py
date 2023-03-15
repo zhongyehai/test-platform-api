@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app, request
 
+from app.api_test.models.project import ApiProjectEnv
+from app.web_ui_test.models.project import WebUiProjectEnv
 from app.baseView import LoginRequiredView, AdminRequiredView, NotLoginView
 from app.config.models.runEnv import RunEnv
 from app.config.forms.runEnv import (
@@ -36,6 +38,8 @@ class RunEnvView(LoginRequiredView):
         form = PostRunEnvForm().do_validate()
         form.num.data = RunEnv.get_insert_num()
         run_env = RunEnv().create(form.data)
+        ApiProjectEnv.create_env(env_list=[run_env.id])
+        WebUiProjectEnv.create_env(env_list=[run_env.id])
         return app.restful.success("新增成功", data=run_env.to_dict())
 
     def put(self):

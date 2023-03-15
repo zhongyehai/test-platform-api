@@ -24,7 +24,7 @@ class WebDriverSession(BaseSession):
         self.meta_data["data"][0]["test_action"] = kwargs  # 记录原始的请求信息
 
         # 执行前截图
-        # self.meta_data["data"][0]['before'] = getattr(driver, 'get_screenshot_as_base64')()
+        self.meta_data["data"][0]['before'] = getattr(driver, 'get_screenshot_as_base64')()
 
         # 执行测试步骤
         start_timestamp = time.time()

@@ -36,6 +36,7 @@ class HasFuncForm(BaseForm):
 
 class CreatFuncForm(BaseForm):
     """ 创建自定义函数文件 """
+    default_env = 'debug'
     name = StringField(validators=[DataRequired("请输入函数文件名")])
     desc = StringField()
     num = StringField()
@@ -57,12 +58,14 @@ class CreatFuncForm(BaseForm):
                         "result": "当前用户暂无权限保存函数文件内容"
                     })
 
-            # 把自定义函数脚本内容写入到python脚本中
-            FileUtil.save_func_data(self.name.data, field.data)
+            # 把自定义函数脚本内容写入到python脚本中,
+            Func.create_func_file(self.default_env)  # 重新发版时会把文件全部删除，所以全部创建
+            # FileUtil.save_func_data(self.name.data, field.data)
+            FileUtil.save_func_data(f'{self.default_env}_{self.name.data}', self.func_data.data, env=self.default_env)
 
             # 动态导入脚本，语法有错误则不保存
             try:
-                importlib.reload(importlib.import_module(f'func_list.{self.name.data}'))
+                importlib.reload(importlib.import_module(f'func_list.{self.default_env}_{self.name.data}'))
             except Exception as e:
                 raise ValidationError({
                     "msg": "语法错误，请检查",

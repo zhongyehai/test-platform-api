@@ -275,7 +275,7 @@ find_element_option = [
 run_type = {
     "api": "接口",
     "case": "用例",
-    "caseSet": "用例集",
+    "set": "用例集",
     "task": "任务",
 }
 

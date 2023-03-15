@@ -5,6 +5,8 @@ from app.baseView import LoginRequiredView, NotLoginView
 from app.busines import ElementBusiness
 from app.config.models.config import Config
 from app.app_ui_test.blueprint import app_ui_test
+from app.app_ui_test.models.project import AppUiProject as Project
+from app.app_ui_test.models.module import AppUiModule as Module
 from app.app_ui_test.models.page import AppUiPage as Page, db
 from app.app_ui_test.models.element import AppUiElement as Element
 from app.app_ui_test.forms.element import AddElementForm, EditElementForm, DeleteElementForm, ElementListForm, \
@@ -36,6 +38,18 @@ class AppUiChangeElementByIdView(LoginRequiredView):
         form = ChangeElementById().do_validate()
         form.old.update(form.data)
         return app.restful.success(f"元素修改成功")
+
+
+class ElementGetElementFromView(LoginRequiredView):
+
+    def get(self):
+        """ 根据元素id归属信息 """
+        form = GetElementById().do_validate()
+        project = Project.get_first(id=form.element.project_id)
+        module_name = Module.get_from_path(form.element.module_id)
+        page = Page.get_first(id=form.element.page_id)
+        res_msg = f'此元素归属：【{project.name}_{module_name}_{page.name}_{form.element.name}】'
+        return app.restful.success(msg=res_msg)
 
 
 class ElementTemplateDownloadView(LoginRequiredView):
@@ -107,6 +121,7 @@ app_ui_test.add_url_rule("/element", view_func=AppUiElementView.as_view("AppUiEl
 app_ui_test.add_url_rule("/element/upload", view_func=ElementUploadView.as_view("ElementUploadView"))
 app_ui_test.add_url_rule("/element/list", view_func=AppUiGetElementListView.as_view("AppUiGetElementListView"))
 app_ui_test.add_url_rule("/element/sort", view_func=AppUiChangeElementSortView.as_view("AppUiChangeElementSortView"))
+app_ui_test.add_url_rule("/element/from", view_func=ElementGetElementFromView.as_view("ElementGetElementFromView"))
 app_ui_test.add_url_rule("/element/changeById",
                          view_func=AppUiChangeElementByIdView.as_view("AppUiChangeElementByIdView"))
 app_ui_test.add_url_rule("/element/template/download",

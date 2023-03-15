@@ -26,6 +26,7 @@ class AddTaskForm(BaseForm):
     email_pwd = StringField()
     cron = StringField()
     num = StringField()
+    conf = StringField()
     call_back = StringField()
     is_async = IntegerField()
 
@@ -56,6 +57,10 @@ class AddTaskForm(BaseForm):
             CronTab(field.data)
         except Exception as error:
             raise ValidationError(f"时间配置【{field.data}】错误，需为cron格式, 请检查")
+
+    def validate_conf(self, field):
+        """ 校验任务运行配置 """
+        self.validate_data_is_true('请选择运行浏览器', field.data.get("browser"))
 
     def validate_name(self, field):
         """ 校验任务名不重复 """
@@ -92,14 +97,19 @@ class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
     env = StringField()
     is_async = IntegerField()
-    browser = StringField(validators=[DataRequired("请选择运行浏览器")])
+    browser = StringField()
     trigger_type = StringField()  # pipeline 代表是流水线触发，跑完过后会发送测试报告
     extend = StringField()  # 运维传过来的扩展字段，接收的什么就返回什么
 
     def validate_env(self, field):
         """ 检验环境 """
         if field.data:
-            self.validate_data_is_true(f"环境【{field.data}】不存在",  RunEnv.get_first(code=field.data))
+            self.validate_data_is_true(f"环境【{field.data}】不存在", RunEnv.get_first(code=field.data))
+
+    def validate_browser(self, field):
+        """ 浏览器类型 """
+        field.data = field.data or self.loads(self.task.conf).get("browser", "chrome")
+        self.validate_data_is_true('请设置运行浏览器', field.data)
 
 
 class EditTaskForm(AddTaskForm, HasTaskIdForm):

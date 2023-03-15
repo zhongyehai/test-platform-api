@@ -30,8 +30,12 @@ class RunCaseSetForm(GetCaseSetForm):
 
 class AddCaseSetForm(BaseForm):
     """ 添加用例集的校验 """
+    name_length = CaseSet.name.property.columns[0].type.length
     project_id = StringField(validators=[DataRequired("请先选择首页服务")])
-    name = StringField(validators=[DataRequired("用例集名称不能为空"), Length(1, 255, message="用例集名长度为1~255位")])
+    name = StringField(validators=[
+        DataRequired("用例集名称不能为空"),
+        Length(1, name_length, f"用例集名长度不可超过{name_length}位")
+    ])
     level = StringField()
     parent = StringField()
     id = StringField()

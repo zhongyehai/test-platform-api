@@ -75,13 +75,12 @@ f.format_header_param = my_format_header_param
 class ProductionConfig:
     """ 生产环境配置 """
 
-    SECRET_KEY = ""  # 随便填个字符串
+    SECRET_KEY = "localhost"
     TOKEN_TIME_OUT = 36000
     CSRF_ENABLED = True
 
-    # 数据库信息
     DB_HOST = ""
-    DB_PORT = ""
+    DB_PORT = 3306
     DB_USER = ""
     DB_PASSWORD = ""
     DB_DATABASE = ""

@@ -14,7 +14,7 @@ class AutoTestUser(BaseModel):
     company_id = db.Column(db.String(128), nullable=True, default="", comment="公司id")
     password = db.Column(db.String(128), nullable=True, default="", comment="密码")
     role = db.Column(db.String(128), nullable=True, default="", comment="角色")
-    comment = db.Column(db.String(256), nullable=True, default="", comment="备注")
+    comment = db.Column(db.Text, nullable=True, default="", comment="备注")
     env = db.Column(db.String(64), nullable=True, default="", comment="数据对应的环境")
 
 

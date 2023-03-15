@@ -24,7 +24,6 @@ class AppUiRunTaskView(NotLoginView):
             )
         appium_config = RunCaseBusiness.get_appium_config(form.task.project_id, form)
         report_id = RunCaseBusiness.run(
-            env_code=form.env.data or form.task.env,
             trigger_type=form.trigger_type.data,
             is_async=form.is_async.data,
             project_id=form.task.project_id,
@@ -98,7 +97,7 @@ class AppUiTaskStatusView(LoginRequiredView):
     def post(self):
         """ 启用任务 """
         form = HasTaskIdForm().do_validate()
-        res = TaskBusiness.enable(form, "webUi")
+        res = TaskBusiness.enable(form, "appUi")
         if res["status"] == 1:
             return app.restful.success(f"任务【{form.task.name}】启用成功", data=res["data"])
         else:
@@ -107,7 +106,7 @@ class AppUiTaskStatusView(LoginRequiredView):
     def delete(self):
         """ 禁用任务 """
         form = DisableTaskIdForm().do_validate()
-        res = TaskBusiness.disable(form, "webUi")
+        res = TaskBusiness.disable(form, "appUi")
         if res["status"] == 1:
             return app.restful.success(f"任务【{form.task.name}】禁用成功", data=res["data"])
         else:

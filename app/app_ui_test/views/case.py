@@ -60,7 +60,6 @@ class AppUiRunCaseView(LoginRequiredView):
         project_id = CaseSet.get_first(id=case.set_id).project_id
         appium_config = RunCaseBusiness.get_appium_config(project_id, form)
         report_id = RunCaseBusiness.run(
-            env_code=form.env_code.data,
             is_async=form.is_async.data,
             project_id=project_id,
             report_name=case.name,
@@ -109,13 +108,13 @@ class AppUiPullCaseStepView(LoginRequiredView):
         return app.restful.success("步骤复制成功")
 
 
-class AppUiGetQuoteCaseBelongToView(LoginRequiredView):
+class AppUiGetQuoteCaseFromView(LoginRequiredView):
 
     def get(self):
         """ 获取用例的归属 """
         form = GetCaseForm().do_validate()
-        belong_to = CaseBusiness.get_quote_case_belong_to(form.id.data, Project, CaseSet, Case)
-        return app.restful.success("获取成功", data=belong_to)
+        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSet, Case)
+        return app.restful.success("获取成功", data=from_path)
 
 
 class AppUiCaseViewView(LoginRequiredView):
@@ -155,4 +154,4 @@ app_ui_test.add_url_rule("/case/copy/step", view_func=AppUiCopyCaseStepView.as_v
 app_ui_test.add_url_rule("/case/pull/step", view_func=AppUiPullCaseStepView.as_view("AppUiPullCaseStepView"))
 app_ui_test.add_url_rule("/case/quote", view_func=AppUiChangeCaseQuoteView.as_view("AppUiChangeCaseQuoteView"))
 app_ui_test.add_url_rule("/case/changeIsRun", view_func=AppUiChangeCaseStatusView.as_view("AppUiChangeCaseStatusView"))
-app_ui_test.add_url_rule("/case/from", view_func=AppUiGetQuoteCaseBelongToView.as_view("AppUiGetQuoteCaseBelongToView"))
+app_ui_test.add_url_rule("/case/from", view_func=AppUiGetQuoteCaseFromView.as_view("AppUiGetQuoteCaseFromView"))

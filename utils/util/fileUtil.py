@@ -99,7 +99,7 @@ class FileUtil:
             json.dump(diff_detail, fp, ensure_ascii=False, indent=4)
 
     @classmethod
-    def save_func_data(cls, name, content, env="test"):
+    def save_func_data(cls, name, content, env="debug"):
         """ 保存自定义函数数据 """
         content = content or ''
         func_data = "# coding:utf-8\n\n" + f'env = "{env}"\n\n' + content

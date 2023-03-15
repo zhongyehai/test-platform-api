@@ -64,8 +64,12 @@ def _02not_equals(check_value, expect_value):
 
 def _03json_equals(check_value, expect_value):
     """ json相等 """
-    if isinstance(expect_value, str):
-        expect_value = json.loads(expect_value)
+    if isinstance(check_value, str) is False:
+        check_value = json.dumps(check_value)
+
+    if isinstance(expect_value, str) is False:
+        expect_value = json.dumps(expect_value)
+
     assert check_value == expect_value, '断言不通过，断言方式为json相等'
 
 

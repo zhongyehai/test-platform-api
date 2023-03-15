@@ -5,10 +5,12 @@ from app.baseView import LoginRequiredView, NotLoginView
 from app.busines import ElementBusiness
 from app.config.models.config import Config
 from app.web_ui_test.blueprint import web_ui_test
+from app.web_ui_test.models.project import WebUiProject as Project
+from app.web_ui_test.models.module import WebUiModule as Module
 from app.web_ui_test.models.page import WebUiPage as Page, db
 from app.web_ui_test.models.element import WebUiElement as Element
 from app.web_ui_test.forms.element import AddElementForm, EditElementForm, DeleteElementForm, ElementListForm, \
-    GetElementById, ChangeElementById, ElementFromForm
+    GetElementById, ChangeElementById
 from utils.parse.parseExcel import parse_file_content
 from utils.util.fileUtil import STATIC_ADDRESS
 
@@ -25,12 +27,11 @@ class WebUiGetElementFromView(LoginRequiredView):
 
     def get(self):
         """ 获取元素的归属信息 """
-        form = ElementFromForm().do_validate()
-        res_msg = "此元素归属："
-        # for api in form.api_list:  # 多个服务存在同一个接口地址的情况
-        #     project = Project.get_first(id=api.project_id)
-        #     module = Module.get_first(id=api.module_id)
-        #     res_msg += f'【{project.name}_{module.name}_{api.name}】、'
+        form = GetElementById().do_validate()
+        project = Project.get_first(id=form.element.project_id)
+        module_name = Module.get_from_path(form.element.module_id)
+        page = Page.get_first(id=form.element.page_id)
+        res_msg = f'此元素归属：【{project.name}_{module_name}_{page.name}_{form.element.name}】'
         return app.restful.success(msg=res_msg)
 
 

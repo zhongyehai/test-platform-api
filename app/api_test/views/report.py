@@ -5,6 +5,7 @@ from app.baseView import LoginRequiredView, NotLoginView
 from utils.report.report import render_html_report
 from app.api_test.blueprint import api_test
 from app.api_test.models.report import ApiReport as Report
+from app.assist.models.hits import Hits
 from app.api_test.forms.report import GetReportForm, DownloadReportForm, FindReportForm, GetReportDetailForm
 from utils.util.fileUtil import FileUtil
 from utils.view.required import login_required
@@ -42,6 +43,9 @@ class ApiReportView(LoginRequiredView):
     def delete(self):
         """ 删除测试报告 """
         form = GetReportForm().do_validate()
+        hit = Hits.get_first(report_id=form.report.id)
+        if hit:
+            return app.restful.fail(f"id为【{form.report.id}】的报告已被触发问题记录引用，请先解除引用再删除")
         form.report.delete()
         FileUtil.delete_file(form.report_path)
         return app.restful.success("删除成功")

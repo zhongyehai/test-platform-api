@@ -12,7 +12,11 @@ from app.assist.models.func import Func
 
 class AddProjectForm(BaseForm):
     """ 添加服务参数校验 """
-    name = StringField(validators=[DataRequired("服务名称不能为空"), Length(1, 255, message="服务名长度不可超过255位")])
+    name_length = Project.name.property.columns[0].type.length
+    name = StringField(validators=[
+        DataRequired("服务名称不能为空"),
+        Length(1, name_length, message=f"服务名长度不可超过{name_length}位")
+    ])
     manager = StringField(validators=[DataRequired("请选择负责人")])
     business_id = StringField(validators=[DataRequired("请选择业务线")])
     num = StringField()
@@ -113,7 +117,7 @@ class AddEnv(BaseForm):
         # 校验存在使用自定义变量，但是没有声明的情况
         self.validate_variable({
             variable.get("key"): variable.get("value") for variable in field.data if variable.get("key")
-        }, self.dumps(field.data))  # 公共变量
+        }, self.dumps(field.data), "自定义变量")  # 公共变量
 
     def validate_headers(self, field):
         """ 校验头部信息是否有引用自定义函数 """
@@ -126,7 +130,7 @@ class AddEnv(BaseForm):
         # 校验存在使用自定义变量，但是没有声明的情况
         self.validate_variable({
             variable.get("key"): variable.get("value") for variable in self.variables.data if variable.get("key")
-        }, self.dumps(field.data))
+        }, self.dumps(field.data), "头部信息")
 
 
 class EditEnv(AddEnv):

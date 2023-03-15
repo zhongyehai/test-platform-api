@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app, request
 
-from app.api_test.models.project import ApiProjectEnv
-from app.app_ui_test.models.project import AppUiProjectEnv
 from app.baseView import LoginRequiredView, NotLoginView
 from app.config.models.config import Config
 from app.config.forms.config import (
     GetConfigForm, DeleteConfigForm, PostConfigForm, PutConfigForm, GetConfigListForm
 )
 from app.config.blueprint import config_blueprint
-from app.web_ui_test.models.project import WebUiProjectEnv
 from config import skip_if_type_mapping, skip_if_data_source_mapping
 from utils.view.required import admin_required
 
@@ -69,13 +66,6 @@ class ConfigView(LoginRequiredView):
     def put(self):
         """ 修改配置 """
         form = PutConfigForm().do_validate()
-        # 如果key是 run_test_env 则自动同步环境信息
-        if form.name.data == "run_test_env":
-            new_env_list = Config.get_new_env_list(form)
-            if new_env_list:
-                ApiProjectEnv.create_env(env_list=new_env_list)
-                WebUiProjectEnv.create_env(env_list=new_env_list)
-                AppUiProjectEnv.create_env(env_list=new_env_list)
         form.conf.update(form.data)
         return app.restful.success("修改成功", data=form.conf.to_dict())
 

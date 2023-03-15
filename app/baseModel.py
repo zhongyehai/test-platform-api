@@ -83,7 +83,7 @@ class BaseModel(db.Model, JsonUtil):
     serialization_file_list = [
         "headers", "variables", "func_files",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
-        "call_back", "set_ids", "case_ids",
+        "call_back", "set_ids", "case_ids", "conf",
         "kym", "task_item", 'business_id'
     ]
 
@@ -224,6 +224,21 @@ class BaseModel(db.Model, JsonUtil):
         with db.auto_commit():
             data = cls.query.filter(**kwargs)
         return data
+
+    @classmethod
+    def get_from_path(cls, data_id):
+        """ 获取模块/用例集的归属 """
+        from_name = []
+
+        def get_from(m_id):
+            parent = cls.get_first(id=m_id)
+            from_name.insert(0, parent.name)
+
+            if parent.parent:
+                get_from(parent.parent)
+
+        get_from(data_id)
+        return '_'.join(from_name)
 
     @classmethod
     def change_sort(cls, id_list, page_num, page_size):
@@ -504,20 +519,6 @@ class BaseCaseSet(BaseModel):
         return data
 
     @classmethod
-    def get_case_set_by_case(cls, case_set_id):
-        """ 根据用例获取用例集层级 """
-        data_list = []
-
-        def get_parent_set(set_id):
-            case_set = cls.get_first(id=set_id)
-            data_list.append(case_set)
-            if case_set.parent:
-                get_parent_set(case_set.parent)
-
-        get_parent_set(case_set_id)
-        return data_list
-
-    @classmethod
     def get_case_id(cls, case_model, project_id: int, set_id: list, case_id: list):
         """
         获取要执行的用例的id
@@ -596,7 +597,7 @@ class BaseCase(BaseModel):
             for from_variable_key, from_case_variable in from_case_variables.items():
                 to_case_variables.setdefault(from_variable_key, from_case_variable)
 
-            to_case.update({"variables": [value for key, value in to_case_variables.items()]})
+            to_case.update({"variables": [value for key, value in to_case_variables.items() if key]})
 
 
 class BaseStep(BaseModel):
@@ -617,7 +618,8 @@ class BaseStep(BaseModel):
         ]),
         comment="是否跳过的判断条件"
     )
-    skip_on_fail = db.Column(db.Integer(), default=1, comment="当用例有失败的步骤时，是否跳过此步骤，1跳过，0不跳过，默认跳过")
+    skip_on_fail = db.Column(db.Integer(), default=1,
+                             comment="当用例有失败的步骤时，是否跳过此步骤，1跳过，0不跳过，默认跳过")
     data_driver = db.Column(db.Text(), default="[]", comment="数据驱动，若此字段有值，则走数据驱动的解析")
     quote_case = db.Column(db.String(5), default="", comment="引用用例的id")
     project_id = db.Column(db.Integer(), comment="步骤所在的服务的id")
@@ -652,6 +654,10 @@ class BaseTask(BaseModel):
     set_ids = db.Column(db.Text(), comment="用例集id")
     call_back = db.Column(db.Text(), comment="回调给流水线")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
+    conf = db.Column(
+        db.Text(),
+        default='{"browser": "chrome", "server_id": "", "phone_id": "", "no_reset": ""}',
+        comment="运行配置，webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
 
     @classmethod
     def make_pagination(cls, form):

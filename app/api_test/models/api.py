@@ -13,6 +13,7 @@ class ApiMsg(BaseApi):
     up_func = db.Column(db.Text(), default="", comment="接口执行前的函数")
     down_func = db.Column(db.Text(), default="", comment="接口执行后的函数")
     method = db.Column(db.String(10), nullable=True, comment="请求方式")
+    level = db.Column(db.String(10), nullable=True, default="P1", comment="接口重要程度：P0、P1、P2")
     headers = db.Column(db.Text(), default='[{"key": null, "value": null, "remark": null}]', comment="头部信息")
     params = db.Column(db.Text(), default='[{"key": null, "value": null, "remark": null}]', comment="url参数")
     data_type = db.Column(db.String(10), nullable=True, default="json", comment="参数类型，json、form-data、xml")
@@ -32,7 +33,7 @@ class ApiMsg(BaseApi):
         db.Text(),
         default='[{"data_source": null, "key": null, "validate_type": null, "data_type": null, "value": null, "remark": null}]',
         comment="断言信息")
-
+    deprecated = db.Column(db.Boolean(), default=False, comment="是否废弃")
     quote_count = db.Column(db.Integer(), nullable=True, default=0, comment="被引用次数，即多少个步骤直接使用了此接口")
     yapi_id = db.Column(db.Integer(), comment="当前接口在yapi平台的id")
 

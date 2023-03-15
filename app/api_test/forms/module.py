@@ -10,8 +10,12 @@ from app.api_test.models.api import ApiMsg as Api
 
 class AddModelForm(BaseForm):
     """ 添加模块的校验 """
+    name_length = Module.name.property.columns[0].type.length
     project_id = IntegerField(validators=[DataRequired("服务id必传")])
-    name = StringField(validators=[DataRequired("模块名必传"), Length(1, 255, message="模块名称为1~255位")])
+    name = StringField(validators=[
+        DataRequired("模块名必传"),
+        Length(1, name_length, message=f"模块名称不可超过{name_length}位")
+    ])
     level = StringField()
     parent = StringField()
     id = StringField()
@@ -66,7 +70,7 @@ class DeleteModelForm(ModuleIdForm):
     def validate_id(self, field):
         module = self.validate_data_is_exist(f"id为【{field.data}】的模块不存在", Module, id=field.data)
         self.validate_data_is_true("不能删除别人服务下的模块", Project.is_can_delete(module.project_id, module))
-        self.validate_data_is_false("请先删除模块下的接口",  Api.get_first(module_id=module.id))
+        self.validate_data_is_false("请先删除模块下的接口", Api.get_first(module_id=module.id))
         self.validate_data_is_false("请先删除当前模块下的子模块", Module.get_first(parent=module.id))
         setattr(self, "module", module)
 

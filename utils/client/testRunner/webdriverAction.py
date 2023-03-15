@@ -169,6 +169,10 @@ class Actions:
         """ 滚动到浏览器底部 """
         self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
 
+    def action_14move_by_offset_is_input(self, locator: tuple, offset: str = '()', wait_time_out=None, *args, **kwargs):
+        """ 移动坐标(浏览器)，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+        ActionChains(self.driver).move_by_offset(*eval(offset))
+
     def action_14app_scroll_coordinate_is_input1(self, conf={}, *args, **kwargs):
         """ 滚动到手机指定坐标(相对位置)，
         conf: {
@@ -200,28 +204,32 @@ class Actions:
     def action_15select_by_index_is_input(self, locator: tuple, index: int = 0, wait_time_out=None, *args, **kwargs):
         """ 通过索引选中，index是索引第几个，从0开始，默认选第一个， is_input标识为输入内容 """
         element = self.find_element(locator, wait_time_out=wait_time_out)
-        Select(element).select_by_index(index)
-        element.click()
+        Select(element).select_by_index(int(index))
 
     def action_16select_by_value_is_input(self, locator: tuple, value: str = '', wait_time_out=None, *args, **kwargs):
         """ 通过value选中， is_input标识为输入内容 """
-        Select(self.find_element(locator, wait_time_out=wait_time_out)).select_by_value(value)
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).select_by_value(value)
 
     def action_17select_by_text_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
         """ 通过文本值选中 """
-        Select(self.find_element(locator, wait_time_out=wait_time_out)).select_by_visible_text(text)
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).select_by_visible_text(text)
 
     def action_18deselect_by_index_is_input(self, locator: tuple, index: int = 0, wait_time_out=None, *args, **kwargs):
         """ 通过index索引定位， is_input标识为输入内容 """
-        Select(self.find_element(locator, wait_time_out=wait_time_out)).deselect_by_index(index)
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).deselect_by_index(index)
 
     def action_19select_first(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
         """ 选中第一个 """
-        Select(self.find_element(locator, wait_time_out=wait_time_out)).first_selected_option()
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).first_selected_option()
 
     def action_20select_all(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
         """ 全选 """
-        Select(self.find_element(locator, wait_time_out=wait_time_out)).all_selected_options()
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).all_selected_options()
 
     def action_20get_alert_text(self, *args, **kwargs):
         """ 获取alert文本 """
@@ -235,7 +243,7 @@ class Actions:
         """ 点击alert取消按钮 """
         return self.driver.switch_to.alert.dismiss()
 
-    def action_20switch_to_window_is_input(self, index: int = 0, *args, **kwargs):
+    def action_20switch_to_window_is_input(self, locator, index: int = 0, *args, **kwargs):
         """ 切换到指定索引的窗口，is_input标识为输入内容 """
         self.driver.switch_to.window(self.driver.window_handles[int(index)])
 
@@ -267,9 +275,13 @@ class Actions:
         """ 窗口最大化 """
         return self.driver.maximize_window()
 
-    def action_23set_window(self, width: float, height: float, *args, **kwargs):
-        """ 窗口缩放为指定大小 """
+    def action_23set_window_size_is_input(self, width: float, height: float, *args, **kwargs):
+        """ 窗口缩放为指定大小值 """
         return self.driver.set_window_size(float(width), float(height))
+
+    def action_23set_window_percentage_is_input(self, locator: tuple, text: str = '0.5', *args, **kwargs):
+        """ 窗口缩放为指定比例 """
+        return self.driver.execute_script(f"document.body.style.zoom='{text}'")
 
     def action_24switch_handle_is_input(self, window_name: str, *args, **kwargs):
         """ 切换到窗口名对应的窗口 """
@@ -295,56 +307,28 @@ class Actions:
         """ 获取元素大小 """
         return self.find_element(locator, wait_time_out=wait_time_out).size
 
-    def action_30get_local_storage_value_is_input(self, locator: tuple, key: str, *args, **kwargs):
-        """ 根据key从localStorage中获取数据 """
-        return self.driver.execute_script(f"window.localStorage.getItem('{key}');")
-
     def action_30set_local_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args, **kwargs):
         """ 以字典的形式在localStorage中设置数据 """
         for key, value in get_dict_data(data).items():
-            self.driver.execute_script(f"window.localStorage.setItem('{key}', '{value}');")
-
-    def action_30remove_local_storage_value_is_input(self, locator: tuple, key: str, *args, **kwargs):
-        """ 根据key在localStorage中删除数据 """
-        return self.driver.execute_script(f"window.localStorage.removeItem('{key}');")
+            self.driver.execute_script("window.localStorage.setItem(arguments[0], arguments[1]);", key, value)
 
     def action_30clear_local_storage_value(self, *args, **kwargs):
         """ 清空localStorage中的所有数据 """
-        return self.driver.execute_script("window.localStorage.clear();")
-
-    def action_31get_session_storage_value_is_input(self, key: str, *args, **kwargs):
-        """ 根据key从sessionStorage中获取数据 """
-        return self.driver.execute_script(f"window.sessionStorage.getItem('{key}');")
+        return self.driver.execute_script("localStorage.clear();")
 
     def action_31set_session_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args, **kwargs):
         """ 以字典的形式在sessionStorage中设置数据 """
         for key, value in get_dict_data(data).items():
             self.driver.execute_script(f"window.sessionStorage.setItem('{key}', '{value}');")
 
-    def action_31remove_session_storage_value_is_input(self, locator: tuple, key: str, *args, **kwargs):
-        """ 根据key在sessionStorage中删除数据 """
-        return self.driver.execute_script(f"window.sessionStorage.removeItem('{key}');")
-
     def action_31clear_session_storage_value(self, *args, **kwargs):
         """ 清空sessionStorage中的所有数据 """
         return self.driver.execute_script("window.sessionStorage.clear();")
-
-    def action_32get_all_cookie(self, *args, **kwargs):
-        """ 获取cookie中的所有数据 """
-        return self.driver.get_cookies()
-
-    def action_32get_cookie_is_input(self, locator: tuple, name: str, *args, **kwargs):
-        """ 根据key获取cookie中的指定数据 """
-        return self.driver.get_cookie(name)
 
     def action_32add_cookie_by_dict_is_input(self, locator: tuple, cookie, *args, **kwargs):
         """ 以字典形式添加cookie """
         for key, value in get_dict_data(cookie).items():
             self.driver.add_cookie({"name": key, "value": value})
-
-    def action_32delete_cookie_is_input(self, locator: tuple, name: str, *args, **kwargs):
-        """ 根据key删除cookie中的指定数据 """
-        return self.driver.delete_cookie(name)
 
     def action_32delete_all_cookie(self, *args, **kwargs):
         """ 删除cookie中的所有数据 """
@@ -364,12 +348,21 @@ class Actions:
 
     def extract_09_cookie(self, locator: tuple, wait_time_out=None, *args, **kwargs):
         """ 获取cookie值 """
-        print(self.driver.execute_driver(script=textwrap.dedent(f"return localStorage;")))
-        print(self.driver.execute_driver(script=textwrap.dedent(f"return sessionStorage;")))
-        print(self.driver.execute_script(f"return localStorage;"))
-        print(self.driver.execute_script(f"return sessionStorage;"))
-        print(self.driver.get_cookies())
-        return self.driver.get_cookies()
+        data = self.driver.get_cookies()
+        print(data)
+        return data
+
+    def extract_09_session_storage(self, locator: tuple, wait_time_out=None, *args, **kwargs):
+        """ 获取sessionStorage值 """
+        data = self.driver.execute_script(f"return sessionStorage;")
+        print(data)
+        return data
+
+    def extract_09_local_storage(self, locator: tuple, wait_time_out=None, *args, **kwargs):
+        """ 获取localStorage值 """
+        data = self.driver.execute_script(f"return localStorage;")
+        print(data)
+        return data
 
     def extract_10_attribute_is_input(self, locator: tuple, name: str, wait_time_out=None, *args, **kwargs):
         """ 获取指定属性 """
@@ -549,8 +542,8 @@ class GetWebDriver(Actions):
         """ chrome浏览器 """
         chrome_options = chromeOptions()
         chrome_options.add_argument('--headless')
-        # if platform.platform().startswith('Linux') is False:
-        #     chrome_options = None
+        if platform.platform().startswith('Linux') is False:
+            chrome_options = None
         return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
 
     def gecko(self):

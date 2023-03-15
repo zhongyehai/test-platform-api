@@ -103,8 +103,8 @@ class ApiGetQuoteCaseFromView(LoginRequiredView):
     def get(self):
         """ 获取用例的归属 """
         form = GetCaseForm().do_validate()
-        belong_to = CaseBusiness.get_quote_case_belong_to(form.id.data, Project, CaseSet, Case)
-        return app.restful.success("获取成功", data=belong_to)
+        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSet, Case)
+        return app.restful.success("获取成功", data=from_path)
 
 
 class ApiPullCaseStepView(LoginRequiredView):

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 from threading import Thread
 
 from flask import current_app as app, request, send_from_directory, g
@@ -18,7 +19,7 @@ from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.models.step import ApiStep as Step
 from app.config.models.config import Config
 from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, \
-    ApiFromForm
+    ApiFromForm, ChangeLevel, ChangeStatus
 from config import assert_mapping_list
 
 
@@ -47,17 +48,37 @@ class ApiGetApiListView(LoginRequiredView):
         return app.restful.success(data=Api.make_pagination(form))
 
 
+class ApiChangeLevelView(LoginRequiredView):
+
+    def post(self):
+        """ 修改接口重要级别 """
+        form = ChangeLevel().do_validate()
+        form.api.update(form.data)
+        return app.restful.success("修改成功")
+
+
+class ApiChangeStatusView(LoginRequiredView):
+
+    def post(self):
+        """ 修改接口是否被废弃 """
+        form = ChangeStatus().do_validate()
+        form.api.update(form.data)
+        return app.restful.success("修改成功")
+
+
 class ApiGetApiFromView(LoginRequiredView):
 
     def get(self):
         """ 根据接口地址获取接口的归属信息 """
         form = ApiFromForm().do_validate()
-        res_msg = "此接口归属："
+        api_list = []
         for api in form.api_list:  # 多个服务存在同一个接口地址的情况
             project = Project.get_first(id=api.project_id)
-            module = Module.get_first(id=api.module_id)
-            res_msg += f'【{project.name}_{module.name}_{api.name}】、'
-        return app.restful.success(msg=res_msg)
+            module_name = Module.get_from_path(api.module_id)
+            api_dict = api.to_dict()
+            api_dict["from"] = f'【{project.name}_{module_name}_{api.name}】'
+            api_list.append(api_dict)
+        return app.restful.success(msg='获取成功', data=api_list)
 
 
 class ApiGetApiToStepView(LoginRequiredView):
@@ -65,28 +86,29 @@ class ApiGetApiToStepView(LoginRequiredView):
     def get(self):
         """ 查询哪些用例下的步骤引用了当前接口 """
         form = ApiFromForm().do_validate()
-        res_msg = "以下步骤由当前接口转化："
-        case_dict, case_set_dict, project_dict = {}, {}, {}  # 可能存在重复获取数据的请，获取到就存下来，一条数据只查一次库
+        case_list, case_dict, project_dict = [], {}, {}  # 可能存在重复获取数据的请，获取到就存下来，一条数据只查一次库
         for api in form.api_list:  # 多个服务存在同一个接口地址的情况
             steps = Step.get_all(api_id=api.id)  # 存在一个接口在多个步骤调用的情况
             for step in steps:
-                # 获取用例
+                # 获取步骤所在的用例
                 if step.case_id not in case_dict:
                     case_dict[step.case_id] = Case.get_first(id=step.case_id)
                 case = case_dict[step.case_id]
 
-                # 获取用例集
-                if case.set_id not in case_set_dict:
-                    case_set_dict[case.set_id] = CaseSet.get_first(id=case.set_id)
-                case_set = case_set_dict[case.set_id]
+                # 获取用例所在的用例集
+                case_set = CaseSet.get_first(id=case.set_id)
+                case_set_from_path = CaseSet.get_from_path(case_set.id)
 
-                # 获取步骤
+                # 获取用例集所在的服务
                 if case_set.project_id not in project_dict:
                     project_dict[case_set.project_id] = Project.get_first(id=case_set.project_id)
                 project = project_dict[case_set.project_id]
 
-                res_msg += f'【{project.name}_{case_set.name}_{case.name}】、'
-        return app.restful.success(msg=res_msg)
+                case_dict = case.to_dict()
+                case_dict["from"] = f'【{project.name}_{case_set_from_path}_{case.name}_{step.name}】'
+                case_list.append(copy.deepcopy(case_dict))
+
+        return app.restful.success(msg='获取成功', data=case_list)
 
 
 class ApiGetApiUploadView(NotLoginView):
@@ -171,7 +193,6 @@ class ApiMsgView(LoginRequiredView):
         new_api = Api().create(form.data)
         return app.restful.success(f'接口【{form.name.data}】新建成功', data=new_api.to_dict())
 
-
     def put(self):
         """ 修改接口 """
         form = EditApiForm().do_validate()
@@ -186,6 +207,8 @@ class ApiMsgView(LoginRequiredView):
 
 
 api_test.add_url_rule("/apiMsg", view_func=ApiMsgView.as_view("ApiMsgView"))
+api_test.add_url_rule("/apiMsg/status", view_func=ApiChangeStatusView.as_view("ApiChangeStatusView"))
+api_test.add_url_rule("/apiMsg/level", view_func=ApiChangeLevelView.as_view("ApiChangeLevelView"))
 api_test.add_url_rule("/apiMsg/run", view_func=ApiRunApiMsgView.as_view("ApiRunApiMsgView"))
 api_test.add_url_rule("/apiMsg/list", view_func=ApiGetApiListView.as_view("ApiGetApiListView"))
 api_test.add_url_rule("/apiMsg/sort", view_func=ApiChangeApiSortView.as_view("ApiChangeApiSortView"))

@@ -21,6 +21,8 @@ class Hits(BaseModel):
         filters = []
         if form.date.data:
             filters.append(cls.date == form.date.data)
+        if form.report_id.data:
+            filters.append(cls.report_id == form.report_id.data)
         if form.hit_type.data:
             filters.append(cls.hit_type == form.hit_type.data)
         if form.test_type.data:

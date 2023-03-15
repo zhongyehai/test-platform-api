@@ -132,18 +132,17 @@ class CaseBusiness:
         cls.change_quote_case_name(form.id.data, project_model, case_set_model, case_model, step_model)
 
     @classmethod
-    def get_quote_case_belong_to(cls, case_id, project_model, case_set_model, case_model):
+    def get_quote_case_from(cls, case_id, project_model, case_set_model, case_model):
         """ 获取用例的归属 """
         case = case_model.get_first(id=case_id)
-        case_set_list = case_set_model.get_case_set_by_case(case.set_id)
-        project = project_model.get_first(id=case_set_list[0].project_id)
-        case_set_name = '/'.join([case_set.name for case_set in case_set_list])
-        return f'{project.name}/{case_set_name}/{case.name}'
+        case_set_path_name = case_set_model.get_from_path(case.set_id)
+        project = project_model.get_first(id=case_set_model.get_first(id=case.set_id).project_id)
+        return f'{project.name}_{case_set_path_name}_{case.name}'
 
     @classmethod
     def change_quote_case_name(cls, case_id, project_model, case_set_model, case_model, step_model):
         """ 修改用例时，修改引用此用例的步骤的名字 """
-        new_name = cls.get_quote_case_belong_to(case_id, project_model, case_set_model, case_model)
+        new_name = cls.get_quote_case_from(case_id, project_model, case_set_model, case_model)
         for step in step_model.get_all(quote_case=case_id):
             step.update({"name": f'引用【{new_name}】'})
 
@@ -233,7 +232,6 @@ class RunCaseBusiness:
     @classmethod
     def run(
             cls,
-            env_code,
             is_async,
             project_id,
             report_name,
@@ -242,6 +240,7 @@ class RunCaseBusiness:
             case_id,
             run_type,
             run_func,
+            env_code=None,
             browser=None,
             report_id=None,
             trigger_type="page",
@@ -250,8 +249,9 @@ class RunCaseBusiness:
             extend_data={},
             create_user=None
     ):
-        env = RunEnv.get_data_byid_or_code(env_code)
         """ 运行用例/任务 """
+
+        env = RunEnv.get_first() if run_type == "app" else RunEnv.get_data_byid_or_code(env_code)
         report = report_id or report_model.get_new_report(
             name=report_name,
             run_type=task_type,

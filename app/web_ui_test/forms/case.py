@@ -24,7 +24,6 @@ class AddCaseForm(BaseForm):
     num = StringField()
 
     all_func_name = {}
-    all_variables = {}
     project = None
 
     def validate_variables(self, field):
@@ -47,8 +46,11 @@ class AddCaseForm(BaseForm):
         # 公共变量
         variables = env["variables"]
         variables.extend(field.data)
+        all_variables = {
+            variable.get("key"): variable.get("value") for variable in variables if variable.get("key")
+        }
         self.validate_variable_format(field.data)
-        self.validate_variable(self.all_variables, variables, self.dumps(field.data))
+        self.validate_variable(all_variables, self.dumps(field.data), "自定义变量")
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """

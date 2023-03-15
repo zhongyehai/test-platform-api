@@ -124,8 +124,13 @@ class RunTestRunner:
         if project_id not in self.parsed_project_dict:
             project = self.project_model.get_first(id=project_id).to_dict()
             self.parse_functions(project["func_files"])
-
-            project_env = self.project_env_model.get_first(env_id=self.run_env["id"], project_id=project["id"]).to_dict()
+            if self.run_type == "app":  # 如果是app自动化测试，直接查第一个环境即可
+                project_env = self.project_env_model.get_first(project_id=project["id"]).to_dict()
+            else:
+                project_env = self.project_env_model.get_first(
+                    env_id=self.run_env["id"],
+                    project_id=project["id"]
+                ).to_dict()
             project_env.update(project)
             project_env.update(self.run_env)
             self.parsed_project_dict.update({project_id: ProjectModel(**project_env)})

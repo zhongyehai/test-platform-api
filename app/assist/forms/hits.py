@@ -12,6 +12,7 @@ class GetHitListForm(BaseForm):
     hit_type = StringField()
     test_type = StringField()
     hit_detail = StringField()
+    report_id = IntegerField()
     pageNum = IntegerField()
     pageSize = IntegerField()
 

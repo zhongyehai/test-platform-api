@@ -79,10 +79,11 @@ class AddStepForm(BaseForm):
             if not field.data:
                 raise ValidationError("执行方式不能为空")
             if "dict" in field.data:  # 校验输入字典的项能不能序列化和反序列化
-                try:
-                    self.loads(self.send_keys.data)
-                except Exception as error:
-                    raise ValidationError(f"【{self.send_keys.data}】不能转为json，请确认")
+                if self.send_keys.data.startswith("$") is False:
+                    try:
+                        self.loads(self.send_keys.data)
+                    except Exception as error:
+                        raise ValidationError(f"【{self.send_keys.data}】不能转为json，请确认")
 
     def validate_validates(self, field):
         """ 校验断言信息 """

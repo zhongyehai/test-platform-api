@@ -365,6 +365,7 @@ class SwaggerPullView(LoginRequiredView):
                     app.logger.info(f"解析接口数据：{swagger_api}")
                     api_name = swagger_api.get("summary", "接口未命名")
                     api_template = {
+                        "deprecated": swagger_api.get("deprecated"),
                         "project_id": project.id,
                         "module_id": module.id,
                         "name": api_name,
@@ -378,7 +379,7 @@ class SwaggerPullView(LoginRequiredView):
                         split_swagger_addr = api_addr.split("{")[0]
                         db_api = ApiMsg.query.filter(
                             ApiMsg.addr.like(f"%{split_swagger_addr}%"),
-                            ApiMsg.name == api_name,
+                            # ApiMsg.name == api_name,
                             ApiMsg.module_id == module.id
                         ).first() or ApiMsg()
                         if db_api.id and "$" in db_api.addr:  # 已经在测试平台修改过接口地址的路径参数
@@ -386,7 +387,8 @@ class SwaggerPullView(LoginRequiredView):
                             api_msg_addr_split[0] = split_swagger_addr
                             api_template["addr"] = "$".join(api_msg_addr_split)
                     else:
-                        db_api = ApiMsg.get_first(addr=api_addr, name=api_name, module_id=module.id) or ApiMsg()
+                        # db_api = ApiMsg.get_first(addr=api_addr, name=api_name, module_id=module.id) or ApiMsg()
+                        db_api = ApiMsg.get_first(addr=api_addr, module_id=module.id) or ApiMsg()
 
                     # swagger2和openapi3格式不一样，处理方法不一样
                     if "2" in swagger_data.get("swagger", ""):  # swagger2

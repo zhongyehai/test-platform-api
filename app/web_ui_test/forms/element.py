@@ -139,16 +139,3 @@ class DeleteElementForm(GetElementById):
         element = self.validate_data_is_exist(f"id为【{field.data}】的元素不存在", Element, id=field.data)
         self.validate_data_is_true("不能删除别人项目下的元素", Project.is_can_delete(element.project_id, element))
         setattr(self, "element", element)
-
-
-class ElementFromForm(BaseForm):
-    """ 查询元素归属 """
-    element = StringField()
-    id = StringField()
-
-    def validate_element(self, field):
-        """ 根据接口地址查 """
-        self.validate_data_is_true("请传入元素信息或元素id", field.data or self.id.data)
-        element_list = Element.get_all(element=field.data) if field.data else Element.get_all(id=self.id.data)
-        self.validate_data_is_true("元素不存在", element_list)
-        setattr(self, "element_list", element_list)

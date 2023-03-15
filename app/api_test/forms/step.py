@@ -30,12 +30,15 @@ class GetStepForm(BaseForm):
 
 class AddStepForm(BaseForm):
     """ 添加步骤校验 """
+    name_length = Step.name.property.columns[0].type.length
     project_id = IntegerField()
     case_id = IntegerField(validators=[DataRequired("用例id必传")])
     api_id = IntegerField()
     quote_case = IntegerField()
-
-    name = StringField(validators=[DataRequired("步骤名称不能为空"), Length(1, 255, message="步骤名长度为1~255位")])
+    name = StringField(validators=[
+        DataRequired("步骤名称不能为空"),
+        Length(1, name_length, f"步骤长度不可超过{name_length}位")
+    ])
     up_func = StringField()
     down_func = StringField()
     skip_if = StringField()

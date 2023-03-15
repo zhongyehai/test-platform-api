@@ -2,7 +2,7 @@
 import json
 
 from wtforms import StringField, IntegerField
-from wtforms.validators import ValidationError, DataRequired
+from wtforms.validators import ValidationError, Length, DataRequired
 
 from app.baseForm import BaseForm
 from app.assist.models.func import Func
@@ -24,8 +24,12 @@ class GetCaseForm(BaseForm):
 
 class AddCaseForm(BaseForm):
     """ 添加用例的校验 """
+    name_length = Case.name.property.columns[0].type.length
     set_id = IntegerField(validators=[DataRequired("请选择用例集")])
-    name = StringField(validators=[DataRequired("用例名称不能为空")])
+    name = StringField(validators=[
+        DataRequired("用例名称不能为空"),
+        Length(1, name_length, f"用例名长度不可超过{name_length}位")
+    ])
     func_files = StringField()
     skip_if = StringField()
     variables = StringField()
@@ -39,6 +43,15 @@ class AddCaseForm(BaseForm):
     all_variables = {}
     project = {}
     project_env = {}
+
+    def merge_variables(self):
+        """ 合并环境的变量和case的变量 """
+        if self.all_variables.__len__() == 0:
+            variables = self.project_env["variables"]
+            variables.extend(self.variables.data)
+            self.all_variables = {
+                variable.get("key"): variable.get("value") for variable in variables if variable.get("key")
+            }
 
     def validate_set_id(self, field):
         """ 校验用例集存在 """
@@ -57,34 +70,21 @@ class AddCaseForm(BaseForm):
         1.校验是否存在引用了自定义函数但是没有引用自定义函数文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
-        # 校验格式
-        self.validate_variable_format(field.data)
-
-        # 校验引用的自定义函数
-        self.validate_func(self.all_func_name, content=self.dumps(field.data))
-
-        # 公共变量引用项目设置的变量
-        variables = self.project_env["variables"]
-        variables.extend(field.data)
-        self.all_variables = {
-            variable.get("key"): variable.get("value") for variable in variables if variable.get("key")
-        }
-        # 校验变量
-        self.validate_variable(self.all_variables, self.dumps(field.data))
+        self.validate_variable_format(field.data)  # 校验格式
+        self.validate_func(self.all_func_name, content=self.dumps(field.data))  # 校验引用的自定义函数
+        self.merge_variables()
+        self.validate_variable(self.all_variables, self.dumps(field.data), "自定义变量")  # 校验变量
 
     def validate_headers(self, field):
         """ 头部参数的校验
         1.校验是否存在引用了自定义函数但是没有引用自定义函数文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
-        # 校验格式
-        self.validate_header_format(field.data)
 
-        # 校验引用的自定义函数
-        self.validate_func(self.all_func_name, content=self.dumps(field.data))
-
-        # 校验引用的变量
-        self.validate_variable(self.all_variables, self.dumps(field.data))
+        self.validate_header_format(field.data)  # 校验格式
+        self.validate_func(self.all_func_name, content=self.dumps(field.data))  # 校验引用的自定义函数
+        self.merge_variables()
+        self.validate_variable(self.all_variables, self.dumps(field.data), "头部信息")  # 校验引用的变量
 
     def validate_name(self, field):
         """ 用例名不重复 """

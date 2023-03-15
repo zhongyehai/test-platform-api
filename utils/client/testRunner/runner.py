@@ -272,6 +272,8 @@ class Runner(object):
         finally:
             self.validation_results = self.session_context.validation_results
 
+        self.client_session.meta_data["data"][0]['before'] = None  # 如果步骤执行成功，则把执行前截图去掉
+
     def run_test(self, step_dict):
         """ 运行用例的单个测试步骤
         Args:

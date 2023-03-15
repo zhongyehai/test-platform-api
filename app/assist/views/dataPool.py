@@ -64,9 +64,9 @@ class DataPoolView(LoginRequiredView):
         return app.restful.success("删除成功")
 
 
+assist.add_url_rule("/autoTestUser", view_func=GetAutoTestUserListView.as_view("GetAutoTestUserListView"))
 assist.add_url_rule("/dataPool", view_func=DataPoolView.as_view("DataPoolView"))
 assist.add_url_rule("/dataPool/list", view_func=GetDataPoolListView.as_view("GetDataPoolListView"))
-assist.add_url_rule("/autoTestUser", view_func=GetAutoTestUserListView.as_view("GetAutoTestUserListView"))
 assist.add_url_rule("/dataPool/useStatus",
                     view_func=GetDataPoolUseStatusListView.as_view("GetDataPoolUseStatusListView"))
 assist.add_url_rule("/dataPool/businessStatus",
