@@ -5,7 +5,8 @@ from app.baseView import LoginRequiredView, NotLoginView
 from utils.report.report import render_html_report
 from app.web_ui_test.blueprint import web_ui_test
 from app.web_ui_test.models.report import WebUiReport as Report
-from app.web_ui_test.forms.report import GetReportForm, DownloadReportForm, FindReportForm, GetReportDetailForm
+from app.web_ui_test.forms.report import GetReportForm, DownloadReportForm, FindReportForm, GetReportDetailForm, \
+    DeleteReportForm
 from utils.util.fileUtil import FileUtil
 from utils.view.required import login_required
 
@@ -44,9 +45,10 @@ class WebUiReportView(LoginRequiredView):
     @login_required
     def delete(self):
         """ 删除测试报告 """
-        form = GetReportForm().do_validate()
-        form.report.delete()
-        FileUtil.delete_file(form.report_path)
+        form = DeleteReportForm().do_validate()
+        for report in form.report_list:
+            report.delete()
+            FileUtil.delete_file(report.report_path)
         return app.restful.success("删除成功")
 
 

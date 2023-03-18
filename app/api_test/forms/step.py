@@ -54,6 +54,7 @@ class AddStepForm(BaseForm):
     extracts = StringField()
     replace_host = IntegerField()
     skip_on_fail = IntegerField()
+    pop_header_filed = StringField()
     validates = StringField()
     data_driver = StringField()
     num = StringField()

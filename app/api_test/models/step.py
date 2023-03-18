@@ -30,6 +30,8 @@ class ApiStep(BaseStep):
         default='[{"data_source": null, "key": null, "validate_type": null, "data_type": null, "value": null, "remark": null}]',
         comment="断言信息")
 
+    pop_header_filed = db.Column(db.Text(), default='', comment="头部参数中去除指定字段")
+
     api_id = db.Column(db.Integer(), comment="步骤所引用的接口的id")
 
     def add_quote_count(self, api=None):

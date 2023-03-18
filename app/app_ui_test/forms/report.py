@@ -4,6 +4,7 @@ import os
 from wtforms import IntegerField, StringField
 from wtforms.validators import DataRequired
 
+from app.assist.models.hits import Hits
 from utils.util.fileUtil import APP_UI_REPORT_ADDRESS, FileUtil
 from app.baseForm import BaseForm
 from app.app_ui_test.models.report import AppUiReport as Report
@@ -38,6 +39,20 @@ class GetReportForm(BaseForm):
         setattr(self, "report_path", report_path)
 
 
+class DeleteReportForm(BaseForm):
+    """ 删除报告 """
+    id = StringField(validators=[DataRequired("请选择报告")])
+
+    def validate_id(self, field):
+        report_list = []
+        for report_id in field.data:
+            report = Report.get_first(id=report_id)
+            if report and Hits.get_first(report_id=report.id) is None:  # 没有被登记失败记录的报告
+                report.report_path = os.path.join(APP_UI_REPORT_ADDRESS, f"{report.id}.txt")
+                report_list.append(report)
+        setattr(self, "report_list", report_list)
+
+
 class FindReportForm(BaseForm):
     """ 查找报告 """
     projectId = IntegerField(validators=[DataRequired("请选择服务")])
@@ -45,3 +60,7 @@ class FindReportForm(BaseForm):
     pageSize = IntegerField()
     projectName = StringField()
     createUser = StringField()
+    trigger_type = StringField()
+    run_type = StringField()
+    is_passed = StringField()
+    env = IntegerField()

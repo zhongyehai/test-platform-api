@@ -13,7 +13,7 @@ from app.web_ui_test.models.step import WebUiStep as Step
 from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
 from app.web_ui_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, \
-    RunCaseForm, CopyCaseStepForm, PullCaseStepForm
+    RunCaseForm, CopyCaseStepForm, PullCaseStepForm, ChangeCaseStatusForm
 
 
 class WebUiGetCaseListView(LoginRequiredView):
@@ -77,7 +77,9 @@ class WebUiChangeCaseStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改用例状态（是否执行） """
-        Case.get_first(id=request.json.get("id")).change_status()
+        form = ChangeCaseStatusForm().do_validate()
+        for case in form.case_list:
+            case.change_status(form.status.data)
         return app.restful.success("运行状态修改成功")
 
 

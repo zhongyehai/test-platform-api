@@ -114,6 +114,11 @@ class RunCase(RunTestRunner):
         headers.update(current_case.headers)
         headers.update(step.headers)
 
+        # 如果步骤设置了不使用字段，则去掉
+        for filed in step.pop_header_filed:
+            if filed in headers:
+                headers.pop(filed)
+
         return {
             "name": step.name,
             "setup_hooks": [up.strip() for up in step.up_func.split(";") if up] if step.up_func else [],

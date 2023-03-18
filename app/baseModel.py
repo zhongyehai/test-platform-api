@@ -300,10 +300,14 @@ class BaseModel(db.Model, JsonUtil):
             else:
                 return data
 
-    def change_status(self):
+    def change_status(self, status=None):
         """ 修改状态 """
         if hasattr(self, 'status'):
-            self.update({"status": 1 if self.status == 0 else 0})
+            if status is not None:
+                change_status = status
+            else:
+                change_status = 1 if self.status == 0 else 0
+            self.update({"status": change_status})
 
     @classmethod
     def pagination(cls, page_num, page_size, filters: list = [], order_by=None):
@@ -679,7 +683,7 @@ class BaseReport(BaseModel):
 
     name = db.Column(db.String(128), nullable=True, comment="测试报告名称")
     is_passed = db.Column(db.Integer(), default=1, comment="是否全部通过，1全部通过，0有报错")
-    run_type = db.Column(db.String(255), default="task", nullable=True, comment="报告类型，task/case/api")
+    run_type = db.Column(db.String(255), default="task", nullable=True, comment="报告类型，task/set/case/api")
     status = db.Column(db.Integer(), default=1, comment="是否执行完毕，1执行中，2执行完毕")
     retry_count = db.Column(db.Integer(), default=0, comment="已经执行重试的次数")
     env = db.Column(db.String(255), default="test", comment="运行环境")
@@ -739,6 +743,14 @@ class BaseReport(BaseModel):
             filters.append(cls.name.like(f"%{form.projectName.data}%"))
         if form.createUser.data:
             filters.append(cls.create_user == form.createUser.data)
+        if form.trigger_type.data:
+            filters.append(cls.trigger_type == form.trigger_type.data)
+        if form.run_type.data:
+            filters.append(cls.run_type == form.run_type.data)
+        if form.is_passed.data:
+            filters.append(cls.is_passed == form.is_passed.data)
+        if form.env.data:
+            filters.append(cls.env == form.env.data)
         if form.projectId.data:
             filters.append(cls.project_id == form.projectId.data)
         return cls.pagination(

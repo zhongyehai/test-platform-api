@@ -13,7 +13,7 @@ from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm, \
-    CopyCaseStepForm, PullCaseStepForm
+    CopyCaseStepForm, PullCaseStepForm, ChangeCaseStatusForm
 
 
 class ApiGetCaseListView(LoginRequiredView):
@@ -76,7 +76,9 @@ class ApiChangeCaseStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改用例状态（是否执行） """
-        Case.get_first(id=request.json.get("id")).change_status()
+        form = ChangeCaseStatusForm().do_validate()
+        for case in form.case_list:
+            case.change_status(form.status.data)
         return app.restful.success("运行状态修改成功")
 
 

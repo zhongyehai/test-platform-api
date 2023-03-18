@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 from wtforms import StringField, IntegerField, BooleanField
 from wtforms.validators import ValidationError, DataRequired
 
@@ -6,9 +8,25 @@ from app.assist.models.func import Func
 from app.app_ui_test.models.project import AppUiProject as Project, AppUiProjectEnv as ProjectEnv
 from app.app_ui_test.models.caseSet import AppUiCaseSet as CaseSet
 from app.app_ui_test.models.step import AppUiStep as Step
+from app.app_ui_test.models.task import AppUiTask as Task
 from app.baseForm import BaseForm
 from app.app_ui_test.models.case import AppUiCase as Case
 from app.app_ui_test.models.env import AppUiRunServer as Server, AppUiRunPhone as Phone
+
+
+class ChangeCaseStatusForm(BaseForm):
+    """ 批量修改用例状态 """
+    id = StringField(validators=[DataRequired("用例id必传")])
+    status = IntegerField()
+
+    def validate_id(self, field):
+        case_list = []
+        for case_id in field.data:
+            case = Case.get_first(id=case_id)
+            if case:
+                case_list.append(case)
+        setattr(self, "case_list", case_list)
+
 
 class AddCaseForm(BaseForm):
     """ 添加用例的校验 """
@@ -96,26 +114,30 @@ class FindCaseForm(BaseForm):
 
 class DeleteCaseForm(BaseForm):
     """ 删除用例 """
-    id = IntegerField(validators=[DataRequired("用例id必传")])
+    id = StringField(validators=[DataRequired("用例id必传")])
 
     def validate_id(self, field):
-        case = self.validate_data_is_exist("没有该用例", Case, id=field.data)
-        self.validate_data_is_true(
-            "不能删除别人的用例",
-            Project.is_can_delete(CaseSet.get_first(id=case.set_id).project_id, case)
-        )
+        for case_id in field.data:  # TODO 批量删除用例
+            case = self.validate_data_is_exist("用例不存在", Case, id=case_id)
 
-        # 校验是否有定时任务已引用此用例
-        # for task in Task.query.filter(Task.case_id.like(f"%{field.data}%")).all():
-        #     if field.data in json.loads(task.case_id):
-        #         raise ValidationError(f"定时任务【{task.name}】已引用此用例，请先解除引用")
+            self.validate_data_is_true(
+                f"不能删除别人的用例",
+                Project.is_can_delete(CaseSet.get_first(id=case.set_id).project_id, case)
+            )
 
-        # 校验是否有其他用例已引用此用例
-        step = Step.get_first(quote_case=field.data)
-        if step:
-            raise ValidationError(f"用例【{Case.get_first(id=step.case_id).name}】已引用此用例，请先解除引用")
+            # 校验是否有定时任务已引用此用例
+            for task in Task.query.filter(Task.case_ids.like(f"%{field.data}%")).all():
+                self.validate_data_is_false(
+                    f"定时任务【{task.name}】已引用此用例，请先解除引用",
+                    field.data in json.loads(task.case_ids)
+                )
 
-        setattr(self, "case", case)
+            # 校验是否有其他用例已引用此用例
+            step = Step.get_first(quote_case=field.data)
+            if step:
+                raise ValidationError(f"用例【{Case.get_first(id=step.case_id).name}】已引用此用例，请先解除引用")
+
+            setattr(self, "case", case)
 
 
 class GetCaseForm(BaseForm):
