@@ -626,7 +626,6 @@ class BaseStep(BaseModel):
                              comment="当用例有失败的步骤时，是否跳过此步骤，1跳过，0不跳过，默认跳过")
     data_driver = db.Column(db.Text(), default="[]", comment="数据驱动，若此字段有值，则走数据驱动的解析")
     quote_case = db.Column(db.String(5), default="", comment="引用用例的id")
-    project_id = db.Column(db.Integer(), comment="步骤所在的服务的id")
     case_id = db.Column(db.Integer(), comment="步骤所在的用例的id")
 
     @classmethod

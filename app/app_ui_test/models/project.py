@@ -46,6 +46,6 @@ class AppUiProjectEnv(BaseProjectEnv):
                 data["env_id"] = env_id
                 cls().create(data)
         else:
-            all_project = cls.get_all()
+            all_project = AppUiProject.get_all()
             for project in all_project:
                 cls.create_env(project.id, env_id_list)

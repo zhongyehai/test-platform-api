@@ -6,7 +6,9 @@ from app.baseForm import BaseForm
 from app.assist.models.func import Func
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.case import ApiCase as Case
+from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.models.project import ApiProject as Project
+from app.api_test.models.project import ApiProjectEnv as ProjectEnv
 from app.api_test.models.step import ApiStep as Step
 
 
@@ -31,9 +33,8 @@ class GetStepForm(BaseForm):
 class AddStepForm(BaseForm):
     """ 添加步骤校验 """
     name_length = Step.name.property.columns[0].type.length
-    project_id = IntegerField()
-    case_id = IntegerField(validators=[DataRequired("用例id必传")])
     api_id = IntegerField()
+    case_id = IntegerField(validators=[DataRequired("用例id必传")])
     quote_case = IntegerField()
     name = StringField(validators=[
         DataRequired("步骤名称不能为空"),
@@ -59,23 +60,26 @@ class AddStepForm(BaseForm):
     data_driver = StringField()
     num = StringField()
     time_out = IntegerField()
-
-    def validate_project_id(self, field):
-        """ 校验服务id """
-        if not self.quote_case.data:
-            project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
-            setattr(self, "project", project)
-
-    def validate_case_id(self, field):
-        """ 校验用例存在 """
-        case = self.validate_data_is_exist(f"id为 {field.data} 的用例不存在", Case, id=field.data)
-        setattr(self, "case", case)
+    all_func_files = []
 
     def validate_api_id(self, field):
         """ 校验接口存在 """
         if not self.quote_case.data:
             api = self.validate_data_is_exist(f"id为【{field.data}】的接口不存在", Api, id=field.data)
             setattr(self, "api", api)
+            # 接口对应服务设置的函数文件、公共变量、头部信息
+            api_project = Project.get_first(id=api.project_id)
+            self.all_func_files.extend(self.loads(api_project.func_files))
+
+    def validate_case_id(self, field):
+        """ 校验用例存在 """
+        case = self.validate_data_is_exist(f"id为 {field.data} 的用例不存在", Case, id=field.data)
+        setattr(self, "case", case)
+        self.all_func_files.extend(self.loads(case.func_files))
+
+        # case对应服务设置的函数文件、公共变量、头部信息
+        project = Project.get_first(id=CaseSet.get_first(id=case.set_id).project_id)
+        self.all_func_files.extend(self.loads(project.func_files))
 
     def validate_quote_case(self, field):
         """ 不能自己引用自己 """
@@ -90,7 +94,7 @@ class AddStepForm(BaseForm):
     def validate_validates(self, field):
         """ 校验断言信息 """
         if not self.quote_case.data:
-            func_container = Func.get_func_by_func_file_name(self.loads(self.project.func_files))
+            func_container = Func.get_func_by_func_file_name(self.all_func_files)
             self.validate_api_validates(field.data, func_container)
 
     def validate_data_form(self, field):

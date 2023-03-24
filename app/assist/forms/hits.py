@@ -33,12 +33,14 @@ class CreatHitForm(BaseForm):
     hit_type = StringField(validators=[DataRequired("请选择问题类型")])
     test_type = StringField(validators=[DataRequired("请输入测试类型")])
     hit_detail = StringField(validators=[DataRequired("请输入问题内容")])
+    # project_id = IntegerField(validators=[DataRequired("请输入服务id")])
+    env = StringField(validators=[DataRequired("请选则环境")])
     report_id = IntegerField(validators=[DataRequired("请输入测试报告id")])
     desc = StringField()
 
     def validate_date(self, filed):
         self.date.data = filed.data[0:10]
 
+
 class EditHitForm(HasHitForm, CreatHitForm):
     """ 修改自定义自动化测试命中问题 """
-

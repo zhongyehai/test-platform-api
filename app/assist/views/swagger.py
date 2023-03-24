@@ -343,7 +343,7 @@ class SwaggerPullView(LoginRequiredView):
                 return app.restful.fail(fail_str)
         except Exception as error:
             pull_log.pull_fail(project, swagger_data)
-            fail_str = f"swagger数据拉取报错，结果为: \n{error.doc}"
+            fail_str = f"swagger数据拉取报错，结果为: \n{error.args}"
             app.logger.info(fail_str)
             return app.restful.fail(fail_str)
         pull_log.pull_success(project)

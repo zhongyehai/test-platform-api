@@ -4,8 +4,10 @@ from wtforms.validators import ValidationError, DataRequired, Length
 
 from app.app_ui_test.models.element import AppUiElement as Element
 from app.app_ui_test.models.case import AppUiCase as Case
+from app.app_ui_test.models.caseSet import AppUiCaseSet as CaseSet
 from app.baseForm import BaseForm
 from app.app_ui_test.models.project import AppUiProject as Project
+from app.app_ui_test.models.page import AppUiPage as Page
 from app.app_ui_test.models.step import AppUiStep as Step
 from app.assist.models.func import Func
 
@@ -30,14 +32,11 @@ class GetStepForm(BaseForm):
 
 class AddStepForm(BaseForm):
     """ 添加步骤校验 """
-    func_file_container = []
+    all_func_files = []
     func_container = {}
-    project_id = IntegerField()
-    page_id = IntegerField()
     case_id = IntegerField(validators=[DataRequired("用例id必传")])
     element_id = IntegerField()
     quote_case = IntegerField()
-
     name = StringField(validators=[DataRequired("步骤名称不能为空"), Length(1, 255, message="步骤名长度为1~255位")])
     execute_type = StringField()
     send_keys = StringField()
@@ -53,21 +52,25 @@ class AddStepForm(BaseForm):
     num = StringField()
     wait_time_out = IntegerField()
 
-    def validate_project_id(self, field):
-        """ 校验服务id """
+    def validate_element_id(self, field):
+        """ 校验元素存在 """
         if not self.quote_case.data:
-            project = self.validate_data_is_exist(f"id为 {field.data} 的项目不存在", Project, id=field.data)
-            setattr(self, "project", project)
+            element = self.validate_data_is_exist(f"id为 {field.data} 的元素不存在", Element, id=field.data)
+            # 元素所在的项目
+            page = Page.get_first(id=element.page_id)
+            page_project = Project.get_first(id=page.project_id)
+            self.all_func_files.extend(self.loads(page_project.func_files))
 
     def validate_case_id(self, field):
         """ 校验用例存在 """
         case = self.validate_data_is_exist(f"id为 {field.data} 的用例不存在", Case, id=field.data)
         setattr(self, "case", case)
+        self.all_func_files.extend(self.loads(case.func_files))
 
-    def validate_element_id(self, field):
-        """ 校验元素存在 """
-        if not self.quote_case.data:
-            self.validate_data_is_exist(f"id为 {field.data} 的元素不存在", Element, id=field.data)
+        # 用例所在的项目
+        case_set = CaseSet.get_first(id=case.set_id)
+        case_set_project = Project.get_first(id=case_set.project_id)
+        self.all_func_files.extend(self.loads(case_set_project.func_files))
 
     def validate_quote_case(self, field):
         """ 不能自己引用自己 """
@@ -86,12 +89,7 @@ class AddStepForm(BaseForm):
 
     def validate_validates(self, field):
         """ 校验断言信息 """
-        if not self.quote_case.data:
-            self.func_file_container = self.loads(self.project.func_files)
-
-        # 获取用例配置的函数
-        self.func_file_container.extend(self.loads(self.case.func_files))
-        self.func_container = Func.get_func_by_func_file_name(self.func_file_container)
+        self.func_container = Func.get_func_by_func_file_name(self.all_func_files)
 
         if not self.quote_case.data:
             for index, validate in enumerate(field.data):

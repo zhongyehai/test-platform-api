@@ -20,8 +20,6 @@ class WebUiStep(BaseStep):
         db.Text(),
         default='[{"element": null, "key": null, "validate_type": null, "data_type": null, "value": null, "remark": null}]',
         comment="断言信息")
-
-    page_id = db.Column(db.Integer(), comment="步骤所在的元素对应的页面的id")
     element_id = db.Column(db.Integer(), comment="步骤所引用的元素的id")
 
     def add_quote_count(self):
