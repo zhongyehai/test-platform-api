@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
+import time
 from threading import Thread
 
 from flask import current_app as app, request, send_from_directory, g
@@ -149,25 +150,28 @@ class ApiRunApiMsgView(LoginRequiredView):
         """ 运行接口 """
         form = RunApiMsgForm().do_validate()
         api, api_list = form.api_list[0], form.api_list
-        report = Report.get_new_report(
-            name=api.name,
-            run_type="api",
-            env=form.env_code.data,
-            create_user=g.user_id,
-            project_id=form.projectId.data
-        )
+        run_id = Report.get_run_id()
+        for env_code in form.env_list.data:
+            report = Report.get_new_report(
+                run_id=run_id,
+                name=api.name,
+                run_type="api",
+                env=env_code,
+                create_user=g.user_id,
+                project_id=form.projectId.data
+            )
 
-        # 新起线程运行接口
-        Thread(
-            target=RunApi(
-                project_id=form.projectId.data,
-                run_name=report.name,
-                api_ids=api_list,
-                report_id=report.id,
-                env_code=form.env_code.data
-            ).run_case
-        ).start()
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report.id})
+            # 新起线程运行接口
+            Thread(
+                target=RunApi(
+                    project_id=form.projectId.data,
+                    run_name=report.name,
+                    api_ids=api_list,
+                    report_id=report.id,
+                    env_code=env_code
+                ).run_case
+            ).start()
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
 
 
 class ApiChangeApiSortView(LoginRequiredView):

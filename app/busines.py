@@ -240,6 +240,7 @@ class RunCaseBusiness:
             case_id,
             run_type,
             run_func,
+            run_id=None,
             env_code=None,
             browser=None,
             report_id=None,
@@ -258,7 +259,8 @@ class RunCaseBusiness:
             create_user=create_user,
             project_id=project_id,
             env=env.code,
-            trigger_type=trigger_type
+            trigger_type=trigger_type,
+            run_id=run_id
         )
         # 新起线程运行任务
         Thread(

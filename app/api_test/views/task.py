@@ -21,21 +21,25 @@ class ApiRunTaskView(NotLoginView):
         case_id = CaseSet.get_case_id(
                 Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
             )
-        report_id = RunCaseBusiness.run(
-            env_code=form.env.data or form.task.env,
-            trigger_type=form.trigger_type.data,
-            is_async=form.is_async.data,
-            project_id=form.task.project_id,
-            report_name=form.task.name,
-            task_type="task",
-            report_model=Report,
-            case_id=case_id,
-            run_type="api",
-            run_func=RunCase,
-            task=form.task.to_dict(),
-            create_user=g.user_id or User.get_first(account="common").id
-        )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})
+        run_id = Report.get_run_id()
+        env_list = form.env_list.data or form.loads(form.task.env_list)
+        for env_code in env_list:
+            RunCaseBusiness.run(
+                run_id=run_id,
+                env_code=env_code,
+                trigger_type=form.trigger_type.data,
+                is_async=form.is_async.data,
+                project_id=form.task.project_id,
+                report_name=form.task.name,
+                task_type="task",
+                report_model=Report,
+                case_id=case_id,
+                run_type="api",
+                run_func=RunCase,
+                task=form.task.to_dict(),
+                create_user=g.user_id or User.get_first(account="common").id
+            )
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
 
 
 class ApiTaskListView(LoginRequiredView):

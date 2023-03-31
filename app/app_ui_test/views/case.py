@@ -59,7 +59,9 @@ class AppUiRunCaseView(LoginRequiredView):
         case = form.case_list[0]
         project_id = CaseSet.get_first(id=case.set_id).project_id
         appium_config = RunCaseBusiness.get_appium_config(project_id, form)
-        report_id = RunCaseBusiness.run(
+        run_id = Report.get_run_id()
+        RunCaseBusiness.run(
+            run_id=run_id,
             is_async=form.is_async.data,
             project_id=project_id,
             report_name=case.name,
@@ -70,7 +72,7 @@ class AppUiRunCaseView(LoginRequiredView):
             run_func=RunCase,
             appium_config=appium_config
         )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
 
 
 class AppUiChangeCaseStatusView(LoginRequiredView):
@@ -98,7 +100,8 @@ class AppUiCopyCaseStepView(LoginRequiredView):
         """ 复制指定用例的步骤到当前用例下 """
         form = CopyCaseStepForm().do_validate()
         step_list = CaseBusiness.copy_step_to_current_case(form, Step)
-        return app.restful.success("步骤复制成功", data=step_list)
+        Case.merge_variables(form.source.data, form.to.data)
+        return app.restful.success("步骤拉取成功，自定义变量已合并至当前用例", data=step_list)
 
 
 class AppUiPullCaseStepView(LoginRequiredView):
@@ -155,5 +158,5 @@ app_ui_test.add_url_rule("/case/sort", view_func=AppUiChangeCaseSortView.as_view
 app_ui_test.add_url_rule("/case/copy/step", view_func=AppUiCopyCaseStepView.as_view("AppUiCopyCaseStepView"))
 app_ui_test.add_url_rule("/case/pull/step", view_func=AppUiPullCaseStepView.as_view("AppUiPullCaseStepView"))
 app_ui_test.add_url_rule("/case/quote", view_func=AppUiChangeCaseQuoteView.as_view("AppUiChangeCaseQuoteView"))
-app_ui_test.add_url_rule("/case/changeIsRun", view_func=AppUiChangeCaseStatusView.as_view("AppUiChangeCaseStatusView"))
+app_ui_test.add_url_rule("/case/status", view_func=AppUiChangeCaseStatusView.as_view("AppUiChangeCaseStatusView"))
 app_ui_test.add_url_rule("/case/from", view_func=AppUiGetQuoteCaseFromView.as_view("AppUiGetQuoteCaseFromView"))

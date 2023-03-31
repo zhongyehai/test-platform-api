@@ -18,6 +18,14 @@ class GetRunEnvListView(NotLoginView):
         return app.restful.success(data=RunEnv.make_pagination(form))
 
 
+class GeRunEnvGroupListView(LoginRequiredView):
+
+    def get(self):
+        """ 环境分组列表 """
+        group_list = RunEnv.query.with_entities(RunEnv.group).distinct().all()
+        return app.restful.success("获取成功", data=[group[0] for group in group_list])
+
+
 class RunEnvChangeSortView(LoginRequiredView):
 
     def put(self):
@@ -58,3 +66,4 @@ class RunEnvView(LoginRequiredView):
 config_blueprint.add_url_rule("/runEnv", view_func=RunEnvView.as_view("RunEnvView"))
 config_blueprint.add_url_rule("/runEnv/list", view_func=GetRunEnvListView.as_view("GetRunEnvListView"))
 config_blueprint.add_url_rule("/runEnv/sort", view_func=RunEnvChangeSortView.as_view("RunEnvChangeSortView"))
+config_blueprint.add_url_rule("/runEnv/group", view_func=GeRunEnvGroupListView.as_view("GeRunEnvGroupListView"))

@@ -214,7 +214,7 @@ class Runner(object):
         variables_mapping = copy.deepcopy(self.session_context.test_variables_mapping)
         self.session_context.test_variables_mapping['request'] = copy_request
 
-        step_name, extractors = step_dict.get("name", ""), step_dict.get("extract", {})
+        case_id, step_name, extractors = step_dict.get("case_id"), step_dict.get("name"), step_dict.get("extract", {})
         if self.run_type == "api":
             # 发送请求
             url, method = parsed_step.pop('url'), parsed_step.pop('method')
@@ -223,6 +223,7 @@ class Runner(object):
                 method,
                 url,
                 name=step_name,
+                case_id=case_id,
                 variables_mapping=copy.deepcopy(variables_mapping),
                 **parsed_step
             )
@@ -236,7 +237,8 @@ class Runner(object):
             # 执行测试步骤浏览器操作
             self.client_session.do_action(
                 self.driver,
-                step_name,
+                name=step_name,
+                case_id=case_id,
                 variables_mapping=copy.deepcopy(variables_mapping),
                 **parsed_step
             )

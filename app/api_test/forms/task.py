@@ -15,7 +15,7 @@ class AddTaskForm(BaseForm):
     project_id = IntegerField(validators=[DataRequired("请选择服务")])
     set_ids = StringField()
     case_ids = StringField()
-    env = StringField(validators=[DataRequired("请选择要运行的环境")])
+    env_list = StringField(validators=[DataRequired("请选择要运行的环境")])
     name = StringField(validators=[
         DataRequired("任务名不能为空"),
         Length(1, name_length, f"步骤长度不可超过{name_length}位")
@@ -84,15 +84,10 @@ class HasTaskIdForm(BaseForm):
 
 class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
-    env = StringField()
+    env_list = StringField()
     is_async = IntegerField()
     trigger_type = StringField()  # pipeline 代表是流水线触发，跑完过后会发送测试报告
     extend = StringField()  # 运维传过来的扩展字段，接收的什么就返回什么
-
-    def validate_env(self, field):
-        """ 检验环境 """
-        if field.data:
-            self.validate_data_is_true(f"环境【{field.data}】不存在", RunEnv.get_first(code=field.data))
 
 
 class EditTaskForm(AddTaskForm, HasTaskIdForm):

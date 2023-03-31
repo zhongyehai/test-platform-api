@@ -32,7 +32,7 @@ from app.config.models.config import Config
 from utils.client.testRunner.api import TestRunner
 from utils.client.testRunner.utils import build_url
 from utils.log import logger
-from utils.util.fileUtil import FileUtil
+from utils.util.fileUtil import FileUtil, API_REPORT_ADDRESS, WEB_UI_REPORT_ADDRESS, APP_UI_REPORT_ADDRESS
 from utils.parse.parse import encode_object
 from utils.client.parseModel import ProjectModel, ApiModel, CaseModel, ElementModel
 from utils.message.sendReport import async_send_report, call_back_for_pipeline
@@ -71,7 +71,8 @@ class RunTestRunner:
             self.case_model = ApiCase
             self.step_model = ApiStep
             self.report_model = ApiReport
-            self.report_addr = f'{Config.get_report_host()}{Config.get_api_report_addr()}'
+            self.report_file_path = API_REPORT_ADDRESS
+            self.front_report_addr = f'{Config.get_report_host()}{Config.get_api_report_addr()}'
         elif self.run_type == "webUi":  # web-ui自动化
             self.project_model = WebUiProject
             self.project_env_model = WebUiProjectEnv
@@ -80,7 +81,8 @@ class RunTestRunner:
             self.case_model = WebUiCase
             self.step_model = WebUiStep
             self.report_model = WebUiReport
-            self.report_addr = f'{Config.get_report_host()}{Config.get_web_ui_report_addr()}'
+            self.report_file_path = WEB_UI_REPORT_ADDRESS
+            self.front_report_addr = f'{Config.get_report_host()}{Config.get_web_ui_report_addr()}'
         else:  # app-ui自动化
             self.project_model = AppUiProject
             self.project_env_model = AppUiProjectEnv
@@ -89,7 +91,8 @@ class RunTestRunner:
             self.case_model = AppUiCase
             self.step_model = AppUiStep
             self.report_model = AppUiReport
-            self.report_addr = f'{Config.get_report_host()}{Config.get_app_ui_report_addr()}'
+            self.report_file_path = APP_UI_REPORT_ADDRESS
+            self.front_report_addr = f'{Config.get_report_host()}{Config.get_app_ui_report_addr()}'
 
         self.report_id = report_id
         self.parsed_project_dict = {}
@@ -221,7 +224,7 @@ class RunTestRunner:
         else:
             FileUtil.save_app_ui_test_report(report_id, result)
 
-    def save_report(self, json_result):
+    def save_report_and_send_message(self, json_result):
         """ 写入测试报告到数据库, 并把数据写入到文本中 """
         self.report_model.save_report_start(self.report_id)
         result = json.loads(json_result)
@@ -229,11 +232,21 @@ class RunTestRunner:
         report = self.report_model.get_first(id=self.report_id)
         report.update_status(result["success"])
         self.save_report_file(report.id, result)  # 测试报告写入到文本文件
-
         self.report_model.save_report_finish(self.report_id)
+
         # 定时任务需要把连接放回连接池，不放回去会报错
         if self.is_rollback:
             db.session.rollback()
+
+        # 有可能是多环境一次性批量运行，根据run_id查是否全部运行完毕
+        run_id = self.report_model.get_first(id=self.report_id).run_id  # 获取当前报告所属的run_id
+        if self.report_model.select_is_all_done_by_run_id(run_id):  # 查询此run_id下的报告是否全部生成
+            not_passed_report = self.report_model.get_first(run_id=run_id, is_passed=0)  # 有失败的，则获取失败的报告
+            if not_passed_report:
+                self.report_id = not_passed_report.id
+                result = FileUtil.get_report(self.report_file_path, not_passed_report.id)
+
+            self.send_report(self.report_id, result)  # 发送报告
 
     def run_case(self):
         """ 调 testRunner().run() 执行测试 """
@@ -275,8 +288,7 @@ class RunTestRunner:
         summary["count_api"] = len(self.api_set)
         summary["count_element"] = len(self.element_set)
         jump_res = json.dumps(summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
-        self.save_report(jump_res)
-        self.send_report(jump_res)
+        self.save_report_and_send_message(jump_res)
 
     def update_run_case_status(self, run_dict, run_index, summary):
         """ 每条用例执行完了都更新对应的运行状态，如果更新后的结果是用例全都运行了，则生成测试报告"""
@@ -301,34 +313,22 @@ class RunTestRunner:
                     all_summary["time"]["duration"] = summary["time"]["duration"]  # 总共耗时取运行最长的
 
             jump_res = json.dumps(all_summary, ensure_ascii=False, default=encode_object, cls=JSONEncoder)
-            self.save_report(jump_res)
+            self.save_report_and_send_message(jump_res)
 
-            # 如果没通过，则触发重试机制，
-            # 触发类型为流水线、测试报告状态为不通过、测试报告重试次数字段 < 任务设置的重试次数
-            # 初始化改变测试报告状态: 1, 1
-            # if self.trigger_type == 'pipeline' \
-            #         and all_summary["success"] is False \
-            #         and self.report_model.get_first(id=self.report_id).retry_count < self.task.retry_count:
-            #     pass
-
-            self.send_report(jump_res)
-
-    def send_report(self, res):
+    def send_report(self, report_id, res):
         """ 发送测试报告 """
         if self.task:
-            content = json.loads(res)
-
             # 如果是流水线触发的，则回调给流水线
             if self.trigger_type == "pipeline":
                 call_back_for_pipeline(
                     self.task["id"],
                     self.task["call_back"] or [],
                     self.extend,
-                    content["success"]
+                    res["success"]
                 )
 
             # 发送测试报告
-            async_send_report(content=content, **self.task, report_id=self.report_id, report_addr=self.report_addr)
+            async_send_report(content=res, **self.task, report_id=report_id, report_addr=self.front_report_addr)
 
     @staticmethod
     def parse_api(project, api):

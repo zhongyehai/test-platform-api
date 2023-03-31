@@ -14,7 +14,7 @@ class AddTaskForm(BaseForm):
     project_id = IntegerField(validators=[DataRequired("请选择项目")])
     set_ids = StringField()
     case_ids = StringField()
-    env = StringField(validators=[DataRequired("请选择要运行的环境")])
+    env_list = StringField(validators=[DataRequired("请选择要运行的环境")])
     name = StringField(validators=[DataRequired("任务名不能为空")])
     we_chat = StringField()
     ding_ding = StringField()
@@ -95,7 +95,7 @@ class DisableTaskIdForm(HasTaskIdForm):
 
 class RunTaskForm(HasTaskIdForm):
     """ 运行任务 """
-    env = StringField()
+    env_list = StringField()
     is_async = IntegerField()
     browser = StringField()
     trigger_type = StringField()  # pipeline 代表是流水线触发，跑完过后会发送测试报告

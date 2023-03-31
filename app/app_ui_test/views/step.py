@@ -7,7 +7,8 @@ from app.app_ui_test.blueprint import app_ui_test
 from config import ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list
 from app.app_ui_test.models.step import AppUiStep as Step
 from app.app_ui_test.models.case import AppUiCase as Case
-from app.app_ui_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
+from app.app_ui_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm, ChangeStepStatusForm, \
+    DeleteStepForm
 
 
 class AppUiGetStepListView(LoginRequiredView):
@@ -44,7 +45,9 @@ class AppUiChangeStepStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改步骤状态（是否执行） """
-        Step.get_first(id=request.json.get("id")).change_status()
+        form = ChangeStepStatusForm().do_validate()
+        for step in form.step_list:
+            step.change_status(form.status.data)
         return app.restful.success("运行状态修改成功")
 
 
@@ -89,16 +92,18 @@ class AppUiStepMethodViewView(LoginRequiredView):
 
     def delete(self):
         """ 删除步骤 """
-        form = GetStepForm().do_validate()
-        form.step.delete()
-        return app.restful.success(f"步骤【{form.step.name}】删除成功")
+        form = DeleteStepForm().do_validate()
+        for step in form.step_list:
+            step.delete()
+            step.subtract_api_quote_count()
+        return app.restful.success(f"步骤删除成功")
 
 
 app_ui_test.add_url_rule("/step/copy", view_func=AppUiCopyStepView.as_view("AppUiCopyStepView"))
 app_ui_test.add_url_rule("/step/list", view_func=AppUiGetStepListView.as_view("AppUiGetStepListView"))
 app_ui_test.add_url_rule("/step", view_func=AppUiStepMethodViewView.as_view("AppUiStepMethodViewView"))
 app_ui_test.add_url_rule("/step/sort", view_func=AppUiChangeStepSortView.as_view("AppUiChangeStepSortView"))
-app_ui_test.add_url_rule("/step/changeIsRun", view_func=AppUiChangeStepStatusView.as_view("AppUiChangeStepStatusView"))
+app_ui_test.add_url_rule("/step/status", view_func=AppUiChangeStepStatusView.as_view("AppUiChangeStepStatusView"))
 app_ui_test.add_url_rule("/step/execute", view_func=AppUiGetCaseExecuteListView.as_view("AppUiGetCaseExecuteListView"))
 app_ui_test.add_url_rule("/step/assertMapping",
                          view_func=AppUiGetAssertMappingListView.as_view("AppUiGetAssertMappingListView"))

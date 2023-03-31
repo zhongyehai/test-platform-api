@@ -78,8 +78,7 @@ class AddApiForm(BaseForm):
 
     def validate_validates(self, field):
         """ 校验断言表达式 """
-        func_container = Func.get_func_by_func_file_name(self.loads(self.project.func_files))
-        self.validate_api_validates(field.data, func_container)
+        self.validate_api_validates(field.data)
 
     def validate_data_form(self, field):
         self.validate_variable_format(field.data, msg_title='form-data')
@@ -103,7 +102,7 @@ class RunApiMsgForm(BaseForm):
     """ 运行接口 """
     projectId = IntegerField(validators=[DataRequired("服务id必传")])
     apis = StringField(validators=[DataRequired("请选择接口，再进行测试")])
-    env_code = StringField(validators=[DataRequired("请选择运行环境")])
+    env_list = StringField(validators=[DataRequired("请选择运行环境")])
 
     def validate_projectId(self, field):
         """ 校验服务id """

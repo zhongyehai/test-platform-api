@@ -4,7 +4,8 @@ from flask import current_app as app, request
 from app.api_test.blueprint import api_test
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.case import ApiCase as Case
-from app.api_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
+from app.api_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm, DeleteStepForm, \
+    ChangeStepStatusForm
 from app.baseView import LoginRequiredView
 from app.busines import StepBusiness
 
@@ -20,7 +21,9 @@ class ApiGetStepListView(LoginRequiredView):
 class ApiChangeStepStatusView(LoginRequiredView):
     def put(self):
         """ 修改步骤状态（是否执行） """
-        Step.get_first(id=request.json.get("id")).change_status()
+        form = ChangeStepStatusForm().do_validate()
+        for step in form.step_list:
+            step.change_status(form.status.data)
         return app.restful.success("运行状态修改成功")
 
 
@@ -75,10 +78,11 @@ class ApiStepMethodView(LoginRequiredView):
 
     def delete(self):
         """ 删除步骤 """
-        form = GetStepForm().do_validate()
-        form.step.delete()
-        form.step.subtract_api_quote_count()
-        return app.restful.success(f"步骤【{form.step.name}】删除成功")
+        form = DeleteStepForm().do_validate()
+        for step in form.step_list:
+            step.delete()
+            step.subtract_api_quote_count()
+        return app.restful.success(f"步骤删除成功")
 
 
 api_test.add_url_rule("/step", view_func=ApiStepMethodView.as_view("ApiStepMethodView"))
@@ -86,4 +90,4 @@ api_test.add_url_rule("/step/copy", view_func=ApiCopyStepView.as_view("ApiCopySt
 api_test.add_url_rule("/step/list", view_func=ApiGetStepListView.as_view("ApiGetStepListView"))
 api_test.add_url_rule("/step/sort", view_func=ApiChangeStepSortView.as_view("ApiChangeStepSortView"))
 api_test.add_url_rule("/step/changeHost", view_func=ApiChangeStepHostView.as_view("ApiChangeStepHostView"))
-api_test.add_url_rule("/step/changeIsRun", view_func=ApiChangeStepStatusView.as_view("ApiChangeStepStatusView"))
+api_test.add_url_rule("/step/status", view_func=ApiChangeStepStatusView.as_view("ApiChangeStepStatusView"))

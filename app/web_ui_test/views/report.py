@@ -35,6 +35,23 @@ class WebUiReportDetailView(NotLoginView):
         return app.restful.success("获取成功", data=form.report_content)
 
 
+class WebUiReportIsDoneView(NotLoginView):
+    def get(self):
+        """ 根据运行id获取当次报告是否全部生成 """
+        run_id, process, status = request.args["run_id"], request.args.get("process", 1), request.args.get("status", 1)
+        return app.restful.success(
+            "获取成功",
+            data=Report.select_is_all_status_by_run_id(run_id, [int(process), int(status)])
+        )
+
+
+class WebUiReportGetReportIdView(NotLoginView):
+    def get(self):
+        """ 根据运行id获取当次要打开的报告 """
+        run_id = request.args["run_id"]
+        return app.restful.success("获取成功", data=Report.select_show_report_id(run_id))
+
+
 class WebUiReportView(LoginRequiredView):
 
     def get(self):
@@ -56,3 +73,5 @@ web_ui_test.add_url_rule("/report", view_func=WebUiReportView.as_view("WebUiRepo
 web_ui_test.add_url_rule("/report/list", view_func=WebUiReportListView.as_view("WebUiReportListView"))
 web_ui_test.add_url_rule("/report/detail", view_func=WebUiReportDetailView.as_view("WebUiReportDetailView"))
 web_ui_test.add_url_rule("/report/download", view_func=WebUiDownloadReportView.as_view("WebUiDownloadReportView"))
+web_ui_test.add_url_rule("/report/status", view_func=WebUiReportIsDoneView.as_view("WebUiReportIsDoneView"))
+web_ui_test.add_url_rule("/report/showId", view_func=WebUiReportGetReportIdView.as_view("WebUiReportGetReportIdView"))

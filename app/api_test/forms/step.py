@@ -60,26 +60,17 @@ class AddStepForm(BaseForm):
     data_driver = StringField()
     num = StringField()
     time_out = IntegerField()
-    all_func_files = []
 
     def validate_api_id(self, field):
         """ 校验接口存在 """
         if not self.quote_case.data:
             api = self.validate_data_is_exist(f"id为【{field.data}】的接口不存在", Api, id=field.data)
             setattr(self, "api", api)
-            # 接口对应服务设置的函数文件、公共变量、头部信息
-            api_project = Project.get_first(id=api.project_id)
-            self.all_func_files.extend(self.loads(api_project.func_files))
 
     def validate_case_id(self, field):
         """ 校验用例存在 """
         case = self.validate_data_is_exist(f"id为 {field.data} 的用例不存在", Case, id=field.data)
         setattr(self, "case", case)
-        self.all_func_files.extend(self.loads(case.func_files))
-
-        # case对应服务设置的函数文件、公共变量、头部信息
-        project = Project.get_first(id=CaseSet.get_first(id=case.set_id).project_id)
-        self.all_func_files.extend(self.loads(project.func_files))
 
     def validate_quote_case(self, field):
         """ 不能自己引用自己 """
@@ -94,8 +85,7 @@ class AddStepForm(BaseForm):
     def validate_validates(self, field):
         """ 校验断言信息 """
         if not self.quote_case.data:
-            func_container = Func.get_func_by_func_file_name(self.all_func_files)
-            self.validate_api_validates(field.data, func_container)
+            self.validate_api_validates(field.data)
 
     def validate_data_form(self, field):
         self.validate_variable_format(field.data, msg_title='form-data')
@@ -109,3 +99,28 @@ class EditStepForm(AddStepForm):
         """ 校验步骤id已存在 """
         step = self.validate_data_is_exist(f"id为 {field.data} 的步骤不存在", Step, id=field.data)
         setattr(self, "step", step)
+
+
+class ChangeStepStatusForm(BaseForm):
+    """ 批量修改步骤状态 """
+    id = StringField(validators=[DataRequired("步骤id必传")])
+    status = IntegerField()
+
+    def validate_id(self, field):
+        step_list = []
+        for step_id in field.data:
+            step = Step.get_first(id=step_id)
+            if step:
+                step_list.append(step)
+        setattr(self, "step_list", step_list)
+
+
+class DeleteStepForm(BaseForm):
+    """ 批量删除步骤 """
+    id = StringField(validators=[DataRequired("步骤id必传")])
+
+    def validate_id(self, field):
+        step_list = [
+            self.validate_data_is_exist(f"id为 {field.data} 的步骤不存在", Step, id=step_id) for step_id in field.data
+        ]
+        setattr(self, "step_list", step_list)

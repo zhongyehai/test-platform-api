@@ -48,7 +48,7 @@ class Func(BaseModel):
         return func_dict
 
     @classmethod
-    def make_pagination(cls, form):
+    def make_pagination(cls, form, pop_field=['func_data']):
         """ 解析分页条件 """
         filters = []
         if form.create_user.data:
@@ -62,5 +62,6 @@ class Func(BaseModel):
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.num.asc()
+            order_by=cls.num.asc(),
+            pop_field=pop_field
         )

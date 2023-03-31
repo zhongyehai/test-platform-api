@@ -10,6 +10,7 @@ class RunEnv(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="环境序号")
     code = db.Column(db.String(255), nullable=True, comment="环境code")
     desc = db.Column(db.String(255), nullable=True, comment="备注")
+    group = db.Column(db.String(255), nullable=True, comment="环境分组")
 
     @classmethod
     def get_id_list(cls):
@@ -30,6 +31,8 @@ class RunEnv(BaseModel):
             filters.append(cls.name.like(f'%{form.name.data}%'))
         if form.code.data:
             filters.append(cls.code.like(f'%{form.code.data}%'))
+        if form.group.data:
+            filters.append(cls.group.like(f'%{form.group.data}%'))
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,

@@ -106,6 +106,13 @@ class FileUtil:
         cls.save_file(os.path.join(FUNC_ADDRESS, f'{name}.py'), func_data)
 
     @classmethod
+    def get_func_data_by_name(cls, script_name):
+        """ 保存自定义函数数据 """
+        with io.open(os.path.join(FUNC_ADDRESS, f'{script_name}.py'), "r", encoding="utf-8") as fp:
+            script = fp.read()
+        return script
+
+    @classmethod
     def get_report(cls, file_path, report_id):
         """ 获取自动化测试报告 """
         with io.open(os.path.join(file_path, f'{report_id}.txt'), "r", encoding="utf-8") as file:

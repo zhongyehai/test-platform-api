@@ -65,6 +65,7 @@ class RunCase(RunTestRunner):
         返回解析后的步骤 {}
         """
         return {
+            "case_id": step.case_id,
             "name": step.name,
             "setup_hooks": [up.strip() for up in step.up_func.split(";") if up] if step.up_func else [],
             "teardown_hooks": [func.strip() for func in step.down_func.split(";") if func] if step.down_func else [],

@@ -19,7 +19,8 @@ class GetFuncListView(LoginRequiredView):
     def get(self):
         """ 自定义函数文件列表 """
         form = GetFuncFileForm().do_validate()
-        return app.restful.success("获取成功", data=Func.make_pagination(form))
+        data_list = Func.make_pagination(form)
+        return app.restful.success("获取成功", data=data_list)
 
 
 class CopyFuncView(LoginRequiredView):
@@ -45,27 +46,38 @@ class DebugFuncView(LoginRequiredView):
 
     def post(self):
         """ 函数调试 """
-        env = "debug"
         form = DebuggerFuncForm().do_validate()
-        name, expression = f'{env}_{form.func.name}', form.expression.data
+        name, expression = f'{form.env.data}_{form.func.name}', form.expression.data
 
         # 把自定义函数脚本内容写入到python脚本中
-        FileUtil.save_func_data(name, form.func.func_data, env=env)
+        Func.create_func_file(form.env.data)
+        # FileUtil.save_func_data(name, form.func.func_data, env=form.env.data)
 
         # 动态导入脚本
         try:
             import_path = f'func_list.{name}'
             func_list = importlib.reload(importlib.import_module(import_path))
-            module_functions_dict = {name: item for name, item in vars(func_list).items() if
-                                     isinstance(item, types.FunctionType)}
+            module_functions_dict = {
+                name: item for name, item in vars(func_list).items() if isinstance(item, types.FunctionType)
+            }
             ext_func = extract_functions(expression)
             func = parse_function(ext_func[0])
             result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])
-            return app.restful.success(msg="执行成功，请查看执行结果", result=result)
+            return app.restful.success(msg="执行成功，请查看执行结果", result={
+                "env": form.env.data,
+                "expression": form.expression.data,
+                "result": result,
+                "script": FileUtil.get_func_data_by_name(f'{form.env.data}_{form.func.name}')
+            })
         except Exception as e:
             app.logger.info(str(e))
             error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
-            return app.restful.fail(msg="语法错误，请检查", result=error_data)
+            return app.restful.fail(msg="语法错误，请检查", result={
+                "env": form.env.data,
+                "expression": form.expression.data,
+                "result": error_data,
+                "script": FileUtil.get_func_data_by_name(f'{form.env.data}_{form.func.name}')
+            })
 
 
 class FuncView(LoginRequiredView):

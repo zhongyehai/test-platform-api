@@ -57,13 +57,13 @@ def get_request_data_type(content_type):
 def assert_is_update(api_msg, options):
     """ 判断参数是否需要更新 """
     header_update, params_update, data_json_update, data_form_update = False, False, False, False
-    if "headers" in options and not api_msg.headers or not json.loads(api_msg.headers)[0]["key"]:
+    if "headers" in options and (api_msg.headers is None or json.loads(api_msg.headers)[0]["key"] is None):
         header_update = True
-    if "query" in options and not api_msg.params or not json.loads(api_msg.params)[0]["key"]:
+    if "query" in options and (api_msg.params is None or json.loads(api_msg.params)[0]["key"] is None):
         params_update = True
-    if "data_json" in options and not api_msg.data_json or not json.loads(api_msg.data_json):
+    if "data_json" in options and (api_msg.data_json is None or not json.loads(api_msg.data_json)):
         data_json_update = True
-    if "data_form" in options and not api_msg.data_form or not json.loads(api_msg.data_form)[0]["key"]:
+    if "data_form" in options and (api_msg.data_form is None or json.loads(api_msg.data_form)[0]["key"] is None):
         data_form_update = True
     return header_update, params_update, data_json_update, data_form_update
 

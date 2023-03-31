@@ -13,6 +13,7 @@ class GetRunEnvListForm(BaseForm):
     pageSize = IntegerField()
     create_user = StringField()
     name = StringField()
+    group = StringField()
     code = StringField()
 
 
@@ -37,6 +38,7 @@ class PostRunEnvForm(BaseForm):
     """ 新增环境表单校验 """
     name = StringField(validators=[DataRequired("请输入环境名字")])
     code = StringField(validators=[DataRequired("请输入code")])
+    group = StringField(validators=[DataRequired("请选则环境分组")])
     desc = StringField()
     num = StringField()
 

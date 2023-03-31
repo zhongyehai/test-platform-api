@@ -110,7 +110,7 @@ class BaseForm(Form, JsonUtil):
         except Exception as error:
             return False
 
-    def validate_api_validates(self, data, func_container):
+    def validate_api_validates(self, data):
         """ 校验断言信息，全都有才视为有效 """
         for index, validate in enumerate(data):
             row_msg = f"断言，第【{index + 1}】行，"
@@ -137,9 +137,9 @@ class BaseForm(Form, JsonUtil):
                 if value is None:  # 要进行断言，则预期结果必须有值
                     raise ValidationError(f"{row_msg}预期结果需填写")
 
-                self.validate_data_type_(func_container, row_msg, data_type, value)  # 校验预期结果的合法性
+                self.validate_data_type_(row_msg, data_type, value)  # 校验预期结果的合法性
 
-    def validate_data_type_(self, func_container, row, data_type, value):
+    def validate_data_type_(self, row, data_type, value):
         """ 校验数据类型 """
         if data_type in ["str", "file"]:  # 普通字符串和文件，不校验
             pass
@@ -147,7 +147,8 @@ class BaseForm(Form, JsonUtil):
             if extract_variables(value).__len__() < 1:
                 raise ValidationError(f"{row}引用的变量表达式【{value}】错误")
         elif data_type == "func":  # 预期结果为自定义函数，校验校验预期结果表达式、实际结果表达式
-            self.validate_func(func_container, value, message=row)  # 实际结果表达式是否引用自定义函数
+            # self.validate_func(func_container, value, message=row)  # 实际结果表达式是否引用自定义函数
+            pass
         elif data_type == "json":  # 预期结果为json
             try:
                 self.dumps(self.loads(value))

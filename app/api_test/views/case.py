@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import time
 
 from flask import current_app as app, request
 
@@ -56,20 +57,22 @@ class ApiRunCaseView(LoginRequiredView):
     def post(self):
         """ 运行测试用例，并生成报告 """
         form = RunCaseForm().do_validate()
-        case = form.case_list[0]
-        project_id = CaseSet.get_first(id=case.set_id).project_id
-        report_id = RunCaseBusiness.run(
-            env_code=form.env_code.data,
-            is_async=form.is_async.data,
-            project_id=project_id,
-            report_name=case.name,
-            task_type="case",
-            report_model=Report,
-            case_id=form.caseId.data,
-            run_type="api",
-            run_func=RunCase
-        )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})
+        project_id = CaseSet.get_first(id=form.case_list[0].set_id).project_id
+        run_id = Report.get_run_id()
+        for env_code in form.env_list.data:
+            RunCaseBusiness.run(
+                run_id=run_id,
+                env_code=env_code,
+                is_async=form.is_async.data,
+                project_id=project_id,
+                report_name=form.case_list[0].name,
+                task_type="case",
+                report_model=Report,
+                case_id=form.caseId.data,
+                run_type="api",
+                run_func=RunCase
+            )
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
 
 
 class ApiChangeCaseStatusView(LoginRequiredView):
@@ -97,16 +100,8 @@ class ApiCopyCaseStepView(LoginRequiredView):
         """ 复制指定用例的步骤到当前用例下 """
         form = CopyCaseStepForm().do_validate()
         step_list = CaseBusiness.copy_step_to_current_case(form, Step)
-        return app.restful.success("步骤复制成功", data=step_list)
-
-
-class ApiGetQuoteCaseFromView(LoginRequiredView):
-
-    def get(self):
-        """ 获取用例的归属 """
-        form = GetCaseForm().do_validate()
-        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSet, Case)
-        return app.restful.success("获取成功", data=from_path)
+        Case.merge_variables(form.source.data, form.to.data)
+        return app.restful.success("步骤拉取成功，自定义变量已合并至当前用例", data=step_list)
 
 
 class ApiPullCaseStepView(LoginRequiredView):
@@ -116,6 +111,15 @@ class ApiPullCaseStepView(LoginRequiredView):
         form = PullCaseStepForm().do_validate()
         CaseBusiness.pull_step_to_current_case(form, Step)
         return app.restful.success("步骤复制成功")
+
+
+class ApiGetQuoteCaseFromView(LoginRequiredView):
+
+    def get(self):
+        """ 获取用例的归属 """
+        form = GetCaseForm().do_validate()
+        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSet, Case)
+        return app.restful.success("获取成功", data=from_path)
 
 
 class ApiCaseView(LoginRequiredView):
@@ -154,5 +158,5 @@ api_test.add_url_rule("/case/copy/step", view_func=ApiCopyCaseStepView.as_view("
 api_test.add_url_rule("/case/pull/step", view_func=ApiPullCaseStepView.as_view("ApiPullCaseStepView"))
 api_test.add_url_rule("/case/name", view_func=ApiGetCaseNameByIdView.as_view("ApiGetCaseNameByIdView"))
 api_test.add_url_rule("/case/quote", view_func=ApiChangeCaseQuoteView.as_view("ApiChangeCaseQuoteView"))
-api_test.add_url_rule("/case/changeIsRun", view_func=ApiChangeCaseStatusView.as_view("ApiChangeCaseStatusView"))
+api_test.add_url_rule("/case/status", view_func=ApiChangeCaseStatusView.as_view("ApiChangeCaseStatusView"))
 api_test.add_url_rule("/case/from", view_func=ApiGetQuoteCaseFromView.as_view("ApiGetQuoteCaseFromView"))

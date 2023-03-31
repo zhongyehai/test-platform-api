@@ -8,7 +8,8 @@ from app.web_ui_test.blueprint import web_ui_test
 from config import ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list
 from app.web_ui_test.models.step import WebUiStep as Step
 from app.web_ui_test.models.case import WebUiCase as Case
-from app.web_ui_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
+from app.web_ui_test.forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm, ChangeStepStatusForm, \
+    DeleteStepForm
 
 
 class WebUiGetStepListView(LoginRequiredView):
@@ -53,7 +54,9 @@ class WebUiChangeStepStatusView(LoginRequiredView):
 
     def put(self):
         """ 修改步骤状态（是否执行） """
-        Step.get_first(id=request.json.get("id")).change_status()
+        form = ChangeStepStatusForm().do_validate()
+        for step in form.step_list:
+            step.change_status(form.status.data)
         return app.restful.success("运行状态修改成功")
 
 
@@ -98,16 +101,18 @@ class WebUiStepMethodViewView(LoginRequiredView):
 
     def delete(self):
         """ 删除步骤 """
-        form = GetStepForm().do_validate()
-        form.step.delete()
-        return app.restful.success(f"步骤【{form.step.name}】删除成功")
+        form = DeleteStepForm().do_validate()
+        for step in form.step_list:
+            step.delete()
+            step.subtract_api_quote_count()
+        return app.restful.success(f"步骤删除成功")
 
 
 web_ui_test.add_url_rule("/step/copy", view_func=WebUiCopyStepView.as_view("WebUiCopyStepView"))
 web_ui_test.add_url_rule("/step/list", view_func=WebUiGetStepListView.as_view("WebUiGetStepListView"))
 web_ui_test.add_url_rule("/step", view_func=WebUiStepMethodViewView.as_view("WebUiStepMethodViewView"))
 web_ui_test.add_url_rule("/step/sort", view_func=WebUiChangeStepSortView.as_view("WebUiChangeStepSortView"))
-web_ui_test.add_url_rule("/step/changeIsRun", view_func=WebUiChangeStepStatusView.as_view("WebUiChangeStepStatusView"))
+web_ui_test.add_url_rule("/step/status", view_func=WebUiChangeStepStatusView.as_view("WebUiChangeStepStatusView"))
 web_ui_test.add_url_rule("/step/execute", view_func=WebUiGetCaseExecuteListView.as_view("WebUiGetCaseExecuteListView"))
 web_ui_test.add_url_rule("/step/keyBoardCode",
                          view_func=WebUiGetKeyBoardCodeListView.as_view("WebUiGetKeyBoardCodeListView"))

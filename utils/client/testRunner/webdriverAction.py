@@ -542,6 +542,7 @@ class GetWebDriver(Actions):
         """ chrome浏览器 """
         chrome_options = chromeOptions()
         chrome_options.add_argument('--headless')
+        chrome_options.add_argument('no-sandbox')  # 加上此项，不报错
         if platform.platform().startswith('Linux') is False:
             chrome_options = None
         return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)

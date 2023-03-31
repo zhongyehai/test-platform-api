@@ -83,7 +83,7 @@ class BaseModel(db.Model, JsonUtil):
     serialization_file_list = [
         "headers", "variables", "func_files",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
-        "call_back", "set_ids", "case_ids", "conf",
+        "call_back", "set_ids", "case_ids", "conf", "env_list",
         "kym", "task_item", 'business_id'
     ]
 
@@ -310,19 +310,28 @@ class BaseModel(db.Model, JsonUtil):
             self.update({"status": change_status})
 
     @classmethod
-    def pagination(cls, page_num, page_size, filters: list = [], order_by=None):
+    def pop_field(cls, data: dict, field_list: list = []):
+        for field in field_list:
+            if field in data:
+                data.pop(field)
+        return data
+
+    @classmethod
+    def pagination(cls, page_num, page_size, filters: list = [], order_by=None, pop_field=[]):
         """ 分页, 如果没有传页码和页数，则根据查询条件获取全部数据
         filters：过滤条件
         page_num：页数
         page_size：页码
         order_by: 排序规则
+        pop_field: 返回数据中，指定不返回的字段
         """
         if page_num and page_size:
             query_obj = cls.query.filter(*filters).order_by(order_by) if filters else cls.query.order_by(order_by)
             result = query_obj.paginate(page_num, per_page=page_size, error_out=False)
-            return {"total": result.total, "data": [model.to_dict() for model in result.items]}
+            return {"total": result.total,
+                    "data": [cls.pop_field(model.to_dict(), pop_field) for model in result.items]}
         all_data = cls.query.filter(*filters).order_by(order_by).all()
-        return {"total": len(all_data), "data": [model.to_dict() for model in all_data]}
+        return {"total": len(all_data), "data": [cls.pop_field(model.to_dict(), pop_field) for model in all_data]}
 
 
 class ApschedulerJobs(BaseModel):
@@ -640,7 +649,7 @@ class BaseTask(BaseModel):
 
     num = db.Column(db.Integer(), comment="任务序号")
     name = db.Column(db.String(255), comment="任务名称")
-    env = db.Column(db.String(255), default="test", comment="运行环境")
+    env_list = db.Column(db.String(255), default='[]', comment="运行环境")
     case_ids = db.Column(db.Text(), comment="用例id")
     task_type = db.Column(db.String(255), default="cron", comment="定时类型")
     cron = db.Column(db.String(255), nullable=True, comment="cron表达式")
@@ -683,13 +692,19 @@ class BaseReport(BaseModel):
     name = db.Column(db.String(128), nullable=True, comment="测试报告名称")
     is_passed = db.Column(db.Integer(), default=1, comment="是否全部通过，1全部通过，0有报错")
     run_type = db.Column(db.String(255), default="task", nullable=True, comment="报告类型，task/set/case/api")
-    status = db.Column(db.Integer(), default=1, comment="是否执行完毕，1执行中，2执行完毕")
+    status = db.Column(db.Integer(), default=1, comment="当前节点是否执行完毕，1执行中，2执行完毕")
     retry_count = db.Column(db.Integer(), default=0, comment="已经执行重试的次数")
     env = db.Column(db.String(255), default="test", comment="运行环境")
-    process = db.Column(db.Integer(), default=1, comment="进度, 1: 解析数据、2: 执行测试、3: 写入报告")
+    process = db.Column(db.Integer(), default=1, comment="进度节点, 1: 解析数据、2: 执行测试、3: 写入报告")
     trigger_type = db.Column(
         db.String(128), nullable=True, default="page", comment="触发类型，pipeline:流水线、page:页面、cron:定时任务")
+    run_id = db.Column(db.String(128), comment="运行id，用于查询报告")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
+
+    @classmethod
+    def get_run_id(cls):
+        """ 生产运行id """
+        return f'{g.user_id}_{int(time.time() * 1000000)}'
 
     def update_status(self, run_result, status=2):
         """ 测试运行结束后，更新状态和结果 """
@@ -733,6 +748,30 @@ class BaseReport(BaseModel):
     def get_new_report(cls, **kwargs):
         kwargs["create_user"] = kwargs["create_user"] or g.user_id
         return cls().create(kwargs)
+
+    @classmethod
+    def select_is_all_status_by_run_id(cls, run_id, process_and_status=[1, 1]):
+        """ 查询一个运行批次下离初始化状态最近的报告 """
+        status_list = [[1, 1], [1, 2], [2, 1], [2, 2], [3, 1], [3, 2]]
+        index = status_list.index(process_and_status)
+        for process, status in status_list[index:]:  # 只查传入状态之后的状态
+            if cls.query.filter(cls.run_id == run_id, cls.process == process, cls.status == status).first():
+                return {"process": process, "status": status}
+
+    @classmethod
+    def select_is_all_done_by_run_id(cls, run_id):
+        """ 报告是否全部生成 """
+        return cls.query.filter(cls.run_id == run_id, cls.process != 3, cls.status != 2).first() is None
+
+    @classmethod
+    def select_show_report_id(cls, run_id):
+        """ 获取一个运行批次要展示的报告 """
+        # 全部通过
+        run_fail_report = cls.get_first(run_id=run_id, is_passed=0)
+        if run_fail_report:
+            return run_fail_report.id
+        else:
+            return cls.get_first(run_id=run_id).id
 
     @classmethod
     def make_pagination(cls, form):
