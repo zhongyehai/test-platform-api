@@ -63,4 +63,4 @@ class FindReportForm(BaseForm):
     trigger_type = StringField()
     run_type = StringField()
     is_passed = StringField()
-    env = IntegerField()
+    env = StringField()

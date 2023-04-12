@@ -6,6 +6,7 @@ from app.baseModel import BaseModel, db
 class YapiProject(BaseModel):
     """ yapi的服务表 """
     __tablename__ = "yapi_project"
+    __table_args__ = {"comment": "yapi的服务表"}
 
     yapi_group = db.Column(db.Integer(), comment="当前服务归属于yapi平台分组的id")
     yapi_name = db.Column(db.String(255), comment="当前服务在yapi平台的名字")
@@ -16,6 +17,7 @@ class YapiProject(BaseModel):
 class YapiModule(BaseModel):
     """ yapi的模块表 """
     __tablename__ = "yapi_module"
+    __table_args__ = {"comment": "yapi的模块表"}
 
     yapi_project = db.Column(db.Integer(), comment="当前模块在yapi平台对应的服务id")
     yapi_name = db.Column(db.String(255), comment="当前模块在yapi平台的名字")
@@ -26,6 +28,8 @@ class YapiModule(BaseModel):
 class YapiApiMsg(BaseModel):
     """ yapi的接口表 """
     __tablename__ = "yapi_apis"
+    __table_args__ = {"comment": "yapi的接口表"}
+
     yapi_project = db.Column(db.Integer(), comment="当前接口在yapi平台对应的服务id")
     yapi_module = db.Column(db.Integer(), comment="当前接口在yapi平台对应的模块id")
     yapi_name = db.Column(db.String(255), comment="当前接口在yapi平台的名字")
@@ -36,6 +40,7 @@ class YapiApiMsg(BaseModel):
 class YapiDiffRecord(BaseModel):
     """ yapi数据比对记录 """
     __tablename__ = "yapi_diff_record"
+    __table_args__ = {"comment": "yapi数据比对记录"}
 
     name = db.Column(db.String(255), comment="比对标识，全量比对，或者具体分组的比对")
     is_changed = db.Column(db.Integer, default=0, comment="对比结果，1有改变，0没有改变")

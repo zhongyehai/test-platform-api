@@ -5,8 +5,8 @@ from app.baseModel import BaseApi, db
 class AppUiPage(BaseApi):
     """ 页面表 """
     __abstract__ = False
-
     __tablename__ = "app_ui_test_page"
+    __table_args__ = {"comment": "APP测试页面表"}
 
     addr = db.Column(db.String(255), nullable=True, comment="地址")
 

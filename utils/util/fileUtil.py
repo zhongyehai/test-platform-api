@@ -11,7 +11,7 @@ from utils.variables.contentType import CONTENT_TYPE
 LOG_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/logs/"))  # 日志路径
 RUN_LOG_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/run_logs/"))  # 日志路径
 STATIC_ADDRESS = os.path.abspath(os.path.join(basedir, r"static"))  # 导入模板存放路径
-FUNC_ADDRESS = os.path.abspath(os.path.join(basedir, "." + r"/func_list"))  # 自定义函数文件存放地址
+Script_ADDRESS = os.path.abspath(os.path.join(basedir, "." + r"/script_list"))  # 自定义函数文件存放地址
 API_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/reports_api/"))  # api测试报告文件存放地址
 WEB_UI_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/reports_web_ui/"))  # web-ui测试报告文件存放地址
 APP_UI_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/reports_app_ui/"))  # app-ui测试报告文件存放地址
@@ -40,7 +40,7 @@ def _check_file_path(paths):
 
 
 _check_file_path([
-    LOG_ADDRESS, FUNC_ADDRESS, API_REPORT_ADDRESS, WEB_UI_REPORT_ADDRESS, APP_UI_REPORT_ADDRESS, DIFF_RESULT,
+    LOG_ADDRESS, Script_ADDRESS, API_REPORT_ADDRESS, WEB_UI_REPORT_ADDRESS, APP_UI_REPORT_ADDRESS, DIFF_RESULT,
     CASE_FILE_ADDRESS, UI_CASE_FILE_ADDRESS, MOCK_DATA_ADDRESS, CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS,
     GIT_FILE_ADDRESS, DB_BACK_UP_ADDRESS, SWAGGER_FILE_ADDRESS, RUN_LOG_ADDRESS, BROWSER_DRIVER_ADDRESS
 ])
@@ -99,16 +99,22 @@ class FileUtil:
             json.dump(diff_detail, fp, ensure_ascii=False, indent=4)
 
     @classmethod
-    def save_func_data(cls, name, content, env="debug"):
+    def save_script_data(cls, name, content, env="debug"):
         """ 保存自定义函数数据 """
         content = content or ''
         func_data = "# coding:utf-8\n\n" + f'env = "{env}"\n\n' + content
-        cls.save_file(os.path.join(FUNC_ADDRESS, f'{name}.py'), func_data)
+        cls.save_file(os.path.join(Script_ADDRESS, f'{name}.py'), func_data)
 
     @classmethod
-    def get_func_data_by_name(cls, script_name):
+    def delete_script(cls, name):
+        """ 删除脚本文件 """
+        file_path = os.path.join(Script_ADDRESS, f'{name}.py')
+        cls.delete_file(file_path)
+
+    @classmethod
+    def get_func_data_by_script_name(cls, script_name):
         """ 保存自定义函数数据 """
-        with io.open(os.path.join(FUNC_ADDRESS, f'{script_name}.py'), "r", encoding="utf-8") as fp:
+        with io.open(os.path.join(Script_ADDRESS, f'{script_name}.py'), "r", encoding="utf-8") as fp:
             script = fp.read()
         return script
 

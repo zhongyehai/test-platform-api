@@ -10,7 +10,7 @@ from app.system.forms.user import (
     ChangePasswordForm,
     LoginForm,
     FindUserForm,
-    GetUserEditForm,
+    GetUserForm,
     DeleteUserForm,
     ChangeStatusUserForm
 )
@@ -28,14 +28,22 @@ class GetUserListView(LoginRequiredView):
         )
 
 
+class GetUserRoleListView(LoginRequiredView):
+
+    def get(self):
+        """ 获取用户的角色 """
+        form = GetUserForm().do_validate()
+        return app.restful.success(data=form.user.roles)
+
+
 class UserLoginView(NotLoginView):
 
     def post(self):
         """ 登录 """
         form = LoginForm().do_validate()
-        user = form.user
-        user_info = user.to_dict()
-        user_info["token"] = user.generate_reset_token()
+        user_info = form.user.to_dict()
+        user_info["token"] = form.user.generate_reset_token()
+        user_info["front_permissions"] = form.user.get_front_permissions()
         return app.restful.success("登录成功", user_info)
 
 
@@ -69,7 +77,7 @@ class UserView(AdminRequiredView):
 
     def get(self):
         """ 获取用户 """
-        form = GetUserEditForm().do_validate()
+        form = GetUserForm().do_validate()
         data = {"account": form.user.account, "name": form.user.name, "role_id": form.user.role_id}
         return app.restful.success(data=data)
 
@@ -77,12 +85,14 @@ class UserView(AdminRequiredView):
         """ 新增用户 """
         form = CreateUserForm().do_validate()
         user = User().create(form.data)
+        user.insert_user_roles(form.role_list.data)
         return app.restful.success(f'用户 {form.name.data} 新增成功', user.to_dict())
 
     def put(self):
         """ 修改用户 """
         form = EditUserForm().do_validate()
         form.user.update(form.data)
+        form.user.update_user_roles(form.role_list.data)
         return app.restful.success(f'用户 {form.user.name} 修改成功', form.user.to_dict())
 
     # def delete(self):
@@ -98,5 +108,6 @@ system_manage.add_url_rule("/user", view_func=UserView.as_view("UserView"))
 system_manage.add_url_rule("/user/login", view_func=UserLoginView.as_view("UserLoginView"))
 system_manage.add_url_rule("/user/logout", view_func=UserLogoutView.as_view("UserLogoutView"))
 system_manage.add_url_rule("/user/list", view_func=GetUserListView.as_view("GetUserListView"))
+system_manage.add_url_rule("/user/role", view_func=GetUserRoleListView.as_view("GetUserRoleListView"))
 system_manage.add_url_rule("/user/status", view_func=ChangeUserStatusView.as_view("ChangeUserStatusView"))
 system_manage.add_url_rule("/user/password", view_func=ChangeUserPasswordView.as_view("ChangeUserPasswordView"))

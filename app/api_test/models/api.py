@@ -5,8 +5,8 @@ from app.baseModel import BaseApi, db
 class ApiMsg(BaseApi):
     """ 接口表 """
     __abstract__ = False
-
     __tablename__ = "api_test_api"
+    __table_args__ = {"comment": "接口测试接口信息表"}
 
     time_out = db.Column(db.Integer(), default=60, nullable=True, comment="request超时时间，默认60秒")
     addr = db.Column(db.String(255), nullable=True, comment="地址")

@@ -9,6 +9,12 @@ from utils.view.required import before_request_required
 def register_before_hook(app):
     """ 注册前置钩子函数，有请求时，会按函数所在位置，以从近到远的序顺序执行以下钩子函数 """
 
+    @app.before_request
+    def parse_request_ip():
+        """ 获取用户ip """
+        g.user_ip = request.headers.get("X-Forwarded-History") or request.headers.get(
+            "X-Forwarded-From") or request.remote_addr
+
     @app.before_first_request
     def set_config():
         """ 第一次请求时，获取并初始化配置 """
@@ -16,12 +22,6 @@ def register_before_hook(app):
         pagination = Config.get_pagination_size()
         app.config["page_num"] = pagination["page_num"]
         app.config["page_size"] = pagination["page_size"]
-
-    @app.before_request
-    def parse_request_ip():
-        """ 获取用户ip """
-        g.user_ip = request.headers.get("X-Forwarded-History") or request.headers.get(
-            "X-Forwarded-From") or request.remote_addr
 
     @app.before_request
     def request_endpoint_is_exist():

@@ -4,7 +4,7 @@ import json
 from wtforms import StringField, IntegerField, BooleanField
 from wtforms.validators import ValidationError, DataRequired
 
-from app.assist.models.func import Func
+from app.assist.models.script import Script
 from app.app_ui_test.models.project import AppUiProject as Project, AppUiProjectEnv as ProjectEnv
 from app.app_ui_test.models.caseSet import AppUiCaseSet as CaseSet
 from app.app_ui_test.models.step import AppUiStep as Step
@@ -32,7 +32,7 @@ class AddCaseForm(BaseForm):
     """ 添加用例的校验 """
     name = StringField(validators=[DataRequired("用例名称不能为空")])
     desc = StringField()
-    func_files = StringField()
+    script_list = StringField()
     skip_if = StringField()
     variables = StringField()
     run_times = IntegerField()
@@ -55,9 +55,9 @@ class AddCaseForm(BaseForm):
         setattr(self, "project_env", env)
 
         # 自定义函数
-        func_files = self.loads(self.project.func_files)
-        func_files.extend(self.func_files.data)
-        self.all_func_name = Func.get_func_by_func_file_name(func_files)
+        project_script_list = self.loads(self.project.script_list)
+        project_script_list.extend(self.script_list.data)
+        self.all_func_name = Script.get_func_by_script_name(project_script_list)
         self.validate_func(self.all_func_name, self.dumps(field.data))
 
         # 公共变量

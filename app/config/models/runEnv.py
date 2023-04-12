@@ -5,6 +5,7 @@ from app.baseModel import BaseModel, db
 class RunEnv(BaseModel):
     """ 运行环境表 """
     __tablename__ = "config_run_env"
+    __table_args__ = {"comment": "运行环境配置表"}
 
     name = db.Column(db.String(255), nullable=True, comment="环境名字")
     num = db.Column(db.Integer(), nullable=True, comment="环境序号")

@@ -9,17 +9,18 @@ from app.config.models.runEnv import RunEnv
 from utils.util.fileUtil import FileUtil
 
 
-class Func(BaseModel):
-    """ 自定义函数 """
-    __tablename__ = "func_data"
+class Script(BaseModel):
+    """ python脚本 """
+    __tablename__ = "python_script"
+    __table_args__ = {"comment": "python脚本"}
 
     name = db.Column(db.String(128), nullable=True, unique=True, comment="脚本名称")
-    func_data = db.Column(LONGTEXT, default="", comment="脚本代码")
+    script_data = db.Column(LONGTEXT, default="", comment="脚本代码")
     desc = db.Column(db.Text(), comment="函数文件描述")
     num = db.Column(db.Integer(), nullable=True, comment="当前函数文件的序号")
 
     @classmethod
-    def create_func_file(cls, env_code=None):
+    def create_script_file(cls, env_code=None, not_create_list=[]):
         """ 创建所有自定义函数 py 文件，默认在第一行加上运行环境
         示例：
             # coding:utf-8
@@ -29,18 +30,19 @@ class Func(BaseModel):
             脚本内容
         """
         env = env_code or RunEnv.get_first().code
-        for func in cls.get_all():
-            FileUtil.save_func_data(f"{env}_{func.name}", func.func_data, env)
+        for script in cls.get_all():
+            if script.name not in not_create_list:
+                FileUtil.save_script_data(f"{env}_{script.name}", script.script_data, env)
 
     @classmethod
-    def get_func_by_func_file_name(cls, func_file_id_list, env_id=None):
+    def get_func_by_script_name(cls, func_file_id_list, env_id=None):
         """ 获取指定函数文件中的函数 """
         env = RunEnv.get_first(id=env_id).code if env_id else RunEnv.get_first().code
-        cls.create_func_file(env)  # 创建所有函数文件
+        cls.create_script_file(env)  # 创建所有函数文件
         func_dict = {}
         for func_file_id in func_file_id_list:
             func_list = importlib.reload(
-                importlib.import_module(f"func_list.{env}_{Func.get_first(id=func_file_id).name}")
+                importlib.import_module(f"script_list.{env}_{cls.get_first(id=func_file_id).name}")
             )
             func_dict.update({
                 name: item for name, item in vars(func_list).items() if isinstance(item, types.FunctionType)
@@ -48,7 +50,7 @@ class Func(BaseModel):
         return func_dict
 
     @classmethod
-    def make_pagination(cls, form, pop_field=['func_data']):
+    def make_pagination(cls, form, pop_field=['script_data']):
         """ 解析分页条件 """
         filters = []
         if form.create_user.data:

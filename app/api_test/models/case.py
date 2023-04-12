@@ -6,8 +6,8 @@ from app.api_test.models.step import ApiStep as Step
 class ApiCase(BaseCase):
     """ 用例表 """
     __abstract__ = False
-
     __tablename__ = "api_test_case"
+    __table_args__ = {"comment": "接口测试用例表"}
 
     headers = db.Column(db.Text(), comment="用例级的头部信息")
 

@@ -20,7 +20,7 @@ class GetCaseSetForm(BaseForm):
 class RunCaseSetForm(GetCaseSetForm):
     """ 运行用例集 """
     is_async = IntegerField()
-    env_code = StringField()
+    env_list = StringField(validators=[DataRequired("请选择运行环境")])
     browser = StringField(validators=[DataRequired("请选择运行浏览器")])
 
     def validate_id(self, field):

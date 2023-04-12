@@ -67,6 +67,7 @@ class CaseBusiness:
         old_case["create_user"] = old_case["update_user"] = g.user_id
         old_case["name"] = old_case["name"] + "_copy"
         old_case["num"] = case_model.get_insert_num(set_id=old_case["set_id"])
+        old_case["status"] = 0
         new_case = case_model().create(old_case)
 
         # 复制步骤

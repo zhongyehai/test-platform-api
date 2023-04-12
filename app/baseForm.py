@@ -28,11 +28,11 @@ class BaseForm(Form, JsonUtil):
         return self.errors.popitem()[1][0]
 
     def is_admin(self):
-        """ 角色为2，为管理员 """
-        return g.user_role == 2
+        """ 管理员权限 """
+        return 'admin' in g.api_permissions
 
     def is_not_admin(self):
-        """ 角色不为2，非管理员 """
+        """ 非管理员 """
         return not self.is_admin()
 
     def is_can_delete(self, is_manager, obj):

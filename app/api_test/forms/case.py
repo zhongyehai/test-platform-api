@@ -5,7 +5,7 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, Length, DataRequired, InputRequired
 
 from app.baseForm import BaseForm
-from app.assist.models.func import Func
+from app.assist.models.script import Script
 from app.api_test.models.project import ApiProject, ApiProjectEnv
 from app.api_test.models.caseSet import ApiCaseSet as CaseSet
 from app.api_test.models.step import ApiStep as Step
@@ -44,7 +44,7 @@ class AddCaseForm(BaseForm):
         DataRequired("用例名称不能为空"),
         Length(1, name_length, f"用例名长度不可超过{name_length}位")
     ])
-    func_files = StringField()
+    script_list = StringField()
     skip_if = StringField()
     variables = StringField()
     headers = StringField()
@@ -73,15 +73,15 @@ class AddCaseForm(BaseForm):
         self.project = ApiProject.get_first(id=CaseSet.get_first(id=self.set_id.data).project_id).to_dict()
         self.project_env = ApiProjectEnv.get_first(project_id=self.project["id"]).to_dict()
 
-    def validate_func_files(self, field):
-        """ 合并项目选择的自定义函数和用例选择的自定义函数文件 """
-        func_files = self.project["func_files"]
-        func_files.extend(field.data)
-        self.all_func_name = Func.get_func_by_func_file_name(func_files)
+    def validate_script_list(self, field):
+        """ 合并项目选择的自定义函数和用例选择的脚本文件 """
+        project_script_list = self.project["script_list"]
+        project_script_list.extend(field.data)
+        self.all_func_name = Script.get_func_by_script_name(project_script_list)
 
     def validate_variables(self, field):
         """ 公共变量参数的校验
-        1.校验是否存在引用了自定义函数但是没有引用自定义函数文件的情况
+        1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
         self.validate_variable_format(field.data)  # 校验格式
@@ -91,7 +91,7 @@ class AddCaseForm(BaseForm):
 
     def validate_headers(self, field):
         """ 头部参数的校验
-        1.校验是否存在引用了自定义函数但是没有引用自定义函数文件的情况
+        1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
 

@@ -5,6 +5,7 @@ from app.baseModel import BaseModel, db
 class SwaggerDiffRecord(BaseModel):
     """ yapi数据比对记录 """
     __tablename__ = "swagger_diff_record"
+    __table_args__ = {"comment": "yapi数据比对记录"}
 
     name = db.Column(db.String(255), comment="比对标识，全量比对，或者具体分组的比对")
     is_changed = db.Column(db.Integer, default=0, comment="对比结果，1有改变，0没有改变")
@@ -28,6 +29,7 @@ class SwaggerDiffRecord(BaseModel):
 class SwaggerPullLog(BaseModel):
     """ swagger拉取日志 """
     __tablename__ = "swagger_pull_log"
+    __table_args__ = {"comment": "swagger拉取日志"}
 
     is_success = db.Column(db.Integer, default=1, comment="拉取结果，0失败，1拉取中，2拉取成功")
     project_id = db.Column(db.Integer, comment="服务id")

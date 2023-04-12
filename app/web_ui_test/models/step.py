@@ -5,8 +5,8 @@ from app.baseModel import BaseStep, db
 class WebUiStep(BaseStep):
     """ 测试步骤表 """
     __abstract__ = False
-
     __tablename__ = "web_ui_test_step"
+    __table_args__ = {"comment": "web-ui测试步骤表"}
 
     wait_time_out = db.Column(db.Integer(), default=10, nullable=True, comment="等待元素出现的时间，默认10秒")
     execute_type = db.Column(db.String(255), comment="执行方式")

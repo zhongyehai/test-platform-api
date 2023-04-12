@@ -3,12 +3,8 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import DataRequired, Length
 
 from app.baseForm import BaseForm
-from app.assist.models.func import Func
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.case import ApiCase as Case
-from app.api_test.models.caseSet import ApiCaseSet as CaseSet
-from app.api_test.models.project import ApiProject as Project
-from app.api_test.models.project import ApiProjectEnv as ProjectEnv
 from app.api_test.models.step import ApiStep as Step
 
 

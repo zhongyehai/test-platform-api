@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import copy
-import time
 from threading import Thread
 
 from flask import current_app as app, request, send_from_directory, g

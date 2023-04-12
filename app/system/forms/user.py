@@ -13,7 +13,7 @@ class CreateUserForm(BaseForm):
     account = StringField(validators=[DataRequired("请设置账号"), Length(2, 50, message="账号长度为2~50位")])
     password = StringField(validators=[DataRequired("请设置密码"), Length(4, 18, message="密码长度长度为4~18位")])
     business_id = StringField(validators=[DataRequired("请选择业务线")])
-    role_id = IntegerField(validators=[DataRequired("请选择角色")])
+    role_list = StringField(validators=[DataRequired("请选择角色")])
 
     def validate_name(self, field):
         """ 校验用户名不重复 """
@@ -22,10 +22,6 @@ class CreateUserForm(BaseForm):
     def validate_account(self, field):
         """ 校验账号不重复 """
         self.validate_data_is_not_exist(f"账号 {field.data} 已存在", User, account=field.data)
-
-    def validate_role_id(self, field):
-        """ 校验角色存在 """
-        self.validate_data_is_exist(f"id为 {field.data} 的角色不存在", Role, id=field.data)
 
 
 class ChangePasswordForm(BaseForm):
@@ -74,7 +70,7 @@ class FindUserForm(BaseForm):
             self.validate_data_is_true("当前角色无权限", self.is_admin())
 
 
-class GetUserEditForm(BaseForm):
+class GetUserForm(BaseForm):
     """ 返回待编辑用户信息 """
     id = IntegerField(validators=[DataRequired("用户id必传")])
 
@@ -83,7 +79,7 @@ class GetUserEditForm(BaseForm):
         setattr(self, "user", user)
 
 
-class DeleteUserForm(GetUserEditForm):
+class DeleteUserForm(GetUserForm):
     """ 删除用户 """
 
     def validate_id(self, field):
@@ -92,7 +88,7 @@ class DeleteUserForm(GetUserEditForm):
         setattr(self, "user", user)
 
 
-class ChangeStatusUserForm(GetUserEditForm):
+class ChangeStatusUserForm(GetUserForm):
     """ 改变用户状态 """
 
     def validate_id(self, field):
@@ -100,7 +96,7 @@ class ChangeStatusUserForm(GetUserEditForm):
         setattr(self, "user", user)
 
 
-class EditUserForm(GetUserEditForm, CreateUserForm):
+class EditUserForm(GetUserForm, CreateUserForm):
     """ 编辑用户的校验 """
     password = StringField()
 

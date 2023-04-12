@@ -7,7 +7,7 @@ from app.baseForm import BaseForm
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
 from app.api_test.models.module import ApiModule as Module
 from app.system.models.user import User
-from app.assist.models.func import Func
+from app.assist.models.script import Script
 
 
 class AddProjectForm(BaseForm):
@@ -21,7 +21,7 @@ class AddProjectForm(BaseForm):
     business_id = StringField(validators=[DataRequired("请选择业务线")])
     num = StringField()
     swagger = StringField()
-    func_files = StringField()
+    script_list = StringField()
 
     def validate_name(self, field):
         """ 校验服务名不重复 """
@@ -99,7 +99,7 @@ class AddEnv(BaseForm):
 
     def validate_project_id(self, field):
         project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
-        self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files), self.env_id.data)
+        self.all_func_name = Script.get_func_by_script_name(self.loads(project.script_list), self.env_id.data)
         setattr(self, "project", project)
 
     def validate_host(self, field):

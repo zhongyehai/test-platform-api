@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import time
 
 from flask import current_app as app, request
 

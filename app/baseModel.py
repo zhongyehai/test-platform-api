@@ -81,7 +81,8 @@ class BaseModel(db.Model, JsonUtil):
 
     # 需要做序列化和反序列化的字段
     serialization_file_list = [
-        "headers", "variables", "func_files",
+        "extend_role",
+        "headers", "variables", "script_list",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "set_ids", "case_ids", "conf", "env_list",
         "kym", "task_item", 'business_id'
@@ -253,12 +254,22 @@ class BaseModel(db.Model, JsonUtil):
     def get_max_num(cls, **kwargs):
         """ 返回 model 表中**kwargs筛选条件下的已存在编号num的最大值 """
         max_num_data = cls.get_filter_by(**kwargs).order_by(cls.num.desc()).first()
-        return max_num_data.num if max_num_data else 0
+        return max_num_data.num if max_num_data and max_num_data.num else 0
 
     @classmethod
     def get_insert_num(cls, **kwargs):
         """ 返回 model 表中**kwargs筛选条件下的已存在编号num的最大值 + 1 """
         return cls.get_max_num(**kwargs) + 1
+
+    @classmethod
+    def is_admin(cls):
+        """ 管理员权限 """
+        return 'admin' in g.api_permissions
+
+    @classmethod
+    def is_not_admin(cls):
+        """ 非管理员权限 """
+        return not cls.is_admin()
 
     def to_dict(self, to_dict: list = [], pop_list: list = [], filter_list: list = []):
         """ 自定义序列化器，把模型的每个字段转为key，方便返回给前端
@@ -337,6 +348,8 @@ class BaseModel(db.Model, JsonUtil):
 class ApschedulerJobs(BaseModel):
     """ apscheduler任务表，防止执行数据库迁移的时候，把定时任务删除了 """
     __tablename__ = "apscheduler_jobs"
+    __table_args__ = {"comment": "定时任务执行计划表"}
+
     id = db.Column(db.String(64), primary_key=True, nullable=False)
     next_run_time = db.Column(db.String(128), comment="任务下一次运行时间")
     job_state = db.Column(db.LargeBinary(length=(2 ** 32) - 1), comment="任务详情")
@@ -348,7 +361,7 @@ class BaseProject(BaseModel):
 
     name = db.Column(db.String(255), nullable=True, comment="服务名称")
     manager = db.Column(db.Integer(), nullable=True, default=1, comment="服务管理员id，默认为admin")
-    func_files = db.Column(db.Text(), nullable=True, default="[]", comment="引用的函数文件")
+    script_list = db.Column(db.Text(), nullable=True, default="[]", comment="引用的脚本文件")
     num = db.Column(db.Integer(), nullable=True, comment="当前服务的序号")
     business_id = db.Column(db.Integer(), comment="所属业务线")
 
@@ -367,16 +380,6 @@ class BaseProject(BaseModel):
         return cls.get_first(id=project_id).manager == g.user_id
 
     @classmethod
-    def is_admin(cls, ):
-        """ 角色为2，为管理员 """
-        return g.user_role == 2
-
-    @classmethod
-    def is_not_admin(cls):
-        """ 角色不为2，非管理员 """
-        return not cls.is_admin()
-
-    @classmethod
     def is_can_delete(cls, project_id, obj):
         """
         判断是否有权限删除，
@@ -391,7 +394,7 @@ class BaseProject(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        if g.user_role != 2:  # 非管理员则校验业务线权限
+        if cls.is_not_admin():  # 非管理员则校验业务线权限
             filters.append(cls.business_id.in_(g.business_id))
         if form.name.data:
             filters.append(cls.name.like(f'%{form.name.data}%'))
@@ -571,7 +574,7 @@ class BaseCase(BaseModel):
     desc = db.Column(db.Text(), comment="用例描述")
     status = db.Column(db.Integer(), default=0, comment="是否执行此用例，1执行，0不执行，默认不执行")
     run_times = db.Column(db.Integer(), default=1, comment="执行次数，默认执行1次")
-    func_files = db.Column(db.Text(), default="[]", comment="用例需要引用的函数list")
+    script_list = db.Column(db.Text(), default="[]", comment="用例需要引用的脚本list")
     variables = db.Column(
         db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="用例级的公共参数"
     )
@@ -803,6 +806,7 @@ class ConfigType(BaseModel):
     """ 配置类型表 """
 
     __tablename__ = "config_type"
+    __table_args__ = {"comment": "配置类型表"}
 
     name = db.Column(db.String(128), nullable=True, unique=True, comment="字段名")
     desc = db.Column(db.Text(), comment="描述")
@@ -828,6 +832,7 @@ class Config(BaseModel):
     """ 配置表 """
 
     __tablename__ = "config_config"
+    __table_args__ = {"comment": "配置表"}
 
     name = db.Column(db.String(128), nullable=True, unique=True, comment="字段名")
     value = db.Column(db.Text(), nullable=True, comment="字段值")
@@ -957,6 +962,7 @@ class Config(BaseModel):
 class FuncErrorRecord(BaseModel):
     """ 自定义函数执行错误记录表 """
     __tablename__ = "func_error_record"
+    __table_args__ = {"comment": "自定义函数执行错误记录表"}
 
     name = db.Column(db.String(255), nullable=True, comment="错误title")
     detail = db.Column(db.Text(), default="", comment="错误详情")

@@ -6,7 +6,6 @@ from crontab import CronTab
 from app.baseForm import BaseForm
 from app.api_test.models.task import ApiTask as Task
 from app.api_test.models.project import ApiProject as Project
-from app.config.models.runEnv import RunEnv
 
 
 class AddTaskForm(BaseForm):

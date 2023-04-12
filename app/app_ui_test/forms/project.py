@@ -3,7 +3,7 @@ import validators
 from wtforms import StringField, IntegerField
 from wtforms.validators import Length, DataRequired
 
-from app.assist.models.func import Func
+from app.assist.models.script import Script
 from app.baseForm import BaseForm
 from app.app_ui_test.models.project import AppUiProject as Project, AppUiProjectEnv as ProjectEnv
 from app.system.models.user import User
@@ -17,7 +17,7 @@ class AddUiProjectForm(BaseForm):
     app_package = StringField(validators=[DataRequired("app包名不能为空")])
     app_activity = StringField(validators=[DataRequired("activity不能为空")])
     business_id = StringField(validators=[DataRequired("请选择业务线")])
-    func_files = StringField()
+    script_list = StringField()
     num = StringField()
 
     def validate_name(self, field):
@@ -86,7 +86,7 @@ class AddEnv(BaseForm):
 
     def validate_project_id(self, field):
         project = self.validate_data_is_exist(f"id为【{field.data}】的app不存在", Project, id=field.data)
-        self.all_func_name = Func.get_func_by_func_file_name(self.loads(project.func_files))
+        self.all_func_name = Script.get_func_by_script_name(self.loads(project.script_list))
         setattr(self, "project", project)
 
     def validate_variables(self, field):

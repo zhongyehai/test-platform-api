@@ -118,3 +118,4 @@ dmypy.json
 
 # 自定义函数文件
 func_list/
+script_list/

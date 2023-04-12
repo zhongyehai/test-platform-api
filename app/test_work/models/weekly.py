@@ -7,6 +7,7 @@ from app.baseModel import BaseModel, db
 class WeeklyConfigModel(BaseModel):
     """ 周报配置表 """
     __tablename__ = "test_work_weekly_config"
+    __table_args__ = {"comment": "周报配置表"}
 
     name = db.Column(db.Text(), comment="名字")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级的id，有上一级则为项目，否则为产品")
@@ -93,6 +94,7 @@ class WeeklyConfigModel(BaseModel):
 class WeeklyModel(BaseModel):
     """ 周报明细表 """
     __tablename__ = "test_work_weekly"
+    __table_args__ = {"comment": "周报明细表"}
 
     product_id = db.Column(db.String(5), comment="产品id")
     project_id = db.Column(db.String(5), comment="项目id")

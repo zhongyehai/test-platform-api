@@ -5,6 +5,7 @@ from app.baseModel import BaseModel, db
 class AutoTestUser(BaseModel):
     """ 自动化测试用户表 """
     __tablename__ = "auto_test_user"
+    __table_args__ = {"comment": "自动化测试用户数据池"}
 
     mobile = db.Column(db.String(128), nullable=True, default="", comment="手机号")
     company_name = db.Column(db.String(128), nullable=True, default="", comment="公司名")
@@ -21,6 +22,7 @@ class AutoTestUser(BaseModel):
 class DataPool(BaseModel):
     """ 数据池 """
     __tablename__ = "auto_test_data_pool"
+    __table_args__ = {"comment": "测试数据池"}
 
     env = db.Column(db.String(10), nullable=True, default="", comment="数据对应的环境")
     mobile = db.Column(db.String(32), nullable=True, default="", comment="手机号")

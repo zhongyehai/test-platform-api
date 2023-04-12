@@ -27,7 +27,7 @@ from app.app_ui_test.models.step import AppUiStep
 from app.app_ui_test.models.report import AppUiReport
 from app.config.models.runEnv import RunEnv
 
-from app.assist.models.func import Func
+from app.assist.models.script import Script
 from app.config.models.config import Config
 from utils.client.testRunner.api import TestRunner
 from utils.client.testRunner.utils import build_url
@@ -106,7 +106,7 @@ class RunTestRunner:
 
         self.run_env = RunEnv.get_first(code=self.env_code).to_dict()
 
-        Func.create_func_file(self.env_code)  # 创建所有函数文件
+        Script.create_script_file(self.env_code)  # 创建所有函数文件
 
         # testRunner需要的数据格式
         self.DataTemplate = {
@@ -126,7 +126,7 @@ class RunTestRunner:
         """ 从已解析的服务字典中取指定id的服务，如果没有，则取出来解析后放进去 """
         if project_id not in self.parsed_project_dict:
             project = self.project_model.get_first(id=project_id).to_dict()
-            self.parse_functions(project["func_files"])
+            self.parse_functions(project["script_list"])
             if self.run_type == "app":  # 如果是app自动化测试，直接查第一个环境即可
                 project_env = self.project_env_model.get_first(project_id=project["id"]).to_dict()
             else:
@@ -143,7 +143,7 @@ class RunTestRunner:
         """ 从已解析的用例字典中取指定id的用例，如果没有，则取出来解析后放进去 """
         if case_id not in self.parsed_case_dict:
             case = self.case_model.get_first(id=case_id)
-            self.parse_functions(json.loads(case.func_files))
+            self.parse_functions(json.loads(case.script_list))
             self.parsed_case_dict.update({case_id: CaseModel(**case.to_dict())})
         return self.parsed_case_dict[case_id]
 
@@ -158,7 +158,7 @@ class RunTestRunner:
         """ 从已解析的接口字典中取指定id的接口，如果没有，则取出来解析后放进去 """
         if api.id not in self.parsed_api_dict:
             if api.project_id not in self.parsed_project_dict:
-                self.parse_functions(json.loads(self.project_model.get_first(id=api.project_id).func_files))
+                self.parse_functions(json.loads(self.project_model.get_first(id=api.project_id).script_list))
             self.parsed_api_dict.update({
                 api.id: self.parse_api(project, ApiModel(**api.to_dict()))
             })
@@ -167,8 +167,8 @@ class RunTestRunner:
     def parse_functions(self, func_list):
         """ 获取自定义函数 """
         for func_file_id in func_list:
-            func_file_name = Func.get_first(id=func_file_id).name
-            func_file_data = importlib.reload(importlib.import_module(f'func_list.{self.env_code}_{func_file_name}'))
+            func_file_name = Script.get_first(id=func_file_id).name
+            func_file_data = importlib.reload(importlib.import_module(f'script_list.{self.env_code}_{func_file_name}'))
             self.DataTemplate["project_mapping"]["functions"].update({
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })

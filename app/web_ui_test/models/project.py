@@ -6,8 +6,8 @@ from app.config.models.runEnv import RunEnv
 class WebUiProject(BaseProject):
     """ 服务表 """
     __abstract__ = False
-
     __tablename__ = "web_ui_test_project"
+    __table_args__ = {"comment": "web-ui测试项目表"}
 
     use_host = db.Column(
         db.String(255), default="env", comment="运行时使用的域名，env: 环境设置的域名，project: 服务设置的域名"
@@ -22,8 +22,8 @@ class WebUiProject(BaseProject):
 class WebUiProjectEnv(BaseProjectEnv):
     """ 服务环境表 """
     __abstract__ = False
-
     __tablename__ = "web_ui_test_project_env"
+    __table_args__ = {"comment": "web-ui测试项目环境表"}
 
     @classmethod
     def create_env(cls, project_id=None, env_list=None):

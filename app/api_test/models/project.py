@@ -6,8 +6,8 @@ from app.config.models.runEnv import RunEnv
 class ApiProject(BaseProject):
     """ 服务表 """
     __abstract__ = False
-
     __tablename__ = "api_test_project"
+    __table_args__ = {"comment": "接口测试服务表"}
 
     swagger = db.Column(db.String(255), default="", comment="服务对应的swagger地址")
     last_pull_status = db.Column(db.Integer(), default=1, comment="最近一次swagger拉取状态，0拉取失败，1未拉取，2拉取成功")
@@ -29,8 +29,8 @@ class ApiProject(BaseProject):
 class ApiProjectEnv(BaseProjectEnv):
     """ 服务环境表 """
     __abstract__ = False
-
     __tablename__ = "api_test_project_env"
+    __table_args__ = {"comment": "接口测试服务环境表"}
 
     headers = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment="服务的公共头部信息")
 

@@ -365,7 +365,7 @@ class SwaggerPullView(LoginRequiredView):
                     app.logger.info(f"解析接口数据：{swagger_api}")
                     api_name = swagger_api.get("summary", "接口未命名")
                     api_template = {
-                        "deprecated": swagger_api.get("deprecated"),
+                        "deprecated": swagger_api.get("deprecated", 0),
                         "project_id": project.id,
                         "module_id": module.id,
                         "name": api_name,

@@ -25,19 +25,22 @@ class WebUiRunCaseSetView(LoginRequiredView):
     def post(self):
         """ 运行用例集下的用例 """
         form = RunCaseSetForm().do_validate()
-        report_id = RunCaseBusiness.run(
-            env_code=form.env_code.data,
-            browser=form.browser.data,
-            is_async=form.is_async.data,
-            project_id=form.set.project_id,
-            report_name=form.set.name,
-            task_type="set",
-            report_model=Report,
-            case_id=form.set.get_run_case_id(Case),
-            run_type="webUi",
-            run_func=RunCase
-        )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})
+        run_id = Report.get_run_id()
+        for env_code in form.env_list.data:
+            RunCaseBusiness.run(
+                run_id=run_id,
+                env_code=env_code,
+                browser=form.browser.data,
+                is_async=form.is_async.data,
+                project_id=form.set.project_id,
+                report_name=form.set.name,
+                task_type="set",
+                report_model=Report,
+                case_id=form.set.get_run_case_id(Case),
+                run_type="webUi",
+                run_func=RunCase
+            )
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
 
 
 class WebUiGetCaseSetTreeView(LoginRequiredView):

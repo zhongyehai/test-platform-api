@@ -5,8 +5,8 @@ from app.baseModel import BaseApi, db
 class AppUiElement(BaseApi):
     """ 页面元素表 """
     __abstract__ = False
-
     __tablename__ = "app_ui_test_element"
+    __table_args__ = {"comment": "APP测试元素表"}
 
     by = db.Column(db.String(255), nullable=True, comment="定位方式")
     element = db.Column(db.Text(), default="", nullable=True, comment="元素值")

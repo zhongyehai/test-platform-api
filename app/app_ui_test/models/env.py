@@ -5,8 +5,8 @@ from app.baseModel import BaseModel, db
 class AppUiRunServer(BaseModel):
     """ 运行服务器表 """
     __abstract__ = False
-
     __tablename__ = "app_ui_test_run_server"
+    __table_args__ = {"comment": "APP测试运行服务器表"}
 
     name = db.Column(db.String(255), nullable=True, comment="服务器名字")
     num = db.Column(db.Integer(), comment="序号")
@@ -44,8 +44,8 @@ class AppUiRunServer(BaseModel):
 class AppUiRunPhone(BaseModel):
     """ 运行终端手机表 """
     __abstract__ = False
-
     __tablename__ = "app_ui_test_run_phone"
+    __table_args__ = {"comment": "APP测试运行手机表"}
 
     name = db.Column(db.String(255), nullable=True, comment="设备名字")
     num = db.Column(db.Integer(), comment="序号")

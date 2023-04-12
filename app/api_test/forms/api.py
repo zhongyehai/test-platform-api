@@ -4,7 +4,6 @@ from wtforms.validators import ValidationError, Length, DataRequired
 
 from app.baseForm import BaseForm
 from app.api_test.models.case import ApiCase as Case
-from app.assist.models.func import Func
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.module import ApiModule as Module

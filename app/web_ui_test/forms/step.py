@@ -4,12 +4,8 @@ from wtforms.validators import ValidationError, DataRequired, Length
 
 from app.web_ui_test.models.element import WebUiElement as Element
 from app.web_ui_test.models.case import WebUiCase as Case
-from app.baseForm import BaseForm
-from app.web_ui_test.models.project import WebUiProject as Project
 from app.web_ui_test.models.step import WebUiStep as Step
-from app.web_ui_test.models.page import WebUiPage as Page
-from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
-from app.assist.models.func import Func
+from app.baseForm import BaseForm
 
 
 class GetStepListForm(BaseForm):

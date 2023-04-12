@@ -6,8 +6,8 @@ from app.config.models.runEnv import RunEnv
 class AppUiProject(BaseProject):
     """ app表 """
     __abstract__ = False
-
     __tablename__ = "app_ui_test_project"
+    __table_args__ = {"comment": "APP测试APP表"}
 
     app_package = db.Column(db.String(255), nullable=True, comment="被测app包名")
     app_activity = db.Column(db.String(255), nullable=True, comment="被测app要启动的AndroidActivity")
@@ -20,8 +20,8 @@ class AppUiProject(BaseProject):
 class AppUiProjectEnv(BaseProjectEnv):
     """ app环境表 """
     __abstract__ = False
-
     __tablename__ = "app_ui_test_project_env"
+    __table_args__ = {"comment": "APP测试APP环境表"}
 
     @classmethod
     def create_env(cls, project_id=None, env_list=None):

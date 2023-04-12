@@ -7,6 +7,7 @@ from app.baseModel import BaseModel, db
 class Hits(BaseModel):
     """ 自动化测试触发的问题记录 """
     __tablename__ = "auto_test_hits"
+    __table_args__ = {"comment": "自动化测试触发问题记录"}
 
     date = db.Column(db.String(128), default=datetime.now, comment="问题触发日期")
     hit_type = db.Column(db.String(128), default="", comment="问题类型")

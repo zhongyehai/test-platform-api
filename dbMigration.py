@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import os.path
 from collections import OrderedDict
 
@@ -7,11 +8,11 @@ from flask_migrate import Migrate, MigrateCommand
 
 from utils.util.jsonUtil import JsonUtil
 from app.baseModel import db
-from app.system.models.user import User, Permission, Role
+from app.system.models.user import User, Permission, Role, RolePermissions, UserRoles
 from app.config.models.config import Config, ConfigType
 from app.config.models.runEnv import RunEnv
 from app.system.models.business import BusinessLine
-from app.assist.models.func import Func
+from app.assist.models.script import Script
 from main import app
 
 manager = Manager(app)
@@ -298,33 +299,85 @@ case_set_list = ["引用用例集", "流程用例集", "单接口用例集", "�
 # 回调流水线消息内容
 call_back_msg_addr = ""
 
+# 保存脚本时，不校验格式的函数名字
+name_list = ["contextmanager"]
+
+with open('rules.json', 'r', encoding='utf8') as rules:
+    permission_dict = json.load(rules)
+
+
+@manager.command
+def init_permission():
+    """ 初始化权限 """
+    print_type_delimiter("开始创建权限")
+
+    for source_type, permission_rules in permission_dict.items():
+        for rule_type, rule_list in permission_rules.items():
+            for rule in rule_list:
+                if Permission.get_first(source_addr=rule["source_addr"], source_type=source_type) is None:
+                    rule["source_type"] = source_type
+                    rule["source_class"] = "menu" if rule["source_addr"] != "admin" else "admin"
+                    Permission().create(rule)
+                    print_type_delimiter(f'权限【{rule["name"]}】创建成功')
+    print_type_delimiter("权限创建完成")
+
 
 @manager.command
 def init_role():
-    """ 初始化权限、角色 """
+    """ 初始化角色和对应的权限 """
     print_type_delimiter("开始创建角色")
-    roles_permissions_map = OrderedDict()
-    roles_permissions_map["测试人员"] = ["COMMON"]
-    roles_permissions_map["管理员"] = ["COMMON", "ADMINISTER"]
-    for role_name in roles_permissions_map:
-        role = Role.get_first(name=role_name)
-        if role is None:
-            role = Role(name=role_name)
-            db.session.add(role)
-            role.permission = []
-        for permission_name in roles_permissions_map[role_name]:
-            permission = Permission.get_first(name=permission_name)
-            if permission is None:
-                permission = Permission(name=permission_name)
-                db.session.add(permission)
-            role.permission.append(permission)
-            db.session.commit()
-    print_type_delimiter("角色创建成功")
+
+    print_type_delimiter("开始创建【后端管理员】角色")
+    if Role.get_first(name="管理员-后端") is None:
+        admin_role = Role().create({"name": "管理员-后端", "desc": "后端管理员, 有权限访问任何接口"})
+        admin_permission = Permission.get_first(source_addr='admin', source_type='api')
+        RolePermissions().create({"role_id": admin_role.id, "permission_id": admin_permission.id})
+    print_type_delimiter("【后端管理员】创建完成")
+
+    print_type_delimiter("开始创建【前端管理员】角色")
+    if Role.get_first(name="管理员-前端") is None:
+        admin_role = Role().create({"name": "管理员-前端", "desc": "前端管理员, 有权限访问任何页面、按钮"})
+        admin_permission = Permission.get_first(source_addr='admin', source_type='front')
+        RolePermissions().create({"role_id": admin_role.id, "permission_id": admin_permission.id})
+    print_type_delimiter("【前端管理员】创建完成")
+
+    print_type_delimiter("开始创建测试人员角色")
+    if Role.get_first(name="测试人员") is None:
+        test_role = Role().create({"name": "测试人员", "desc": "能访问项目的基本信息，不能访问配置管理"})
+        for source_type, permission_rules in permission_dict.items():
+            if source_type == "front":
+                for rule_type, source_addr_list in permission_rules.items():
+                    for source in source_addr_list:
+                        addr = source["source_addr"]
+                        if addr.startswith(('/system', '/config', '/help', 'admin')) is False and "task" not in addr:
+                            permission = Permission.get_first(source_addr=addr)
+                            RolePermissions().create({"role_id": test_role.id, "permission_id": permission.id})
+    print_type_delimiter("测试人员角色创建完成")
+
+    print_type_delimiter("开始创建项目负责人角色")
+    if Role.get_first(name="项目负责人") is None:
+        test_role = Role.get_first(name="测试人员")
+        manager_role = Role().create({
+            "name": "项目负责人",
+            "desc": "有权限访问项目的任何页面、按钮和配置管理",
+            "extend_role": [test_role.id]
+        })
+        for source_type, permission_rules in permission_dict.items():
+            if source_type == "front":
+                for rule_type, source_addr_list in permission_rules.items():
+                    for source in source_addr_list:
+                        addr = source["source_addr"]
+                        if addr.startswith('/config'):
+                            permission = Permission.get_first(source_addr=addr)
+                            RolePermissions().create({"role_id": manager_role.id, "permission_id": permission.id})
+    print_type_delimiter("项目负责人角色创建完成")
+
+    print_type_delimiter("角色创建完成")
 
 
 @manager.command
 def init_user():
-    """ 初始化用户 """
+    """ 初始化用户和对应的角色 """
 
     # 创建业务线
     print_type_delimiter("开始创建业务线")
@@ -338,15 +391,20 @@ def init_user():
     # 创建用户
     print_type_delimiter("开始创建用户")
     user_list = [
-        {"account": "admin", "password": "123456", "name": "管理员", "role_id": 2},
-        {"account": "common", "password": "common", "name": "公用账号", "role_id": 1}
+        {"account": "admin", "password": "123456", "name": "管理员", "role": ["管理员-后端", "管理员-前端"]},
+        {"account": "manager", "password": "manager", "name": "项目负责人", "role": ["项目负责人"]},
+        {"account": "common", "password": "common", "name": "测试员", "role": ["测试人员"]}
     ]
     for user_info in user_list:
         if User.get_first(account=user_info["account"]) is None:
             user_info["status"] = 1
             user_info["business_id"] = [business.id]
-            User().create(user_info)
+            user = User().create(user_info)
+            for role_name in user_info["role"]:
+                role = Role.get_first(name=role_name)
+                UserRoles().create({"user_id": user.id, "role_id": role.id})
             print_item_delimiter(f'用户【{user_info["name"]}】创建成功')
+
     print_type_delimiter("用户创建完成")
 
 
@@ -401,8 +459,7 @@ def init_config():
             {"name": "callback_webhook", "value": "", "desc": "接口收到回调请求后即时通讯通知的地址"},
             {"name": "test_type", "value": JsonUtil.dumps(test_type), "desc": "测试类型"},
             {"name": "call_back_msg_addr", "value": call_back_msg_addr, "desc": "发送回调流水线消息内容地址"},
-            {"name": "save_func_permissions", "value": "0",
-             "desc": "是否只允许管理员保存自定义函数，0所有人都可以，1管理员"},
+            {"name": "save_func_permissions", "value": "0", "desc": "保存脚本权限，0所有人都可以，1管理员才可以"},
             {
                 "name": "call_back_response",
                 "value": "",
@@ -483,20 +540,20 @@ def init_config():
 
 
 @manager.command
-def init_func_files():
-    """ 初始化函数文件模板 """
+def init_script():
+    """ 初始化脚本文件模板 """
     print_type_delimiter("开始创建函数文件模板")
     func_file_list = [
-        {"name": "base_template", "desc": "自定义函数文件使用规范说明"},
-        {"name": "utils_template", "desc": "工具类自定义函数操作模板"},
-        {"name": "database_template", "desc": "数据库操作类型的自定义函数文件模板"}
+        {"name": "base_template", "num": 0, "desc": "自定义函数文件使用规范说明"},
+        {"name": "utils_template", "num": 1, "desc": "工具类自定义函数操作模板"},
+        {"name": "database_template", "num": 2, "desc": "数据库操作类型的自定义函数文件模板"}
     ]
     for data in func_file_list:
-        if Func.get_first(name=data["name"]) is None:
+        if Script.get_first(name=data["name"]) is None:
             with open(os.path.join("static", f'{data["name"]}.py'), "r", encoding="utf-8") as fp:
                 func_data = fp.read()
             data["func_data"] = func_data
-            Func().create(data)
+            Script().create(data)
             print_item_delimiter(f'函数文件【{data["name"]}】创建成功')
     print_type_delimiter("函数文件模板创建完成")
 
@@ -523,11 +580,12 @@ def init_run_env():
 def init():
     """ 初始化 权限、角色、管理员 """
     print_start_delimiter("开始初始化数据")
+    init_permission()
     init_role()
     init_user()
     init_config_type()
     init_config()
-    init_func_files()
+    init_script()
     init_run_env()
     print_start_delimiter("数据初始化完毕")
 

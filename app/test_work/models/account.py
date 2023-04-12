@@ -5,6 +5,7 @@ from app.baseModel import BaseModel, db
 class AccountModel(BaseModel):
     """ 测试账号表 """
     __tablename__ = "test_work_account"
+    __table_args__ = {"comment": "测试账号表"}
 
     project = db.Column(db.String(255), comment="服务名")
     name = db.Column(db.String(255), comment="账户名")
