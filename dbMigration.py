@@ -568,11 +568,12 @@ def init_run_env():
         {"name": "uat环境", "code": "uat", "desc": "uat环境"},
         {"name": "生产环境", "code": "production", "desc": "生产环境"},
     ]
-    for index, env in enumerate(env_dict):
-        if RunEnv.get_first(code=env["code"]) is None:
-            env["num"] = index
-            RunEnv().create(env)
-            print_item_delimiter(f'运行环境【{env["name"]}】创建成功')
+    if RunEnv.get_first() is None:  # 没有运行环境则创建
+        for index, env in enumerate(env_dict):
+            if RunEnv.get_first(code=env["code"]) is None:
+                env["num"] = index
+                RunEnv().create(env)
+                print_item_delimiter(f'运行环境【{env["name"]}】创建成功')
     print_type_delimiter("运行环境创建完成")
 
 

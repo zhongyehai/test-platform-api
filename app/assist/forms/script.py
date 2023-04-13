@@ -8,11 +8,14 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, DataRequired
 
 from app.baseForm import BaseForm
-from app.api_test.models.case import ApiCase
 from app.api_test.models.project import ApiProject
+from app.app_ui_test.models.project import AppUiProject
+from app.web_ui_test.models.project import WebUiProject
+from app.api_test.models.case import ApiCase
+from app.app_ui_test.models.case import AppUiCase
+from app.web_ui_test.models.case import WebUiCase
 from app.assist.models.script import Script
 from app.config.models.config import Config
-from app.system.models.user import User
 from utils.util.fileUtil import FileUtil
 
 
@@ -43,7 +46,8 @@ class CreatScriptForm(BaseForm):
     script_data = StringField()
 
     def validate_name(self, field):
-        """ 校验Python脚本文件 """
+        """ 校验Python脚本文件名 """
+        self.validate_data_is_true(f"脚本文名错误，支持大小写字母和下划线", re.match('^[a-zA-Z_]+$', field.data))
         self.validate_data_is_not_exist(f"脚本文件【{field.data}】已经存在", Script, name=field.data)
 
     def validate_script_data(self, field):
@@ -116,18 +120,24 @@ class DeleteScriptForm(BaseForm):
         """
         script = self.validate_data_is_exist(f"脚本文件【{field.data}】不存在", Script, id=field.data)
 
-        # 服务引用
-        project_like = ApiProject.query.filter(ApiProject.script.like(f"%{field.data}%")).all()
-        if project_like:
-            for project in project_like:
-                if field.data in project.to_dict().get("script_files", []):
-                    raise ValidationError(
-                        f"服务【{ApiProject.get_first(id=project.id).name}】已引用此脚本文件，请先解除依赖再删除")
+        # 校验是否被引用
+        for model in [ApiProject, AppUiProject, WebUiProject, ApiCase, AppUiCase, WebUiCase]:
+            data_like = model.query.filter(model.script_list.like(f"%{field.data}%")).all()
+            if data_like:
+                for data in data_like:
+                    if field.data in data.to_dict().get("script_list", []):
+                        class_name = type(data).__name__
 
-        # 用例引用
-        case = ApiCase.query.filter(ApiCase.script.like(f"%{field.data}%")).first()
-        if case:
-            raise ValidationError(f"用例【{case.name}】已引用此脚本文件，请先解除依赖再删除")
+                        if 'Project' in class_name:
+                            name = '服务' if 'Api' in class_name else '项目' if 'WebUi' in class_name else 'APP'
+                            raise ValidationError(
+                                f"{name}【{model.get_first(id=data.id).name}】已引用此脚本文件，请先解除依赖再删除"
+                            )
+                        else:
+                            name = '接口' if 'Api' in class_name else 'WebUi' if 'WebUi' in class_name else 'APP'
+                        raise ValidationError(
+                            f"{name}测试用例【{model.get_first(id=data.id).name}】已引用此脚本文件，请先解除依赖再删除"
+                        )
 
         # 用户是管理员或者创建者
         self.validate_data_is_true(
