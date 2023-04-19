@@ -2,11 +2,11 @@
 from flask import current_app as app
 
 from app.baseView import LoginRequiredView, AdminRequiredView
-from app.system.models.business import BusinessLine
-from app.system.forms.business import (
+from app.config.models.business import BusinessLine
+from app.config.forms.business import (
     GetBusinessForm, DeleteBusinessForm, PostBusinessForm, PutBusinessForm, GetBusinessListForm
 )
-from app.system.blueprint import system_manage
+from app.config.blueprint import config_blueprint
 
 
 class GetBusinessListView(LoginRequiredView):
@@ -43,5 +43,5 @@ class BusinessView(AdminRequiredView):
         return app.restful.success("删除成功")
 
 
-system_manage.add_url_rule("/business", view_func=BusinessView.as_view("BusinessView"))
-system_manage.add_url_rule("/business/list", view_func=GetBusinessListView.as_view("GetBusinessListView"))
+config_blueprint.add_url_rule("/business", view_func=BusinessView.as_view("BusinessView"))
+config_blueprint.add_url_rule("/business/list", view_func=GetBusinessListView.as_view("GetBusinessListView"))

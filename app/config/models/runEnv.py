@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from app.baseModel import BaseModel, db
+from app.config.models.business import BusinessLine
 
 
 class RunEnv(BaseModel):
@@ -26,6 +27,9 @@ class RunEnv(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
+        if form.business_id.data:  # 如果传了业务线，就只查业务线对应的环境
+            env_id_list = BusinessLine.get_env_list(form.business_id.data)
+            filters.append(cls.id.in_(env_id_list))
         if form.create_user.data:
             filters.append(cls.create_user == form.create_user.data)
         if form.name.data:

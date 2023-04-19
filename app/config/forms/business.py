@@ -2,7 +2,7 @@
 from wtforms import StringField, IntegerField
 from wtforms.validators import DataRequired
 
-from app.system.models.business import BusinessLine
+from app.config.models.business import BusinessLine
 from app.baseForm import BaseForm
 
 
@@ -36,6 +36,7 @@ class PostBusinessForm(BaseForm):
     """ 新增业务线表单校验 """
     name = StringField(validators=[DataRequired("请输业务线名字")])
     code = StringField(validators=[DataRequired("请输业务线code")])
+    env_list = StringField()
     num = StringField()
     desc = StringField()
 

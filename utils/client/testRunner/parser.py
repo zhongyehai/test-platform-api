@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import ast
 import re
+import sys
 import traceback
 from datetime import datetime
 
@@ -10,6 +11,7 @@ from .compat import basestring, builtin_str, numeric_types
 from app.baseModel import FuncErrorRecord
 from utils.message.sendReport import send_run_func_error_message
 from utils.variables.regexp import variable_regexp, function_regexp, function_regexp_compile
+from ...util.fileUtil import SCRIPT_PRINT_LOG_ADDRESS
 
 
 def parse_string_value(str_value):
@@ -363,7 +365,9 @@ def parse_string_functions(content, variables_mapping, functions_mapping):
         # eval_value = func(*args, **kwargs)
         # 执行自定义函数，有可能会报错
         try:
+            # sys.stdout = open(f"{SCRIPT_PRINT_LOG_ADDRESS}/test.txt", "a", encoding='utf8')  # 脚本的print输出重定向到文本
             eval_value = func(*args, **kwargs)
+            # sys.stdout = sys.__stdout__  # 恢复 print 输出到控制台
         except Exception as error:
             # 记录错误信息
             FuncErrorRecord().create({

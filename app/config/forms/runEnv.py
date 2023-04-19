@@ -13,6 +13,7 @@ class GetRunEnvListForm(BaseForm):
     pageSize = IntegerField()
     create_user = StringField()
     name = StringField()
+    business_id = StringField()
     group = StringField()
     code = StringField()
 

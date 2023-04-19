@@ -46,8 +46,8 @@ class RunEnvView(LoginRequiredView):
         form = PostRunEnvForm().do_validate()
         form.num.data = RunEnv.get_insert_num()
         run_env = RunEnv().create(form.data)
-        ApiProjectEnv.create_env(env_list=[run_env.id])
-        WebUiProjectEnv.create_env(env_list=[run_env.id])
+        # ApiProjectEnv.create_env(env_list=[run_env.id])
+        # WebUiProjectEnv.create_env(env_list=[run_env.id])
         return app.restful.success("新增成功", data=run_env.to_dict())
 
     def put(self):

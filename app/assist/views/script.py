@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import importlib
+import sys
 import types
 import traceback
 
 from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView
+from utils.redirectPrintLog import RedirectPrintLogToMemory, redirect_print_log_to_file
 from utils.util.fileUtil import FileUtil
 from utils.client.testRunner.parser import parse_function, extract_functions
 from app.assist.blueprint import assist
@@ -61,14 +63,28 @@ class DebugScriptView(LoginRequiredView):
             }
             ext_func = extract_functions(expression)
             func = parse_function(ext_func[0])
+
+            # 重定向print内容到文件
+            # redirect_print_log_to_file(name)
+            # result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])
+            # # 恢复输出到console、读取print内容、删除printlog文件，顺序不可改变
+            # sys.stdout = sys.__stdout__
+            # script_print = FileUtil.get_script_print_log(name)
+            # FileUtil.delete_script_print_addr(FileUtil.get_script_print_addr(name))
+
+            # 重定向print内容到内存
+            redirect = RedirectPrintLogToMemory()
             result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])
+            sys.stdout = sys.__stdout__  # 恢复输出到console
             return app.restful.success(msg="执行成功，请查看执行结果", result={
                 "env": form.env.data,
                 "expression": form.expression.data,
                 "result": result,
+                "script_print": redirect.text,
                 "script": FileUtil.get_func_data_by_script_name(f'{form.env.data}_{form.script.name}')
             })
         except Exception as e:
+            sys.stdout = sys.__stdout__  # 恢复输出到console
             app.logger.info(str(e))
             error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
             return app.restful.fail(msg="语法错误，请检查", result={

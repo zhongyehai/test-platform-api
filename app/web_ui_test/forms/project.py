@@ -120,8 +120,14 @@ class FindEnvForm(BaseForm):
 
     def validate_projectId(self, field):
         env_data = ProjectEnv.get_first(project_id=field.data, env_id=self.env_id.data)
-        if not env_data:  # 如果没有就插入一条记录
-            env_data = ProjectEnv().create({"env_id": self.env_id.data, "project_id": field.data})
+        if not env_data:  # 如果没有就插入一条记录， 并且自动同步当前服务已有的环境数据
+            project_other_env = ProjectEnv.get_first(project_id=field.data)
+            if project_other_env:
+                insert_env_data = project_other_env.to_dict()
+                insert_env_data["env_id"] = self.env_id.data
+            else:
+                insert_env_data = {"env_id": self.env_id.data, "project_id": field.data}
+            env_data = ProjectEnv().create(insert_env_data)
             setattr(self, "env_data", env_data)
         setattr(self, "env_data", env_data)
 

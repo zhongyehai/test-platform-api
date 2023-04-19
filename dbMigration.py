@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import os.path
-from collections import OrderedDict
 
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
@@ -11,7 +10,7 @@ from app.baseModel import db
 from app.system.models.user import User, Permission, Role, RolePermissions, UserRoles
 from app.config.models.config import Config, ConfigType
 from app.config.models.runEnv import RunEnv
-from app.system.models.business import BusinessLine
+from app.config.models.business import BusinessLine
 from app.assist.models.script import Script
 from main import app
 
@@ -384,6 +383,7 @@ def init_user():
     business_dict = {"name": "公共业务线", "code": "common", "desc": "公共业务线，所有人都可见、可操作", "num": 0}
     business = BusinessLine.get_first(code=business_dict["code"])
     if business is None:
+        business_dict["env_list"] = [run_env.id for run_env in RunEnv.get_all()]
         business = BusinessLine().create(business_dict)
         print_item_delimiter(f'业务线【{business.name}】创建成功')
     print_type_delimiter("业务线创建完成")
@@ -548,8 +548,8 @@ def init_script():
         {"name": "utils_template", "num": 1, "desc": "工具类自定义函数操作模板"},
         {"name": "database_template", "num": 2, "desc": "数据库操作类型的自定义函数文件模板"}
     ]
-    for data in func_file_list:
-        if Script.get_first(name=data["name"]) is None:
+    if Script.get_first() is None:
+        for data in func_file_list:
             with open(os.path.join("static", f'{data["name"]}.py'), "r", encoding="utf-8") as fp:
                 func_data = fp.read()
             data["func_data"] = func_data

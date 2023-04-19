@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import g
 from app.baseModel import BaseModel, db
-from app.system.models.user import User
+
 
 class BusinessLine(BaseModel):
     """ 业务线 """
@@ -11,8 +11,14 @@ class BusinessLine(BaseModel):
 
     name = db.Column(db.String(128), nullable=True, unique=True, comment="业务线名")
     code = db.Column(db.String(128), nullable=True, unique=True, comment="业务线编码")
+    env_list = db.Column(db.String(128), default='[]', comment="业务线能使用的运行环境")
     num = db.Column(db.Integer(), nullable=True, comment="序号")
     desc = db.Column(db.Text(), comment="描述")
+
+    @classmethod
+    def get_env_list(cls, business_id):
+        """ 根据业务线获取选择的运行环境 """
+        return cls.loads(cls.get_first(id=business_id).env_list)
 
     @classmethod
     def make_pagination(cls, form):

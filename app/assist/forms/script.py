@@ -102,10 +102,6 @@ class DebuggerScriptForm(HasScriptForm):
     expression = StringField(validators=[DataRequired("请输入调试表达式")])
     env = StringField(validators=[DataRequired("请选择环境")])
 
-    # def validate_debug_data(self, field):
-    #     if not re.findall(r"\$\{([\w_]+\([\$\w\.\-/_ =,]*\))\}", field.data):
-    #         raise ValidationError("格式错误，请使用【 ${func(*args)} 】格式")
-
 
 class DeleteScriptForm(BaseForm):
     """ 删除脚本文件 """
