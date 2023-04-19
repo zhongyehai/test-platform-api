@@ -1,6 +1,6 @@
 # 基于python-flask生态开发的rest风格的测试平台后端
 
-## [体验demo](http://139.196.100.202/#/login) ，  账号：tester、密码：123456
+## [体验demo](http://139.196.100.202/#/login) ，  账号：admin、密码：admin123456Aliyun
 
 ## [去前端](https://github.com/zhongyehai/test-platform-front)
 
