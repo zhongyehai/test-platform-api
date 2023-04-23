@@ -11,7 +11,7 @@ from app.api_test.models.project import ApiProject as Project
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.report import ApiReport as Report
-from app.api_test.models.caseSet import ApiCaseSet as CaseSet
+from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
 from app.api_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, RunCaseForm, \
     CopyCaseStepForm, PullCaseStepForm, ChangeCaseStatusForm
 
@@ -56,7 +56,7 @@ class ApiRunCaseView(LoginRequiredView):
     def post(self):
         """ 运行测试用例，并生成报告 """
         form = RunCaseForm().do_validate()
-        project_id = CaseSet.get_first(id=form.case_list[0].set_id).project_id
+        project_id = CaseSuite.get_first(id=form.case_list[0].suite_id).project_id
         run_id = Report.get_run_id()
         for env_code in form.env_list.data:
             RunCaseBusiness.run(
@@ -117,7 +117,7 @@ class ApiGetQuoteCaseFromView(LoginRequiredView):
     def get(self):
         """ 获取用例的归属 """
         form = GetCaseForm().do_validate()
-        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSet, Case)
+        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSuite, Case)
         return app.restful.success("获取成功", data=from_path)
 
 
@@ -131,14 +131,14 @@ class ApiCaseView(LoginRequiredView):
     def post(self):
         """ 新增用例 """
         form = AddCaseForm().do_validate()
-        form.num.data = Case.get_insert_num(set_id=form.set_id.data)
+        form.num.data = Case.get_insert_num(suite_id=form.suite_id.data)
         new_case = Case().create(form.data)
         return app.restful.success(f"用例【{new_case.name}】新建成功", data=new_case.to_dict())
 
     def put(self):
         """ 修改用例 """
         form = EditCaseForm().do_validate()
-        CaseBusiness.put(form, Project, CaseSet, Case, Step)
+        CaseBusiness.put(form, Project, CaseSuite, Case, Step)
         return app.restful.success(msg=f"用例【{form.case.name}】修改成功", data=form.case.to_dict())
 
     def delete(self):

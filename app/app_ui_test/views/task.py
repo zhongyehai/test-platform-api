@@ -6,7 +6,7 @@ from app.busines import TaskBusiness, RunCaseBusiness
 from app.system.models.user import User
 from app.app_ui_test.models.report import AppUiReport as Report
 from app.app_ui_test.models.case import AppUiCase as Case
-from app.app_ui_test.models.caseSet import AppUiCaseSet as CaseSet
+from app.app_ui_test.models.caseSuite import AppUiCaseSuite as CaseSuite
 from utils.client.runUiTest import RunCase
 from app.app_ui_test.blueprint import app_ui_test
 from app.app_ui_test.models.task import AppUiTask as Task
@@ -19,8 +19,8 @@ class AppUiRunTaskView(NotLoginView):
     def post(self):
         """ 单次运行定时任务 """
         form = RunTaskForm().do_validate()
-        case_id = CaseSet.get_case_id(
-                Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
+        case_id = CaseSuite.get_case_id(
+                Case, form.task.project_id, form.task.loads(form.task.suite_ids), form.task.loads(form.task.case_ids)
             )
         appium_config = RunCaseBusiness.get_appium_config(form.task.project_id, form)
         run_id = Report.get_run_id()

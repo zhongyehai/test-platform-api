@@ -3,7 +3,7 @@ from flask import current_app as app, request, g
 
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.models.case import ApiCase as Case
-from app.api_test.models.caseSet import ApiCaseSet as CaseSet
+from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
 from app.baseView import LoginRequiredView, NotLoginView
 from app.busines import TaskBusiness, RunCaseBusiness
 from app.system.models.user import User
@@ -18,8 +18,8 @@ class ApiRunTaskView(NotLoginView):
     def post(self):
         """ 运行定时任务 """
         form = RunTaskForm().do_validate()
-        case_id = CaseSet.get_case_id(
-                Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
+        case_id = CaseSuite.get_case_id(
+                Case, form.task.project_id, form.task.loads(form.task.suite_ids), form.task.loads(form.task.case_ids)
             )
         run_id = Report.get_run_id()
         env_list = form.env_list.data or form.loads(form.task.env_list)

@@ -6,7 +6,7 @@ from wtforms.validators import ValidationError, DataRequired
 
 from app.assist.models.script import Script
 from app.web_ui_test.models.project import WebUiProject as Project, WebUiProjectEnv as ProjectEnv
-from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
+from app.web_ui_test.models.caseSuite import WebUiCaseSuite as CaseSuite
 from app.web_ui_test.models.step import WebUiStep as Step
 from app.baseForm import BaseForm
 from app.web_ui_test.models.task import WebUiTask as Task
@@ -16,7 +16,7 @@ from app.web_ui_test.models.case import WebUiCase as Case
 class ChangeCaseStatusForm(BaseForm):
     """ 批量修改用例状态 """
     id = StringField(validators=[DataRequired("用例id必传")])
-    status = IntegerField()
+    status = IntegerField(validators=[DataRequired("状态必传")])
 
     def validate_id(self, field):
         case_list = []
@@ -35,7 +35,7 @@ class AddCaseForm(BaseForm):
     skip_if = StringField()
     variables = StringField()
     run_times = IntegerField()
-    set_id = IntegerField(validators=[DataRequired("请选择用例集")])
+    suite_id = IntegerField(validators=[DataRequired("请选择用例集")])
     steps = StringField()
     num = StringField()
 
@@ -48,7 +48,7 @@ class AddCaseForm(BaseForm):
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
         if not self.project:
-            self.project = Project.get_first(id=CaseSet.get_first(id=self.set_id.data).project_id)
+            self.project = Project.get_first(id=CaseSuite.get_first(id=self.suite_id.data).project_id)
 
         env = ProjectEnv.get_first(project_id=self.project.id).to_dict()
         setattr(self, "project_env", env)
@@ -68,13 +68,13 @@ class AddCaseForm(BaseForm):
         self.validate_variable_format(field.data)
         self.validate_variable(all_variables, self.dumps(field.data), "自定义变量")
 
-    def validate_set_id(self, field):
+    def validate_suite_id(self, field):
         """ 校验用例集存在 """
-        self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSet, id=field.data)
+        self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSuite, id=field.data)
 
     def validate_name(self, field):
         """ 用例名不重复 """
-        self.validate_data_is_not_exist(f"用例名【{field.data}】已存在", Case, name=field.data, set_id=self.set_id.data)
+        self.validate_data_is_not_exist(f"用例名【{field.data}】已存在", Case, name=field.data, suite_id=self.suite_id.data)
 
 
 class EditCaseForm(AddCaseForm):
@@ -93,21 +93,21 @@ class EditCaseForm(AddCaseForm):
             Case,
             self.id.data,
             name=field.data,
-            set_id=self.set_id.data
+            suite_id=self.suite_id.data
         )
 
 
 class FindCaseForm(BaseForm):
     """ 根据用例集查找用例 """
     name = StringField()
-    setId = IntegerField(validators=[DataRequired("请选择用例集")])
+    suiteId = IntegerField(validators=[DataRequired("请选择用例集")])
     pageNum = IntegerField()
     pageSize = IntegerField()
 
     def validate_name(self, field):
         if field.data:
             case = Case.query.filter_by(
-                set_id=self.setId.data).filter(Case.name.like("%{}%".format(field.data)))
+                suite_id=self.suiteId.data).filter(Case.name.like("%{}%".format(field.data)))
             setattr(self, "case", case)
 
 
@@ -121,7 +121,7 @@ class DeleteCaseForm(BaseForm):
 
             self.validate_data_is_true(
                 f"不能删除别人的用例",
-                Project.is_can_delete(CaseSet.get_first(id=case.set_id).project_id, case)
+                Project.is_can_delete(CaseSuite.get_first(id=case.suite_id).project_id, case)
             )
 
             # 校验是否有定时任务已引用此用例

@@ -6,7 +6,7 @@ from app.busines import TaskBusiness, RunCaseBusiness
 from app.system.models.user import User
 from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.models.case import WebUiCase as Case
-from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
+from app.web_ui_test.models.caseSuite import WebUiCaseSuite as CaseSuite
 from utils.client.runUiTest import RunCase
 from app.web_ui_test.blueprint import web_ui_test
 from app.web_ui_test.models.task import WebUiTask as Task
@@ -19,8 +19,8 @@ class WebUiRunTaskView(NotLoginView):
     def post(self):
         """ 单次运行定时任务 """
         form = RunTaskForm().do_validate()
-        case_id = CaseSet.get_case_id(
-                Case, form.task.project_id, form.task.loads(form.task.set_ids), form.task.loads(form.task.case_ids)
+        case_id = CaseSuite.get_case_id(
+                Case, form.task.project_id, form.task.loads(form.task.suite_ids), form.task.loads(form.task.case_ids)
             )
         run_id = Report.get_run_id()
         env_list = form.env_list.data or form.loads(form.task.env_list)

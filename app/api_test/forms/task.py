@@ -12,17 +12,16 @@ class AddTaskForm(BaseForm):
     """ 添加定时任务的校验 """
     name_length = Task.name.property.columns[0].type.length
     project_id = IntegerField(validators=[DataRequired("请选择服务")])
-    set_ids = StringField()
+    suite_ids = StringField()
     case_ids = StringField()
     env_list = StringField(validators=[DataRequired("请选择要运行的环境")])
     name = StringField(validators=[
         DataRequired("任务名不能为空"),
         Length(1, name_length, f"步骤长度不可超过{name_length}位")
     ])
-    we_chat = StringField()
-    ding_ding = StringField()
     is_send = StringField(validators=[DataRequired("请选择是否发送报告")])
-    send_type = StringField()
+    receive_type = StringField()
+    webhook_list = StringField()
     email_server = StringField()
     email_to = StringField()
     email_from = StringField()
@@ -36,18 +35,9 @@ class AddTaskForm(BaseForm):
     def validate_is_send(self, field):
         """ 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
         if field.data in ["2", "3"]:
-            if self.send_type.data == "we_chat":
-                self.validate_data_is_true('选择了要通过机器人发送报告，则webhook地址必填', self.we_chat.data)
-            elif self.send_type.data == "ding_ding":
-                self.validate_data_is_true('选择了要通过机器人发送报告，则webhook地址必填', self.ding_ding.data)
-            elif self.send_type.data == "email":
-                self.validate_email(
-                    self.email_server.data, self.email_from.data, self.email_pwd.data, self.email_to.data
-                )
-            elif self.send_type.data == "all":
-                self.validate_data_is_true(
-                    '选择了要通过机器人发送报告，则webhook地址必填', self.ding_ding.data or self.we_chat.data
-                )
+            if self.receive_type.data in ("ding_ding", "we_chat"):
+                self.validate_data_is_true('选择了要通过机器人发送报告，则webhook地址必填', self.webhook_list.data)
+            elif self.receive_type.data == "email":
                 self.validate_email(
                     self.email_server.data, self.email_from.data, self.email_pwd.data, self.email_to.data
                 )

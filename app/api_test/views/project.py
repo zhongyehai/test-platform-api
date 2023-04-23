@@ -4,7 +4,7 @@ from flask import current_app as app, request
 from app.api_test.blueprint import api_test
 from app.busines import ProjectBusiness, ProjectEnvBusiness
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
-from app.api_test.models.caseSet import ApiCaseSet as CaseSet
+from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
 from app.api_test.forms.project import (
     AddProjectForm, EditProjectForm, FindProjectForm, DeleteProjectForm, GetProjectByIdForm,
     EditEnv, AddEnv, FindEnvForm, SynchronizationEnvForm
@@ -46,7 +46,7 @@ class ApiProjectView(LoginRequiredView):
     def post(self):
         """ 新增服务 """
         form = AddProjectForm().do_validate()
-        project = ProjectBusiness.post(form, Project, ProjectEnv, CaseSet)
+        project = ProjectBusiness.post(form, Project, ProjectEnv, CaseSuite)
         return app.restful.success(f"服务【{form.name.data}】新建成功", project.to_dict())
 
     def put(self):

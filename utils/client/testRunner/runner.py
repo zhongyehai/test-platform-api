@@ -7,6 +7,7 @@ from utils.client.testRunner.client.http import HttpSession
 from utils.client.testRunner.client.webdriver import WebDriverSession
 from .runnerContext import SessionContext
 from .webdriverAction import GetWebDriver, GetAppDriver
+from ...redirectPrintLog import RedirectPrintLogToMemory
 
 
 class Runner(object):
@@ -183,6 +184,7 @@ class Runner(object):
 
         """
         self.__clear_test_data()
+        self.redirect_print = RedirectPrintLogToMemory()  # 重定向自定义函数的打印到内存中
 
         test_variables = step_dict.get("variables", {})
         self.session_context.init_test_variables(test_variables)
@@ -297,4 +299,5 @@ class Runner(object):
                 self.session_context.update_session_variables({"case_run_result": "fail"})
             raise
         finally:
+            self.client_session.meta_data["redirect_print"] = self.redirect_print.text  # 保存自定义函数的 print 打印
             self.meta_datas = self.__get_test_data()

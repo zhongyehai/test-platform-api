@@ -301,7 +301,7 @@ class CaseModel(FormatModel):
         self.status = kwargs.get("status")
         self.run_times = kwargs.get("run_times")
         self.module_id = kwargs.get("module_id")
-        self.set_id = kwargs.get("set_id")
+        self.suite_id = kwargs.get("suite_id")
         self.create_user = kwargs.get("create_user")
         # 接口自动化字段
         self.headers = self.parse_list_data(kwargs.get("headers", {}))

@@ -6,9 +6,9 @@ from utils.client.runTestRunner import RunTestRunner
 from utils.util.fileUtil import FileUtil
 from utils.client.parseModel import StepModel
 from utils.client.testRunner.utils import build_url
-from app.web_ui_test.models.caseSet import WebUiCaseSet
+from app.web_ui_test.models.caseSuite import WebUiCaseSuite
 from app.web_ui_test.models.step import WebUiStep
-from app.app_ui_test.models.caseSet import AppUiCaseSet
+from app.app_ui_test.models.caseSuite import AppUiCaseSuite
 from app.app_ui_test.models.step import AppUiStep
 from config import ui_action_mapping_reverse
 
@@ -44,11 +44,11 @@ class RunCase(RunTestRunner):
         )
         self.task = task
         if run_type == "webUi":
-            self.case_set_model = WebUiCaseSet
+            self.suite_model = WebUiCaseSuite
             self.step_model = WebUiStep
             self.browser = browser
         else:
-            self.case_set_model = AppUiCaseSet
+            self.suite_model = AppUiCaseSuite
             self.step_model = AppUiStep
         self.DataTemplate["is_async"] = is_async
         self.case_id_list = case_id  # 要执行的用例id_list
@@ -185,7 +185,7 @@ class RunCase(RunTestRunner):
             if self.parse_case_is_skip(current_case.skip_if) is True:
                 continue
 
-            current_project = self.get_format_project(self.case_set_model.get_first(id=current_case.set_id).project_id)
+            current_project = self.get_format_project(self.suite_model.get_first(id=current_case.suite_id).project_id)
 
             case_template = {
                 "config": {

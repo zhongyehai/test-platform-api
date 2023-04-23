@@ -275,7 +275,7 @@ find_element_option = [
 run_type = {
     "api": "接口",
     "case": "用例",
-    "set": "用例集",
+    "suite": "用例集",
     "task": "任务",
 }
 
@@ -293,7 +293,9 @@ server_os_mapping = ["Windows", "Mac", "Linux"]
 phone_os_mapping = ["Android", "iOS"]
 
 # 创建项目/服务时，默认要同时创建的用例集列表
-case_set_list = ["引用用例集", "流程用例集", "单接口用例集", "辅助测试用例集"]
+api_suite_list = ["引用用例集", "流程用例集", "单接口用例集", "辅助测试用例集"]
+ui_suite_list = ["引用用例集", "流程用例集", "辅助测试用例集"]
+
 
 # 回调流水线消息内容
 call_back_msg_addr = ""
@@ -442,7 +444,6 @@ def init_config():
         "系统配置": [
             {"name": "platform_name", "value": "极测平台", "desc": "测试平台名字"},
             {"name": "run_type", "value": JsonUtil.dumps(run_type), "desc": "运行测试的类型"},
-            {"name": "case_set_list", "value": JsonUtil.dumps(case_set_list), "desc": "运行测试的类型"},
             {"name": "data_type_mapping", "value": JsonUtil.dumps(data_type_mapping), "desc": "python数据类型映射"},
             {"name": "yapi_host", "value": "", "desc": "yapi域名"},
             {"name": "yapi_account", "value": "", "desc": "yapi账号"},
@@ -487,6 +488,7 @@ def init_config():
              "desc": "http请求方式，以英文的 ',' 隔开"},
             {"name": "run_time_error_message_send_addr", "value": "", "desc": "运行测试用例时，有错误信息实时通知地址"},
             {"name": "request_time_out", "value": 60, "desc": "运行测试步骤时，request超时时间"},
+            {"name": "api_suite_list", "value": JsonUtil.dumps(api_suite_list), "desc": "接口自动化用例集类型"},
             {
                 "name": "response_data_source_mapping",
                 "value": JsonUtil.dumps(response_data_source_mapping),
@@ -507,6 +509,7 @@ def init_config():
         "webUi自动化": [
             {"name": "wait_time_out", "value": 10, "desc": "等待元素出现时间"},
             {"name": "browser_name", "value": JsonUtil.dumps(browser_name), "desc": "支持的浏览器"},
+            {"name": "ui_suite_list", "value": JsonUtil.dumps(ui_suite_list), "desc": "UI自动化用例集类型"},
             {
                 "name": "find_element_option",
                 "value": JsonUtil.dumps(find_element_option),

@@ -84,7 +84,7 @@ class BaseModel(db.Model, JsonUtil):
         "extend_role",
         "headers", "variables", "script_list",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
-        "call_back", "set_ids", "case_ids", "conf", "env_list",
+        "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to",
         "kym", "task_item", 'business_id'
     ]
 
@@ -492,7 +492,7 @@ class BaseApi(BaseModel):
     module_id = db.Column(db.Integer(), comment="所属的模块id")
 
 
-class BaseCaseSet(BaseModel):
+class BaseCaseSuite(BaseModel):
     """ 用例集基类表 """
     __abstract__ = True
 
@@ -518,14 +518,15 @@ class BaseCaseSet(BaseModel):
         )
 
     @classmethod
-    def create_case_set_by_project(cls, project_id):
+    def create_suite_by_project(cls, project_id):
         """ 根据项目id，创建用例集 """
-        for index, name in enumerate(Config.get_case_set_list()):
+        suite_type = "api" if "api" in cls.__name__.lower() else "ui"
+        for index, name in enumerate(Config.get_suite_type_list(suite_type)):
             cls().create({"name": name, "num": index, "project_id": project_id})
 
     def get_run_case_id(self, case_model, business_id=None):
         """ 获取用例集下，状态为要运行的用例id """
-        query = {"set_id": self.id, "status": 1}
+        query = {"suite_id": self.id, "status": 1}
         if business_id:
             query["business_id"] = business_id
         data = [
@@ -535,7 +536,7 @@ class BaseCaseSet(BaseModel):
         return data
 
     @classmethod
-    def get_case_id(cls, case_model, project_id: int, set_id: list, case_id: list):
+    def get_case_id(cls, case_model, project_id: int, suite_id: list, case_id: list):
         """
         获取要执行的用例的id
             1、即没选择用例，也没选择用例集
@@ -544,19 +545,19 @@ class BaseCaseSet(BaseModel):
             4、选定了用例和用例集
         """
         # 1、只选择了用例，则直接返回用例
-        if len(case_id) != 0 and len(set_id) == 0:
+        if len(case_id) != 0 and len(suite_id) == 0:
             return case_id
 
         # 2、没有选择用例集和用例，则视为选择了所有用例集
-        elif len(set_id) == 0 and len(case_id) == 0:
-            set_id = [
-                case_set.id for case_set in cls.query.filter_by(project_id=project_id).order_by(cls.num.asc()).all()
+        elif len(suite_id) == 0 and len(case_id) == 0:
+            suite_id = [
+                suite.id for suite in cls.query.filter_by(project_id=project_id).order_by(cls.num.asc()).all()
             ]
 
         # 解析已选中的用例集，并继承已选中的用例列表，再根据用例id去重
         case_ids = [
-            case.id for case_set_id in set_id for case in case_model.query.filter_by(
-                set_id=case_set_id,
+            case.id for id in suite_id for case in case_model.query.filter_by(
+                suite_id=id,
                 status=1
             ).order_by(case_model.num.asc()).all() if case and case.status
         ]
@@ -572,7 +573,7 @@ class BaseCase(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="用例序号")
     name = db.Column(db.String(255), nullable=True, comment="用例名称")
     desc = db.Column(db.Text(), comment="用例描述")
-    status = db.Column(db.Integer(), default=0, comment="是否执行此用例，1执行，0不执行，默认不执行")
+    status = db.Column(db.Integer(), default=0, comment="用例调试状态，0未调试-不执行，1调试通过-要执行，2调试通过-不执行，3调试不通过-不执行，默认未调试-不执行")
     run_times = db.Column(db.Integer(), default=1, comment="执行次数，默认执行1次")
     script_list = db.Column(db.Text(), default="[]", comment="用例需要引用的脚本list")
     variables = db.Column(
@@ -585,14 +586,14 @@ class BaseCase(BaseModel):
         ]),
         comment="是否跳过的判断条件"
     )
-    set_id = db.Column(db.Integer(), comment="所属的用例集id")
+    suite_id = db.Column(db.Integer(), comment="所属的用例集id")
 
     @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        if form.setId.data:
-            filters.append(cls.set_id == form.setId.data)
+        if form.suiteId.data:
+            filters.append(cls.suite_id == form.suiteId.data)
         if form.name.data:
             filters.append(cls.name.like(f"%{form.name.data}%"))
         return cls.pagination(
@@ -657,16 +658,15 @@ class BaseTask(BaseModel):
     task_type = db.Column(db.String(255), default="cron", comment="定时类型")
     cron = db.Column(db.String(255), nullable=True, comment="cron表达式")
     is_send = db.Column(db.String(10), comment="是否发送报告，1.不发送、2.始终发送、3.仅用例不通过时发送")
-    send_type = db.Column(db.String(255), default="webhook", comment="测试报告发送类型，webhook，email，all")
-    we_chat = db.Column(db.Text(), comment="企业微信机器人地址")
-    ding_ding = db.Column(db.Text(), comment="钉钉机器人地址")
+    receive_type = db.Column(db.String(255), default="ding_ding", comment="接收测试报告类型: ding_ding、we_chat、email")
+    webhook_list = db.Column(db.Text(), comment="机器人地址")
     email_server = db.Column(db.String(255), comment="发件邮箱服务器")
     email_from = db.Column(db.String(255), comment="发件人邮箱")
     email_pwd = db.Column(db.String(255), comment="发件人邮箱密码")
     email_to = db.Column(db.Text(), comment="收件人邮箱")
     status = db.Column(db.Integer(), default=0, comment="任务的运行状态，0：禁用中、1：启用中，默认0")
     is_async = db.Column(db.Integer(), default=1, comment="任务的运行机制，0：单线程，1：多线程，默认1")
-    set_ids = db.Column(db.Text(), comment="用例集id")
+    suite_ids = db.Column(db.Text(), comment="用例集id")
     call_back = db.Column(db.Text(), comment="回调给流水线")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
     conf = db.Column(
@@ -694,7 +694,7 @@ class BaseReport(BaseModel):
 
     name = db.Column(db.String(128), nullable=True, comment="测试报告名称")
     is_passed = db.Column(db.Integer(), default=1, comment="是否全部通过，1全部通过，0有报错")
-    run_type = db.Column(db.String(255), default="task", nullable=True, comment="报告类型，task/set/case/api")
+    run_type = db.Column(db.String(255), default="task", nullable=True, comment="报告类型，task/suite/case/api")
     status = db.Column(db.Integer(), default=1, comment="当前节点是否执行完毕，1执行中，2执行完毕")
     retry_count = db.Column(db.Integer(), default=0, comment="已经执行重试的次数")
     env = db.Column(db.String(255), default="test", comment="运行环境")
@@ -903,8 +903,8 @@ class Config(BaseModel):
         return cls.get_first(name="wait_time_out").value
 
     @classmethod
-    def get_case_set_list(cls):
-        return cls.loads(cls.get_first(name="case_set_list").value)
+    def get_suite_type_list(cls, suite_type="api"):
+        return cls.loads(cls.get_first(name=f"{suite_type}_suite_list").value)
 
     @classmethod
     def get_report_host(cls):

@@ -12,11 +12,11 @@ class ProjectBusiness:
     """ 项目管理业务 """
 
     @classmethod
-    def post(cls, form, project_model, env_model, case_set_model):
+    def post(cls, form, project_model, env_model, suite_model):
         form.num.data = project_model.get_insert_num()
         project = project_model().create(form.data)
         env_model.create_env(project.id)  # 新增服务的时候，一并把环境设置齐全
-        case_set_model.create_case_set_by_project(project.id)  # 新增服务的时候，一并把用例集设置齐全
+        suite_model.create_suite_by_project(project.id)  # 新增服务的时候，一并把用例集设置齐全
         return project
 
 
@@ -66,7 +66,7 @@ class CaseBusiness:
         old_case = form.case.to_dict()
         old_case["create_user"] = old_case["update_user"] = g.user_id
         old_case["name"] = old_case["name"] + "_copy"
-        old_case["num"] = case_model.get_insert_num(set_id=old_case["set_id"])
+        old_case["num"] = case_model.get_insert_num(suite_id=old_case["suite_id"])
         old_case["status"] = 0
         new_case = case_model().create(old_case)
 
@@ -127,23 +127,23 @@ class CaseBusiness:
                 step.add_quote_count()
 
     @classmethod
-    def put(cls, form, project_model, case_set_model, case_model, step_model):
+    def put(cls, form, project_model, suite_model, case_model, step_model):
         """ 更新步骤 """
         form.case.update(form.data)
-        cls.change_quote_case_name(form.id.data, project_model, case_set_model, case_model, step_model)
+        cls.change_quote_case_name(form.id.data, project_model, suite_model, case_model, step_model)
 
     @classmethod
-    def get_quote_case_from(cls, case_id, project_model, case_set_model, case_model):
+    def get_quote_case_from(cls, case_id, project_model, suite_model, case_model):
         """ 获取用例的归属 """
         case = case_model.get_first(id=case_id)
-        case_set_path_name = case_set_model.get_from_path(case.set_id)
-        project = project_model.get_first(id=case_set_model.get_first(id=case.set_id).project_id)
-        return f'{project.name}_{case_set_path_name}_{case.name}'
+        suite_path_name = suite_model.get_from_path(case.suite_id)
+        project = project_model.get_first(id=suite_model.get_first(id=case.suite_id).project_id)
+        return f'{project.name}_{suite_path_name}_{case.name}'
 
     @classmethod
-    def change_quote_case_name(cls, case_id, project_model, case_set_model, case_model, step_model):
+    def change_quote_case_name(cls, case_id, project_model, suite_model, case_model, step_model):
         """ 修改用例时，修改引用此用例的步骤的名字 """
-        new_name = cls.get_quote_case_from(case_id, project_model, case_set_model, case_model)
+        new_name = cls.get_quote_case_from(case_id, project_model, suite_model, case_model)
         for step in step_model.get_all(quote_case=case_id):
             step.update({"name": f'引用【{new_name}】'})
 

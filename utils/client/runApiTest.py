@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 
-from app.api_test.models.caseSet import ApiCaseSet as CaseSet
+from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.step import ApiStep as Step
 from utils.log import logger
@@ -169,7 +169,7 @@ class RunCase(RunTestRunner):
             if self.parse_case_is_skip(current_case.skip_if) is True:
                 continue
 
-            current_project = self.get_format_project(CaseSet.get_first(id=current_case.set_id).project_id)
+            current_project = self.get_format_project(CaseSuite.get_first(id=current_case.suite_id).project_id)
 
             # 用例格式模板
             case_template = {

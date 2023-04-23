@@ -5,7 +5,7 @@ from app.baseView import LoginRequiredView
 from app.busines import ProjectBusiness, ProjectEnvBusiness
 from app.app_ui_test.blueprint import app_ui_test
 from app.app_ui_test.models.project import AppUiProject as Project, AppUiProjectEnv as ProjectEnv
-from app.app_ui_test.models.caseSet import AppUiCaseSet as CaseSet
+from app.app_ui_test.models.caseSuite import AppUiCaseSuite as CaseSuite
 from app.app_ui_test.forms.project import (
     AddUiProjectForm, EditUiProjectForm, FindUiProjectForm, DeleteUiProjectForm, GetUiProjectByIdForm,
     EditEnv, AddEnv, FindEnvForm
@@ -45,7 +45,7 @@ class AppProjectView(LoginRequiredView):
     def post(self):
         """ 新增app """
         form = AddUiProjectForm().do_validate()
-        project = ProjectBusiness.post(form, Project, ProjectEnv, CaseSet)
+        project = ProjectBusiness.post(form, Project, ProjectEnv, CaseSuite)
         return app.restful.success(f"app【{form.name.data}】新建成功", project.to_dict())
 
     def put(self):

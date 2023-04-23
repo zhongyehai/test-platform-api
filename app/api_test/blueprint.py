@@ -3,4 +3,4 @@ from flask import Blueprint
 
 api_test = Blueprint("apiTest", __name__)
 
-from .views import project, module, api, caseSet, case, step, task, report
+from .views import project, module, api, caseSuite, case, step, task, report

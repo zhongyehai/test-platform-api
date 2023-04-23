@@ -17,7 +17,8 @@ def by_we_chat(content, kwargs):
         "msgtype": "markdown",
         "markdown": {
             "content": f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
-                       f'任务名：{content["stat"]["testcases"]["project"]} \n'
+                       f'任务名:{content["stat"]["testcases"]["project"]} \n'
+                       f'>环境code:{content["run_env"]} \n'
                        f'>执行用例:<font color="comment"> {content["stat"]["testcases"]["total"]} </font>条\n'
                        f'>成功:<font color="info"> {content["stat"]["testcases"]["success"]} </font>条\n'
                        f'>失败:<font color="warning"> {content["stat"]["testcases"]["fail"]} </font>条\n'
@@ -27,11 +28,12 @@ def by_we_chat(content, kwargs):
         }
     }
     print(msg)
-    for url in kwargs["we_chat"].strip().split(';'):
-        try:
-            print(f'测试结果通过企业微信机器人发送：{requests.post(url, json=msg, verify=False).json()}')
-        except Exception as error:
-            print(f'向企业微信发送测试报告失败，错误信息：\n{error}')
+    for webhook in kwargs["webhook_list"]:
+        if webhook:
+            try:
+                print(f'测试结果通过企业微信机器人发送：{requests.post(webhook, json=msg, verify=False).json()}')
+            except Exception as error:
+                print(f'向企业微信发送测试报告失败，错误信息：\n{error}')
 
 
 def by_ding_ding(content, kwargs):
@@ -43,7 +45,8 @@ def by_ding_ding(content, kwargs):
         "markdown": {
             "title": "测试报告",
             "text": f'## 测试报告 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
-                    f'### 任务名：{content["stat"]["testcases"]["project"]} \n> '
+                    f'#### 任务名:{content["stat"]["testcases"]["project"]} \n> '
+                    f'#### 环境code:{content["run_env"]} \n> '
                     f'#### 执行用例:<font color=#409EFF> {testcases["total"]} </font>条 \n> '
                     f'#### 成功:<font color=#00FF00> {testcases["success"]} </font>条 \n> '
                     f'#### 失败:<font color=#FF0000> {testcases["fail"]} </font>条 \n> '
@@ -54,11 +57,12 @@ def by_ding_ding(content, kwargs):
         }
     }
     print(msg)
-    for url in kwargs["ding_ding"].strip().split(';'):
-        try:
-            print(f'测试结果通过钉钉机器人发送：{requests.post(url, json=msg, verify=False).json()}')
-        except Exception as error:
-            print(f'向钉钉机器人发送测试报告失败，错误信息：\n{error}')
+    for webhook in kwargs["webhook_list"]:
+        if webhook:
+            try:
+                print(f'测试结果通过钉钉机器人发送：{requests.post(webhook, json=msg, verify=False).json()}')
+            except Exception as error:
+                print(f'向钉钉机器人发送测试报告失败，错误信息：\n{error}')
 
 
 def by_email(content, kwargs):
@@ -67,24 +71,20 @@ def by_email(content, kwargs):
         kwargs.get("email_server"),
         kwargs.get("email_from").strip(),
         kwargs.get("email_pwd"),
-        [email.strip() for email in kwargs.get("email_to").split(";") if email],
+        [email.strip() for email in kwargs.get("email_to") if email],
         render_html_report(content)
     ).send_email()
 
 
 def send_report(**kwargs):
     """ 封装发送测试报告提供给多线程使用 """
-    is_send, send_type, content = kwargs.get("is_send"), kwargs.get("send_type"), kwargs.get("content")
+    is_send, receive_type, content = kwargs.get("is_send"), kwargs.get("receive_type"), kwargs.get("content")
     if is_send == "2" or (is_send == "3" and content["success"] is False):
-        if send_type == "we_chat":
+        if receive_type == "we_chat":
             by_we_chat(content, kwargs)
-        elif send_type == "ding_ding":
+        elif receive_type == "ding_ding":
             by_ding_ding(content, kwargs)
-        elif send_type == "email":
-            by_email(content, kwargs)
-        elif send_type == "all":
-            by_we_chat(content, kwargs)
-            by_ding_ding(content, kwargs)
+        elif receive_type == "email":
             by_email(content, kwargs)
 
 

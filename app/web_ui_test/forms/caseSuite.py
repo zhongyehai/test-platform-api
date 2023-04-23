@@ -5,31 +5,31 @@ from wtforms.validators import Length, DataRequired
 from app.baseForm import BaseForm
 from app.web_ui_test.models.case import WebUiCase as Case
 from app.web_ui_test.models.project import WebUiProject as Project
-from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
+from app.web_ui_test.models.caseSuite import WebUiCaseSuite as CaseSuite
 
 
-class GetCaseSetForm(BaseForm):
+class GetCaseSuiteForm(BaseForm):
     """ 获取用例集信息 """
     id = IntegerField(validators=[DataRequired("用例集id必传")])
 
     def validate_id(self, field):
-        set = self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSet, id=field.data)
-        setattr(self, "set", set)
+        suite = self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSuite, id=field.data)
+        setattr(self, "suite", suite)
 
 
-class RunCaseSetForm(GetCaseSetForm):
+class RunCaseSuiteForm(GetCaseSuiteForm):
     """ 运行用例集 """
     is_async = IntegerField()
     env_list = StringField(validators=[DataRequired("请选择运行环境")])
     browser = StringField(validators=[DataRequired("请选择运行浏览器")])
 
     def validate_id(self, field):
-        set = self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSet, id=field.data)
-        self.validate_data_is_exist(f"用例集下没有用例", Case, set_id=field.data)
-        setattr(self, "set", set)
+        suite = self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSuite, id=field.data)
+        self.validate_data_is_exist(f"用例集下没有用例", Case, suite_id=field.data)
+        setattr(self, "suite", suite)
 
 
-class AddCaseSetForm(BaseForm):
+class AddCaseSuiteForm(BaseForm):
     """ 添加用例集的校验 """
     project_id = StringField(validators=[DataRequired("请先选择首页项目")])
     name = StringField(validators=[DataRequired("用例集名称不能为空"), Length(1, 255, message="用例集名长度为1~255位")])
@@ -47,7 +47,7 @@ class AddCaseSetForm(BaseForm):
         """ 校验用例集名不重复 """
         self.validate_data_is_not_exist(
             f"用例集名字【{field.data}】已存在",
-            CaseSet,
+            CaseSuite,
             project_id=self.project_id.data,
             level=self.level.data,
             name=field.data,
@@ -55,45 +55,45 @@ class AddCaseSetForm(BaseForm):
         )
 
 
-class GetCaseSetEditForm(BaseForm):
+class GetCaseSuiteEditForm(BaseForm):
     """ 返回待编辑用例集合 """
     id = IntegerField(validators=[DataRequired("用例集id必传")])
 
     def validate_id(self, field):
-        set = self.validate_data_is_exist("没有此用例集", CaseSet, id=field.data)
-        setattr(self, "set", set)
+        suite = self.validate_data_is_exist("没有此用例集", CaseSuite, id=field.data)
+        setattr(self, "suite", suite)
 
 
-class DeleteCaseSetForm(GetCaseSetEditForm):
+class DeleteCaseSuiteForm(GetCaseSuiteEditForm):
     """ 删除用例集 """
 
     def validate_id(self, field):
-        case_set = CaseSet.get_first(id=field.data)
+        suite = CaseSuite.get_first(id=field.data)
         # 数据权限
-        self.validate_data_is_true("不能删除别人项目下的用例集", Project.is_can_delete(case_set.project_id, case_set))
+        self.validate_data_is_true("不能删除别人项目下的用例集", Project.is_can_delete(suite.project_id, suite))
 
         # 用例集下是否有用例集
-        self.validate_data_is_false("请先删除当前用例集下的用例集", CaseSet.get_first(parent=field.data))
+        self.validate_data_is_false("请先删除当前用例集下的用例集", CaseSuite.get_first(parent=field.data))
 
         # 用例集下是否有用例
-        self.validate_data_is_false("请先删除当前用例集下的用例", Case.get_first(set_id=field.data))
+        self.validate_data_is_false("请先删除当前用例集下的用例", Case.get_first(suite_id=field.data))
 
-        setattr(self, "case_set", case_set)
+        setattr(self, "suite", suite)
 
 
-class EditCaseSetForm(GetCaseSetEditForm, AddCaseSetForm):
+class EditCaseSuiteForm(GetCaseSuiteEditForm, AddCaseSuiteForm):
     """ 编辑用例集 """
 
     def validate_id(self, field):
         """ 用例集id已存在 """
-        case_set = self.validate_data_is_exist(f"不存在id为【{field.data}】的用例集", CaseSet, id=field.data)
-        setattr(self, "case_set", case_set)
+        suite = self.validate_data_is_exist(f"不存在id为【{field.data}】的用例集", CaseSuite, id=field.data)
+        setattr(self, "suite", suite)
 
     def validate_name(self, field):
         """ 校验用例集名不重复 """
         self.validate_data_is_not_repeat(
             f"用例集名字【{field.data}】已存在",
-            CaseSet,
+            CaseSuite,
             self.id.data,
             project_id=self.project_id.data,
             level=self.level.data,
@@ -102,7 +102,7 @@ class EditCaseSetForm(GetCaseSetEditForm, AddCaseSetForm):
         )
 
 
-class FindCaseSet(BaseForm):
+class FindCaseSuite(BaseForm):
     """ 查找用例集合 """
     pageNum = IntegerField()
     pageSize = IntegerField()

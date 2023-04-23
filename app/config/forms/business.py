@@ -36,6 +36,8 @@ class PostBusinessForm(BaseForm):
     """ 新增业务线表单校验 """
     name = StringField(validators=[DataRequired("请输业务线名字")])
     code = StringField(validators=[DataRequired("请输业务线code")])
+    receive_type = StringField()
+    webhook_list = StringField()
     env_list = StringField()
     num = StringField()
     desc = StringField()
@@ -45,6 +47,10 @@ class PostBusinessForm(BaseForm):
 
     def validate_code(self, field):
         self.validate_data_is_not_exist(f"业务线code {field.data} 已存在", BusinessLine, code=field.data)
+
+    def validate_receive_type(self, field):
+        if field.data:
+            self.validate_data_is_true(f"要接收段统计通知，则通知地址必填", self.webhook_list.data)
 
 
 class PutBusinessForm(BusinessIdForm, PostBusinessForm):

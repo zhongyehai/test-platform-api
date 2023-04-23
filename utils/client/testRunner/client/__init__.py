@@ -6,6 +6,7 @@ class BaseSession:
         self.meta_data = {
             "case_id": None,
             "name": "",
+            "redirect_print": "",
             "data": [
                 {
                     "extract_msgs": {},

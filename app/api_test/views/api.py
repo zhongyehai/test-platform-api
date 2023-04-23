@@ -15,7 +15,7 @@ from app.api_test.models.project import ApiProject as Project
 from app.api_test.models.report import ApiReport as Report
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.case import ApiCase as Case
-from app.api_test.models.caseSet import ApiCaseSet as CaseSet
+from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
 from app.api_test.models.step import ApiStep as Step
 from app.config.models.config import Config
 from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, DeleteApiForm, ApiListForm, GetApiByIdForm, \
@@ -96,16 +96,16 @@ class ApiGetApiToStepView(LoginRequiredView):
                 case = case_dict[step.case_id]
 
                 # 获取用例所在的用例集
-                case_set = CaseSet.get_first(id=case.set_id)
-                case_set_from_path = CaseSet.get_from_path(case_set.id)
+                suite = CaseSuite.get_first(id=case.suite_id)
+                suite_from_path = CaseSuite.get_from_path(suite.id)
 
                 # 获取用例集所在的服务
-                if case_set.project_id not in project_dict:
-                    project_dict[case_set.project_id] = Project.get_first(id=case_set.project_id)
-                project = project_dict[case_set.project_id]
+                if suite.project_id not in project_dict:
+                    project_dict[suite.project_id] = Project.get_first(id=suite.project_id)
+                project = project_dict[suite.project_id]
 
                 case_dict = case.to_dict()
-                case_dict["from"] = f'【{project.name}_{case_set_from_path}_{case.name}_{step.name}】'
+                case_dict["from"] = f'【{project.name}_{suite_from_path}_{case.name}_{step.name}】'
                 case_list.append(copy.deepcopy(case_dict))
 
         return app.restful.success(msg='获取成功', data=case_list)

@@ -248,7 +248,7 @@ class BaseForm(Form, JsonUtil):
             raise ValidationError(f"发件人邮箱【{email_from}】格式错误")
 
         # 校验收件邮箱
-        for mail in email_to.split(";"):
+        for mail in email_to:
             mail = mail.strip()
             if mail and not validators.email(mail):
                 raise ValidationError(f"收件人邮箱【{mail}】格式错误")

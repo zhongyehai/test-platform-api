@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask.json import JSONEncoder
 
-from app.api_test.models.caseSet import ApiCaseSet
+from app.api_test.models.caseSuite import ApiCaseSuite
 from app.api_test.models.api import ApiMsg
 from app.api_test.models.case import ApiCase
 from app.api_test.models.step import ApiStep
@@ -15,13 +15,13 @@ from app.api_test.models.project import ApiProject, ApiProjectEnv, db
 from app.api_test.models.report import ApiReport
 from app.web_ui_test.models.project import WebUiProject, WebUiProjectEnv
 from app.web_ui_test.models.element import WebUiElement
-from app.web_ui_test.models.caseSet import WebUiCaseSet
+from app.web_ui_test.models.caseSuite import WebUiCaseSuite
 from app.web_ui_test.models.case import WebUiCase
 from app.web_ui_test.models.step import WebUiStep
 from app.web_ui_test.models.report import WebUiReport
 from app.app_ui_test.models.project import AppUiProject, AppUiProjectEnv
 from app.app_ui_test.models.element import AppUiElement
-from app.app_ui_test.models.caseSet import AppUiCaseSet
+from app.app_ui_test.models.caseSuite import AppUiCaseSuite
 from app.app_ui_test.models.case import AppUiCase
 from app.app_ui_test.models.step import AppUiStep
 from app.app_ui_test.models.report import AppUiReport
@@ -67,7 +67,7 @@ class RunTestRunner:
         if self.run_type == "api":  # 接口自动化
             self.project_model = ApiProject
             self.project_env_model = ApiProjectEnv
-            self.case_set_model = ApiCaseSet
+            self.suite_model = ApiCaseSuite
             self.case_model = ApiCase
             self.step_model = ApiStep
             self.report_model = ApiReport
@@ -77,7 +77,7 @@ class RunTestRunner:
             self.project_model = WebUiProject
             self.project_env_model = WebUiProjectEnv
             self.element_model = WebUiElement
-            self.case_set_model = WebUiCaseSet
+            self.suite_model = WebUiCaseSuite
             self.case_model = WebUiCase
             self.step_model = WebUiStep
             self.report_model = WebUiReport
@@ -87,7 +87,7 @@ class RunTestRunner:
             self.project_model = AppUiProject
             self.project_env_model = AppUiProjectEnv
             self.element_model = AppUiElement
-            self.case_set_model = AppUiCaseSet
+            self.suite_model = AppUiCaseSuite
             self.case_model = AppUiCase
             self.step_model = AppUiStep
             self.report_model = AppUiReport

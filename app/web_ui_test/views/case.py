@@ -11,7 +11,7 @@ from app.web_ui_test.models.project import WebUiProject as Project
 from app.web_ui_test.models.case import WebUiCase as Case
 from app.web_ui_test.models.step import WebUiStep as Step
 from app.web_ui_test.models.report import WebUiReport as Report
-from app.web_ui_test.models.caseSet import WebUiCaseSet as CaseSet
+from app.web_ui_test.models.caseSuite import WebUiCaseSuite as CaseSuite
 from app.web_ui_test.forms.case import AddCaseForm, EditCaseForm, FindCaseForm, DeleteCaseForm, GetCaseForm, \
     RunCaseForm, CopyCaseStepForm, PullCaseStepForm, ChangeCaseStatusForm
 
@@ -57,7 +57,7 @@ class WebUiRunCaseView(LoginRequiredView):
         """ 运行测试用例 """
         form = RunCaseForm().do_validate()
         case = form.case_list[0]
-        project_id = CaseSet.get_first(id=case.set_id).project_id
+        project_id = CaseSuite.get_first(id=case.suite_id).project_id
         run_id = Report.get_run_id()
         for env_code in form.env_list.data:
             RunCaseBusiness.run(
@@ -119,7 +119,7 @@ class WebUiGetQuoteCaseFromView(LoginRequiredView):
     def get(self):
         """ 获取用例的归属 """
         form = GetCaseForm().do_validate()
-        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSet, Case)
+        from_path = CaseBusiness.get_quote_case_from(form.id.data, Project, CaseSuite, Case)
         return app.restful.success("获取成功", data=from_path)
 
 
@@ -140,7 +140,7 @@ class WebUiCaseViewView(LoginRequiredView):
     def put(self):
         """ 修改用例 """
         form = EditCaseForm().do_validate()
-        CaseBusiness.put(form, Project, CaseSet, Case, Step)
+        CaseBusiness.put(form, Project, CaseSuite, Case, Step)
         return app.restful.success(msg=f"用例【{form.case.name}】修改成功", data=form.case.to_dict())
 
     def delete(self):
