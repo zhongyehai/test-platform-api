@@ -2,10 +2,9 @@
 from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView, NotLoginView
-from utils.report.report import render_html_report
+from utils.message.template import render_html_report
 from app.api_test.blueprint import api_test
 from app.api_test.models.report import ApiReport as Report
-from app.assist.models.hits import Hits
 from app.api_test.forms.report import GetReportForm, DownloadReportForm, FindReportForm, GetReportDetailForm, \
     DeleteReportForm
 from utils.util.fileUtil import FileUtil

@@ -1,71 +1,35 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 from threading import Thread
 
 import requests
 
 from utils.message.sendEmail import SendEmail
-from utils.report.report import render_html_report
+from utils.message.template import diff_api_msg, run_time_error_msg, call_back_webhook_msg, render_html_report, \
+    get_inspection_msg, get_business_stage_count_msg
 from app.baseModel import Config
 from app.assist.models.callBack import CallBack
 from config import error_push
 
 
-def by_we_chat(content, kwargs):
-    """ 通过企业微信器人发送测试报告 """
-    msg = {
-        "msgtype": "markdown",
-        "markdown": {
-            "content": f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
-                       f'任务名:{content["stat"]["testcases"]["project"]} \n'
-                       f'>环境code:{content["run_env"]} \n'
-                       f'>执行用例:<font color="comment"> {content["stat"]["testcases"]["total"]} </font>条\n'
-                       f'>成功:<font color="info"> {content["stat"]["testcases"]["success"]} </font>条\n'
-                       f'>失败:<font color="warning"> {content["stat"]["testcases"]["fail"]} </font>条\n'
-                       f'>此次共运行<font color=#info> {content["count_step"]} </font>个步骤，'
-                       f'涉及<font color=#info> {content["count_api"]} </font>个接口 \n> '
-                       f'详情请登录[测试平台]({kwargs["report_addr"] + str(kwargs["report_id"])})查看'
-        }
-    }
+def send_msg(addr, msg):
+    """ 发送消息 """
+    print(msg)
+    try:
+        print(f'发送消息：{requests.post(addr, json=msg, verify=False).json()}')
+    except Exception as error:
+        print(f'向机器人发送测试报告失败，错误信息：\n{error}')
+
+
+def send_inspection_by_msg(receive_type, content, kwargs):
+    """ 发送巡检消息 """
+    msg = get_inspection_msg(receive_type, content, kwargs)
     print(msg)
     for webhook in kwargs["webhook_list"]:
         if webhook:
-            try:
-                print(f'测试结果通过企业微信机器人发送：{requests.post(webhook, json=msg, verify=False).json()}')
-            except Exception as error:
-                print(f'向企业微信发送测试报告失败，错误信息：\n{error}')
+            send_msg(webhook, msg)
 
 
-def by_ding_ding(content, kwargs):
-    """ 通过钉钉机器人发送测试报告 """
-    testcases = content["stat"]["testcases"]
-    pass_rate = round(testcases["success"] / testcases["total"] * 100, 3) if testcases["total"] else 100
-    msg = {
-        "msgtype": "markdown",
-        "markdown": {
-            "title": "测试报告",
-            "text": f'## 测试报告 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
-                    f'#### 任务名:{content["stat"]["testcases"]["project"]} \n> '
-                    f'#### 环境code:{content["run_env"]} \n> '
-                    f'#### 执行用例:<font color=#409EFF> {testcases["total"]} </font>条 \n> '
-                    f'#### 成功:<font color=#00FF00> {testcases["success"]} </font>条 \n> '
-                    f'#### 失败:<font color=#FF0000> {testcases["fail"]} </font>条 \n> '
-                    f'#### 通过率:<font color=#409EFF> {pass_rate}% </font> \n> '
-                    f'#### 此次共运行<font color=#19D4AE> {content["count_step"]} </font>个步骤，'
-                    f'涉及<font color=#19D4AE> {content["count_api"]} </font>个接口 \n> '
-                    f'#### 详情请登录[测试平台]({kwargs["report_addr"] + str(kwargs["report_id"])})查看\n'
-        }
-    }
-    print(msg)
-    for webhook in kwargs["webhook_list"]:
-        if webhook:
-            try:
-                print(f'测试结果通过钉钉机器人发送：{requests.post(webhook, json=msg, verify=False).json()}')
-            except Exception as error:
-                print(f'向钉钉机器人发送测试报告失败，错误信息：\n{error}')
-
-
-def by_email(content, kwargs):
+def send_inspection_by_email(content, kwargs):
     """ 通过邮件发送测试报告 """
     SendEmail(
         kwargs.get("email_server"),
@@ -80,12 +44,10 @@ def send_report(**kwargs):
     """ 封装发送测试报告提供给多线程使用 """
     is_send, receive_type, content = kwargs.get("is_send"), kwargs.get("receive_type"), kwargs.get("content")
     if is_send == "2" or (is_send == "3" and content["success"] is False):
-        if receive_type == "we_chat":
-            by_we_chat(content, kwargs)
-        elif receive_type == "ding_ding":
-            by_ding_ding(content, kwargs)
-        elif receive_type == "email":
-            by_email(content, kwargs)
+        if receive_type == "email":
+            send_inspection_by_email(content, kwargs)
+        else:
+            send_inspection_by_msg(receive_type, content, kwargs)
 
 
 def async_send_report(**kwargs):
@@ -118,7 +80,8 @@ def call_back_for_pipeline(task_id, call_back_info: list, extend: dict, status):
             call_back_res = requests.request(**call_back).text
             call_back_obj.success(call_back_res)
             print(f'回调{call_back.get("url")}结束: \n{call_back_res}')
-            send_call_back_webhook(call_back.get("json", {}))
+            msg = call_back_webhook_msg(call_back.get("json", {}))
+            send_msg(Config.get_call_back_msg_addr(), msg)
         except Exception as error:
             print(f'回调{call_back.get("url")}失败')
             call_back_obj.fail()
@@ -137,72 +100,16 @@ def call_back_for_pipeline(task_id, call_back_info: list, extend: dict, status):
     print("回调执行结束")
 
 
-def send_call_back_webhook(data):
-    """ 发送回调数据消息到即时通讯 """
-    print("开始发送回调消息到钉钉")
-    try:
-        requests.post(url=Config.get_call_back_msg_addr(), json={
-            "msgtype": "markdown",
-            "markdown": {
-                "title": "测试平台回调",
-                "text": data
-            }
-        }, verify=False).json()
-        print("发送回调消息到钉钉成功")
-    except Exception as error:
-        print(f'发送回调消息到钉钉失败: \n{error}'"")
-
-
 def send_diff_api_message(content, report_id, addr):
     """ 发送接口对比报告 """
-    msg = {
-        "msgtype": "markdown",
-        "markdown": {
-            "title": "接口监控",
-            "text": f'## 接口监控 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
-                    f'### 任务名：{content["title"]} \n> '
-                    f'#### 对比服务:<font color=#27AE60> {content["project"]["totle"]} </font>个 \n> '
-                    f'##### 新增服务:<font color=#27AE60> {content["project"]["add"]} </font>个 \n> '
-                    f'##### 修改服务:<font color=#3498DB> {content["project"]["modify"]} </font>个 \n> '
-                    f'##### 删除服务:<font color=#E74C3C> {content["project"]["remove"]} </font>个 \n> '
-                    f'##### 乱码:<font color=#E74C3C> {content["project"]["errorCode"]} </font>个 \n> '
-                    f'##### \n> '
-                    f'#### 对比模块:<font color=#27AE60> {content["module"]["totle"]} </font>个 \n> '
-                    f'##### 新增模块:<font color=#27AE60> {content["module"]["add"]} </font>个 \n> '
-                    f'##### 修改模块:<font color=#3498DB> {content["module"]["modify"]} </font>个 \n> '
-                    f'##### 删除模块:<font color=#E74C3C> {content["module"]["remove"]} </font>个 \n> '
-                    f'##### 乱码:<font color=#E74C3C> {content["module"]["errorCode"]} </font>个 \n> '
-                    f'##### \n> '
-                    f'#### 对比接口:<font color=#27AE60> {content["api"]["totle"]} </font>个 \n> '
-                    f'##### 新增接口:<font color=#27AE60> {content["api"]["add"]} </font>个 \n> '
-                    f'##### 修改接口:<font color=#3498DB> {content["api"]["modify"]} </font>个 \n> '
-                    f'##### 删除接口:<font color=#E74C3C> {content["api"]["remove"]} </font>个 \n> '
-                    f'##### 乱码:<font color=#E74C3C> {content["api"]["errorCode"]} </font>个 \n> '
-                    f'##### \n> '
-                    f'#### 请登录[测试平台]({Config.get_report_host()}{Config.get_diff_api_addr()}{str(report_id)})查看详情，并确认是否更新\n'
-        }
-    }
-    try:
-        print(f'测试结果通过钉钉机器人发送：{requests.post(addr, json=msg, verify=False).json()}')
-    except Exception as error:
-        print(f'向钉钉机器人发送测试报告失败，错误信息：\n{error}')
+    msg = diff_api_msg(content, Config.get_report_host(), Config.get_diff_api_addr(), report_id)
+    send_msg(addr, msg)
 
 
 def send_run_time_error_message(content, addr):
     """ 执行自定义函数时发生了异常的报告 """
-    msg = {
-        "msgtype": "markdown",
-        "markdown": {
-            "title": content.get("title"),
-            "text": content.get(
-                "detail") + f"#### 详情请登录[测试平台]({Config.get_report_host()}{Config.get_func_error_addr()})查看\n"
-        }
-    }
-    print(msg)
-    try:
-        print(f"发送错误通知：{requests.post(addr, json=msg, verify=False).json()}")
-    except Exception as error:
-        print(f"向钉钉机器人发送错误通知失败，错误信息：\n{error}")
+    msg = run_time_error_msg(content, Config.get_report_host(), Config.get_func_error_addr())
+    send_msg(addr, msg)
 
 
 def async_send_run_time_error_message(**kwargs):
@@ -218,6 +125,14 @@ def send_run_func_error_message(content):
         content=content,
         addr=f'{Config.get_report_host()}{Config.get_run_time_error_message_send_addr()}'
     )
+
+
+def send_business_stage_count(content):
+    """ 发送阶段统计报告 """
+    if content["total"]:
+        msg = get_business_stage_count_msg(content)
+        for webhook in content["webhookList"]:
+            send_msg(webhook, msg)
 
 
 if __name__ == "__main__":

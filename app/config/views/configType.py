@@ -16,7 +16,7 @@ class GetConfTypeListView(LoginRequiredView):
         return app.restful.success(data=ConfigType.make_pagination(form))
 
 
-class ConfigTypeView(AdminRequiredView):
+class ConfigTypeView(LoginRequiredView):
 
     def get(self):
         """ 获取配置类型 """

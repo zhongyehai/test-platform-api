@@ -49,7 +49,7 @@ class PostBusinessForm(BaseForm):
         self.validate_data_is_not_exist(f"业务线code {field.data} 已存在", BusinessLine, code=field.data)
 
     def validate_receive_type(self, field):
-        if field.data:
+        if field.data != "0":
             self.validate_data_is_true(f"要接收段统计通知，则通知地址必填", self.webhook_list.data)
 
 

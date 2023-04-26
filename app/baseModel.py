@@ -27,10 +27,13 @@ class SQLAlchemy(_SQLAlchemy):
         finally:
             self.session.rollback()
 
-    def execute_query_sql(self, sql):
+    def execute_query_sql(self, sql, to_dict=True):
         """ 执行原生查询sql，并返回字典 """
         res = self.session.execute(sql).fetchall()
-        return dict(res) if res else {}
+        if to_dict:
+            return dict(res) if res else {}
+        else:
+            return res
 
 
 class Qeury(BaseQuery):
@@ -82,7 +85,7 @@ class BaseModel(db.Model, JsonUtil):
     # 需要做序列化和反序列化的字段
     serialization_file_list = [
         "extend_role",
-        "headers", "variables", "script_list",
+        "headers", "variables", "script_list", "pop_header_filed",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to",
         "kym", "task_item", 'business_id'
@@ -573,7 +576,8 @@ class BaseCase(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="用例序号")
     name = db.Column(db.String(255), nullable=True, comment="用例名称")
     desc = db.Column(db.Text(), comment="用例描述")
-    status = db.Column(db.Integer(), default=0, comment="用例调试状态，0未调试-不执行，1调试通过-要执行，2调试通过-不执行，3调试不通过-不执行，默认未调试-不执行")
+    status = db.Column(db.Integer(), default=0,
+                       comment="用例调试状态，0未调试-不执行，1调试通过-要执行，2调试通过-不执行，3调试不通过-不执行，默认未调试-不执行")
     run_times = db.Column(db.Integer(), default=1, comment="执行次数，默认执行1次")
     script_list = db.Column(db.Text(), default="[]", comment="用例需要引用的脚本list")
     variables = db.Column(

@@ -62,14 +62,12 @@ class ConfigView(LoginRequiredView):
         conf = Config().create(form.data)
         return app.restful.success("新增成功", data=conf.to_dict())
 
-    @admin_required
     def put(self):
         """ 修改配置 """
         form = PutConfigForm().do_validate()
         form.conf.update(form.data)
         return app.restful.success("修改成功", data=form.conf.to_dict())
 
-    @admin_required
     def delete(self):
         """ 删除配置 """
         form = DeleteConfigForm().do_validate()

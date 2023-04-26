@@ -12,7 +12,7 @@ class BusinessLine(BaseModel):
     code = db.Column(db.String(128), nullable=True, unique=True, comment="业务线编码")
     receive_type = db.Column(db.String(16), default="0", comment="接收通知类型：0:不接收、we_chat:企业微信、ding_ding:钉钉")
     webhook_list = db.Column(db.Text(), default='[]', comment="接收该业务线自动化测试阶段统计通知地址")
-    env_list = db.Column(db.String(128), default='[]', comment="业务线能使用的运行环境")
+    env_list = db.Column(db.Text(), default='[]', comment="业务线能使用的运行环境")
     num = db.Column(db.Integer(), nullable=True, comment="序号")
     desc = db.Column(db.Text(), comment="描述")
 

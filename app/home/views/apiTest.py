@@ -205,43 +205,16 @@ class GetApiTestCountTaskView(LoginRequiredView):
                 group by status
             """)
 
-        is_send = db.execute_query_sql("""
-            select is_send, count(*) as totle
-                from (select case
-                         when is_send = 1 then "is_send1"
-                         when is_send = 2 then "is_send2"
-                         else "is_send3" end as is_send
-                      from `api_test_task`
-                     ) as t
-                group by is_send
-            """)
-
-        send_type = db.execute_query_sql("""
-            select send_type, count(*) as totle
-                from (select case
-                         when send_type = "all" then "all"
-                         when send_type = "we_chat" then "we_chat"
-                         when send_type = "ding_ding" then "ding_ding"
-                         else "email" end as send_type
-                      from `api_test_task`
-                     ) as t
-                group by send_type
-            """)
         time_data = get_data_by_time(Task)
         return app.restful.success("获取成功", data={
             "title": "定时任务",
             "options": [
                 "总数", "启用", "禁用",
-                "始终发送", "不发送", "失败时发送",
-                "都接收", "仅微信群接收", "仅钉钉群接收", "仅邮件接收",
                 "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"
             ],
             "data": [
                 sum(status.values()),
                 status.get("enable", 0), status.get("disable", 0),
-                is_send.get("is_send2", 0), is_send.get("is_send1", 0), is_send.get("is_send3", 0),
-                send_type.get("all", 0), send_type.get("we_chat", 0), send_type.get("ding_ding", 0),
-                send_type.get("email", 0),
                 time_data["last_day_add"],
                 time_data["to_day_add"],
                 time_data["current_week_add"],

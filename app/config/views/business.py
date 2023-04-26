@@ -16,7 +16,7 @@ class GetBusinessListView(LoginRequiredView):
         return app.restful.success(data=BusinessLine.make_pagination(form))
 
 
-class BusinessView(AdminRequiredView):
+class BusinessView(LoginRequiredView):
 
     def get(self):
         """ 获取业务线 """

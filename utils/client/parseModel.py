@@ -332,7 +332,7 @@ class StepModel(FormatModel):
         self.params = self.parse_list_data(kwargs.get("params", {}))
         self.api_id = kwargs.get("api_id")
         self.data_type = kwargs.get("data_type", "json")
-        self.pop_header_filed = kwargs.get("pop_header_filed", "").split(',')
+        self.pop_header_filed = kwargs.get("pop_header_filed", [])
         self.data_json, self.data_form, self.data_file = {}, {}, {}
         self.parse_body(kwargs)
 
