@@ -47,9 +47,16 @@ class DeleteReportForm(BaseForm):
         report_list = []
         for report_id in field.data:
             report = Report.get_first(id=report_id)
-            if report and Hits.get_first(report_id=report.id) is None:  # 没有被登记失败记录的报告
-                report.report_path = os.path.join(API_REPORT_ADDRESS, f"{report.id}.txt")
-                report_list.append(report)
+            if report:
+                # 出于周统计、月统计的数据准确性考虑，触发方式为 pipeline 和 cron，只有管理员权限能删
+                if report.trigger_type in ['pipeline', 'cron'] and self.is_not_admin():
+                    continue
+
+                # 没有被登记失败记录的报告可以删
+                if Hits.get_first(report_id=report.id) is None:  # 没有被登记失败记录的报告
+                    report.report_path = os.path.join(API_REPORT_ADDRESS, f"{report.id}.txt")
+                    report_list.append(report)
+
         setattr(self, "report_list", report_list)
 
 
@@ -63,4 +70,4 @@ class FindReportForm(BaseForm):
     trigger_type = StringField()
     run_type = StringField()
     is_passed = StringField()
-    env = StringField()
+    env_list = StringField()

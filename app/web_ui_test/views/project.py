@@ -12,13 +12,6 @@ from app.web_ui_test.forms.project import (
 )
 
 
-class WebUiProjectAllView(LoginRequiredView):
-
-    def get(self):
-        """ 获取所有项目列表 """
-        return app.restful.success(data=[project.to_dict() for project in Project.get_all()])
-
-
 class WebUiProjectListView(LoginRequiredView):
 
     def get(self):
@@ -93,7 +86,6 @@ class WebUiProjectEnvView(LoginRequiredView):
 
 web_ui_test.add_url_rule("/project", view_func=WebProjectView.as_view("WebProjectView"))
 web_ui_test.add_url_rule("/project/env", view_func=WebUiProjectEnvView.as_view("WebUiProjectEnvView"))
-web_ui_test.add_url_rule("/project/all", view_func=WebUiProjectAllView.as_view("WebUiProjectAllView"))
 web_ui_test.add_url_rule("/project/list", view_func=WebUiProjectListView.as_view("WebUiProjectListView"))
 web_ui_test.add_url_rule("/project/sort", view_func=WebUiProjectChangeSortView.as_view("WebUiProjectChangeSortView"))
 web_ui_test.add_url_rule("/project/env/synchronization",

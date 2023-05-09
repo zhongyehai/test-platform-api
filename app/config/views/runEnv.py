@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app, request
 
-from app.api_test.models.project import ApiProjectEnv
-from app.web_ui_test.models.project import WebUiProjectEnv
-from app.baseView import LoginRequiredView, AdminRequiredView, NotLoginView
+from app.baseView import LoginRequiredView, NotLoginView
 from app.config.models.runEnv import RunEnv
 from app.config.forms.runEnv import (
-    GetRunEnvForm, DeleteRunEnvForm, PostRunEnvForm, PutRunEnvForm, GetRunEnvListForm
+    GetRunEnvForm, DeleteRunEnvForm, PostRunEnvForm, PutRunEnvForm, GetRunEnvListForm, EnvToBusinessForm
 )
 from app.config.blueprint import config_blueprint
 
@@ -34,6 +32,15 @@ class RunEnvChangeSortView(LoginRequiredView):
         return app.restful.success(msg="修改排序成功")
 
 
+class EnvToBusiness(LoginRequiredView):
+    """ 运行环境与业务线的绑定关系 """
+
+    def put(self):
+        form = EnvToBusinessForm().do_validate()
+        RunEnv.env_to_business(form.env_list.data, form.business_list.data, form.command.data)
+        return app.restful.success("修改成功")
+
+
 class RunEnvView(LoginRequiredView):
 
     def get(self):
@@ -46,8 +53,6 @@ class RunEnvView(LoginRequiredView):
         form = PostRunEnvForm().do_validate()
         form.num.data = RunEnv.get_insert_num()
         run_env = RunEnv().create(form.data)
-        # ApiProjectEnv.create_env(env_list=[run_env.id])
-        # WebUiProjectEnv.create_env(env_list=[run_env.id])
         return app.restful.success("新增成功", data=run_env.to_dict())
 
     def put(self):
@@ -64,6 +69,7 @@ class RunEnvView(LoginRequiredView):
 
 
 config_blueprint.add_url_rule("/runEnv", view_func=RunEnvView.as_view("RunEnvView"))
+config_blueprint.add_url_rule("/runEnv/toBusiness", view_func=EnvToBusiness.as_view("EnvToBusiness"))
 config_blueprint.add_url_rule("/runEnv/list", view_func=GetRunEnvListView.as_view("GetRunEnvListView"))
 config_blueprint.add_url_rule("/runEnv/sort", view_func=RunEnvChangeSortView.as_view("RunEnvChangeSortView"))
 config_blueprint.add_url_rule("/runEnv/group", view_func=GeRunEnvGroupListView.as_view("GeRunEnvGroupListView"))

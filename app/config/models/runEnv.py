@@ -24,6 +24,18 @@ class RunEnv(BaseModel):
         return cls.get_first(id=id_or_code) or cls.get_first(code=id_or_code)
 
     @classmethod
+    def env_to_business(cls, env_id_list, business_id_list, command):
+        """ 管理环境与业务线的 绑定/解绑  command: add、delete """
+        business_list = BusinessLine.query.filter(BusinessLine.id.in_(business_id_list)).all()
+        for business in business_list:
+            business_env = cls.loads(business.env_list)
+            if command == "add":  # 绑定
+                business_env_list = list({*env_id_list, *business_env})
+            else:  # 取消绑定
+                business_env_list = list(set(business_env).difference(set(env_id_list)))
+            business.update({"env_list": business_env_list})
+
+    @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []

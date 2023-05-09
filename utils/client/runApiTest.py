@@ -174,6 +174,8 @@ class RunCase(RunTestRunner):
             # 用例格式模板
             case_template = {
                 "config": {
+                    "case_id": case_id,
+                    "project_id": current_project.id,
                     "run_type": self.run_type,
                     "variables": {},
                     "headers": {},

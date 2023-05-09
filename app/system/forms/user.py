@@ -12,7 +12,7 @@ class CreateUserForm(BaseForm):
     name = StringField(validators=[DataRequired("请设置用户名"), Length(2, 12, message="用户名长度为2~12位")])
     account = StringField(validators=[DataRequired("请设置账号"), Length(2, 50, message="账号长度为2~50位")])
     password = StringField(validators=[DataRequired("请设置密码"), Length(4, 18, message="密码长度长度为4~18位")])
-    business_id = StringField(validators=[DataRequired("请选择业务线")])
+    business_list = StringField(validators=[DataRequired("请选择业务线")])
     role_list = StringField(validators=[DataRequired("请选择角色")])
 
     def validate_name(self, field):

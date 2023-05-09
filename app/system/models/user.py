@@ -158,7 +158,7 @@ class User(BaseModel):
     password_hash = db.Column(db.String(255), comment="密码")
     name = db.Column(db.String(12), comment="姓名")
     status = db.Column(db.Integer, default=1, comment="状态，1为启用，0为冻结")
-    business_id = db.Column(db.String(255), comment="用户所在的业务线")
+    business_list = db.Column(db.String(255), comment="用户所在的业务线")
 
     @property
     def password(self):
@@ -183,7 +183,7 @@ class User(BaseModel):
             "name": self.name,
             "role_list": self.roles,
             "api_permissions": self.get_api_permissions(),
-            "business_id": self.loads(self.business_id),
+            "business_list": self.loads(self.business_list),
         }).decode("utf-8")
 
     @property

@@ -51,7 +51,7 @@ class AddCaseForm(BaseForm):
     run_times = IntegerField()
     steps = StringField()
     num = StringField()
-    desc = StringField()
+    desc = StringField(validators=[DataRequired("用例描述必填")])
 
     all_func_name = {}
     all_variables = {}

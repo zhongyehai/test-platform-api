@@ -23,8 +23,8 @@ def get_system_platform():
     }
 
 
-def build_summary(result):
-    """ 从测试结果中解析详细数据，用于渲染报告
+def build_case_summary(result):
+    """ 从测试结果中解析成用例级别的详细数据，用于渲染报告
     Args:
         result (instance): HtmlTestResult() instance
     Returns:
@@ -60,6 +60,8 @@ def build_summary(result):
             # 'start_date': result.start_date,
             'duration': result.duration
         },
+        "case_id": None,
+        "project_id": None,
         "records": result.records
     }
 

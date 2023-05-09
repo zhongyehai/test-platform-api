@@ -37,7 +37,6 @@ def register_errorhandler_hook(app):
         """ 捕获所有服务器内部的异常，把错误发送到 即时达推送 的 系统错误 通道 """
         error = traceback.format_exc()
         try:
-            # 写日志
             _app.logger.exception(f'系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
             # 写数据库
@@ -52,14 +51,15 @@ def register_errorhandler_hook(app):
             })
 
             # 发送即时通讯通知
-            requests.post(
+            send_error_msg_res = requests.post(
                 url=_app.config["ERROR_PUSH_URL"],
                 json={
                     "key": _app.config["ERROR_PUSH_KEY"],
-                    "head": f'{_app.config["SECRET_KEY"]}报错了 \n数据id为：{error_record.id}',
+                    "head": f'{_app.config["SECRET_KEY"]}报错，数据id：{error_record.id}',
                     "body": f'{error_record}   \n\n{error}'
                 }
-            )
+            ).text
+            _app.logger.info(f'发送错误消息结果: {send_error_msg_res}')
         except:
             pass
 

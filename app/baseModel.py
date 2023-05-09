@@ -88,7 +88,7 @@ class BaseModel(db.Model, JsonUtil):
         "headers", "variables", "script_list", "pop_header_filed",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to",
-        "kym", "task_item", 'business_id'
+        "kym", "task_item", 'business_list'
     ]
 
     def set_attr(self, column_list, value=None):
@@ -398,7 +398,7 @@ class BaseProject(BaseModel):
         """ 解析分页条件 """
         filters = []
         if cls.is_not_admin():  # 非管理员则校验业务线权限
-            filters.append(cls.business_id.in_(g.business_id))
+            filters.append(cls.business_id.in_(g.business_list))
         if form.name.data:
             filters.append(cls.name.like(f'%{form.name.data}%'))
         if form.manager.data:
@@ -502,6 +502,8 @@ class BaseCaseSuite(BaseModel):
     name = db.Column(db.String(255), nullable=True, comment="用例集名称")
     num = db.Column(db.Integer(), nullable=True, comment="用例集在对应服务下的序号")
     level = db.Column(db.Integer(), nullable=True, default=2, comment="用例集级数")
+    suite_type = db.Column(db.String(64), default="base",
+                           comment="用例集类型，base: 基础用例集，api: 单接口用例集，process: 流程用例集，assist: 辅助测试用例集")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级用例集id")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
 
@@ -509,23 +511,30 @@ class BaseCaseSuite(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        if form.projectId.data:
-            filters.append(cls.project_id == form.projectId.data)
+        if form.project_id.data:
+            filters.append(cls.project_id == form.project_id.data)
         if form.name.data:
             filters.append(cls.name == form.name.data)
+        if form.suite_type.data:
+            filters.append(cls.suite_type.in_(form.suite_type.data))
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.num.asc()
+            order_by=cls.id.asc()
         )
 
     @classmethod
     def create_suite_by_project(cls, project_id):
         """ 根据项目id，创建用例集 """
-        suite_type = "api" if "api" in cls.__name__.lower() else "ui"
-        for index, name in enumerate(Config.get_suite_type_list(suite_type)):
-            cls().create({"name": name, "num": index, "project_id": project_id})
+        project_type = "api" if "api" in cls.__name__.lower() else "ui"
+        for index, suite_type in enumerate(Config.get_suite_type_list(project_type)):
+            cls().create({
+                "num": index,
+                "project_id": project_id,
+                "name": suite_type["value"],
+                "suite_type": suite_type["key"]
+            })
 
     def get_run_case_id(self, case_model, business_id=None):
         """ 获取用例集下，状态为要运行的用例id """
@@ -554,7 +563,9 @@ class BaseCaseSuite(BaseModel):
         # 2、没有选择用例集和用例，则视为选择了所有用例集
         elif len(suite_id) == 0 and len(case_id) == 0:
             suite_id = [
-                suite.id for suite in cls.query.filter_by(project_id=project_id).order_by(cls.num.asc()).all()
+                suite.id for suite in cls.query.filter(
+                    cls.project_id == project_id, cls.suite_type.in_(['api', 'process'])
+                ).order_by(cls.num.asc()).all()
             ]
 
         # 解析已选中的用例集，并继承已选中的用例列表，再根据用例id去重
@@ -583,6 +594,9 @@ class BaseCase(BaseModel):
     variables = db.Column(
         db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="用例级的公共参数"
     )
+    # output = db.Column(
+    #     db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment="用例出参（变量+提取的数据）"
+    # )
     skip_if = db.Column(
         db.Text(),
         default=BaseModel.dumps([
@@ -649,6 +663,37 @@ class BaseStep(BaseModel):
     def delete_by_case_id(cls, case_id):
         """ 根据用例id删除步骤 """
         cls.query.filter(cls.case_id == case_id).delete(synchronize_session=False)
+
+    @classmethod
+    def set_has_step_for_step(cls, step_list, case_model):
+        """ 增加是否有步骤的标识 """
+        data_list = []
+        for step in step_list:
+            if isinstance(step, dict) is False:
+                step = step.to_dict()
+            step["hasStep"] = cls.get_first(case_id=step["quote_case"]) is not None
+            step["children"] = []
+            if step["quote_case"]:  # 若果是引用用例，把对应用例的入参出参一起返回
+                case = case_model.get_first(id=step["quote_case"]).to_dict()
+                step["desc"] = case["desc"]
+                step["skip_if"] = case.get("skip_if")
+                step["variables"] = case.get("variables")
+                step["output"] = case.get("output")
+
+            data_list.append(step)
+        return data_list
+
+    @classmethod
+    def set_has_step_for_case(cls, case_list):
+        """ 增加是否有步骤的标识 """
+        data_list = []
+        for case in case_list:
+            if isinstance(case, dict) is False:
+                case = case.to_dict()
+            case["hasStep"] = cls.get_first(case_id=case["id"]) is not None
+            case["children"] = []
+            data_list.append(case)
+        return data_list
 
 
 class BaseTask(BaseModel):
@@ -794,8 +839,8 @@ class BaseReport(BaseModel):
             filters.append(cls.run_type == form.run_type.data)
         if form.is_passed.data:
             filters.append(cls.is_passed == form.is_passed.data)
-        if form.env.data:
-            filters.append(cls.env == form.env.data)
+        if form.env_list.data:
+            filters.append(cls.env.in_(form.env_list.data))
         if form.projectId.data:
             filters.append(cls.project_id == form.projectId.data)
         return cls.pagination(

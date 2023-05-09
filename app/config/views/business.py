@@ -4,7 +4,7 @@ from flask import current_app as app
 from app.baseView import LoginRequiredView, AdminRequiredView
 from app.config.models.business import BusinessLine
 from app.config.forms.business import (
-    GetBusinessForm, DeleteBusinessForm, PostBusinessForm, PutBusinessForm, GetBusinessListForm
+    GetBusinessForm, DeleteBusinessForm, PostBusinessForm, PutBusinessForm, GetBusinessListForm, BusinessToUserForm
 )
 from app.config.blueprint import config_blueprint
 
@@ -15,6 +15,14 @@ class GetBusinessListView(LoginRequiredView):
         form = GetBusinessListForm().do_validate()
         return app.restful.success(data=BusinessLine.make_pagination(form))
 
+
+class BusinessToUser(LoginRequiredView):
+    """ 批量管理业务线与用户的关系 绑定/解除绑定 """
+
+    def put(self):
+        form = BusinessToUserForm().do_validate()
+        BusinessLine.business_to_user(form.business_list.data, form.user_list.data, form.command.data)
+        return app.restful.success("修改成功")
 
 class BusinessView(LoginRequiredView):
 
@@ -44,4 +52,6 @@ class BusinessView(LoginRequiredView):
 
 
 config_blueprint.add_url_rule("/business", view_func=BusinessView.as_view("BusinessView"))
+config_blueprint.add_url_rule("/business/toUser", view_func=BusinessToUser.as_view("BusinessToUser"))
 config_blueprint.add_url_rule("/business/list", view_func=GetBusinessListView.as_view("GetBusinessListView"))
+

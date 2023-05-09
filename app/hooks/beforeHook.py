@@ -43,16 +43,16 @@ def register_before_hook(app):
                 f'【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.url}】: \n请求参数：{request_data}\n'
             )
 
-    @app.before_request
-    def save_requests_by_db():
-        """ 存操作日志 """
-        if request.method in ("POST", "PUT", "DELETE"):
-            UserOperationLog().create({
-                "ip": g.user_ip,
-                "url": request.path,
-                "method": request.method,
-                "headers": dict(request.headers),
-                "params": request.args or {},
-                "data_form": request.form or {},
-                "data_json": request.json or {}
-            })
+    # @app.before_request
+    # def save_requests_by_db():
+    #     """ 存操作日志 """
+    #     if request.method in ("POST", "PUT", "DELETE"):
+    #         UserOperationLog().create({
+    #             "ip": g.user_ip,
+    #             "url": request.path,
+    #             "method": request.method,
+    #             "headers": dict(request.headers),
+    #             "params": request.args or {},
+    #             "data_form": request.form or {},
+    #             "data_json": request.json or {}
+    #         })

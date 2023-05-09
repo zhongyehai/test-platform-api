@@ -21,7 +21,9 @@ class WebUiGetCaseListView(LoginRequiredView):
     def get(self):
         """ 根据用例集查找用例列表 """
         form = FindCaseForm().do_validate()
-        return app.restful.success(data=Case.make_pagination(form))
+        data = Case.make_pagination(form)
+        total, data_list = data["total"], Step.set_has_step_for_case(data["data"])
+        return app.restful.success(data={"total": total, "data": data_list})
 
 
 class WebUiGetCaseNameView(LoginRequiredView):
@@ -41,6 +43,20 @@ class WebUiChangeCaseQuoteView(LoginRequiredView):
         case_id, quote_type, quote = request.json.get("id"), request.json.get("quoteType"), request.json.get("quote")
         Case.get_first(id=case_id).update({quote_type: json.dumps(quote)})
         return app.restful.success(msg="引用关系修改成功")
+
+
+class WebUiGetCaseFromProjectView(LoginRequiredView):
+
+    def get(self):
+        """ 获取用例属于哪个用例集、哪个服务 """
+        case = Case.get_first(id=request.args.get("id"))
+        suite = CaseSuite.get_first(id=case.suite_id)
+        project = Project.get_first(id=suite.project_id)
+        return app.restful.success(data={
+            "case": case.to_dict(),
+            "suite": suite.to_dict(),
+            "project": project.to_dict()
+        })
 
 
 class WebUiChangeCaseSortView(LoginRequiredView):
@@ -72,7 +88,7 @@ class WebUiRunCaseView(LoginRequiredView):
                 case_id=form.caseId.data,
                 run_type="webUi",
                 run_func=RunCase
-        )
+            )
         return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
 
 
@@ -133,7 +149,7 @@ class WebUiCaseViewView(LoginRequiredView):
     def post(self):
         """ 新增用例 """
         form = AddCaseForm().do_validate()
-        form.num.data = Case.get_insert_num(set_id=form.set_id.data)
+        form.num.data = Case.get_insert_num(suite_id=form.suite_id.data)
         new_case = Case().create(form.data)
         return app.restful.success(f"用例【{new_case.name}】新建成功", data=new_case.to_dict())
 
@@ -161,3 +177,4 @@ web_ui_test.add_url_rule("/case/pull/step", view_func=WebUiPullCaseStepView.as_v
 web_ui_test.add_url_rule("/case/quote", view_func=WebUiChangeCaseQuoteView.as_view("WebUiChangeCaseQuoteView"))
 web_ui_test.add_url_rule("/case/status", view_func=WebUiChangeCaseStatusView.as_view("WebUiChangeCaseStatusView"))
 web_ui_test.add_url_rule("/case/from", view_func=WebUiGetQuoteCaseFromView.as_view("WebUiGetQuoteCaseFromView"))
+web_ui_test.add_url_rule("/case/project", view_func=WebUiGetCaseFromProjectView.as_view("WebUiGetCaseFromProjectView"))

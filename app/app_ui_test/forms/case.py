@@ -31,7 +31,7 @@ class ChangeCaseStatusForm(BaseForm):
 class AddCaseForm(BaseForm):
     """ 添加用例的校验 """
     name = StringField(validators=[DataRequired("用例名称不能为空")])
-    desc = StringField()
+    desc = StringField(validators=[DataRequired("用例描述必填")])
     script_list = StringField()
     skip_if = StringField()
     variables = StringField()

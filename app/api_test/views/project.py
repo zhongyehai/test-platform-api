@@ -12,13 +12,6 @@ from app.api_test.forms.project import (
 from app.baseView import LoginRequiredView
 
 
-class ApiProjectAllView(LoginRequiredView):
-
-    def get(self):
-        """ 所有服务列表 """
-        return app.restful.success(data=[project.to_dict() for project in Project.get_all()])
-
-
 class ApiProjectListView(LoginRequiredView):
 
     def get(self):
@@ -94,7 +87,6 @@ class ApiProjectEnvView(LoginRequiredView):
 
 
 api_test.add_url_rule("/project", view_func=ApiProjectView.as_view("ApiProjectView"))
-api_test.add_url_rule("/project/all", view_func=ApiProjectAllView.as_view("ApiProjectAllView"))
 api_test.add_url_rule("/project/list", view_func=ApiProjectListView.as_view("ApiProjectListView"))
 api_test.add_url_rule("/project/sort", view_func=ProjectChangeSortView.as_view("ProjectChangeSortView"))
 api_test.add_url_rule("/project/env", view_func=ApiProjectEnvView.as_view("ApiProjectEnvView"))

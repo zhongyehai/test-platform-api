@@ -112,7 +112,7 @@ class TestRunner(object):
 
         for tests_result in tests_results:
             testcase, result = tests_result
-            testcase_summary = report.build_summary(result)
+            testcase_summary = report.build_case_summary(result)
 
             if testcase_summary["success"]:
                 summary["stat"]["testcases"]["success"] += 1
@@ -121,6 +121,8 @@ class TestRunner(object):
 
             summary["success"] &= testcase_summary["success"]
             testcase_summary["name"] = testcase.config.get("name")
+            testcase_summary["case_id"] = testcase.config.get("case_id")
+            testcase_summary["project_id"] = testcase.config.get("project_id")
 
             report.merge_stat(summary["stat"]["teststeps"], testcase_summary["stat"])
             report.merge_stat(summary["time"], testcase_summary["time"])

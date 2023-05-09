@@ -17,7 +17,8 @@ class AppUiGetStepListView(LoginRequiredView):
         """ 根据用例id获取步骤列表 """
         form = GetStepListForm().do_validate()
         step_obj_list = Step.query.filter_by(case_id=form.caseId.data).order_by(Step.num.asc()).all()
-        return app.restful.success("获取成功", data=[step.to_dict() for step in step_obj_list])
+        step_list = Step.set_has_step_for_step(step_obj_list, Case)
+        return app.restful.success("获取成功", data={"total": step_list.__len__(), "data": step_list})
 
 
 class AppUiGetCaseExecuteListView(LoginRequiredView):

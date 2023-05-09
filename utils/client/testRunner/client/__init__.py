@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 class BaseSession:
 
-    def init_meta_data(self):
-        """ 初始化meta_data，用于存储请求和响应的详细数据 """
+    def init_step_meta_data(self):
+        """ 初始化meta_data，用于存储步骤的执行和结果的详细数据 """
         self.meta_data = {
             "case_id": None,
             "name": "",

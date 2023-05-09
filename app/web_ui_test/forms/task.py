@@ -12,7 +12,7 @@ from app.web_ui_test.models.project import WebUiProject as Project
 class AddTaskForm(BaseForm):
     """ 添加定时任务的校验 """
     project_id = IntegerField(validators=[DataRequired("请选择项目")])
-    set_ids = StringField()
+    suite_ids = StringField()
     case_ids = StringField()
     env_list = StringField(validators=[DataRequired("请选择要运行的环境")])
     name = StringField(validators=[DataRequired("任务名不能为空")])

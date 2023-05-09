@@ -12,7 +12,7 @@ from app.app_ui_test.models.env import AppUiRunServer as Server, AppUiRunPhone a
 class AddTaskForm(BaseForm):
     """ 添加定时任务的校验 """
     project_id = IntegerField(validators=[DataRequired("请选择项目")])
-    set_ids = StringField()
+    suite_ids = StringField()
     case_ids = StringField()
     name = StringField(validators=[DataRequired("任务名不能为空")])
     is_send = StringField(validators=[DataRequired("请选择是否发送报告")])

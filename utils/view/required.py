@@ -12,7 +12,7 @@ def parse_token(token):
         data = Serializer(app.config["SECRET_KEY"]).loads(token.encode("utf-8"))
         # 把用户数据存到g对象，方便后面使用
         g.user_id, g.user_name = data["id"], data["name"]
-        g.api_permissions, g.business_id = data["api_permissions"], data["business_id"]
+        g.api_permissions, g.business_list = data["api_permissions"], data["business_list"]
         return True
     except:
         g.user_id, g.user_name, g.api_permissions = None, None, []

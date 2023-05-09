@@ -20,7 +20,7 @@ class AppUiDownloadReportView(LoginRequiredView):
 
 class AppUiReportListView(LoginRequiredView):
 
-    def get(self):
+    def post(self):
         """ 报告列表 """
         form = FindReportForm().do_validate()
         return app.restful.success(data=Report.make_pagination(form))

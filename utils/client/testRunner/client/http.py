@@ -38,7 +38,7 @@ class HttpSession(requests.Session, BaseSession):
     def __init__(self, base_url=None, *args, **kwargs):
         super(HttpSession, self).__init__(*args, **kwargs)
         self.base_url = base_url if base_url else ""
-        self.init_meta_data()
+        self.init_step_meta_data()
 
     def get_req_resp_record(self, resp_obj):
         """ 从response对象中获取请求和响应信息。 """
@@ -101,7 +101,7 @@ class HttpSession(requests.Session, BaseSession):
 
     def request(self, method, url, name=None, case_id=None, variables_mapping={}, **kwargs):
         """ 重写 requests.Session.request 方法，加一个参数 name，用作记录请求的标识"""
-        self.init_meta_data()
+        self.init_step_meta_data()
 
         self.meta_data["name"] = name  # 记录测试名
         self.meta_data["case_id"] = case_id  # 步骤对应的用例id

@@ -189,6 +189,8 @@ class RunCase(RunTestRunner):
 
             case_template = {
                 "config": {
+                    "case_id": case_id,
+                    "project_id": current_project.id,
                     "variables": {},
                     "name": current_case.name,
                     "run_type": self.run_type

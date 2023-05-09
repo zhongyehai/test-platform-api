@@ -63,3 +63,11 @@ class PutRunEnvForm(RunEnvIdForm, PostRunEnvForm):
             self.id.data,
             code=field.data
         )
+
+
+class EnvToBusinessForm(BaseForm):
+    """ 批量管理环境与业务线的关系 绑定/解除绑定 """
+
+    env_list = StringField(validators=[DataRequired("环境必传")])
+    business_list = StringField(validators=[DataRequired("业务线必传")])
+    command = StringField(validators=[DataRequired("操作类型必传")])  # add、delete

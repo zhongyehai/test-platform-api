@@ -7,7 +7,7 @@ from app.web_ui_test.models.case import WebUiCase as Case
 from app.web_ui_test.models.report import WebUiReport as Report
 from app.web_ui_test.blueprint import web_ui_test
 from app.web_ui_test.models.caseSuite import WebUiCaseSuite as CaseSuite
-from app.web_ui_test.forms.caseSuite import AddCaseSuiteForm, EditCaseSuiteForm, FindCaseSuite, GetCaseSuiteEditForm, \
+from app.web_ui_test.forms.caseSuite import AddCaseSuiteForm, EditCaseSuiteForm, FindCaseSuite, GetCaseSuiteForm, \
     DeleteCaseSuiteForm, RunCaseSuiteForm
 from utils.client.runUiTest import RunCase
 
@@ -43,23 +43,12 @@ class WebUiRunCaseSuiteView(LoginRequiredView):
         return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
 
 
-class WebUiGetCaseSuiteTreeView(LoginRequiredView):
-
-    def get(self):
-        """ 获取当前服务下的用例集树 """
-        suite_list = [
-            suite.to_dict() for suite in CaseSuite.query.filter_by(
-                project_id=int(request.args.get("project_id"))).order_by(CaseSuite.parent.asc()).all()
-        ]
-        return app.restful.success(data=suite_list)
-
-
 class WebUiCaseSuiteView(LoginRequiredView):
 
     def get(self):
         """ 获取用例集 """
-        form = GetCaseSuiteEditForm().do_validate()
-        return app.restful.success(data={"name": form.suite.name, "num": form.suite.num})
+        form = GetCaseSuiteForm().do_validate()
+        return app.restful.success(data=form.suite.to_dict())
 
     def post(self):
         """ 新增用例集 """
@@ -83,5 +72,4 @@ class WebUiCaseSuiteView(LoginRequiredView):
 
 web_ui_test.add_url_rule("/caseSuite", view_func=WebUiCaseSuiteView.as_view("WebUiCaseSuiteView"))
 web_ui_test.add_url_rule("/caseSuite/run", view_func=WebUiRunCaseSuiteView.as_view("WebUiRunCaseSuiteView"))
-web_ui_test.add_url_rule("/caseSuite/tree", view_func=WebUiGetCaseSuiteTreeView.as_view("WebUiGetCaseSuiteTreeView"))
 web_ui_test.add_url_rule("/caseSuite/list", view_func=WebUiGetCaseSuiteListView.as_view("WebUiGetCaseSuiteListView"))

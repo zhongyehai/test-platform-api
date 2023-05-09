@@ -43,8 +43,9 @@ class RunCaseSuiteForm(GetCaseSuiteForm):
 
 class AddCaseSuiteForm(BaseForm):
     """ 添加用例集的校验 """
-    project_id = StringField(validators=[DataRequired("请先选择首页项目")])
+    project_id = StringField(validators=[DataRequired("服务必传")])
     name = StringField(validators=[DataRequired("用例集名称不能为空"), Length(1, 255, message="用例集名长度为1~255位")])
+    suite_type = StringField(validators=[DataRequired("用例集类型必传")])
     level = StringField()
     parent = StringField()
     id = StringField()
@@ -67,7 +68,7 @@ class AddCaseSuiteForm(BaseForm):
         )
 
 
-class GetCaseSuiteEditForm(BaseForm):
+class GetCaseSuiteForm(BaseForm):
     """ 返回待编辑用例集合 """
     id = IntegerField(validators=[DataRequired("用例集id必传")])
 
@@ -76,7 +77,7 @@ class GetCaseSuiteEditForm(BaseForm):
         setattr(self, "suite", suite)
 
 
-class DeleteCaseSuiteForm(GetCaseSuiteEditForm):
+class DeleteCaseSuiteForm(GetCaseSuiteForm):
     """ 删除用例集 """
 
     def validate_id(self, field):
@@ -93,7 +94,7 @@ class DeleteCaseSuiteForm(GetCaseSuiteEditForm):
         setattr(self, "suite", suite)
 
 
-class EditCaseSuiteForm(GetCaseSuiteEditForm, AddCaseSuiteForm):
+class EditCaseSuiteForm(GetCaseSuiteForm, AddCaseSuiteForm):
     """ 编辑用例集 """
 
     def validate_id(self, field):
@@ -119,7 +120,8 @@ class FindCaseSuite(BaseForm):
     pageNum = IntegerField()
     pageSize = IntegerField()
     name = StringField()
-    projectId = IntegerField(validators=[DataRequired("项目id必传")])
+    suite_type = StringField()
+    project_id = IntegerField(validators=[DataRequired("项目id必传")])
 
-    def validate_projectId(self, field):
+    def validate_project_id(self, field):
         self.validate_data_is_exist(f"id为【{field.data}】的项目不存在", Project, id=field.data)

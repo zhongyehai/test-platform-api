@@ -9,6 +9,7 @@ from app.baseForm import BaseForm
 class GetBusinessListForm(BaseForm):
     """ 获取业务线列表 """
     name = StringField()
+    getAll = StringField()
     pageNum = IntegerField()
     pageSize = IntegerField()
     create_user = StringField()
@@ -71,3 +72,10 @@ class PutBusinessForm(BusinessIdForm, PostBusinessForm):
             self.id.data,
             code=field.data
         )
+
+class BusinessToUserForm(BaseForm):
+    """ 批量管理业务线与用户的关系 绑定/解除绑定 """
+
+    business_list = StringField(validators=[DataRequired("业务线必传")])
+    user_list = StringField(validators=[DataRequired("环用户必传")])
+    command = StringField(validators=[DataRequired("操作类型必传")])  # add、delete

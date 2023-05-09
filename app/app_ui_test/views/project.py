@@ -12,13 +12,6 @@ from app.app_ui_test.forms.project import (
 )
 
 
-class AppUiProjectAllView(LoginRequiredView):
-
-    def get(self):
-        """ 获取所有app列表 """
-        return app.restful.success(data=[project.to_dict() for project in Project.get_all()])
-
-
 class AppUiProjectListView(LoginRequiredView):
 
     def get(self):
@@ -83,6 +76,5 @@ class AppUiProjectEnvView(LoginRequiredView):
 
 app_ui_test.add_url_rule("/project", view_func=AppProjectView.as_view("AppProjectView"))
 app_ui_test.add_url_rule("/project/env", view_func=AppUiProjectEnvView.as_view("AppUiProjectEnvView"))
-app_ui_test.add_url_rule("/project/all", view_func=AppUiProjectAllView.as_view("AppUiProjectAllView"))
 app_ui_test.add_url_rule("/project/list", view_func=AppUiProjectListView.as_view("AppUiProjectListView"))
 app_ui_test.add_url_rule("/project/sort", view_func=AppUiProjectChangeSortView.as_view("AppUiProjectChangeSortView"))

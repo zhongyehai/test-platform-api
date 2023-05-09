@@ -21,7 +21,9 @@ class ApiGetCaseListView(LoginRequiredView):
     def get(self):
         """ 根据模块获取用例list """
         form = FindCaseForm().do_validate()
-        return app.restful.success(data=Case.make_pagination(form))
+        data = Case.make_pagination(form)
+        total, data_list = data["total"], Step.set_has_step_for_case(data["data"])
+        return app.restful.success(data={"total": total, "data": data_list})
 
 
 class ApiGetCaseNameByIdView(LoginRequiredView):
@@ -41,6 +43,20 @@ class ApiChangeCaseQuoteView(LoginRequiredView):
         case_id, quote_type, quote = request.json.get("id"), request.json.get("quoteType"), request.json.get("quote")
         Case.get_first(id=case_id).update({quote_type: json.dumps(quote)})
         return app.restful.success(msg="引用关系修改成功")
+
+
+class ApiGetCaseFromProjectView(LoginRequiredView):
+
+    def get(self):
+        """ 获取用例属于哪个用例集、哪个服务 """
+        case = Case.get_first(id=request.args.get("id"))
+        suite = CaseSuite.get_first(id=case.suite_id)
+        project = Project.get_first(id=suite.project_id)
+        return app.restful.success(data={
+            "case": case.to_dict(),
+            "suite": suite.to_dict(),
+            "project": project.to_dict()
+        })
 
 
 class ApiChangeCaseSortView(LoginRequiredView):
@@ -159,3 +175,4 @@ api_test.add_url_rule("/case/name", view_func=ApiGetCaseNameByIdView.as_view("Ap
 api_test.add_url_rule("/case/quote", view_func=ApiChangeCaseQuoteView.as_view("ApiChangeCaseQuoteView"))
 api_test.add_url_rule("/case/status", view_func=ApiChangeCaseStatusView.as_view("ApiChangeCaseStatusView"))
 api_test.add_url_rule("/case/from", view_func=ApiGetQuoteCaseFromView.as_view("ApiGetQuoteCaseFromView"))
+api_test.add_url_rule("/case/project", view_func=ApiGetCaseFromProjectView.as_view("ApiGetCaseFromProjectView"))

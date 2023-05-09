@@ -83,15 +83,15 @@ class Runner(object):
         if self.testcase_teardown_hooks:
             self.do_hook_actions(self.testcase_teardown_hooks, 'teardown')
 
-    def __clear_test_data(self):
+    def __clear_step_test_data(self):
         """ 清除请求和响应数据 """
         if not isinstance(self.client_session, HttpSession):
             return
 
         self.validation_results = []
-        self.client_session.init_meta_data()
+        self.client_session.init_step_meta_data()
 
-    def __get_test_data(self):
+    def __get_step_test_data(self):
         """ 获取请求、响应、断言数据 """
         meta_data = self.client_session.meta_data
         meta_data["validators"] = self.validation_results
@@ -183,7 +183,7 @@ class Runner(object):
             exceptions.ExtractFailure
 
         """
-        self.__clear_test_data()
+        self.__clear_step_test_data()
         self.redirect_print = RedirectPrintLogToMemory()  # 重定向自定义函数的打印到内存中
 
         test_variables = step_dict.get("variables", {})
@@ -300,4 +300,4 @@ class Runner(object):
             raise
         finally:
             self.client_session.meta_data["redirect_print"] = self.redirect_print.text  # 保存自定义函数的 print 打印
-            self.meta_datas = self.__get_test_data()
+            self.meta_datas = self.__get_step_test_data()

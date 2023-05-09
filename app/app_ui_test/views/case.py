@@ -21,7 +21,9 @@ class AppUiGetCaseListView(LoginRequiredView):
     def get(self):
         """ 根据用例集查找用例列表 """
         form = FindCaseForm().do_validate()
-        return app.restful.success(data=Case.make_pagination(form))
+        data = Case.make_pagination(form)
+        total, data_list = data["total"], Step.set_has_step_for_case(data["data"])
+        return app.restful.success(data={"total": total, "data": data_list})
 
 
 class AppUiGetCaseNameView(LoginRequiredView):
@@ -41,6 +43,20 @@ class AppUiChangeCaseQuoteView(LoginRequiredView):
         case_id, quote_type, quote = request.json.get("id"), request.json.get("quoteType"), request.json.get("quote")
         Case.get_first(id=case_id).update({quote_type: json.dumps(quote)})
         return app.restful.success(msg="引用关系修改成功")
+
+
+class AppUiGetCaseFromProjectView(LoginRequiredView):
+
+    def get(self):
+        """ 获取用例属于哪个用例集、哪个服务 """
+        case = Case.get_first(id=request.args.get("id"))
+        suite = CaseSuite.get_first(id=case.suite_id)
+        project = Project.get_first(id=suite.project_id)
+        return app.restful.success(data={
+            "case": case.to_dict(),
+            "suite": suite.to_dict(),
+            "project": project.to_dict()
+        })
 
 
 class AppUiChangeCaseSortView(LoginRequiredView):
@@ -160,3 +176,4 @@ app_ui_test.add_url_rule("/case/pull/step", view_func=AppUiPullCaseStepView.as_v
 app_ui_test.add_url_rule("/case/quote", view_func=AppUiChangeCaseQuoteView.as_view("AppUiChangeCaseQuoteView"))
 app_ui_test.add_url_rule("/case/status", view_func=AppUiChangeCaseStatusView.as_view("AppUiChangeCaseStatusView"))
 app_ui_test.add_url_rule("/case/from", view_func=AppUiGetQuoteCaseFromView.as_view("AppUiGetQuoteCaseFromView"))
+app_ui_test.add_url_rule("/case/project", view_func=AppUiGetCaseFromProjectView.as_view("AppUiGetCaseFromProjectView"))
