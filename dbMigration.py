@@ -410,7 +410,7 @@ def init_user():
     for user_info in user_list:
         if User.get_first(account=user_info["account"]) is None:
             user_info["status"] = 1
-            user_info["business_id"] = [business.id]
+            user_info["business_list"] = [business.id]
             user = User().create(user_info)
             for role_name in user_info["role"]:
                 role = Role.get_first(name=role_name)
