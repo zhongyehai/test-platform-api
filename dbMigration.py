@@ -293,9 +293,19 @@ server_os_mapping = ["Windows", "Mac", "Linux"]
 phone_os_mapping = ["Android", "iOS"]
 
 # 创建项目/服务时，默认要同时创建的用例集列表
-api_suite_list = ["引用用例集", "流程用例集", "单接口用例集", "辅助测试用例集"]
-ui_suite_list = ["引用用例集", "流程用例集", "辅助测试用例集"]
-
+api_suite_list = [
+    {"key": "base", "value": "基础用例集"},
+    {"key": "api", "value": "单接口用例集"},
+    {"key": "process", "value": "流程用例集"},
+    {"key": "quote", "value": "引用用例集"},
+    {"key": "assist", "value": "辅助测试用例集"}
+]
+ui_suite_list = [
+    {"key": "base", "value": "基础用例集"},
+    {"key": "process", "value": "流程用例集"},
+    {"key": "quote", "value": "引用用例集"},
+    {"key": "assist", "value": "辅助测试用例集"}
+]
 
 # 回调流水线消息内容
 call_back_msg_addr = ""
