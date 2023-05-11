@@ -114,7 +114,7 @@ class ApiCopyCaseStepView(LoginRequiredView):
     def post(self):
         """ 复制指定用例的步骤到当前用例下 """
         form = CopyCaseStepForm().do_validate()
-        step_list = CaseBusiness.copy_step_to_current_case(form, Step)
+        step_list = CaseBusiness.copy_case_all_step_to_current_case(form, Step, Case)
         Case.merge_variables(form.source.data, form.to.data)
         return app.restful.success("步骤拉取成功，自定义变量已合并至当前用例", data=step_list)
 
@@ -124,7 +124,7 @@ class ApiPullCaseStepView(LoginRequiredView):
     def post(self):
         """ 复制指定用例的步骤到当前用例下 """
         form = PullCaseStepForm().do_validate()
-        CaseBusiness.pull_step_to_current_case(form, Step)
+        CaseBusiness.copy_step_to_current_case(form, Step)
         return app.restful.success("步骤复制成功")
 
 
@@ -170,7 +170,7 @@ api_test.add_url_rule("/case/copy", view_func=ApiCopyCaseView.as_view("ApiCopyCa
 api_test.add_url_rule("/case/list", view_func=ApiGetCaseListView.as_view("ApiGetCaseListView"))
 api_test.add_url_rule("/case/sort", view_func=ApiChangeCaseSortView.as_view("ApiChangeCaseSortView"))
 api_test.add_url_rule("/case/copy/step", view_func=ApiCopyCaseStepView.as_view("ApiCopyCaseStepView"))
-api_test.add_url_rule("/case/pull/step", view_func=ApiPullCaseStepView.as_view("ApiPullCaseStepView"))
+# api_test.add_url_rule("/case/pull/step", view_func=ApiPullCaseStepView.as_view("ApiPullCaseStepView"))
 api_test.add_url_rule("/case/name", view_func=ApiGetCaseNameByIdView.as_view("ApiGetCaseNameByIdView"))
 api_test.add_url_rule("/case/quote", view_func=ApiChangeCaseQuoteView.as_view("ApiChangeCaseQuoteView"))
 api_test.add_url_rule("/case/status", view_func=ApiChangeCaseStatusView.as_view("ApiChangeCaseStatusView"))

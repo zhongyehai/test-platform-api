@@ -47,15 +47,7 @@ class GetConfByNameView(NotLoginView):
     def get(self):
         """ 根据配置名获取配置，不需要登录 """
         name = request.args.get("name")
-        if name == "suite_type":
-            return app.restful.success(data=[
-                {"key": "base", "value": "基础用例集"},
-                {"key": "api", "value": "单接口用例集"},
-                {"key": "process", "value": "流程用例集"},
-                {"key": "quote", "value": "引用用例集"},
-                {"key": "assist", "value": "辅助测试用例集"}
-            ])
-        return app.restful.success(data=Config.get_first(name=name).to_dict())
+        return app.restful.success(data=Config.get_first(name=name).value)
 
 
 class ConfigView(LoginRequiredView):

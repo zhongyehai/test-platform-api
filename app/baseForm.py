@@ -89,9 +89,14 @@ class BaseForm(Form, JsonUtil):
             key, value, data_type = data.get("key"), data.get("value"), data.get("data_type")
 
             # 校验格式
-            # key 和 数据类型必传
-            if not ((key and data_type) or (not key and not data_type)):
-                raise ValidationError(f"{title}，要设置{msg_title}，则【key、数据类型】都需设置")
+            # 要设置变量，则key、数据类型、备注必传
+            if key or data_type:
+                if msg_title == 'form-data':
+                    if not key or not data_type:
+                        raise ValidationError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
+                else:
+                    if not key or not data_type or not data.get("remark"):
+                        raise ValidationError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
 
             # 检验数据类型
             if key:
@@ -161,14 +166,28 @@ class BaseForm(Form, JsonUtil):
                 raise ValidationError(f"{row}预期结果【{value}】，不可转为【{data_type}】")
 
     def validate_api_extracts(self, data):
-        """ 校验数据提取表达式 """
+        """ 校验接口测试数据提取表达式 """
         for index, validate in enumerate(data):
             row = f"数据提取，第【{index + 1}】行，"
             data_source, key, value = validate.get("data_source"), validate.get("key"), validate.get("value")
 
+            if key or data_source:
+                if not key or not data_source or not validate.get("remark"):
+                    raise ValidationError(f"数据提取第 {row} 行，要设置数据提取，则【key、数据源、备注】都需设置")
+
             # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
             if key and data_source == "regexp" and value and not self.validate_is_regexp(value):
-                raise ValidationError(f"{row}正则表达式【{value}】错误")
+                raise ValidationError(f"数据提取第 {row} 行，正则表达式【{value}】错误")
+
+    def validate_ui_extracts(self, data):
+        """ 校验ui测试数据提取表达式 """
+        for index, validate in enumerate(data):
+            row = f"数据提取，第【{index + 1}】行，"
+            extract_type, key, value = validate.get("extract_type"), validate.get("key"), validate.get("value")
+
+            if key or extract_type:
+                if not key or not extract_type or not validate.get("remark"):
+                    raise ValidationError(f"数据提取第 {row} 行，要设置数据提取，则【key、提取方式、备注】都需设置")
 
     def validate_data_is_exist(self, error_msg, model, **kwargs):
         """ 校验数据已存在，存在则返回数据模型 """

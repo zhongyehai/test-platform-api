@@ -51,7 +51,7 @@ class ApiCopyStepView(LoginRequiredView):
     def post(self):
         """ 复制步骤 """
         step_id, case_id = request.json.get("id"), request.json.get("caseId")
-        step = StepBusiness.copy(step_id, case_id, Step, step_type="api")
+        step = StepBusiness.copy(step_id, case_id, Step, Case, step_type="api")
         return app.restful.success(msg="步骤复制成功", data=step.to_dict())
 
 
@@ -75,6 +75,7 @@ class ApiStepMethodView(LoginRequiredView):
         """ 修改步骤 """
         form = EditStepForm().do_validate()
         form.step.update(form.data)
+        Case.merge_output(form.step.case_id, [form.step])  # 合并出参
         return app.restful.success(msg=f"步骤【{form.step.name}】修改成功", data=form.step.to_dict())
 
     def delete(self):

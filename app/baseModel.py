@@ -9,7 +9,7 @@ from sqlalchemy import MetaData
 from contextlib import contextmanager
 
 from utils.util.jsonUtil import JsonUtil
-from utils.parse.parse import parse_list_to_dict, update_dict_to_list
+from utils.parse.parse import parse_list_to_dict, update_dict_to_list, parse_dict_to_list
 
 
 class SQLAlchemy(_SQLAlchemy):
@@ -85,7 +85,7 @@ class BaseModel(db.Model, JsonUtil):
     # 需要做序列化和反序列化的字段
     serialization_file_list = [
         "extend_role",
-        "headers", "variables", "script_list", "pop_header_filed",
+        "headers", "variables", "script_list", "pop_header_filed", "output",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to",
         "kym", "task_item", 'business_list'
@@ -242,7 +242,7 @@ class BaseModel(db.Model, JsonUtil):
                 get_from(parent.parent)
 
         get_from(data_id)
-        return '_'.join(from_name)
+        return '/'.join(from_name)
 
     @classmethod
     def change_sort(cls, id_list, page_num, page_size):
@@ -503,7 +503,7 @@ class BaseCaseSuite(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="用例集在对应服务下的序号")
     level = db.Column(db.Integer(), nullable=True, default=2, comment="用例集级数")
     suite_type = db.Column(db.String(64), default="base",
-                           comment="用例集类型，base: 基础用例集，api: 单接口用例集，process: 流程用例集，assist: 辅助测试用例集")
+                           comment="用例集类型，base: 基础用例集，api: 单接口用例集，process: 流程用例集，assist: 造数据用例集")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级用例集id")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
 
@@ -594,9 +594,9 @@ class BaseCase(BaseModel):
     variables = db.Column(
         db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="用例级的公共参数"
     )
-    # output = db.Column(
-    #     db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment="用例出参（变量+提取的数据）"
-    # )
+    output = db.Column(
+        db.Text(), default='[]', comment="用例出参（步骤提取的数据）"
+    )
     skip_if = db.Column(
         db.Text(),
         default=BaseModel.dumps([
@@ -633,6 +633,27 @@ class BaseCase(BaseModel):
                 to_case_variables.setdefault(from_variable_key, from_case_variable)
 
             to_case.update({"variables": [value for key, value in to_case_variables.items() if key]})
+
+    @classmethod
+    def merge_output(cls, case_id, source_list=[]):
+        """ 把步骤的数据提取加到用例的output字段下 """
+        output_dict = {}
+        for source in source_list:
+            if isinstance(source, int):  # 用例id
+                source = cls.get_first(id=source).to_dict()
+            elif isinstance(source, dict) is False:  # 对象（步骤或用例）
+                source = source.to_dict()
+
+            if source.get("quote_case") or source.get("suite_id"):  # 更新源是用例（引用用例和复制用例下的所有步骤）
+                source_case = cls.get_first(id=source["id"] if source["suite_id"] else source["quote_case"])
+                source_case_output = parse_list_to_dict(cls.loads(source_case.output))
+                output_dict.update(source_case_output)
+            else:  # 更新源为步骤（添加步骤和复制其他用例的步骤）
+                output_dict.update(parse_list_to_dict(source["extracts"]))
+
+        to_case = cls.get_first(id=case_id)
+        output_dict.update(parse_list_to_dict(cls.loads(to_case.output)))
+        to_case.update({"output": parse_dict_to_list(output_dict, False)})
 
 
 class BaseStep(BaseModel):
@@ -674,11 +695,13 @@ class BaseStep(BaseModel):
             step["hasStep"] = cls.get_first(case_id=step["quote_case"]) is not None
             step["children"] = []
             if step["quote_case"]:  # 若果是引用用例，把对应用例的入参出参一起返回
-                case = case_model.get_first(id=step["quote_case"]).to_dict()
-                step["desc"] = case["desc"]
-                step["skip_if"] = case.get("skip_if")
-                step["variables"] = case.get("variables")
-                step["output"] = case.get("output")
+                case_data = case_model.get_first(id=step["quote_case"])
+                if case_data:  # 如果手动从数据库删过数据，可能没有
+                    case = case_data.to_dict()
+                    step["desc"] = case["desc"]
+                    step["skip_if"] = case.get("skip_if")
+                    step["variables"] = case.get("variables")
+                    step["output"] = case.get("output")
 
             data_list.append(step)
         return data_list

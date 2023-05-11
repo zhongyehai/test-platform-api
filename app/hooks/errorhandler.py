@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import platform
 import traceback
 
 import requests
@@ -51,15 +52,16 @@ def register_errorhandler_hook(app):
             })
 
             # 发送即时通讯通知
-            send_error_msg_res = requests.post(
-                url=_app.config["ERROR_PUSH_URL"],
-                json={
-                    "key": _app.config["ERROR_PUSH_KEY"],
-                    "head": f'{_app.config["SECRET_KEY"]}报错，数据id：{error_record.id}',
-                    "body": f'{error_record}   \n\n{error}'
-                }
-            ).text
-            _app.logger.info(f'发送错误消息结果: {send_error_msg_res}')
+            if platform.platform().startswith('Linux'):
+                send_error_msg_res = requests.post(
+                    url=_app.config["ERROR_PUSH_URL"],
+                    json={
+                        "key": _app.config["ERROR_PUSH_KEY"],
+                        "head": f'{_app.config["SECRET_KEY"]}报错，数据id：{error_record.id}',
+                        "body": f'{error_record}   \n\n{error}'
+                    }
+                ).text
+                _app.logger.info(f'发送错误消息结果: {send_error_msg_res}')
         except:
             pass
 

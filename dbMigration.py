@@ -295,16 +295,16 @@ phone_os_mapping = ["Android", "iOS"]
 # 创建项目/服务时，默认要同时创建的用例集列表
 api_suite_list = [
     {"key": "base", "value": "基础用例集"},
+    {"key": "quote", "value": "引用用例集"},
     {"key": "api", "value": "单接口用例集"},
     {"key": "process", "value": "流程用例集"},
-    {"key": "quote", "value": "引用用例集"},
-    {"key": "assist", "value": "辅助测试用例集"}
+    {"key": "assist", "value": "造数据用例集"}
 ]
 ui_suite_list = [
     {"key": "base", "value": "基础用例集"},
-    {"key": "process", "value": "流程用例集"},
     {"key": "quote", "value": "引用用例集"},
-    {"key": "assist", "value": "辅助测试用例集"}
+    {"key": "process", "value": "流程用例集"},
+    {"key": "assist", "value": "造数据用例集"}
 ]
 
 # 回调流水线消息内容
@@ -565,7 +565,7 @@ def init_script():
         for data in func_file_list:
             with open(os.path.join("static", f'{data["name"]}.py'), "r", encoding="utf-8") as fp:
                 func_data = fp.read()
-            data["func_data"] = func_data
+            data["script_data"] = func_data
             Script().create(data)
             print_item_delimiter(f'函数文件【{data["name"]}】创建成功')
     print_type_delimiter("函数文件模板创建完成")
@@ -576,10 +576,10 @@ def init_run_env():
     """ 初始化运行环境 """
     print_type_delimiter("开始创建运行环境")
     env_dict = [
-        {"name": "开发环境", "code": "dev", "desc": "开发环境"},
-        {"name": "测试环境", "code": "test", "desc": "测试环境"},
-        {"name": "uat环境", "code": "uat", "desc": "uat环境"},
-        {"name": "生产环境", "code": "production", "desc": "生产环境"},
+        {"name": "开发环境", "code": "dev_qa", "desc": "开发环境", "group": "QA环境"},
+        {"name": "测试环境", "code": "test_qa", "desc": "测试环境", "group": "QA环境"},
+        {"name": "uat环境", "code": "uat_qa", "desc": "uat环境", "group": "QA环境"},
+        {"name": "生产环境", "code": "production_qa", "desc": "生产环境", "group": "QA环境"},
     ]
     if RunEnv.get_first() is None:  # 没有运行环境则创建
         for index, env in enumerate(env_dict):

@@ -52,6 +52,10 @@ class AddStepForm(BaseForm):
         if not self.quote_case.data:
             self.validate_data_is_exist(f"id为 {field.data} 的元素不存在", Element, id=field.data)
 
+    def validate_extracts(self, field):
+        """ 校验数据提取 """
+        self.validate_ui_extracts(field.data)
+
     def validate_case_id(self, field):
         """ 校验用例存在 """
         case = self.validate_data_is_exist(f"id为 {field.data} 的用例不存在", Case, id=field.data)

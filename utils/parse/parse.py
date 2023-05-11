@@ -19,7 +19,7 @@ def parse_list_to_dict(data_list: list):
     return result
 
 
-def parse_dict_to_list(data_dict: dict):
+def parse_dict_to_list(data_dict: dict, add_row=True):
     """
     {
         "a": {
@@ -38,12 +38,13 @@ def parse_dict_to_list(data_dict: dict):
             "data_type": value.get("data_type"),
             "remark": value.get("remark")
         })
-    result.append({
-        "key": None,
-        "value": None,
-        "data_type": None,
-        "remark": None,
-    })
+    if add_row:
+        result.append({
+            "key": None,
+            "value": None,
+            "data_type": None,
+            "remark": None,
+        })
     return result
 
 

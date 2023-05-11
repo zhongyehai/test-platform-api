@@ -84,7 +84,7 @@ class CaseBusiness:
         return {"case": new_case.to_dict(), "steps": step_list}
 
     @classmethod
-    def copy_step_to_current_case(cls, form, step_model):
+    def copy_case_all_step_to_current_case(cls, form, step_model, case_model):
         """ 复制指定用例的步骤到当前用例下 """
         from_case, to_case = form.source_case, form.to_case
         step_list, num_start = [], step_model.get_max_num(case_id=to_case.id)
@@ -94,10 +94,11 @@ class CaseBusiness:
             step_dict["case_id"], step_dict["num"] = to_case.id, num_start + index + 1
             step_list.append(step_model().create(step_dict).to_dict())
             step.add_quote_count()
+        case_model.merge_output(to_case.id, step_list)  # 合并出参
         return step_list
 
     @classmethod
-    def pull_step_to_current_case(cls, form, step_model):
+    def copy_step_to_current_case(cls, form, step_model):
         """ 拉取指定用例的步骤到指定用例下 """
         current_step, from_index = form.current_step, 0
         case_id = form.caseId.data or current_step.case_id
@@ -137,8 +138,9 @@ class CaseBusiness:
         """ 获取用例的归属 """
         case = case_model.get_first(id=case_id)
         suite_path_name = suite_model.get_from_path(case.suite_id)
-        project = project_model.get_first(id=suite_model.get_first(id=case.suite_id).project_id)
-        return f'{project.name}_{suite_path_name}_{case.name}'
+        suite = suite_model.get_first(id=case.suite_id)
+        project = project_model.get_first(id=suite.project_id)
+        return f'{project.name}/{suite_path_name}/{case.name}'
 
     @classmethod
     def change_quote_case_name(cls, case_id, project_model, suite_model, case_model, step_model):
@@ -153,15 +155,17 @@ class StepBusiness:
 
     @classmethod
     def post(cls, form, step_model, case_model, step_type=None):
+        """ 新增步骤 """
         form.num.data = step_model.get_insert_num(case_id=form.case_id.data)
         step = step_model().create(form.data)
         if step_type == "api":
             step.add_quote_count()
         case_model.merge_variables(step.quote_case, step.case_id)
+        case_model.merge_output(step.case_id, [int(step.quote_case) if step.quote_case else step])  # 合并出参
         return step
 
     @classmethod
-    def copy(cls, step_id, case_id, step_model, step_type=None):
+    def copy(cls, step_id, case_id, step_model, case_model, step_type=None):
         """ 复制步骤，如果没有指定用例id，则默认复制到当前用例下 """
         old = step_model.get_first(id=step_id).to_dict()
         old["name"] = f'{old["name"]}_copy'
@@ -171,6 +175,7 @@ class StepBusiness:
         step = step_model().create(old)
         if step_type == "api":
             step.add_quote_count()
+        case_model.merge_output(step.case_id, [step])  # 合并出参
         return step
 
 
