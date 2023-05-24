@@ -16,7 +16,6 @@ class AddModelForm(BaseForm):
         DataRequired("模块名必传"),
         Length(1, name_length, message=f"模块名称不可超过{name_length}位")
     ])
-    level = StringField()
     parent = StringField()
     id = StringField()
     num = StringField()
@@ -32,7 +31,6 @@ class AddModelForm(BaseForm):
             f"当前服务中已存在名为【{field.data}】的模块",
             Module,
             project_id=self.project_id.data,
-            level=self.level.data,
             name=field.data,
             parent=self.parent.data
         )
@@ -90,7 +88,6 @@ class EditModelForm(ModuleIdForm, AddModelForm):
             Module,
             self.id.data,
             project_id=self.project_id.data,
-            level=self.level.data,
             name=field.data,
             parent=self.parent.data
         )

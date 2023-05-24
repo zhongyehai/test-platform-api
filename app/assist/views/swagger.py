@@ -422,4 +422,15 @@ class SwaggerPullView(LoginRequiredView):
         return app.restful.success("数据拉取并更新完成")
 
 
+class SwaggerPullListView(LoginRequiredView):
+
+    def get(self):
+        project_id = request.args.get("project_id")
+        if not project_id:
+            app.restful.fail("服务id必传")
+        log_list = SwaggerPullLog.query.filter_by(project_id=project_id).order_by(SwaggerPullLog.id.desc()).all()
+        return app.restful.success("获取成功", data=[log.to_dict() for log in log_list])
+
+
 assist.add_url_rule("/swagger/pull", view_func=SwaggerPullView.as_view("SwaggerPullView"))
+assist.add_url_rule("/swagger/pull/list", view_func=SwaggerPullListView.as_view("SwaggerPullListView"))

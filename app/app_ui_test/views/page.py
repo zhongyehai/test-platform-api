@@ -59,9 +59,12 @@ class AppUiPageView(LoginRequiredView):
     def post(self):
         """ 新增页面 """
         form = AddPageForm().do_validate()
-        form.num.data = Page.get_insert_num(module_id=form.module_id.data)
-        new_page = Page().create(form.data)
-        return app.restful.success(f"页面【{form.name.data}】新建成功", data=new_page.to_dict())
+        for page in form.page_list.data:
+            page["project_id"] = form.project_id.data
+            page["module_id"] = form.module_id.data
+            page["num"] = Page.get_insert_num(module_id=form.module_id.data)
+            new_page = Page().create(page)
+        return app.restful.success(f"页面新建成功", data=new_page.to_dict() if len(form.page_list.data) == 1 else None)
 
     def put(self):
         """ 修改页面 """

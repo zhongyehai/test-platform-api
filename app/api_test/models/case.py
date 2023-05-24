@@ -9,7 +9,7 @@ class ApiCase(BaseCase):
     __tablename__ = "api_test_case"
     __table_args__ = {"comment": "接口测试用例表"}
 
-    headers = db.Column(db.Text(), comment="用例级的头部信息")
+    headers = db.Column(db.Text(), default='[{"key": "", "value": "", "remark": ""}]', comment="用例的头部信息")
 
     def delete_current_and_step(self):
         for step in Step.get_all(case_id=self.id):

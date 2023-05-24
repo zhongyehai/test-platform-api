@@ -35,18 +35,18 @@ class ApiReportDetailView(NotLoginView):
 class ApiReportIsDoneView(NotLoginView):
     def get(self):
         """ 根据运行id获取当次报告是否全部生成 """
-        run_id, process, status = request.args["run_id"], request.args.get("process", 1), request.args.get("status", 1)
+        batch_id, process, status = request.args["batch_id"], request.args.get("process", 1), request.args.get("status", 1)
         return app.restful.success(
             "获取成功",
-            data=Report.select_is_all_status_by_run_id(run_id, [int(process), int(status)])
+            data=Report.select_is_all_status_by_batch_id(batch_id, [int(process), int(status)])
         )
 
 
 class ApiReportGetReportIdView(NotLoginView):
     def get(self):
         """ 根据运行id获取当次要打开的报告 """
-        run_id = request.args["run_id"]
-        return app.restful.success("获取成功", data=Report.select_show_report_id(run_id))
+        batch_id = request.args["batch_id"]
+        return app.restful.success("获取成功", data=Report.select_show_report_id(batch_id))
 
 
 class ApiReportView(LoginRequiredView):

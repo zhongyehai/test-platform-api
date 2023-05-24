@@ -100,8 +100,8 @@ class AppUiElementView(LoginRequiredView):
     def post(self):
         """ 新增元素 """
         form = AddElementForm().do_validate()
-        new_element = ElementBusiness.post(form, Element)
-        return app.restful.success(f"元素【{form.name.data}】新建成功", data=new_element.to_dict())
+        element_list = ElementBusiness.post(form, Element)
+        return app.restful.success(f"元素新建成功", data=element_list[0].to_dict() if len(element_list) == 1 else None)
 
     def put(self):
         """ 修改元素 """

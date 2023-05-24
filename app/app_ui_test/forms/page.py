@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from wtforms import StringField, IntegerField
-from wtforms.validators import Length, DataRequired
+from wtforms.validators import Length, DataRequired, ValidationError
 
 from app.baseForm import BaseForm
 from app.app_ui_test.models.element import AppUiElement as Element
@@ -14,10 +14,7 @@ class AddPageForm(BaseForm):
     project_id = StringField(validators=[DataRequired("项目id必传")])
     module_id = StringField(validators=[DataRequired("模块id必传")])
 
-    name = StringField(validators=[DataRequired("页面名必传"), Length(1, 255, "页面名长度为1~255位")])
-    desc = StringField()
-    addr = StringField()
-    num = StringField()
+    page_list = StringField(validators=[DataRequired("页面必传")])
 
     def validate_project_id(self, field):
         """ 校验项目id """
@@ -28,19 +25,30 @@ class AddPageForm(BaseForm):
         """ 校验模块id """
         self.validate_data_is_exist(f"id为【{field.data}】的模块不存在", Module, id=field.data)
 
-    def validate_name(self, field):
+    def validate_page_list(self, field):
         """ 校验同一模块下页面名不重复 """
-        self.validate_data_is_not_exist(
-            f"当前模块下，名为【{field.data}】的页面已存在",
-            Page,
-            name=field.data,
-            module_id=self.module_id.data
-        )
+        name_list = []
+        for index, page in enumerate(field.data):
+            page_name = page.get("name")
+            self.validate_data_is_true(f'第【{index + 1}】行，页面名必传', page_name)
+            if page_name in name_list:
+                raise ValidationError(f'第【{index + 1}】行，与第【{name_list.index(page_name) + 1}】行，页面名重复')
+            self.validate_data_is_not_exist(
+                f"当前模块下，名为【{page_name}】的页面已存在",
+                Page,
+                name=page_name,
+                module_id=self.module_id.data
+            )
 
 
 class EditPageForm(AddPageForm):
     """ 修改页面信息 """
+    page_list = None
     id = IntegerField(validators=[DataRequired("页面id必传")])
+    name = StringField(validators=[DataRequired("页面名必传"), Length(1, 255, "页面名长度为1~255位")])
+    desc = StringField()
+    addr = StringField()
+    num = StringField()
 
     def validate_id(self, field):
         """ 校验页面id已存在 """

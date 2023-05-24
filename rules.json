@@ -78,8 +78,8 @@
         "source_addr": "/appUiTest"
       },
       {
-        "name": "app自动化-运行环境菜单",
-        "source_addr": "/appUiTest/env"
+        "name": "app自动化-设备管理菜单",
+        "source_addr": "/appUiTest/device"
       },
       {
         "name": "app自动化-app管理菜单",
@@ -124,6 +124,10 @@
       {
         "name": "工具-数据池菜单",
         "source_addr": "/tools/dataPool"
+      },
+      {
+        "name": "工具-造数据菜单",
+        "source_addr": "/tools/makeData"
       },
       {
         "name": "工具-生成用户信息菜单",

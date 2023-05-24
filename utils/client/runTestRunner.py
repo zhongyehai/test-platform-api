@@ -238,10 +238,10 @@ class RunTestRunner:
         if self.is_rollback:
             db.session.rollback()
 
-        # 有可能是多环境一次性批量运行，根据run_id查是否全部运行完毕
-        run_id = self.report_model.get_first(id=self.report_id).run_id  # 获取当前报告所属的run_id
-        if self.report_model.select_is_all_done_by_run_id(run_id):  # 查询此run_id下的报告是否全部生成
-            not_passed_report = self.report_model.get_first(run_id=run_id, is_passed=0)  # 有失败的，则获取失败的报告
+        # 有可能是多环境一次性批量运行，根据batch_id查是否全部运行完毕
+        batch_id = self.report_model.get_first(id=self.report_id).batch_id  # 获取当前报告所属的batch_id
+        if self.report_model.select_is_all_done_by_batch_id(batch_id):  # 查询此batch_id下的报告是否全部生成
+            not_passed_report = self.report_model.get_first(batch_id=batch_id, is_passed=0)  # 有失败的，则获取失败的报告
             if not_passed_report:
                 self.report_id = not_passed_report.id
                 result = FileUtil.get_report(self.report_file_path, not_passed_report.id)

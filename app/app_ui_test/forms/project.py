@@ -40,6 +40,7 @@ class FindUiProjectForm(BaseForm):
     """ 查找appform """
     name = StringField()
     manager = StringField()
+    business_id = IntegerField()
     create_user = StringField()
     pageNum = IntegerField()
     pageSize = IntegerField()

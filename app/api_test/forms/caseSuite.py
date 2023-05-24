@@ -32,14 +32,13 @@ class AddCaseSuiteForm(BaseForm):
     """ 添加用例集的校验 """
     name_length = CaseSuite.name.property.columns[0].type.length
     project_id = StringField(validators=[DataRequired("服务必传")])
+    id = StringField()
     name = StringField(validators=[
         DataRequired("用例集名称不能为空"),
         Length(1, name_length, f"用例集名长度不可超过{name_length}位")
     ])
     suite_type = StringField(validators=[DataRequired("用例集类型必传")])
-    level = StringField()
     parent = StringField()
-    id = StringField()
     num = StringField()
 
     def validate_project_id(self, field):
@@ -50,22 +49,12 @@ class AddCaseSuiteForm(BaseForm):
     def validate_name(self, field):
         """ 校验用例集名不重复 """
         self.validate_data_is_not_exist(
-            f"用例集名字【{field.data}】已存在",
+            f"当前层级下，用例集名字【{field.data}】已存在",
             CaseSuite,
             project_id=self.project_id.data,
-            level=self.level.data,
             name=field.data,
             parent=self.parent.data
         )
-
-
-class GetCaseSuiteForm(BaseForm):
-    """ 返回待编辑用例集合 """
-    id = IntegerField(validators=[DataRequired("用例集id必传")])
-
-    def validate_id(self, field):
-        suite = self.validate_data_is_exist("没有此用例集", CaseSuite, id=field.data)
-        setattr(self, "suite", suite)
 
 
 class DeleteCaseSuiteForm(GetCaseSuiteForm):
@@ -86,11 +75,7 @@ class DeleteCaseSuiteForm(GetCaseSuiteForm):
 
 class EditCaseSuiteForm(GetCaseSuiteForm, AddCaseSuiteForm):
     """ 编辑用例集 """
-
-    def validate_id(self, field):
-        """ 用例集id已存在 """
-        suite = self.validate_data_is_exist(f"不存在id为【{field.data}】的用例集", CaseSuite, id=field.data)
-        setattr(self, "suite", suite)
+    is_update_suite_type = False  # 判断是否修改了用例集类型
 
     def validate_name(self, field):
         """ 校验用例集名不重复 """
@@ -99,10 +84,11 @@ class EditCaseSuiteForm(GetCaseSuiteForm, AddCaseSuiteForm):
             CaseSuite,
             self.id.data,
             project_id=self.project_id.data,
-            level=self.level.data,
             name=field.data,
             parent=self.parent.data
         )
+        if self.parent.data is None and self.suite_type.data != self.suite.suite_type:
+            self.is_update_suite_type = True
 
 
 class FindCaseSuite(BaseForm):

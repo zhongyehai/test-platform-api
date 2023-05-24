@@ -6,7 +6,7 @@ from crontab import CronTab
 from app.baseForm import BaseForm
 from app.app_ui_test.models.task import AppUiTask as Task
 from app.app_ui_test.models.project import AppUiProject as Project
-from app.app_ui_test.models.env import AppUiRunServer as Server, AppUiRunPhone as Phone
+from app.app_ui_test.models.device import AppUiRunServer as Server, AppUiRunPhone as Phone
 
 
 class AddTaskForm(BaseForm):

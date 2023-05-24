@@ -7,7 +7,7 @@ import traceback
 from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView
-from utils.redirectPrintLog import RedirectPrintLogToMemory, redirect_print_log_to_file
+from utils.redirectPrintLog import RedirectPrintLogToMemory
 from utils.util.fileUtil import FileUtil
 from utils.client.testRunner.parser import parse_function, extract_functions
 from app.assist.blueprint import assist

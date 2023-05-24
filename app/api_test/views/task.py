@@ -21,11 +21,11 @@ class ApiRunTaskView(NotLoginView):
         case_id = CaseSuite.get_case_id(
                 Case, form.task.project_id, form.task.loads(form.task.suite_ids), form.task.loads(form.task.case_ids)
             )
-        run_id = Report.get_run_id()
+        batch_id = Report.get_batch_id()
         env_list = form.env_list.data or form.loads(form.task.env_list)
         for env_code in env_list:
             RunCaseBusiness.run(
-                run_id=run_id,
+                batch_id=batch_id,
                 env_code=env_code,
                 trigger_type=form.trigger_type.data,
                 is_async=form.is_async.data,
@@ -33,13 +33,14 @@ class ApiRunTaskView(NotLoginView):
                 report_name=form.task.name,
                 task_type="task",
                 report_model=Report,
+                trigger_id=form.id.data,
                 case_id=case_id,
                 run_type="api",
                 run_func=RunCase,
                 task=form.task.to_dict(),
                 create_user=g.user_id or User.get_first(account="common").id
             )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
 
 
 class ApiTaskListView(LoginRequiredView):

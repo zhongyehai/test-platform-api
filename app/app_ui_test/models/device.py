@@ -51,6 +51,7 @@ class AppUiRunPhone(BaseModel):
     num = db.Column(db.Integer(), comment="序号")
     os = db.Column(db.String(255), nullable=True, comment="设备系统类型：Android/ios")
     os_version = db.Column(db.String(255), nullable=True, comment="设备系统版本号")
+    device_id = db.Column(db.String(255), nullable=True, comment="终端设备id")
 
     @classmethod
     def make_pagination(cls, form):

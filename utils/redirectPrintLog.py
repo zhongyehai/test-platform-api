@@ -20,6 +20,9 @@ class RedirectPrintLogToMemory:
     def write(self, out_stream):
         self.text += out_stream
 
+    def flush(self):
+        pass
+
     @classmethod
     def redirect_to_default(cls):
         """ 恢复输出到console """

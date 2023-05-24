@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import sys
 from contextlib import contextmanager
 
 import pymysql
+
+this = sys.modules[__name__]
+if hasattr(this, "env") is False:
+    setattr(this, "env", "test")
 
 if env == 'test':
     testDbMysql = {

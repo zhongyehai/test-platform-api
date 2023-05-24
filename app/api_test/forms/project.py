@@ -48,6 +48,7 @@ class FindProjectForm(BaseForm):
     """ 查找服务form """
     name = StringField()
     manager = StringField()
+    business_id = IntegerField()
     create_user = StringField()
     pageNum = IntegerField()
     pageSize = IntegerField()

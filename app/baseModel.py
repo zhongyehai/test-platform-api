@@ -87,8 +87,8 @@ class BaseModel(db.Model, JsonUtil):
         "extend_role",
         "headers", "variables", "script_list", "pop_header_filed", "output",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
-        "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to",
-        "kym", "task_item", 'business_list'
+        "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to", "temp_variables",
+        "kym", "task_item", 'business_list', 'run_id'
     ]
 
     def set_attr(self, column_list, value=None):
@@ -397,8 +397,11 @@ class BaseProject(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        if cls.is_not_admin():  # 非管理员则校验业务线权限
-            filters.append(cls.business_id.in_(g.business_list))
+        if form.business_id.data and form.business_id.data in g.business_list:
+            filters.append(cls.business_id == form.business_id.data)
+        else:
+            if cls.is_not_admin():  # 非管理员则校验业务线权限
+                filters.append(cls.business_id.in_(g.business_list))
         if form.name.data:
             filters.append(cls.name.like(f'%{form.name.data}%'))
         if form.manager.data:
@@ -464,7 +467,6 @@ class BaseModule(BaseModel):
 
     name = db.Column(db.String(255), nullable=True, comment="模块名")
     num = db.Column(db.Integer(), nullable=True, comment="模块在对应服务下的序号")
-    level = db.Column(db.Integer(), nullable=True, default=2, comment="模块级数")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级模块id")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
 
@@ -501,11 +503,86 @@ class BaseCaseSuite(BaseModel):
 
     name = db.Column(db.String(255), nullable=True, comment="用例集名称")
     num = db.Column(db.Integer(), nullable=True, comment="用例集在对应服务下的序号")
-    level = db.Column(db.Integer(), nullable=True, default=2, comment="用例集级数")
     suite_type = db.Column(db.String(64), default="base",
                            comment="用例集类型，base: 基础用例集，api: 单接口用例集，process: 流程用例集，assist: 造数据用例集")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级用例集id")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
+
+    @classmethod
+    def upload(cls, project_id, data_tree, case_model):
+        """ 上传用例集 """
+        suite_pass, suite_fail, case_pass, case_fail = [], [], [], []
+        topic_list = data_tree.get("topic", {}).get("topics", [])
+
+        def insert_data(topic_data, parent=None):
+            title = topic_data.get("title", "")
+
+            if title.startswith('tc'):  # 用例
+                case_name = title.split(':')[1] if ':' in title else title.split('：')[1]  # 支持中英文的冒号
+                if case_model.get_first(name=case_name, suite_id=parent) is None:  # 有才导入
+                    desc = topic_data.get("topics", [{}])[0].get("title", case_name)
+                    num = case_model.get_insert_num(suite_id=parent)
+                    try:
+                        case_model().create({"name": case_name, "num": num, "desc": desc, "suite_id": parent})
+                        case_pass.append(case_name)
+                    except:
+                        case_fail.append(case_name)
+            else:  # 用例集
+                suite = cls.get_first(parent=parent, name=title, project_id=project_id)
+                if suite is None:  # 有就插入下级
+                    num = cls.get_insert_num(project_id=project_id)
+                    try:
+                        suite = cls().create({
+                            "name": title,
+                            "num": num,
+                            "project_id": project_id,
+                            "parent": parent,
+                            "suite_type": "process"
+                        })
+                        suite_pass.append(title)
+                    except:
+                        suite_fail.append(title)
+                        return
+                for child in topic_data.get("topics", []):
+                    insert_data(child, suite.id)
+
+        for topic_data in topic_list:
+            insert_data(topic_data)
+
+        return {
+            "suite": {
+                "pass": {
+                    "total": len(suite_pass),
+                    "data": suite_pass
+                },
+                "fail": {
+                    "total": len(suite_fail),
+                    "data": suite_fail
+                },
+            },
+            "case": {
+                "pass": {
+                    "total": len(case_pass),
+                    "data": case_pass
+                },
+                "fail": {
+                    "total": len(case_fail),
+                    "data": case_fail
+                },
+            }
+        }
+
+    def update_children_suite_type(self):
+        """ 递归更新子用例集的类型 """
+
+        def change_child_suite_type(parent_id):
+            child_list = self.get_all(parent=parent_id)
+            for child in child_list:
+                print(f'child.name: {child.name}')
+                child.update({"suite_type": self.suite_type})
+                change_child_suite_type(child.id)
+
+        change_child_suite_type(self.id)
 
     @classmethod
     def make_pagination(cls, form):
@@ -614,6 +691,8 @@ class BaseCase(BaseModel):
             filters.append(cls.suite_id == form.suiteId.data)
         if form.name.data:
             filters.append(cls.name.like(f"%{form.name.data}%"))
+        if form.status.data:
+            filters.append(cls.status.in_(form.status.data))
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
@@ -770,14 +849,16 @@ class BaseReport(BaseModel):
     status = db.Column(db.Integer(), default=1, comment="当前节点是否执行完毕，1执行中，2执行完毕")
     retry_count = db.Column(db.Integer(), default=0, comment="已经执行重试的次数")
     env = db.Column(db.String(255), default="test", comment="运行环境")
+    temp_variables = db.Column(db.Text(), default=None, comment="临时参数")
     process = db.Column(db.Integer(), default=1, comment="进度节点, 1: 解析数据、2: 执行测试、3: 写入报告")
     trigger_type = db.Column(
         db.String(128), nullable=True, default="page", comment="触发类型，pipeline:流水线、page:页面、cron:定时任务")
-    run_id = db.Column(db.String(128), comment="运行id，用于查询报告")
+    batch_id = db.Column(db.String(128), comment="运行批次id，用于查询报告")
+    run_id = db.Column(db.String(512), comment="运行id，用于触发重跑")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
 
     @classmethod
-    def get_run_id(cls):
+    def get_batch_id(cls):
         """ 生产运行id """
         return f'{g.user_id}_{int(time.time() * 1000000)}'
 
@@ -825,28 +906,28 @@ class BaseReport(BaseModel):
         return cls().create(kwargs)
 
     @classmethod
-    def select_is_all_status_by_run_id(cls, run_id, process_and_status=[1, 1]):
+    def select_is_all_status_by_batch_id(cls, batch_id, process_and_status=[1, 1]):
         """ 查询一个运行批次下离初始化状态最近的报告 """
         status_list = [[1, 1], [1, 2], [2, 1], [2, 2], [3, 1], [3, 2]]
         index = status_list.index(process_and_status)
         for process, status in status_list[index:]:  # 只查传入状态之后的状态
-            if cls.query.filter(cls.run_id == run_id, cls.process == process, cls.status == status).first():
+            if cls.query.filter(cls.batch_id == batch_id, cls.process == process, cls.status == status).first():
                 return {"process": process, "status": status}
 
     @classmethod
-    def select_is_all_done_by_run_id(cls, run_id):
+    def select_is_all_done_by_batch_id(cls, batch_id):
         """ 报告是否全部生成 """
-        return cls.query.filter(cls.run_id == run_id, cls.process != 3, cls.status != 2).first() is None
+        return cls.query.filter(cls.batch_id == batch_id, cls.process != 3, cls.status != 2).first() is None
 
     @classmethod
-    def select_show_report_id(cls, run_id):
+    def select_show_report_id(cls, batch_id):
         """ 获取一个运行批次要展示的报告 """
         # 全部通过
-        run_fail_report = cls.get_first(run_id=run_id, is_passed=0)
+        run_fail_report = cls.get_first(batch_id=batch_id, is_passed=0)
         if run_fail_report:
             return run_fail_report.id
         else:
-            return cls.get_first(run_id=run_id).id
+            return cls.get_first(batch_id=batch_id).id
 
     @classmethod
     def make_pagination(cls, form):

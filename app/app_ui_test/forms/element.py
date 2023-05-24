@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from jsonschema.exceptions import ValidationError
 from wtforms import StringField, IntegerField
 from wtforms.validators import Length, DataRequired
 
@@ -10,17 +11,12 @@ from app.app_ui_test.models.project import AppUiProject as Project
 
 
 class AddElementForm(BaseForm):
-    """ 添加接口信息的校验 """
+    """ 添加元素信息的校验 """
     project_id = StringField(validators=[DataRequired("项目id必传")])
     module_id = StringField(validators=[DataRequired("模块id必传")])
     page_id = StringField(validators=[DataRequired("页面id必传")])
 
-    name = StringField(validators=[DataRequired("元素名字必传"), Length(1, 255, "元素名字长度为1~255位")])
-    by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
-    element = StringField(validators=[DataRequired("定位元素表达式必传"), Length(1, 512, "定位元素表达式长度为1~512位")])
-    desc = StringField()
-    num = StringField()
-    wait_time_out = IntegerField()
+    element_list = StringField(validators=[DataRequired("元素必传")])
 
     def validate_project_id(self, field):
         """ 校验项目id """
@@ -35,43 +31,44 @@ class AddElementForm(BaseForm):
         """ 校验页面id """
         self.validate_data_is_exist(f"id为【{field.data}】的页面不存在", Page, id=field.data)
 
-    def validate_by(self, field):
-        """ 一个页面只能有一个url地址 """
-        self.validate_data_is_false(
-            "一个页面只能有一个地址",
-            field.data == "url" and Element.get_first(page_id=self.page_id.data, by="url")
-        )
+    def validate_element_list(self, field):
+        """ 校验元素信息 """
+        name_list = []
+        for index, element in enumerate(field.data):
+            name, by, element = element.get("name"), element.get("by"), element.get("element")
+            self.validate_data_is_true(f'第【{index + 1}】行，元素名必传', name)
+            self.validate_data_is_true(f'第【{index + 1}】行，定位方式必传', by)
+            self.validate_data_is_true(f'第【{index + 1}】行，元素表达式必传', element)
+            if name in name_list:
+                raise ValidationError(f'第【{index + 1}】行，与第【{name_list.index(name) + 1}】行，元素名重复')
+            if by == "coordinate":
+                try:
+                    if isinstance(eval(self.element.data), (tuple, list)) is False:
+                        raise ValueError("元素表达式错误，请参照示例填写")
+                except:
+                    raise ValueError("元素表达式错误，请参照示例填写")
 
-        # 如果是坐标定位，校验坐标值
-        if field.data == "coordinate":
-            try:
-                if isinstance(eval(self.element.data), (tuple, list)) is False:
-                    raise
-            except:
-                raise ValueError("元素表达式错误，请参照示例填写")
-
-    def validate_name(self, field):
-        """ 校验同一页面元素名不重复 """
-        self.validate_data_is_not_exist(
-            f"当前页面下，名为【{field.data}】的元素已存在",
-            Element,
-            name=field.data,
-            page_id=self.page_id.data
-        )
-
-    def update_page_addr(self):
-        """ 如果元素是页面地址，则同步修改页面表里面对应的地址 """
-        if self.by.data == "url":  # 增加url地址元素
-            page = Page.get_first(id=self.page_id.data)
-            page.update({"addr": self.element.data})
-        elif hasattr(self, "old"):  # 把url改为其他元素
-            page = Page.get_first(id=self.page_id.data)
-            page.update({"addr": ""})
+            self.validate_data_is_not_exist(
+                f"当前页面下，名为【{name}】的元素已存在",
+                Element,
+                name=name,
+                page_id=self.page_id.data
+            )
 
 
 class EditElementForm(AddElementForm):
     """ 修改元素信息 """
+    element_list = None
+
     id = IntegerField(validators=[DataRequired("元素id必传")])
+
+    name = StringField(validators=[DataRequired("元素名字必传"), Length(1, 255, "元素名字长度为1~255位")])
+    by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
+    element = StringField(
+        validators=[DataRequired("定位元素表达式必传"), Length(1, 512, "定位元素表达式长度为1~512位")])
+    desc = StringField()
+    num = StringField()
+    wait_time_out = IntegerField()
 
     def validate_id(self, field):
         """ 校验元素id已存在 """
@@ -90,22 +87,14 @@ class EditElementForm(AddElementForm):
 
     def validate_by(self, field):
         """ 一个页面只能有一个url地址 """
-        if field.data == "url":
-            self.validate_data_is_not_repeat(
-                f"一个页面只能有一个地址",
-                Element,
-                self.id.data,
-                page_id=self.page_id.data,
-                by="url"
-            )
-
         # 如果是坐标定位，校验坐标值
         if field.data == "coordinate":
             try:
                 if isinstance(eval(self.element.data), (tuple, list)) is False:
-                    raise
+                    raise ValueError("元素表达式错误，请参照示例填写")
             except:
                 raise ValueError("元素表达式错误，请参照示例填写")
+
 
 class ValidateProjectId(BaseForm):
     """ 校验项目id """
@@ -120,7 +109,8 @@ class ChangeElementById(BaseForm):
     """ 根据id更新元素 """
     id = IntegerField(validators=[DataRequired("元素id必传")])
     by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
-    element = StringField(validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
+    element = StringField(
+        validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
 
     def validate_id(self, field):
         """ 校验元素id已存在 """

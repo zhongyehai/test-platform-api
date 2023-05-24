@@ -23,15 +23,16 @@ class AppUiRunTaskView(NotLoginView):
                 Case, form.task.project_id, form.task.loads(form.task.suite_ids), form.task.loads(form.task.case_ids)
             )
         appium_config = RunCaseBusiness.get_appium_config(form.task.project_id, form)
-        run_id = Report.get_run_id()
+        batch_id = Report.get_batch_id()
         RunCaseBusiness.run(
-            run_id=run_id,
+            batch_id=batch_id,
             trigger_type=form.trigger_type.data,
             is_async=form.is_async.data,
             project_id=form.task.project_id,
             report_name=form.task.name,
             task_type="task",
             report_model=Report,
+            trigger_id=form.id.data,
             case_id=case_id,
             run_type="app",
             run_func=RunCase,
@@ -39,7 +40,7 @@ class AppUiRunTaskView(NotLoginView):
             create_user=g.user_id or User.get_first(account="common").id,
             appium_config=appium_config
         )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
 
 
 class AppUiGetTaskListView(LoginRequiredView):

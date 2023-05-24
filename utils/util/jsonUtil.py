@@ -9,14 +9,14 @@ class JsonUtil:
     def dump(cls, obj, fp, *args, **kwargs):
         """ json.dump """
         kwargs.setdefault("ensure_ascii", False)
-        kwargs.setdefault("indent", 4)
+        # kwargs.setdefault("indent", 4)
         return json.dump(obj, fp, *args, **kwargs)
 
     @classmethod
     def dumps(cls, obj, *args, **kwargs):
         """ json.dumps """
         kwargs.setdefault("ensure_ascii", False)
-        kwargs.setdefault("indent", 4)
+        # kwargs.setdefault("indent", 4)
         return json.dumps(obj, *args, **kwargs)
 
     @classmethod

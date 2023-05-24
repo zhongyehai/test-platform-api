@@ -4,8 +4,8 @@ import requests
 
 from app.baseView import LoginRequiredView
 from app.app_ui_test.blueprint import app_ui_test
-from app.app_ui_test.models.env import AppUiRunServer as Server, AppUiRunPhone as Phone
-from app.app_ui_test.forms.env import (
+from app.app_ui_test.models.device import AppUiRunServer as Server, AppUiRunPhone as Phone
+from app.app_ui_test.forms.device import (
     AddServerForm, HasServerIdForm, EditServerForm, GetServerListForm,
     AddPhoneForm, HasPhoneIdForm, EditPhoneForm, GetPhoneListForm
 )
@@ -132,15 +132,16 @@ class AppUiRunPhoneView(LoginRequiredView):
         return app.restful.success(f"手机【{form.phone.name}】删除成功")
 
 
-app_ui_test.add_url_rule("/env/server/run", view_func=AppUiRunServer.as_view("AppUiRunServer"))
-app_ui_test.add_url_rule("/env/server", view_func=AppUiRunServerView.as_view("AppUiRunServerView"))
-app_ui_test.add_url_rule("/env/server/copy", view_func=AppUiRunServerCopyView.as_view("AppUiRunServerCopyView"))
-app_ui_test.add_url_rule("/env/server/list", view_func=AppUiGetRunServerListView.as_view("AppUiGetRunServerListView"))
-app_ui_test.add_url_rule("/env/server/sort",
+app_ui_test.add_url_rule("/device/server/run", view_func=AppUiRunServer.as_view("AppUiRunServer"))
+app_ui_test.add_url_rule("/device/server", view_func=AppUiRunServerView.as_view("AppUiRunServerView"))
+app_ui_test.add_url_rule("/device/server/copy", view_func=AppUiRunServerCopyView.as_view("AppUiRunServerCopyView"))
+app_ui_test.add_url_rule("/device/server/list",
+                         view_func=AppUiGetRunServerListView.as_view("AppUiGetRunServerListView"))
+app_ui_test.add_url_rule("/device/server/sort",
                          view_func=AppUiChangeRunServerSortView.as_view("AppUiChangeRunServerSortView"))
 
-app_ui_test.add_url_rule("/env/phone", view_func=AppUiRunPhoneView.as_view("AppUiRunPhoneView"))
-app_ui_test.add_url_rule("/env/phone/copy", view_func=AppUiRunPhoneCopyView.as_view("AppUiRunPhoneCopyView"))
-app_ui_test.add_url_rule("/env/phone/list", view_func=AppUiGetRunPhoneListView.as_view("AppUiGetRunPhoneListView"))
-app_ui_test.add_url_rule("/env/phone/sort",
+app_ui_test.add_url_rule("/device/phone", view_func=AppUiRunPhoneView.as_view("AppUiRunPhoneView"))
+app_ui_test.add_url_rule("/device/phone/copy", view_func=AppUiRunPhoneCopyView.as_view("AppUiRunPhoneCopyView"))
+app_ui_test.add_url_rule("/device/phone/list", view_func=AppUiGetRunPhoneListView.as_view("AppUiGetRunPhoneListView"))
+app_ui_test.add_url_rule("/device/phone/sort",
                          view_func=AppUiChangeRunPhoneSortView.as_view("AppUiChangeRunPhoneSortView"))

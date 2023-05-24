@@ -149,10 +149,12 @@ class ApiRunApiMsgView(LoginRequiredView):
         """ 运行接口 """
         form = RunApiMsgForm().do_validate()
         api, api_list = form.api_list[0], form.api_list
-        run_id = Report.get_run_id()
+        batch_id = Report.get_batch_id()
         for env_code in form.env_list.data:
             report = Report.get_new_report(
-                run_id=run_id,
+                batch_id=batch_id,
+                run_id=api.id,
+                trigger_id=form.apis.data,
                 name=api.name,
                 run_type="api",
                 env=env_code,
@@ -170,7 +172,7 @@ class ApiRunApiMsgView(LoginRequiredView):
                     env_code=env_code
                 ).run_case
             ).start()
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
 
 
 class ApiChangeApiSortView(LoginRequiredView):

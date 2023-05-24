@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+import os
 from threading import Thread
 
 import requests
@@ -6,6 +8,8 @@ from flask import g, request
 
 from app.app_ui_test.models.project import AppUiProject
 from app.config.models.runEnv import RunEnv
+from utils.makeData.makeXmind import get_xmind_first_sheet_data
+from utils.util.fileUtil import TEMP_FILE_ADDRESS
 
 
 class ProjectBusiness:
@@ -50,11 +54,31 @@ class ElementBusiness:
     """ 元素管理业务 """
 
     @classmethod
-    def post(cls, form, model):
-        form.num.data = model.get_insert_num(module_id=form.module_id.data)
-        new_element = model().create(form.data)
-        form.update_page_addr()
-        return new_element
+    def post(cls, form, model, is_update_addr=False):
+        element_list = []
+        for element in form.element_list.data:
+            element["project_id"] = form.project_id.data
+            element["module_id"] = form.module_id.data
+            element["page_id"] = form.page_id.data
+            element["num"] = model.get_insert_num(page_id=form.page_id.data)
+            new_element = model().create(element)
+            element_list.append(new_element)
+        if is_update_addr:
+            form.update_page_addr()
+        return element_list
+
+
+class CaseSuiteBusiness:
+    """ 用例集管理业务 """
+
+    @classmethod
+    def upload_case_suite(cls, project_id, file_obj, suite_model, case_model):
+        file_path = os.path.join(TEMP_FILE_ADDRESS, file_obj.filename)
+        file_obj.save(file_path)
+
+        # 读取文件
+        xmind_data = get_xmind_first_sheet_data(file_path)
+        return suite_model.upload(project_id, xmind_data, case_model)
 
 
 class CaseBusiness:
@@ -246,7 +270,9 @@ class RunCaseBusiness:
             case_id,
             run_type,
             run_func,
-            run_id=None,
+            temp_variables=None,
+            trigger_id=None,  # 保存触发源的id，方便触发重跑
+            batch_id=None,
             env_code=None,
             browser=None,
             report_id=None,
@@ -266,7 +292,9 @@ class RunCaseBusiness:
             project_id=project_id,
             env=env.code,
             trigger_type=trigger_type,
-            run_id=run_id
+            temp_variables=temp_variables,
+            batch_id=batch_id,
+            run_id=trigger_id or case_id
         )
         # 新起线程运行任务
         Thread(
@@ -279,6 +307,7 @@ class RunCaseBusiness:
                 env_code=env.code,
                 browser=browser,
                 task=task,
+                temp_variables=temp_variables,
                 trigger_type=trigger_type,
                 run_type=run_type,
                 extend=extend_data,

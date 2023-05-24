@@ -4,7 +4,7 @@ from wtforms import StringField, IntegerField
 from wtforms.validators import DataRequired
 
 from app.baseForm import BaseForm
-from app.app_ui_test.models.env import AppUiRunServer as Server, AppUiRunPhone as Phone
+from app.app_ui_test.models.device import AppUiRunServer as Server, AppUiRunPhone as Phone
 
 
 class HasServerIdForm(BaseForm):
@@ -75,6 +75,7 @@ class AddPhoneForm(BaseForm):
     name = StringField(validators=[DataRequired("手机设备名字不能为空")])
     os = StringField(validators=[DataRequired("手机设备系统类型不能为空")])
     os_version = StringField(validators=[DataRequired("手机设备系统版本不能为空")])
+    device_id = StringField(validators=[DataRequired("设备id不能为空")])
     num = StringField()
 
     def validate_name(self, field):

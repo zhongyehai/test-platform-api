@@ -22,8 +22,10 @@ class AppUiGetCaseListView(LoginRequiredView):
         """ 根据用例集查找用例列表 """
         form = FindCaseForm().do_validate()
         data = Case.make_pagination(form)
-        total, data_list = data["total"], Step.set_has_step_for_case(data["data"])
-        return app.restful.success(data={"total": total, "data": data_list})
+        if form.getHasStep.data:
+            total, data_list = data["total"], Step.set_has_step_for_case(data["data"])
+            return app.restful.success(data={"total": total, "data": data_list})
+        return app.restful.success(data=data)
 
 
 class AppUiGetCaseNameView(LoginRequiredView):
@@ -75,11 +77,12 @@ class AppUiRunCaseView(LoginRequiredView):
         case = form.case_list[0]
         project_id = CaseSuite.get_first(id=case.suite_id).project_id
         appium_config = RunCaseBusiness.get_appium_config(project_id, form)
-        run_id = Report.get_run_id()
+        batch_id = Report.get_batch_id()
         RunCaseBusiness.run(
-            run_id=run_id,
+            batch_id=batch_id,
             is_async=form.is_async.data,
             project_id=project_id,
+            temp_variables=form.temp_variables.data,
             report_name=case.name,
             task_type="case",
             report_model=Report,
@@ -88,7 +91,7 @@ class AppUiRunCaseView(LoginRequiredView):
             run_func=RunCase,
             appium_config=appium_config
         )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
 
 
 class AppUiChangeCaseStatusView(LoginRequiredView):
@@ -148,9 +151,11 @@ class AppUiCaseViewView(LoginRequiredView):
     def post(self):
         """ 新增用例 """
         form = AddCaseForm().do_validate()
-        form.num.data = Case.get_insert_num(suite_id=form.suite_id.data)
-        new_case = Case().create(form.data)
-        return app.restful.success(f"用例【{new_case.name}】新建成功", data=new_case.to_dict())
+        for case in form.case_list.data:
+            case["suite_id"] = form.suite_id.data
+            case["num"] = Case.get_insert_num(suite_id=form.suite_id.data)
+            new_case = Case().create(case)
+        return app.restful.success(f"用例新建成功", data=new_case.to_dict() if len(form.case_list.data) == 1 else None)
 
     def put(self):
         """ 修改用例 """

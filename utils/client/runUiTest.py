@@ -4,7 +4,7 @@ import json
 
 from utils.client.runTestRunner import RunTestRunner
 from utils.util.fileUtil import FileUtil
-from utils.client.parseModel import StepModel
+from utils.client.parseModel import StepModel, FormatModel
 from utils.client.testRunner.utils import build_url
 from app.web_ui_test.models.caseSuite import WebUiCaseSuite
 from app.web_ui_test.models.step import WebUiStep
@@ -20,6 +20,7 @@ class RunCase(RunTestRunner):
             self,
             project_id=None,
             run_name=None,
+            temp_variables=None,
             case_id=[],
             task={},
             report_id=None,
@@ -31,6 +32,7 @@ class RunCase(RunTestRunner):
             appium_config={},
             run_type="web_ui",
             extend={},
+            **kwargs
     ):
         super(RunCase, self).__init__(
             project_id=project_id,
@@ -42,6 +44,7 @@ class RunCase(RunTestRunner):
             run_type=run_type,
             extend=extend
         )
+        self.temp_variables = temp_variables
         self.task = task
         if run_type == "webUi":
             self.suite_model = WebUiCaseSuite
@@ -180,6 +183,10 @@ class RunCase(RunTestRunner):
         for case_id in self.case_id_list:
 
             current_case = self.get_format_case(case_id)
+            if self.temp_variables:
+                current_case.variables = FormatModel().parse_variables(self.temp_variables.get("variables"))
+                current_case.skip_if = FormatModel().parse_skip_if(self.temp_variables.get("skip_if"))
+                current_case.run_times = self.temp_variables.get("run_times", 1)
 
             # 满足跳过条件则跳过
             if self.parse_case_is_skip(current_case.skip_if) is True:
@@ -204,20 +211,18 @@ class RunCase(RunTestRunner):
             else:
                 case_template["config"]["appium_config"] = self.appium_config
 
-            # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
-            self.get_all_steps(case_id)
-            print(f'最后解析出的步骤为：{self.all_case_steps}')
+            self.get_all_steps(case_id)  # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
 
             # 循环解析测试步骤
             all_variables = {}  # 当前用例的所有公共变量
             for step in self.all_case_steps:
-                case = self.get_format_case(step.case_id)
-                element = self.get_format_element(step.element_id)
+                step_case = self.get_format_case(step.case_id)
+                step_element = self.get_format_element(step.element_id)
                 step = StepModel(**step.to_dict())
                 step.execute_name = ui_action_mapping_reverse[step.execute_type]  # 执行方式的别名，用于展示测试报告
                 step.extracts = self.parse_extracts(step.extracts)  # 解析数据提取
                 step.validates = self.parse_validates(step.validates)  # 解析断言
-                project = self.get_format_project(element.project_id)  # 元素所在的项目
+                element_project = self.get_format_project(step_element.project_id)  # 元素所在的项目
 
                 if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动
                     """
@@ -231,17 +236,17 @@ class RunCase(RunTestRunner):
                         # 数据驱动的 comment 字段，用于做标识
                         step.name += driver_data.get("comment", "")
                         step.params = step.params = step.data_json = step.data_form = driver_data.get("data", {})
-                        case_template["teststeps"].append(self.parse_step(project, element, step))
+                        case_template["teststeps"].append(self.parse_step(element_project, step_element, step))
                 else:
-                    case_template["teststeps"].append(self.parse_step(project, element, step))
+                    case_template["teststeps"].append(self.parse_step(element_project, step_element, step))
 
                 # 把服务和用例的的自定义变量留下来
-                all_variables.update(project.variables)
-                all_variables.update(case.variables)
+                all_variables.update(element_project.variables)
+                all_variables.update(step_case.variables)
 
             # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
             all_variables.update(current_project.variables)
-            all_variables.update(self.get_format_case(current_case.id).variables)
+            all_variables.update(current_case.variables)
             case_template["config"]["variables"].update(all_variables)
 
             # 设置的用例执行多少次就加入多少次

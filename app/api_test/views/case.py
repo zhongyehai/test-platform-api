@@ -22,8 +22,23 @@ class ApiGetCaseListView(LoginRequiredView):
         """ 根据模块获取用例list """
         form = FindCaseForm().do_validate()
         data = Case.make_pagination(form)
-        total, data_list = data["total"], Step.set_has_step_for_case(data["data"])
-        return app.restful.success(data={"total": total, "data": data_list})
+        if form.getHasStep.data:
+            total, data_list = data["total"], Step.set_has_step_for_case(data["data"])
+            return app.restful.success(data={"total": total, "data": data_list})
+        return app.restful.success(data=data)
+
+
+class ApiGetAssertCaseListView(LoginRequiredView):
+
+    def get(self):
+        """ 根据服务id获取造数用例集下的用例list """
+        suite_list = CaseSuite.get_all(project_id=request.args.get("project_id"), suite_type='assist')
+        suite_id_list = [suite.id for suite in suite_list]
+
+        db_case_list = Case.query.filter(Case.suite_id.in_(suite_id_list), Case.status == 1).all()
+        case_list = [case.to_dict() for case in db_case_list]
+
+        return app.restful.success(data={"total": len(case_list), "data": case_list})
 
 
 class ApiGetCaseNameByIdView(LoginRequiredView):
@@ -73,13 +88,14 @@ class ApiRunCaseView(LoginRequiredView):
         """ 运行测试用例，并生成报告 """
         form = RunCaseForm().do_validate()
         project_id = CaseSuite.get_first(id=form.case_list[0].suite_id).project_id
-        run_id = Report.get_run_id()
+        batch_id = Report.get_batch_id()
         for env_code in form.env_list.data:
             RunCaseBusiness.run(
-                run_id=run_id,
+                batch_id=batch_id,
                 env_code=env_code,
                 is_async=form.is_async.data,
                 project_id=project_id,
+                temp_variables=form.temp_variables.data,
                 report_name=form.case_list[0].name,
                 task_type="case",
                 report_model=Report,
@@ -87,7 +103,7 @@ class ApiRunCaseView(LoginRequiredView):
                 run_type="api",
                 run_func=RunCase
             )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"run_id": run_id})
+        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
 
 
 class ApiChangeCaseStatusView(LoginRequiredView):
@@ -147,9 +163,11 @@ class ApiCaseView(LoginRequiredView):
     def post(self):
         """ 新增用例 """
         form = AddCaseForm().do_validate()
-        form.num.data = Case.get_insert_num(suite_id=form.suite_id.data)
-        new_case = Case().create(form.data)
-        return app.restful.success(f"用例【{new_case.name}】新建成功", data=new_case.to_dict())
+        for case in form.case_list.data:
+            case["suite_id"] = form.suite_id.data
+            case["num"] = Case.get_insert_num(suite_id=form.suite_id.data)
+            new_case = Case().create(case)
+        return app.restful.success(f"用例新建成功", data=new_case.to_dict() if len(form.case_list.data) == 1 else None)
 
     def put(self):
         """ 修改用例 """
@@ -176,3 +194,4 @@ api_test.add_url_rule("/case/quote", view_func=ApiChangeCaseQuoteView.as_view("A
 api_test.add_url_rule("/case/status", view_func=ApiChangeCaseStatusView.as_view("ApiChangeCaseStatusView"))
 api_test.add_url_rule("/case/from", view_func=ApiGetQuoteCaseFromView.as_view("ApiGetQuoteCaseFromView"))
 api_test.add_url_rule("/case/project", view_func=ApiGetCaseFromProjectView.as_view("ApiGetCaseFromProjectView"))
+api_test.add_url_rule("/case/assert/list", view_func=ApiGetAssertCaseListView.as_view("ApiGetAssertCaseListView"))

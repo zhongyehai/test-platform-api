@@ -18,3 +18,10 @@ def make_xmind(file_name, all_data):
 
     make_data(root_topic, all_data.get("nodeData", {}).get("children", []))
     xmind.save(workbook=workbook, path=file_name)
+
+
+def get_xmind_first_sheet_data(file_path):
+    """ 获取xmind文件第一个画布内容 """
+    workbook = xmind.load(file_path)
+    first_sheet = workbook.getPrimarySheet()  # 获取第一个画布
+    return first_sheet.getData()
