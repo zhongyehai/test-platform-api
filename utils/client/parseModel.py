@@ -179,7 +179,8 @@ class FormatModel(JsonUtil):
         data_list = []
         for skip_if in skip_if_list:
             if skip_if and skip_if.get("expect"):
-                skip_if["expect"] = self.build_data(skip_if["data_type"], skip_if["expect"])
+                if skip_if.get("data_source") not in ["run_env", "run_server", "run_device"]:  # 常规数据校验
+                    skip_if["expect"] = self.build_data(skip_if["data_type"], skip_if["expect"])
                 skip_if["comparator"] = assert_mapping[skip_if["comparator"]]
                 data_list.append(skip_if)
 

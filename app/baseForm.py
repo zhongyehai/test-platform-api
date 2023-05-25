@@ -237,22 +237,23 @@ class BaseForm(Form, JsonUtil):
             check_value, comparator = skip_if.get("check_value"), skip_if.get("comparator")
             data_type, expect = skip_if.get("data_type"), skip_if.get("expect")
             if any((skip_type, data_source, check_value, comparator, data_type, expect)):
-                if skip_type and data_source and comparator and data_type and expect:
-                    if data_source != "run_env" and not check_value:
+                if data_source not in ["run_env", "run_server", "run_device"]:  # 常规数据校验
+                    if all((skip_type, data_source, check_value, comparator, data_type, expect)) is False:
                         raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
-                    else:
-                        try:
-                            if data_type in ["variable", "func", "str"]:
-                                continue
-                            elif data_type == "json":
-                                self.dumps(self.loads(expect))
-                                continue
-                            else:  # python数据类型
-                                eval(f"{data_type}({expect})")
-                                continue
-                        except Exception as error:
-                            raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
-                raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
+                    try:
+                        if data_type in ["variable", "func", "str"]:
+                            continue
+                        elif data_type == "json":
+                            self.dumps(self.loads(expect))
+                            continue
+                        else:  # python数据类型
+                            eval(f"{data_type}({expect})")
+                            continue
+                    except Exception as error:
+                        raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
+                else:  # 运行环境、运行服务器、运行终端
+                    if all((skip_type, data_source, comparator, expect)) is False:
+                        raise ValidationError(f"【跳过条件】第【{index}】行设置的条件错误，请检查")
 
     def validate_email(self, email_server, email_from, email_pwd, email_to):
         """ 发件邮箱、发件人、收件人、密码 """

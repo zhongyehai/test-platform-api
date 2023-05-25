@@ -50,9 +50,14 @@ class RunCase(RunTestRunner):
             self.suite_model = WebUiCaseSuite
             self.step_model = WebUiStep
             self.browser = browser
+            self.device_id = None
         else:
             self.suite_model = AppUiCaseSuite
             self.step_model = AppUiStep
+            self.run_server_id = appium_config.pop("server_id")
+            self.run_phone_id = appium_config.pop("phone_id")
+            self.device_id = appium_config.pop("device_id")
+
         self.DataTemplate["is_async"] = is_async
         self.case_id_list = case_id  # 要执行的用例id_list
         self.appium_config = appium_config
@@ -166,7 +171,8 @@ class RunCase(RunTestRunner):
         """ 解析引用的用例 """
         case = self.get_format_case(case_id)
 
-        if self.parse_case_is_skip(case.skip_if) is not True:  # 不满足跳过条件才解析
+        # 不满足跳过条件才解析
+        if self.parse_case_is_skip(case.skip_if, self.run_server_id, self.run_phone_id) is not True:
             steps = self.step_model.query.filter_by(case_id=case.id, status=1).order_by(self.step_model.num.asc()).all()
             for step in steps:
                 if step.quote_case:
@@ -189,7 +195,7 @@ class RunCase(RunTestRunner):
                 current_case.run_times = self.temp_variables.get("run_times", 1)
 
             # 满足跳过条件则跳过
-            if self.parse_case_is_skip(current_case.skip_if) is True:
+            if self.parse_case_is_skip(current_case.skip_if, self.run_server_id, self.run_phone_id) is True:
                 continue
 
             current_project = self.get_format_project(self.suite_model.get_first(id=current_case.suite_id).project_id)
@@ -247,6 +253,7 @@ class RunCase(RunTestRunner):
             # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
             all_variables.update(current_project.variables)
             all_variables.update(current_case.variables)
+            all_variables.update({"device_id": self.device_id})  # 强制增加一个变量为设备id，用于去数据库查数据
             case_template["config"]["variables"].update(all_variables)
 
             # 设置的用例执行多少次就加入多少次

@@ -173,12 +173,16 @@ class RunTestRunner:
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
 
-    def parse_case_is_skip(self, skip_if_list):
+    def parse_case_is_skip(self, skip_if_list, server_id=None, phone_id=None):
         """ 判断是否跳过用例，暂时只支持对运行环境的判断 """
         for skip_if in skip_if_list:
             skip_type = skip_if["skip_type"]
             if skip_if["data_source"] == "run_env":
                 skip_if["check_value"] = self.env_code
+            elif skip_if["data_source"] == "run_server":
+                skip_if["check_value"] = server_id
+            elif skip_if["data_source"] == "run_device":
+                skip_if["check_value"] = phone_id
             try:
                 comparator = getattr(built_in, skip_if["comparator"])
                 skip_if_result = comparator(skip_if["check_value"], skip_if["expect"])  # 借用断言来判断条件是否为真

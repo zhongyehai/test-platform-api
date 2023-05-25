@@ -38,11 +38,6 @@ skip_if_type_mapping = [
     {"label": "不满足则跳过", "value": "skip_if_false"},
 ]
 
-# 跳过条件数据源映射
-skip_if_data_source_mapping = [
-    {"label": "运行环境", "value": "run_env"}
-]
-
 basedir = os.path.abspath(".")
 
 # 即时达推送的 系统错误通道，不接受错误信息可不配置

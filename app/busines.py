@@ -333,6 +333,9 @@ class RunCaseBusiness:
             "unicodeKeyboard": True,  # 使用Unicode编码方式发送字符串
             "resetKeyboard": True,  # 是否调用appium键盘
             "noReset": form.no_reset.data,  # 控制APP记录的信息是否不重置
+            "server_id": server["id"],  # 用于判断跳过条件
+            "phone_id": phone["id"],  # 用于判断跳过条件
+            "device_id": phone["device_id"]  # 用于插入到公共变量
             # "app": "",  # 安装路径
             # "browserName": "",  # 直接测web用, Chrome
             # "autoWebview": "",  # 开机进入webview模式

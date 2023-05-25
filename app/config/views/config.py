@@ -7,8 +7,7 @@ from app.config.forms.config import (
     GetConfigForm, DeleteConfigForm, PostConfigForm, PutConfigForm, GetConfigListForm
 )
 from app.config.blueprint import config_blueprint
-from config import skip_if_type_mapping, skip_if_data_source_mapping
-from utils.view.required import admin_required
+from config import skip_if_type_mapping
 
 
 class GetConfListView(LoginRequiredView):
@@ -36,10 +35,13 @@ class GetSkipIfDataSourceView(NotLoginView):
 
     def get(self):
         """ 获取跳过条件数据源 """
+        data = [{"label": "运行环境", "value": "run_env"}]
+        if request.args.get("test_type") == "appUi":
+            data = [{"label": "运行服务器", "value": "run_server"}, {"label": "运行设备", "value": "run_device"}]
         if request.args.get("type") == "step":
             step_skip = [{"label": "自定义变量", "value": "variable"}, {"label": "自定义函数", "value": "func"}]
-            return app.restful.success(data=skip_if_data_source_mapping + step_skip)
-        return app.restful.success(data=skip_if_data_source_mapping)
+            return app.restful.success(data=data + step_skip)
+        return app.restful.success(data=data)
 
 
 class GetConfByNameView(NotLoginView):
