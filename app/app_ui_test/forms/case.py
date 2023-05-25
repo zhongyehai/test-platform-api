@@ -14,6 +14,15 @@ from app.app_ui_test.models.case import AppUiCase as Case
 from app.app_ui_test.models.device import AppUiRunServer as Server, AppUiRunPhone as Phone
 
 
+class GetCaseForm(BaseForm):
+    """ 获取用例信息 """
+    id = IntegerField(validators=[DataRequired("用例id必传")])
+
+    def validate_id(self, field):
+        case = self.validate_data_is_exist(f"id为【{field.data}】的用例不存在", Case, id=field.data)
+        setattr(self, "case", case)
+
+
 class ChangeCaseStatusForm(BaseForm):
     """ 批量修改用例状态 """
     id = StringField(validators=[DataRequired("用例id必传")])
@@ -61,7 +70,7 @@ class AddCaseForm(BaseForm):
             name_list.append(case_name)
 
 
-class EditCaseForm(AddCaseForm):
+class EditCaseForm(GetCaseForm, AddCaseForm):
     """ 修改用例 """
     case_list = None
     name_length = Case.name.property.columns[0].type.length
@@ -157,16 +166,6 @@ class DeleteCaseForm(BaseForm):
                 raise ValidationError(f"用例【{Case.get_first(id=step.case_id).name}】已引用此用例，请先解除引用")
 
             setattr(self, "case", case)
-
-
-class GetCaseForm(BaseForm):
-    """ 获取用例信息 """
-    id = IntegerField(validators=[DataRequired("用例id必传")])
-    env = StringField()
-
-    def validate_id(self, field):
-        case = self.validate_data_is_exist(f"id为【{field.data}】的用例不存在", Case, id=field.data)
-        setattr(self, "case", case)
 
 
 class CopyCaseStepForm(BaseForm):
