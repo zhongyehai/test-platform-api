@@ -229,15 +229,6 @@ pagination_size = {
     "page_size": 20,
 }
 
-# 响应数据源
-response_data_source_mapping = [
-    {"label": "响应体", "value": "content"},
-    {"label": "响应头部信息", "value": "headers"},
-    {"label": "响应cookies", "value": "cookies"},
-    {"label": "正则表达式（从响应体提取）", "value": "regexp"},
-    {"label": "其他（常量、自定义变量、自定义函数）", "value": "other"}
-]
-
 # python数据类型
 data_type_mapping = [
     {"label": "普通字符串", "value": "str"},
@@ -257,19 +248,6 @@ browser_name = {
     "chrome": "chrome",
     "gecko": "火狐"
 }
-
-# ui自动化元素定位方式
-find_element_option = [
-    {"label": "根据id属性定位", "value": "id"},
-    {"label": "根据xpath表达式定位", "value": "xpath"},
-    {"label": "根据class选择器定位", "value": "class name"},
-    {"label": "根据css选择器定位", "value": "css selector"},
-    {"label": "根据name属性定位", "value": "name"},
-    {"label": "根据tag名字定位 ", "value": "tag name"},
-    {"label": "根据超链接文本定位", "value": "link text"},
-    {"label": "页面地址", "value": "url"},
-    {"label": "坐标定位(APP)", "value": "coordinate"}
-]
 
 # 运行测试的类型
 run_type = {
@@ -500,11 +478,6 @@ def init_config():
             {"name": "request_time_out", "value": 60, "desc": "运行测试步骤时，request超时时间"},
             {"name": "api_suite_list", "value": JsonUtil.dumps(api_suite_list), "desc": "接口自动化用例集类型"},
             {
-                "name": "response_data_source_mapping",
-                "value": JsonUtil.dumps(response_data_source_mapping),
-                "desc": "响应对象数据源映射"
-            },
-            {
                 "name": "api_report_addr",
                 "value": "/#/apiTest/reportShow?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
@@ -520,11 +493,6 @@ def init_config():
             {"name": "wait_time_out", "value": 10, "desc": "等待元素出现时间"},
             {"name": "browser_name", "value": JsonUtil.dumps(browser_name), "desc": "支持的浏览器"},
             {"name": "ui_suite_list", "value": JsonUtil.dumps(ui_suite_list), "desc": "UI自动化用例集类型"},
-            {
-                "name": "find_element_option",
-                "value": JsonUtil.dumps(find_element_option),
-                "desc": "ui自动化定位元素方式"
-            },
             {
                 "name": "web_ui_report_addr",
                 "value": "/#/webUiTest/reportShow?id=",

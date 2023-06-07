@@ -22,9 +22,9 @@ class RunCaseSuiteForm(GetCaseSuiteForm):
     """ 运行用例集 """
     is_async = IntegerField()
     no_reset = BooleanField()
-    env_code = StringField(validators=[DataRequired("请选择运行环境")])
     server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])
     phone_id = IntegerField(validators=[DataRequired("请选择执行手机")])
+    env_list = StringField(validators=[DataRequired("请选择运行环境")])
 
     def validate_id(self, field):
         suite = self.validate_data_is_exist(f"id为【{field.data}】的用例集不存在", CaseSuite, id=field.data)

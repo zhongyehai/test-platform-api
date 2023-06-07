@@ -1,34 +1,46 @@
 # -*- coding: utf-8 -*-
 from flask import g
 from wtforms import StringField, IntegerField
-from wtforms.validators import Length, DataRequired
+from wtforms.validators import Length, DataRequired, ValidationError
 
 from app.baseForm import BaseForm
-from app.system.models.user import User, Role
+from app.system.models.user import User
 
 
 class CreateUserForm(BaseForm):
     """ 创建用户的验证 """
-    name = StringField(validators=[DataRequired("请设置用户名"), Length(2, 12, message="用户名长度为2~12位")])
-    account = StringField(validators=[DataRequired("请设置账号"), Length(2, 50, message="账号长度为2~50位")])
-    password = StringField(validators=[DataRequired("请设置密码"), Length(4, 18, message="密码长度长度为4~18位")])
-    business_list = StringField(validators=[DataRequired("请选择业务线")])
-    role_list = StringField(validators=[DataRequired("请选择角色")])
+    user_list = StringField(validators=[DataRequired("用户信息必传")])
 
-    def validate_name(self, field):
-        """ 校验用户名不重复 """
-        self.validate_data_is_not_exist(f"用户名 {field.data} 已存在", User, name=field.data)
+    def validate_user_list(self, field):
+        """ 校验用户数据 """
+        name_list, account_list = [], []
+        for index, user in enumerate(field.data):
+            name, account, password = user.get("name"), user.get("account"), user.get("password")
+            business_list, role_list = user.get("business_list"), user.get("role_list")
+            if not all((name, account, password, business_list, role_list)):
+                raise ValidationError(f'第【{index + 1}】行，数据需填完')
 
-    def validate_account(self, field):
-        """ 校验账号不重复 """
-        self.validate_data_is_not_exist(f"账号 {field.data} 已存在", User, account=field.data)
+            self.validate_data_is_true(f'第【{index + 1}】行，密码长度长度为4~50位', 3 < len(password) < 50)
+
+            if name in name_list:
+                raise ValidationError(f'第【{index + 1}】行，与第【{name_list.index(name) + 1}】行，用户名重复')
+            self.validate_data_is_true(f'第【{index + 1}】行，用户名长度长度为2~12位', 1 < len(name) < 12)
+            self.validate_data_is_not_exist(f'【第{index + 1}】行，用户名【{name}】已存在', User, name=name)
+
+            if account in account_list:
+                raise ValidationError(f'第【{index + 1}】行，与第【{account_list.index(account) + 1}】行，账号重复')
+            self.validate_data_is_true(f'第【{index + 1}】行，账号长度长度为2~50位', 1 < len(account) < 50)
+            self.validate_data_is_not_exist(f'第【{index + 1}】行，账号【{account}】已存在', User, account=account)
+
+            name_list.append(name)
+            account_list.append(account)
 
 
 class ChangePasswordForm(BaseForm):
     """ 修改密码的校验 """
-    oldPassword = StringField(validators=[Length(4, 18, message="密码长度长度为6~18位")])
-    newPassword = StringField(validators=[Length(4, 18, message="密码长度长度为6~18位")])
-    surePassword = StringField(validators=[Length(4, 18, message="密码长度长度为6~18位")])
+    oldPassword = StringField(validators=[Length(4, 50, message="密码长度长度为4~50位")])
+    newPassword = StringField(validators=[Length(4, 50, message="密码长度长度为4~50位")])
+    surePassword = StringField(validators=[Length(4, 50, message="密码长度长度为4~50位")])
 
     def validate_oldPassword(self, field):
         """ 校验旧密码是否正确 """
@@ -71,7 +83,7 @@ class FindUserForm(BaseForm):
 
 
 class GetUserForm(BaseForm):
-    """ 返回待编辑用户信息 """
+    """ 获取用户信息 """
     id = IntegerField(validators=[DataRequired("用户id必传")])
 
     def validate_id(self, field):
@@ -96,14 +108,13 @@ class ChangeStatusUserForm(GetUserForm):
         setattr(self, "user", user)
 
 
-class EditUserForm(GetUserForm, CreateUserForm):
+class EditUserForm(GetUserForm):
     """ 编辑用户的校验 """
+    name = StringField(validators=[DataRequired("请设置用户名"), Length(2, 12, message="用户名长度为2~12位")])
+    account = StringField(validators=[DataRequired("请设置账号"), Length(2, 50, message="账号长度为2~50位")])
     password = StringField()
-
-    def validate_id(self, field):
-        """ 校验id需存在 """
-        user = self.validate_data_is_exist(f"没有id为 {field.data} 的用户", User, id=field.data)
-        setattr(self, "user", user)
+    business_list = StringField(validators=[DataRequired("请选择业务线")])
+    role_list = StringField(validators=[DataRequired("请选择角色")])
 
     def validate_name(self, field):
         """ 校验用户名不重复 """
@@ -125,5 +136,5 @@ class EditUserForm(GetUserForm, CreateUserForm):
 
     def validate_password(self, field):
         """ 如果密码字段没有值，则去掉此属性 """
-        if not field.data:
-            delattr(self, "password")
+        if field.data:
+            self.validate_data_is_true('密码长度长度为4~50位', 3 < len(field.data) < 51)

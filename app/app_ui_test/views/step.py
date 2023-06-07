@@ -97,7 +97,6 @@ class AppUiStepMethodViewView(LoginRequiredView):
         form = DeleteStepForm().do_validate()
         for step in form.step_list:
             step.delete()
-            step.subtract_api_quote_count()
         return app.restful.success(f"步骤删除成功")
 
 

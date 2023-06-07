@@ -198,6 +198,7 @@ class RunCaseForm(BaseForm):
     caseId = StringField(validators=[DataRequired("请选择用例")])
     server_id = IntegerField(validators=[DataRequired("请选择执行服务器")])
     phone_id = IntegerField(validators=[DataRequired("请选择执行手机")])
+    env_list = StringField(validators=[DataRequired("请选择运行环境")])
     temp_variables = StringField()  # 临时指定参数
     no_reset = BooleanField()
     is_async = IntegerField()

@@ -2,6 +2,7 @@
 from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView, NotLoginView
+from app.busines import ProjectEnvBusiness
 from app.config.models.runEnv import RunEnv
 from app.config.forms.runEnv import (
     GetRunEnvForm, DeleteRunEnvForm, PostRunEnvForm, PutRunEnvForm, GetRunEnvListForm, EnvToBusinessForm
@@ -44,25 +45,26 @@ class EnvToBusiness(LoginRequiredView):
 class RunEnvView(LoginRequiredView):
 
     def get(self):
-        """ 获取域名 """
+        """ 获取运行环境 """
         form = GetRunEnvForm().do_validate()
         return app.restful.success("获取成功", data=form.conf.to_dict())
 
     def post(self):
-        """ 新增域名 """
+        """ 新增运行环境 """
         form = PostRunEnvForm().do_validate()
         form.num.data = RunEnv.get_insert_num()
         run_env = RunEnv().create(form.data)
+        ProjectEnvBusiness.add_env(run_env.id)  # 给所有的服务/项目/app创建此运行环境的数据
         return app.restful.success("新增成功", data=run_env.to_dict())
 
     def put(self):
-        """ 修改域名 """
+        """ 修改运行环境 """
         form = PutRunEnvForm().do_validate()
         form.run_env.update(form.data)
         return app.restful.success("修改成功", data=form.run_env.to_dict())
 
     def delete(self):
-        """ 删除域名 """
+        """ 删除运行环境 """
         form = DeleteRunEnvForm().do_validate()
         form.run_env.delete()
         return app.restful.success("删除成功")

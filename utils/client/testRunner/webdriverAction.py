@@ -2,12 +2,13 @@
 import base64
 import json
 import platform
-import textwrap
 import time
 import os
+from unittest.case import SkipTest
 
 from appium import webdriver as appium_webdriver
 from appium.webdriver.common.touch_action import TouchAction
+from appium.webdriver.mobilecommand import MobileCommand
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as chromeOptions
 from selenium.webdriver.firefox.options import Options as firefoxOptions
@@ -83,108 +84,184 @@ class Actions:
             wait_time_out=wait_time_out or self.wait_time_out
         )
 
-    def action_01open(self, url: str, *args, **kwargs):
-        """ 打开url """
-        self.driver.get(url)
-
-    def action_06close(self, *args, **kwargs):
-        """ 关闭浏览器 """
-        self.driver.close()
-
-    def action_07quit(self, *args, **kwargs):
-        """ 关闭窗口 """
-        self.driver.quit()
-
-    def action_04click(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 点击元素 """
+    #################################### 点击相关事件 ####################################
+    def action_01_01_click(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【点击】直接点击元素 """
         if locator[0] == 'coordinate':  # 坐标定位
             coordinate = eval(locator[1])
             TouchAction(self.driver).tap(x=coordinate[0], y=coordinate[1]).perform()
         else:  # 元素定位
             self.find_element(locator, wait_time_out=wait_time_out).click()
 
-    def action_04sleep_is_input(self, locator: tuple, time_seconds: (int, float, str), wait_time_out=None, *args,
-                                **kwargs):
-        """ 等待指定时间 """
-        time.sleep(float(time_seconds) if isinstance(time_seconds, str) else time_seconds)
+    def action_01_02_click_if_has_element(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【点击】元素存在就点击 """
+        if locator[0] == 'coordinate':  # 坐标定位
+            coordinate = eval(locator[1])
+            TouchAction(self.driver).tap(x=coordinate[0], y=coordinate[1]).perform()
+        else:  # 元素定位
+            try:
+                element = self.find_element(locator, wait_time_out=wait_time_out)
+            except:
+                raise SkipTest(f"【元素存在就点击】触发跳过")
+            if element:
+                element.click()
 
-    def action_04clear_and_send_keys_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args,
-                                              **kwargs):
-        """ 清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+    def action_01_03_click_alert_accept(self, *args, **kwargs):
+        """ 【点击】点击alert确定按钮 """
+        return self.driver.switch_to.alert.accept()
+
+    def action_01_04_click_alert_dismiss(self, *args, **kwargs):
+        """ 【点击】点击alert取消按钮 """
+        return self.driver.switch_to.alert.dismiss()
+
+    def action_01_05_click_alert_dismiss(self, locator: tuple, *args, **kwargs):
+        """ 【点击】点击坐标（APP），locator = ("coordinate","[[918,1079], [1080,1205]]")"""
+        bounds = json.loads(locator[1])
+        return TouchAction(self.driver).press(x=bounds[0][0], y=bounds[0][1]).release().perform()
+
+    #################################### 输入相关事件 ####################################
+    def action_02_01_clear_and_send_keys_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
         element = self.find_element(locator, wait_time_out=wait_time_out)
         element.clear()
         element.send_keys(text)
 
-    def action_04send_keys_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+    def action_02_02_click_and_clear_and_send_keys_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】点击并清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        element.click()
+        element.clear()
+        element.send_keys(text)
+
+    def action_02_03_send_keys_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
         element = self.find_element(locator, wait_time_out=wait_time_out)
         element.send_keys(text)
 
-    def action_04send_keys_by_keyboard_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args,
-                                                **kwargs):
-        """ 模拟键盘输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+    def action_02_04_click_and_send_keys_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】点击并追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        element.click()
+        element.send_keys(text)
+
+    def action_02_05_send_keys_by_keyboard_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】模拟键盘输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
         self.driver.press_keycode(text)
 
-    def action_05click_and_clear_and_send_keys_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args,
-                                                        **kwargs):
-        """ 点击并清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        element.click()
-        element.clear()
-        element.send_keys(text)
-
-    def action_04click_and_send_keys_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args,
-                                              **kwargs):
-        """ 点击并追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        element.click()
-        element.send_keys(text)
-
-    def action_04click_and_send_keys_by_keyboard_is_input(self, locator: tuple, text: str = '', wait_time_out=None,
-                                                          *args, **kwargs):
-        """ 点击并模拟键盘输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+    def action_02_06_click_and_send_keys_by_keyboard_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】点击并模拟键盘输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
         self.find_element(locator, wait_time_out=wait_time_out).click()
         self.driver.press_keycode(text)
 
-    def action_07move_to_element(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 鼠标悬停 """
-        ActionChains(self.driver).move_to_element(self.find_element(locator, wait_time_out=wait_time_out)).perform()
+    def action_02_07_click_and_clear_and_send_keys_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】元素存在则清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+        try:
+            element = self.find_element(locator, wait_time_out=wait_time_out)
+        except:
+            raise SkipTest(f"【元素存在则清空后输入】触发跳过")
+        element.clear()
+        element.send_keys(text)
 
-    def action_11js_execute_is_input(self, js: str, *args, **kwargs):
-        """ 执行js， is_input标识为输入内容 """
-        self.driver.execute_script(js)
+    def action_02_08_click_and_clear_and_send_keys_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】元素存在则点击并清空后输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+        try:
+            element = self.find_element(locator, wait_time_out=wait_time_out)
+        except:
+            raise SkipTest(f"【元素存在则点击并清空后输入】触发跳过")
+        element.click()
+        element.clear()
+        element.send_keys(text)
 
-    def action_12js_focus_element(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 聚焦元素 """
-        self.driver.execute_script(
-            "arguments[0].scrollIntoView();",
-            self.find_element(locator, wait_time_out=wait_time_out)
-        )
+    def action_02_09_click_and_send_keys_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】元素存在则追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+        try:
+            element = self.find_element(locator, wait_time_out=wait_time_out)
+        except:
+            raise SkipTest(f"【元素存在则追加输入】触发跳过")
+        element.send_keys(text)
 
-    def action_13js_scroll_top(self, *args, **kwargs):
-        """ 滚动到浏览器顶部 """
+    def action_02_10_click_and_send_keys_is_input(
+            self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【输入】元素存在则点击并追加输入，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+        try:
+            element = self.find_element(locator, wait_time_out=wait_time_out)
+        except:
+            raise SkipTest(f"【元素存在则点击并追加输入】触发跳过")
+        element.click()
+        element.send_keys(text)
+
+    #################################### 选中相关事件 ####################################
+    def action_03_01_select_all(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【选中】全选 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).all_selected_options()
+
+    def action_03_02_deselect_all(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【选中】清除所有的选项 """
+        Select(self.find_element(locator, wait_time_out=wait_time_out)).deselect_all()
+
+    def action_03_03_select_by_index_is_input(
+            self, locator: tuple, index: int = 0, wait_time_out=None, *args, **kwargs):
+        """ 【选中】通过索引选中，index是索引第几个，从0开始，默认选第一个， is_input标识为输入内容 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).select_by_index(int(index))
+
+    def action_03_04_select_by_value_is_input(
+            self, locator: tuple, value: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【选中】通过value选中， is_input标识为输入内容 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).select_by_value(value)
+
+    def action_03_05_select_by_text_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【选中】通过文本值选中 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).select_by_visible_text(text)
+
+    def action_03_06_deselect_by_index_is_input(
+            self, locator: tuple, index: int = 0, wait_time_out=None, *args, **kwargs):
+        """ 【选中】通过index索引定位， is_input标识为输入内容 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).deselect_by_index(index)
+
+    def action_03_07_select_first(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【选中】选中第一个 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        Select(element).first_selected_option()
+
+    #################################### 滚动相关事件 ####################################
+    def action_04_01_js_scroll_top(self, *args, **kwargs):
+        """ 【滚动】滚动到浏览器顶部 """
         self.driver.execute_script("window.scrollTo(0,0)")
 
-    def action_14js_scroll_end(self, *args, **kwargs):
-        """ 滚动到浏览器底部 """
+    def action_04_02_js_scroll_end(self, *args, **kwargs):
+        """ 【滚动】滚动到浏览器底部 """
         self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
 
-    def action_14move_by_offset_is_input(self, locator: tuple, offset: str = '()', wait_time_out=None, *args, **kwargs):
-        """ 移动坐标(浏览器)，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
+    def action_04_03_move_by_offset_is_input(
+            self, locator: tuple, offset: str = '()', wait_time_out=None, *args, **kwargs):
+        """ 【滚动】移动坐标(浏览器)，locator = ("id","xxx")，send_keys(locator, text)， is_input标识为输入内容 """
         ActionChains(self.driver).move_by_offset(*eval(offset))
 
-    def action_14app_scroll_coordinate_is_input1(self, conf={}, *args, **kwargs):
-        """ 滚动到手机指定坐标(相对位置)，
+    def action_04_04_app_scroll_coordinate_is_input1(self, conf={}, *args, **kwargs):
+        """ 【滚动】滚动到手机指定坐标(相对位置)，
         conf: {
             "x1": 0.2, "y1": 0.7, "x2": 0.1, "y2": 0.4
         }
         """
         x1, y1 = self.width * float(conf.get("x1", 0.5)), self.height * float(conf.get("y1", 3 / 4))
         x2, y2 = self.width * float(conf.get("x2", 0.5)), self.height * float(conf.get("y2", 1 / 4))
-        self.driver.swipe(x1, y1, x2, y2, 2000)  # 两秒完成滑动
+        self.driver.swipe(x1, y1, x2, y2, conf.get("duration", 1000))
 
-    def action_14app_scroll_coordinate_is_input2(self, conf={}, *args, **kwargs):
-        """ 滚动到手机指定坐标(绝对位置)，
+    def action_04_05_app_scroll_coordinate_is_input2(self, conf={}, *args, **kwargs):
+        """ 【滚动】滚动到手机指定坐标(绝对位置)，
         conf: {
             "x1": 500, "y1": 1000, "x2": 600, "y2": 1024
         }
@@ -193,147 +270,174 @@ class Actions:
         x2, y2 = float(conf.get("x2", 600)), float(conf.get("y2", 1024))
         self.driver.swipe(x1, y1, x2, y2)  # 两秒完成滑动
 
-    def action_14app_scroll_coordinate_end(self, *args, **kwargs):
-        """ 滚动到手机底部 """
+    def action_04_06_app_scroll_coordinate_end(self, *args, **kwargs):
+        """ 【滚动】滚动到手机底部 """
         before_swipe = self.driver.page_source  # 滚动前的页面资源
-        self.action_14app_scroll_coordinate_is_input1({"y1": 3 / 4, "y2": -1 / 9999})
+        self.action_04_04_app_scroll_coordinate_is_input1({"y1": 3 / 4, "y2": -1 / 9999, "duration": 200})
         after_swipe = self.driver.page_source  # 滚动后的页面资源
         if before_swipe != after_swipe:  # 如果滚动前和滚动后的页面不一致，说明进行了滚动，则继续滚动，否则证明已经滚动到底，不再滚动
-            self.action_14app_scroll_coordinate_end()
+            self.action_04_06_app_scroll_coordinate_end()
 
-    def action_15select_by_index_is_input(self, locator: tuple, index: int = 0, wait_time_out=None, *args, **kwargs):
-        """ 通过索引选中，index是索引第几个，从0开始，默认选第一个， is_input标识为输入内容 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        Select(element).select_by_index(int(index))
+    def action_04_07_app_scroll_coordinate_end(self, *args, **kwargs):
+        """ 【滚动】往上滑动一页（app） """
+        self.driver.swipe(self.width * 0.5, self.height * 0.9, self.width * 0.5, self.height * 0.2, 1500)
 
-    def action_16select_by_value_is_input(self, locator: tuple, value: str = '', wait_time_out=None, *args, **kwargs):
-        """ 通过value选中， is_input标识为输入内容 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        Select(element).select_by_value(value)
+    def action_04_08_app_scroll_coordinate_end_is_input(self, text: str = '', *args, **kwargs):
+        """ 【滚动】往上滑动百分比，填小数（app） """
+        self.driver.swipe(self.width * 0.5, self.height * 0.9, self.width * 0.5, self.height * (1 - float(text)), 1500)
 
-    def action_17select_by_text_is_input(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 通过文本值选中 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        Select(element).select_by_visible_text(text)
+    def action_04_09_app_scroll_coordinate_end(self, *args, **kwargs):
+        """ 【滚动】往下滑动一页（app） """
+        self.driver.swipe(self.width * 0.5, self.height * 0.1, self.width * 0.5, self.height * 0.9, 1500)
 
-    def action_18deselect_by_index_is_input(self, locator: tuple, index: int = 0, wait_time_out=None, *args, **kwargs):
-        """ 通过index索引定位， is_input标识为输入内容 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        Select(element).deselect_by_index(index)
+    def action_04_10_app_scroll_coordinate_end_is_input(self, text: str = '', *args, **kwargs):
+        """ 【滚动】往下滑动百分比，填小数（app） """
+        self.driver.swipe(self.width * 0.5, self.height * (1 - float(text)), self.width * 0.5, self.height * 0.9, 1500)
 
-    def action_19select_first(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 选中第一个 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        Select(element).first_selected_option()
+    def action_04_07_move_to_element(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【滚动】鼠标悬停 """
+        ActionChains(self.driver).move_to_element(self.find_element(locator, wait_time_out=wait_time_out)).perform()
 
-    def action_20select_all(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 全选 """
-        element = self.find_element(locator, wait_time_out=wait_time_out)
-        Select(element).all_selected_options()
-
-    def action_20get_alert_text(self, *args, **kwargs):
-        """ 获取alert文本 """
-        return self.driver.switch_to.alert.text
-
-    def action_20click_alert_accept(self, *args, **kwargs):
-        """ 点击alert确定按钮 """
-        return self.driver.switch_to.alert.accept()
-
-    def action_20click_alert_dismiss(self, *args, **kwargs):
-        """ 点击alert取消按钮 """
-        return self.driver.switch_to.alert.dismiss()
-
-    def action_20switch_to_window_is_input(self, locator, index: int = 0, *args, **kwargs):
-        """ 切换到指定索引的窗口，is_input标识为输入内容 """
+    #################################### 切换相关事件 ####################################
+    def action_05_01_switch_to_window_is_input(self, locator, index: int = 0, *args, **kwargs):
+        """ 【切换-浏览器】切换到指定索引的窗口，is_input标识为输入内容 """
         self.driver.switch_to.window(self.driver.window_handles[int(index)])
 
-    def action_20switch_to_end_window(self, *args, **kwargs):
-        """ 切换到最后一个窗口 """
+    def action_05_02_switch_to_end_window(self, *args, **kwargs):
+        """ 【切换-浏览器】切换到最后一个窗口 """
         self.driver.switch_to.window(self.driver.window_handles[-1])
 
-    def action_20app_upload_file_is_upload(self, locator, file_path, wait_time_out=None, *args, **kwargs):
-        """ APP上传文件， is_upload标识为文件上传 """
+    def action_05_03_switch_handle_is_input(self, window_name: str, *args, **kwargs):
+        """ 【切换-浏览器】切换到窗口名对应的窗口 """
+        self.driver.switch_to.window(window_name)
+
+    def action_05_04_switch_iframe(self, locator: tuple, *args, **kwargs):
+        """ 【切换-浏览器】切换到指定的iframe """
+        return self.assert_65is_iframe(locator)
+
+    def action_05_05_switch_to_h5(self, locator: tuple, *args, **kwargs):
+        """ 【切换-app】切换到H5 """
+        print(self.driver.contexts)
+        self.driver.execute(MobileCommand.SWITCH_TO_CONTEXT, {"name": self.driver.contexts[0]})
+
+    def action_05_06_switch_to_app(self, locator: tuple, *args, **kwargs):
+        """ 【切换-app】切换到app """
+        print(self.driver.contexts)
+
+    #################################### 窗口缩放相关事件 ####################################
+    def action_06_01_set_window_percentage_is_input(self, locator: tuple, text: str = '0.5', *args, **kwargs):
+        """ 【缩放】窗口缩放为指定比例 """
+        return self.driver.execute_script(f"document.body.style.zoom='{text}'")
+
+    def action_06_02_max_window(self, *args, **kwargs):
+        """ 【缩放】窗口最大化 """
+        return self.driver.maximize_window()
+
+    def action_06_03_set_window_size_is_input(self, width: float, height: float, *args, **kwargs):
+        """ 【缩放】窗口缩放为指定大小值 """
+        return self.driver.set_window_size(float(width), float(height))
+
+    #################################### 获取对象相关事件 ####################################
+    def action_07_01_get_current_handle(self, *args, **kwargs):
+        """ 【获取】获取当前句柄 """
+        return self.driver.current_window_handle
+
+    def action_07_02_get_handles(self, *args, **kwargs):
+        """ 【获取】获取所有句柄 """
+        return self.driver.window_handles
+
+    def action_07_03_get_name(self, *args, **kwargs):
+        """ 【获取】获取浏览器名称 """
+        return self.driver.name
+
+    def action_07_04_get_alert_text(self, *args, **kwargs):
+        """ 【获取】获取alert文本 """
+        return self.driver.switch_to.alert.text
+
+    def action_07_05_get_size(self, locator: tuple, wait_time_out=None, *args, **kwargs):
+        """ 【获取】获取元素大小 """
+        return self.find_element(locator, wait_time_out=wait_time_out).size
+
+    #################################### 浏览器操作相关事件 ####################################
+    def action_08_01_open(self, url: str, *args, **kwargs):
+        """ 【浏览器】打开url """
+        self.driver.get(url)
+
+    def action_08_02_close(self, *args, **kwargs):
+        """ 【浏览器】关闭浏览器 """
+        self.driver.close()
+
+    def action_08_03_quit(self, *args, **kwargs):
+        """ 【浏览器】关闭窗口 """
+        self.driver.quit()
+
+    #################################### 上传相关事件 ####################################
+    def action_09_01_app_upload_file_is_upload(self, locator, file_path, wait_time_out=None, *args, **kwargs):
+        """ 【上传】APP上传文件， is_upload标识为文件上传 """
         with open(file_path, 'r', encoding='utf8') as f:
             content = bytes(f.read(), 'utf-8')
         self.driver.push_file(file_path, base64.b64encode(content).decode('utf-8'))
 
-    def action_20upload_file_by_input_is_upload(self, locator, file_path, wait_time_out=None, *args, **kwargs):
-        """ 通过input上传文件， is_upload标识为文件上传 """
+    def action_09_02_upload_file_by_input_is_upload(self, locator, file_path, wait_time_out=None, *args, **kwargs):
+        """ 【上传】通过input上传文件， is_upload标识为文件上传 """
         self.find_element(locator, wait_time_out=wait_time_out).send_keys(file_path)
 
-    def action_20upload_file_by_perform_is_upload(self, locator, file_path, wait_time_out=None, *args, **kwargs):
-        """ 通过对话框上传文件， is_upload标识为文件上传 """
+    def action_09_03_upload_file_by_perform_is_upload(self, locator, file_path, wait_time_out=None, *args, **kwargs):
+        """ 【上传】通过对话框上传文件， is_upload标识为文件上传 """
         ActionChains(driver).click(self.find_element(locator, wait_time_out=wait_time_out)).perform()
         # https://blog.csdn.net/looker53/article/details/123962960
         # https://blog.csdn.net/qq_39314932/article/details/124233302
 
-    def action_21deselect_all(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
-        """ 清除所有的选项 """
-        Select(self.find_element(locator, wait_time_out=wait_time_out)).deselect_all()
+    #################################### JS相关事件 ####################################
+    def action_10_01_js_execute_is_input(self, js: str, *args, **kwargs):
+        """ 【JS】执行js， is_input标识为输入内容 """
+        self.driver.execute_script(js)
 
-    def action_22max_window(self, *args, **kwargs):
-        """ 窗口最大化 """
-        return self.driver.maximize_window()
+    def action_10_02_js_focus_element(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【JS】聚焦元素 """
+        self.driver.execute_script(
+            "arguments[0].scrollIntoView();",
+            self.find_element(locator, wait_time_out=wait_time_out)
+        )
 
-    def action_23set_window_size_is_input(self, width: float, height: float, *args, **kwargs):
-        """ 窗口缩放为指定大小值 """
-        return self.driver.set_window_size(float(width), float(height))
-
-    def action_23set_window_percentage_is_input(self, locator: tuple, text: str = '0.5', *args, **kwargs):
-        """ 窗口缩放为指定比例 """
-        return self.driver.execute_script(f"document.body.style.zoom='{text}'")
-
-    def action_24switch_handle_is_input(self, window_name: str, *args, **kwargs):
-        """ 切换到窗口名对应的窗口 """
-        self.driver.switch_to.window(window_name)
-
-    def action_25switch_iframe(self, locator: tuple, *args, **kwargs):
-        """ 切换到指定的iframe """
-        return self.assert_65is_iframe(locator)
-
-    def action_26get_current_handle(self, *args, **kwargs):
-        """ 获取当前句柄 """
-        return self.driver.current_window_handle
-
-    def action_27get_handles(self, *args, **kwargs):
-        """ 获取所有句柄 """
-        return self.driver.window_handles
-
-    def action_28get_name(self, *args, **kwargs):
-        """ 获取浏览器名称 """
-        return self.driver.name
-
-    def action_29get_size(self, locator: tuple, wait_time_out=None, *args, **kwargs):
-        """ 获取元素大小 """
-        return self.find_element(locator, wait_time_out=wait_time_out).size
-
-    def action_30set_local_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args, **kwargs):
-        """ 以字典的形式在localStorage中设置数据 """
-        for key, value in get_dict_data(data).items():
-            self.driver.execute_script("window.localStorage.setItem(arguments[0], arguments[1]);", key, value)
-
-    def action_30clear_local_storage_value(self, *args, **kwargs):
-        """ 清空localStorage中的所有数据 """
-        return self.driver.execute_script("localStorage.clear();")
-
-    def action_31set_session_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args, **kwargs):
-        """ 以字典的形式在sessionStorage中设置数据 """
-        for key, value in get_dict_data(data).items():
-            self.driver.execute_script(f"window.sessionStorage.setItem('{key}', '{value}');")
-
-    def action_31clear_session_storage_value(self, *args, **kwargs):
-        """ 清空sessionStorage中的所有数据 """
-        return self.driver.execute_script("window.sessionStorage.clear();")
-
-    def action_32add_cookie_by_dict_is_input(self, locator: tuple, cookie, *args, **kwargs):
-        """ 以字典形式添加cookie """
+    def action_10_03_add_cookie_by_dict_is_input(self, locator: tuple, cookie, *args, **kwargs):
+        """ 【JS】以字典形式添加cookie """
         for key, value in get_dict_data(cookie).items():
             self.driver.add_cookie({"name": key, "value": value})
 
-    def action_32delete_all_cookie(self, *args, **kwargs):
-        """ 删除cookie中的所有数据 """
+    def action_10_04_delete_all_cookie(self, *args, **kwargs):
+        """ 【JS】删除cookie中的所有数据 """
         return self.driver.delete_all_cookies()
 
+    def action_10_05_set_session_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args, **kwargs):
+        """ 【JS】以字典的形式在sessionStorage中设置数据 """
+        for key, value in get_dict_data(data).items():
+            self.driver.execute_script(f"window.sessionStorage.setItem('{key}', '{value}');")
+
+    def action_10_06_clear_session_storage_value(self, *args, **kwargs):
+        """ 【JS】清空sessionStorage中的所有数据 """
+        return self.driver.execute_script("window.sessionStorage.clear();")
+
+    def action_10_07_set_local_storage_value_by_dict_is_input(self, locator: tuple, data: dict, *args, **kwargs):
+        """ 【JS】以字典的形式在localStorage中设置数据 """
+        for key, value in get_dict_data(data).items():
+            self.driver.execute_script("window.localStorage.setItem(arguments[0], arguments[1]);", key, value)
+
+    def action_10_08_clear_local_storage_value(self, *args, **kwargs):
+        """ 【JS】清空localStorage中的所有数据 """
+        return self.driver.execute_script("localStorage.clear();")
+
+    #################################### 辅助相关事件 ####################################
+    def action_11_01_sleep_is_input(
+            self, locator: tuple, time_seconds: (int, float, str), wait_time_out=None, *args, **kwargs):
+        """ 【辅助】等待指定时间 """
+        time.sleep(float(time_seconds) if isinstance(time_seconds, str) else time_seconds)
+
+    def action_11_02_nothing_to_do(self, *args, **kwargs):
+        """ 【辅助】不操作元素 """
+        return
+
+    #################################### 数据提取相关事件 ####################################
     def extract_08_title(self, *args, **kwargs):
         """ 获取title """
         return self.driver.title
@@ -525,12 +629,14 @@ class GetWebDriver(Actions):
             self.driver.close()
         except:
             pass
-        try:
-            self.driver.quit()
-        except:
-            pass
+
         try:
             self.driver.close_app()
+        except:
+            pass
+
+        try:
+            self.driver.quit()
         except:
             pass
 

@@ -23,7 +23,7 @@ from app.api_test.forms.api import AddApiForm, EditApiForm, RunApiMsgForm, Delet
 from config import assert_mapping_list
 
 
-class ApiAssertMappingView(LoginRequiredView):
+class ApiAssertMappingView(NotLoginView):
 
     def get(self):
         """ 获取断言类型 """

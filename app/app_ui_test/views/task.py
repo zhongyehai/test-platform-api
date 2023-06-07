@@ -26,6 +26,7 @@ class AppUiRunTaskView(NotLoginView):
         batch_id = Report.get_batch_id()
         RunCaseBusiness.run(
             batch_id=batch_id,
+            env_code=form.env_list.data[0],
             trigger_type=form.trigger_type.data,
             is_async=form.is_async.data,
             project_id=form.task.project_id,

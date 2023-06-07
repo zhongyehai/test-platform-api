@@ -43,7 +43,7 @@ class AddElementForm(BaseForm):
                 raise ValidationError(f'第【{index + 1}】行，与第【{name_list.index(name) + 1}】行，元素名重复')
             if by == "coordinate":
                 try:
-                    if isinstance(eval(self.element.data), (tuple, list)) is False:
+                    if isinstance(eval(element), (tuple, list)) is False:
                         raise ValueError("元素表达式错误，请参照示例填写")
                 except:
                     raise ValueError("元素表达式错误，请参照示例填写")

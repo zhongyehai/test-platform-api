@@ -6,8 +6,10 @@ from threading import Thread
 import requests
 from flask import g, request
 
-from app.app_ui_test.models.project import AppUiProject
+from app.api_test.models.project import ApiProject, ApiProjectEnv
+from app.app_ui_test.models.project import AppUiProject, AppUiProjectEnv
 from app.config.models.runEnv import RunEnv
+from app.web_ui_test.models.project import WebUiProject, WebUiProjectEnv
 from utils.makeData.makeXmind import get_xmind_first_sheet_data
 from utils.util.fileUtil import TEMP_FILE_ADDRESS
 
@@ -37,6 +39,13 @@ class ProjectEnvBusiness:
             env.env_id != form.env_data.env_id
         ]
         env_model.synchronization(form.env_data, env_list, filed_list)
+
+    @classmethod
+    def add_env(cls, env_id):
+        """ 批量给服务/项目/app添加运行环境 """
+        ApiProjectEnv.add_env(env_id, ApiProject)
+        WebUiProjectEnv.add_env(env_id, WebUiProject)
+        AppUiProjectEnv.add_env(env_id, AppUiProject)
 
 
 class ModuleBusiness:
@@ -117,7 +126,8 @@ class CaseBusiness:
             step_dict = step.to_dict()
             step_dict["case_id"], step_dict["num"] = to_case.id, num_start + index + 1
             step_list.append(step_model().create(step_dict).to_dict())
-            step.add_quote_count()
+            if "Api" in step_model.__name__:  # 如果是api的，则增加接口引用
+                step.add_quote_count()
         case_model.merge_output(to_case.id, step_list)  # 合并出参
         return step_list
 
@@ -284,7 +294,7 @@ class RunCaseBusiness:
     ):
         """ 运行用例/任务 """
 
-        env = RunEnv.get_first() if run_type == "app" else RunEnv.get_data_byid_or_code(env_code)
+        env = RunEnv.get_data_byid_or_code(env_code)
         report = report_id or report_model.get_new_report(
             name=report_name,
             run_type=task_type,
@@ -327,7 +337,7 @@ class RunCaseBusiness:
             "port": server["port"],
             "platformName": phone["os"],
             "platformVersion": phone["os_version"],
-            "deviceName": phone["name"],
+            "deviceName": phone["device_id"],
             "appPackage": project["app_package"],
             "appActivity": project["app_activity"],
             "unicodeKeyboard": True,  # 使用Unicode编码方式发送字符串
@@ -335,7 +345,7 @@ class RunCaseBusiness:
             "noReset": form.no_reset.data,  # 控制APP记录的信息是否不重置
             "server_id": server["id"],  # 用于判断跳过条件
             "phone_id": phone["id"],  # 用于判断跳过条件
-            "device_id": phone["device_id"]  # 用于插入到公共变量
+            "device": phone  # 用于插入到公共变量
             # "app": "",  # 安装路径
             # "browserName": "",  # 直接测web用, Chrome
             # "autoWebview": "",  # 开机进入webview模式

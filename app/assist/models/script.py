@@ -18,6 +18,8 @@ class Script(BaseModel):
     script_data = db.Column(LONGTEXT, default="", comment="脚本代码")
     desc = db.Column(db.Text(), comment="函数文件描述")
     num = db.Column(db.Integer(), nullable=True, comment="当前函数文件的序号")
+    script_type = db.Column(
+        db.String(16), default="test", comment="脚本类型，test：执行测试、encryption：加密、decryption：解密")
 
     @classmethod
     def create_script_file(cls, env_code=None, not_create_list=[]):
@@ -53,6 +55,8 @@ class Script(BaseModel):
     def make_pagination(cls, form, pop_field=['script_data']):
         """ 解析分页条件 """
         filters = []
+        if form.script_type.data:
+            filters.append(cls.script_type == form.script_type.data)
         if form.create_user.data:
             filters.append(cls.create_user == form.create_user.data)
         if form.update_user.data:

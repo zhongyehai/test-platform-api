@@ -84,13 +84,16 @@ class UserView(AdminRequiredView):
     def post(self):
         """ 新增用户 """
         form = CreateUserForm().do_validate()
-        user = User().create(form.data)
-        user.insert_user_roles(form.role_list.data)
-        return app.restful.success(f'用户 {form.name.data} 新增成功', user.to_dict())
+        for user_dict in form.user_list.data:
+            user = User().create(user_dict)
+            user.insert_user_roles(user_dict["role_list"])
+        return app.restful.success(f'用户新增成功')
 
     def put(self):
         """ 修改用户 """
         form = EditUserForm().do_validate()
+        if form.password.data is None:
+            delattr(form, "password")
         form.user.update(form.data)
         form.user.update_user_roles(form.role_list.data)
         return app.restful.success(f'用户 {form.user.name} 修改成功', form.user.to_dict())

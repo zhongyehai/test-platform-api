@@ -129,7 +129,6 @@ class FindEnvForm(BaseForm):
             else:
                 insert_env_data = {"env_id": self.env_id.data, "project_id": field.data}
             env_data = ProjectEnv().create(insert_env_data)
-            setattr(self, "env_data", env_data)
         setattr(self, "env_data", env_data)
 
 

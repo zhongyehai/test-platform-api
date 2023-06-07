@@ -129,10 +129,10 @@ def send_run_func_error_message(content):
 
 def send_business_stage_count(content):
     """ 发送阶段统计报告 """
-    if content["total"]:
-        msg = get_business_stage_count_msg(content)
-        for webhook in content["webhookList"]:
-            send_msg(webhook, msg)
+    # if content["total"]:
+    msg = get_business_stage_count_msg(content)
+    for webhook in content["webhookList"]:
+        send_msg(webhook, msg)
 
 
 if __name__ == "__main__":

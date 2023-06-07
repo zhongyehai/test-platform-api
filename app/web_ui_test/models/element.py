@@ -10,7 +10,7 @@ class WebUiElement(BaseApi):
 
     by = db.Column(db.String(255), nullable=True, comment="定位方式")
     element = db.Column(db.Text(), default="", nullable=True, comment="元素值")
-    wait_time_out = db.Column(db.Integer(), default=10, nullable=True, comment="等待元素出现的时间，默认10秒")
+    wait_time_out = db.Column(db.Integer(), default=5, nullable=True, comment="等待元素出现的时间，默认5秒")
     page_id = db.Column(db.Integer(), db.ForeignKey("web_ui_test_page.id"), comment="所属的页面id")
 
     @classmethod

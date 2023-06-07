@@ -460,6 +460,13 @@ class BaseProjectEnv(BaseModel):
         """ 根据服务/项目id删除环境 """
         cls.query.filter(cls.project_id == project_id).delete(synchronize_session=False)
 
+    @classmethod
+    def add_env(cls, env_id, project_model):
+        """ 新增运行环境时，批量给服务/项目/APP加上 """
+        for project in project_model.get_all():
+            if not cls.get_first(project_id=project.id, env_id=env_id):
+                cls().create({"env_id": env_id, "project_id": project.id})
+
 
 class BaseModule(BaseModel):
     """ 模块基类表 """
@@ -692,7 +699,7 @@ class BaseCase(BaseModel):
         if form.name.data:
             filters.append(cls.name.like(f"%{form.name.data}%"))
         if form.status.data:
-            filters.append(cls.status.in_(form.status.data))
+            filters.append(cls.status == form.status.data)
         return cls.pagination(
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
@@ -724,7 +731,7 @@ class BaseCase(BaseModel):
                 source = source.to_dict()
 
             if source.get("quote_case") or source.get("suite_id"):  # 更新源是用例（引用用例和复制用例下的所有步骤）
-                source_case = cls.get_first(id=source["id"] if source["suite_id"] else source["quote_case"])
+                source_case = cls.get_first(id=source["id"] if source.get("suite_id") else source["quote_case"])
                 source_case_output = parse_list_to_dict(cls.loads(source_case.output))
                 output_dict.update(source_case_output)
             else:  # 更新源为步骤（添加步骤和复制其他用例的步骤）

@@ -26,6 +26,7 @@ class GetScriptFileForm(BaseForm):
     create_user = StringField()
     update_user = StringField()
     file_name = StringField()
+    script_type = StringField()
 
 
 class HasScriptForm(BaseForm):
@@ -41,6 +42,7 @@ class HasScriptForm(BaseForm):
 class CreatScriptForm(BaseForm):
     """ 创建自定义脚本文件 """
     name = StringField(validators=[DataRequired("请输入脚本文件名")])
+    script_type = StringField(validators=[DataRequired("请选择脚本类型")])
     desc = StringField()
     num = StringField()
     script_data = StringField()

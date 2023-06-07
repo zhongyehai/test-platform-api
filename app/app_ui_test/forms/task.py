@@ -92,6 +92,7 @@ class RunTaskForm(HasTaskIdForm):
     extend = StringField()  # 运维传过来的扩展字段，接收的什么就返回什么
     server_id = IntegerField()
     phone_id = IntegerField()
+    env_list = StringField(validators=[DataRequired("请选择运行环境")])
 
     def validate_no_reset(self, field):
         """ 是否重置app """

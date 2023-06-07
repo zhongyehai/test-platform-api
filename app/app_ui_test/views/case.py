@@ -80,6 +80,7 @@ class AppUiRunCaseView(LoginRequiredView):
         batch_id = Report.get_batch_id()
         RunCaseBusiness.run(
             batch_id=batch_id,
+            env_code=form.env_list.data[0],
             is_async=form.is_async.data,
             project_id=project_id,
             temp_variables=form.temp_variables.data,

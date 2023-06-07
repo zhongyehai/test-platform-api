@@ -164,13 +164,13 @@ def business_stage_count_ding_ding(content):
 
         # 汇总问题记录
         total_hit_count = 0
-        if data["hitRecord"]:  # 有问题记录才统计
-            hit_record_total = '#### 其中\n> '
-            for hit_title, hit_count in data["hitRecord"].items():
-                total_hit_count += hit_count
-                hit_record_total += f'#### {hit_title}: <font color=#FF0000>{hit_count}</font> 个\n>'
-            hit_record_total = f'#### 共触发问题: <font color=#FF0000>{total_hit_count}</font> 个\n>' + hit_record_total
-            detail_template += hit_record_total
+        # if data["hitRecord"]:  # 有问题记录才统计
+        hit_record_total = '#### 其中\n> '
+        for hit_title, hit_count in data["hitRecord"].items():
+            total_hit_count += hit_count
+            hit_record_total += f'#### {hit_title}: <font color=#FF0000>{hit_count}</font> 个\n>'
+        hit_record_total = f'#### 共触发问题: <font color=#FF0000>{total_hit_count}</font> 个\n>' + hit_record_total
+        detail_template += hit_record_total
         return detail_template
 
     count_type = "月" if content["countTime"] == "month" else "周"

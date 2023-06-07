@@ -50,13 +50,15 @@ class RunCase(RunTestRunner):
             self.suite_model = WebUiCaseSuite
             self.step_model = WebUiStep
             self.browser = browser
-            self.device_id = None
+            self.device = self.device_id = self.run_server_id = self.run_phone_id = None
         else:
             self.suite_model = AppUiCaseSuite
             self.step_model = AppUiStep
             self.run_server_id = appium_config.pop("server_id")
             self.run_phone_id = appium_config.pop("phone_id")
-            self.device_id = appium_config.pop("device_id")
+            self.device = appium_config.pop("device")
+            self.device_id = self.device["device_id"]
+
 
         self.DataTemplate["is_async"] = is_async
         self.case_id_list = case_id  # 要执行的用例id_list
@@ -253,6 +255,7 @@ class RunCase(RunTestRunner):
             # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
             all_variables.update(current_project.variables)
             all_variables.update(current_case.variables)
+            all_variables.update({"device": self.device})  # 强制增加一个变量为设备id，用于去数据库查数据
             all_variables.update({"device_id": self.device_id})  # 强制增加一个变量为设备id，用于去数据库查数据
             case_template["config"]["variables"].update(all_variables)
 

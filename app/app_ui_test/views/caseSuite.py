@@ -14,7 +14,7 @@ from utils.client.runUiTest import RunCase
 
 class AppUiGetCaseSuiteListView(LoginRequiredView):
 
-    def get(self):
+    def post(self):
         """ 用例集list """
         form = FindCaseSuite().do_validate()
         return app.restful.success(data=CaseSuite.make_pagination(form))
@@ -40,7 +40,7 @@ class AppUiRunCaseSuiteView(LoginRequiredView):
         form = RunCaseSuiteForm().do_validate()
         appium_config = RunCaseBusiness.get_appium_config(form.suite.project_id, form)
         report_id = RunCaseBusiness.run(
-            env_code=form.env_code.data,
+            env_code=form.env_list.data[0],
             is_async=form.is_async.data,
             project_id=form.suite.project_id,
             report_name=form.suite.name,

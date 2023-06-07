@@ -2,7 +2,7 @@
 from selenium.webdriver.common.keys import Keys
 from flask import request, current_app as app
 
-from app.baseView import LoginRequiredView
+from app.baseView import LoginRequiredView, NotLoginView
 from app.busines import StepBusiness
 from app.web_ui_test.blueprint import web_ui_test
 from config import ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list
@@ -37,7 +37,7 @@ class WebUiGetKeyBoardCodeListView(LoginRequiredView):
         return app.restful.success("获取成功", data=data)
 
 
-class WebUiGetExtractMappingListView(LoginRequiredView):
+class WebUiGetExtractMappingListView(NotLoginView):
 
     def get(self):
         """ 数据提取方法列表 """
@@ -106,7 +106,6 @@ class WebUiStepMethodViewView(LoginRequiredView):
         form = DeleteStepForm().do_validate()
         for step in form.step_list:
             step.delete()
-            step.subtract_api_quote_count()
         return app.restful.success(f"步骤删除成功")
 
 

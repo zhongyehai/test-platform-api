@@ -14,7 +14,7 @@ from utils.client.runUiTest import RunCase
 
 class WebUiGetCaseSuiteListView(LoginRequiredView):
 
-    def get(self):
+    def post(self):
         """ 用例集list """
         form = FindCaseSuite().do_validate()
         return app.restful.success(data=CaseSuite.make_pagination(form))

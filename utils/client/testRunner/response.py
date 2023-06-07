@@ -57,7 +57,7 @@ class ResponseObject(object):
 
         return matched.group(1)
 
-    def _extract_field_with_delimiter(self, field):
+    def _extract_field_with_delimiter(self, field, variable_data=None):
         """ 响应内容可以是json或html文本
         Args:
             field (str): 由分隔符连接的字符串。
@@ -135,7 +135,7 @@ class ResponseObject(object):
                 logger.log_error(err_msg)
                 raise exceptions.ExtractFailure(err_msg)
 
-        # response body
+        # 响应体
         elif top_query in ["content", "text", "json"]:
             try:
                 body = self.json
@@ -154,10 +154,13 @@ class ResponseObject(object):
                 return utils.query_json(body, sub_query)
             else:
                 # content = "<html>abcdefg</html>", content.xxx
-                err_msg = u"从响应体提取数据失败 => {}\n".format(field)
-                err_msg += u"响应体: {}\n".format(body)
+                err_msg = f"从响应体提取数据失败 => {field}\n响应体: {body}\n"
                 logger.log_error(err_msg)
                 raise exceptions.ExtractFailure(err_msg)
+
+        # 自定义变量
+        elif top_query == "variable":
+            return utils.query_json(variable_data, sub_query)
 
         # new set response attributes in teardown_hooks
         elif top_query in self.__dict__:
@@ -191,23 +194,20 @@ class ResponseObject(object):
             logger.log_error(err_msg)
             raise exceptions.ParamsError(err_msg)
 
-    def extract_field(self, field):
+    def extract_field(self, field, variable_data=None):
         """ 从响应数据中提取数据 """
         if not isinstance(field, basestring):
-            err_msg = u"无效的提取器 => {}\n".format(field)
+            err_msg = f"无效的提取器 => {field}\n"
             logger.log_error(err_msg)
             raise exceptions.ParamsError(err_msg)
-
-        msg = "extract: {}".format(field)
 
         # 判断是否能被正则编译，如果能被正则编译，则用正则提取方式
         if text_extractor_regexp_compile.match(field):
             value = self._extract_field_with_regex(field)
         else:
-            value = self._extract_field_with_delimiter(field)
+            value = self._extract_field_with_delimiter(field, variable_data)
 
-        msg += "\t=> {}".format(value)
-        logger.log_debug(msg)
+        logger.log_debug(f"extract: {field}\t=> {value}")
 
         return value
 
@@ -268,7 +268,24 @@ class ResponseObject(object):
                 session_context_variables_mapping[extract_key] = result
 
             else:  # 没有嵌套自定义函数，则直接提取
-                extracted_variables_mapping[extract_key] = self.extract_field(expression)
-                session_context_variables_mapping[extract_key] = self.extract_field(expression)
+                if expression.startswith("const"):  # 常量
+                    result = expression.split("const.")[1]
+                elif expression.startswith("variable"):  # 变量：variable.$data.data 或者 variable.$data
+                    variable_expression = expression.split("variable.")[1]
+                    variable_expression_split = variable_expression.split(".", 1)
+                    if len(variable_expression_split) > 1:  # $data.data
+                        variable, extract_expression = variable_expression_split
+                        variable_data = extract_variables(variable)[0]
+                        result = self.extract_field(
+                            f"variable.{extract_expression}",
+                            get_mapping_variable(variable_data, session_context_variables_mapping)
+                        )
+                    else:  # $data
+                        variable_data = extract_variables(variable_expression_split[0])[0]
+                        result = get_mapping_variable(variable_data, session_context_variables_mapping)
+                else:  # 从响应中提取
+                    result = self.extract_field(expression)
+                extracted_variables_mapping[extract_key] = result
+                session_context_variables_mapping[extract_key] = result
 
         return extracted_variables_mapping

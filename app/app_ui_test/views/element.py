@@ -107,7 +107,6 @@ class AppUiElementView(LoginRequiredView):
         """ 修改元素 """
         form = EditElementForm().do_validate()
         form.old.update(form.data)
-        form.update_page_addr()
         return app.restful.success(f"元素【{form.name.data}】修改成功", form.old.to_dict())
 
     def delete(self):

@@ -31,16 +31,55 @@ class GetSkipIfTypeView(NotLoginView):
         return app.restful.success(data=skip_if_type_mapping)
 
 
+class GetExtractsMappingView(NotLoginView):
+
+    def get(self):
+        """ 获取提数数据源枚举 """
+        data = [
+            {"label": "响应体", "value": "content"},
+            {"label": "响应头部信息", "value": "headers"},
+            {"label": "响应cookies", "value": "cookies"},
+            {"label": "正则表达式（从响应体提取）", "value": "regexp"},
+            {"label": "常量", "value": "const"},
+            {"label": "自定义变量", "value": "variable"},
+            {"label": "自定义函数", "value": "func"},
+            {"label": "其他（常量、自定义变量、自定义函数）", "value": "other"}
+        ]
+        return app.restful.success(data=data)
+
+
 class GetSkipIfDataSourceView(NotLoginView):
 
     def get(self):
         """ 获取跳过条件数据源 """
         data = [{"label": "运行环境", "value": "run_env"}]
         if request.args.get("test_type") == "appUi":
-            data = [{"label": "运行服务器", "value": "run_server"}, {"label": "运行设备", "value": "run_device"}]
+            data += [{"label": "运行服务器", "value": "run_server"}, {"label": "运行设备", "value": "run_device"}]
         if request.args.get("type") == "step":
             step_skip = [{"label": "自定义变量", "value": "variable"}, {"label": "自定义函数", "value": "func"}]
             return app.restful.success(data=data + step_skip)
+        return app.restful.success(data=data)
+
+
+class GetFindElementByView(NotLoginView):
+
+    def get(self):
+        """ 获取定位方式数据源 """
+        data = [
+            {"label": "根据id属性定位", "value": "id"},
+            {"label": "根据xpath表达式定位", "value": "xpath"},
+            {"label": "根据class选择器定位", "value": "class name"},
+            {"label": "根据css选择器定位", "value": "css selector"},
+            {"label": "根据name属性定位", "value": "name"},
+            {"label": "根据tag名字定位 ", "value": "tag name"},
+            {"label": "根据超链接文本定位", "value": "link text"},
+            {"label": "页面地址", "value": "url"}
+        ]
+        if request.args.get("test_type") == "appUi":
+            data += [
+                {"label": "坐标定位", "value": "coordinate"},
+                {"label": "accessibility_id", "value": "accessibility id"}
+            ]
         return app.restful.success(data=data)
 
 
@@ -85,3 +124,7 @@ config_blueprint.add_url_rule("/config/skipIfType", view_func=GetSkipIfTypeView.
 config_blueprint.add_url_rule("/config/runModel", view_func=GetRunTestModelView.as_view("GetRunTestModelView"))
 config_blueprint.add_url_rule("/config/skipIfDataSource",
                               view_func=GetSkipIfDataSourceView.as_view("GetSkipIfDataSourceView"))
+config_blueprint.add_url_rule("/config/extractsMapping",
+                              view_func=GetExtractsMappingView.as_view("GetExtractsMappingView"))
+config_blueprint.add_url_rule("/config/findElementBy",
+                              view_func=GetFindElementByView.as_view("GetFindElementByView"))
