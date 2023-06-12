@@ -285,6 +285,13 @@ ui_suite_list = [
     {"key": "assist", "value": "造数据用例集"}
 ]
 
+device_extends = {
+    "contact_count": "联系人个数",
+    "contact_person_count": "通讯录条数",
+    "note_record_count": "短信条数",
+    "app_installed_record_count": "APP安装数量"
+}
+
 # 回调流水线消息内容
 call_back_msg_addr = ""
 
@@ -504,6 +511,7 @@ def init_config():
             {"name": "server_os_mapping", "value": JsonUtil.dumps(server_os_mapping), "desc": "appium服务器系统类型"},
             {"name": "phone_os_mapping", "value": JsonUtil.dumps(phone_os_mapping), "desc": "运行app自动化的手机系统"},
             {"name": "app_key_code", "value": JsonUtil.dumps(app_key_code), "desc": "模拟手机键盘输入code"},
+            {"name": "device_extends", "value": JsonUtil.dumps(device_extends), "desc": "设备详细数据"},
             {
                 "name": "app_ui_report_addr",
                 "value": "/#/appUiTest/reportShow?id=",

@@ -24,13 +24,14 @@ ui_action_mapping_reverse = dict(zip(ui_action_mapping.values(), ui_action_mappi
 
 # UI自动化的断言事件
 ui_assert_mapping = Actions.get_assert_mapping()
-ui_assert_mapping, ui_assert_mapping_list = ui_assert_mapping["mapping_dict"], ui_assert_mapping["mapping_list"]
+ui_assert_mapping_dict, ui_assert_mapping_list = ui_assert_mapping["mapping_dict"], ui_assert_mapping["mapping_list"]
 
 # UI自动化的数据提取事件
 extract_mapping = Actions.get_extract_mapping()
 ui_extract_mapping, ui_extract_mapping_list = extract_mapping["mapping_dict"], extract_mapping["mapping_list"]
 ui_extract_mapping.setdefault("自定义函数", "func")
-ui_extract_mapping_list.append({"label": "自定义函数", "value": "func"})
+ui_extract_mapping_list.extend([{"label": "自定义变量", "value": "variable"}, {"label": "自定义函数", "value": "func"}])
+
 
 # 跳过条件判断类型映射
 skip_if_type_mapping = [

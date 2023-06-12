@@ -14,6 +14,8 @@ from pactverify.matchers import PactJsonVerify
 from requests_toolbelt import MultipartEncoder
 
 from .compat import basestring, builtin_str, integer_types
+
+
 # from .exceptions import ParamsError
 #
 #
@@ -80,7 +82,8 @@ def _04contract_equals(check_value, expect_value):
         expect_value = json.loads(expect_value)
     pact_json_verify = PactJsonVerify(expect_value, hard_mode=True, separator='@')
     pact_json_verify.verify(check_value)  # 校验实际返回数据
-    assert pact_json_verify.verify_result is True, json.dumps(pact_json_verify.verify_info, ensure_ascii=False, indent=4)
+    assert pact_json_verify.verify_result is True, json.dumps(pact_json_verify.verify_info, ensure_ascii=False,
+                                                              indent=4)
 
 
 def _05contains(check_value, expect_value):
@@ -136,6 +139,128 @@ def _13is_true(check_value, expect_value=None):
 def _14is_not_true(check_value, expect_value=None):
     """ 值为假 """
     assert not check_value
+
+
+def _13is_real_true(check_value, expect_value=None):
+    """ 值为true """
+    assert check_value is True
+
+
+def _13is_real_not_true(check_value, expect_value=None):
+    """ 值不为true """
+    assert check_value is not True
+
+
+def _14is_real_false(check_value, expect_value=None):
+    """ 值为false """
+    assert check_value is False
+
+
+def _14is_real_not_false(check_value, expect_value=None):
+    """ 值不为false """
+    assert check_value is not False
+
+
+def _14is_none(check_value, expect_value=None):
+    """ 值为null """
+    assert check_value is None
+
+
+def _14is_not_none(check_value, expect_value=None):
+    """ 值不为null """
+    assert check_value is not None
+
+
+def _14batch_is_has_data(check_value, expect_keys=[]):
+    """ 批量判断字段值均为真 """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_has_data(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'【{check_value}】没有字段为【{expect_key}】的key'
+            assert check_value[expect_key], f'【{expect_key}】对应的值【{check_value[expect_key]}】不为真'
+
+
+def _14batch_is_not_has_data(check_value, expect_keys=[]):
+    """ 批量判断字段值均为假 """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_not_has_data(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'【{check_value}】没有字段为【{expect_key}】的key'
+            assert not check_value[expect_key], f'【{expect_key}】对应的值【{check_value[expect_key]}】不为假'
+
+
+def _14batch_is_true(check_value, expect_keys=[]):
+    """ 批量判断字段值均为true """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_true(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'【{check_value}】没有字段为【{expect_key}】的key'
+            assert check_value[expect_key] is True, f'【{expect_key}】对应的值【{check_value[expect_key]}】不是True'
+
+
+def _14batch_is_not_true(check_value, expect_keys=[]):
+    """ 批量判断字段值均不为true """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_not_true(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'批量判断字段值均不为true：【{check_value}】没有字段为【{expect_key}】的key'
+            assert check_value[
+                       expect_key] is not True, f'批量判断字段值均不为true：【{expect_key}】对应的值【{check_value[expect_key]}】不是true'
+
+
+def _14batch_is_false(check_value, expect_keys=[]):
+    """ 批量判断字段值均为false """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_false(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'【{check_value}】没有字段为【{expect_key}】的key'
+            assert check_value[expect_key] is False, f'【{expect_key}】对应的值【{check_value[expect_key]}】不是False'
+
+
+def _14batch_is_not_false(check_value, expect_keys=[]):
+    """ 批量判断字段值均不为false """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_not_false(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'批量判断字段值均不为false：【{check_value}】没有字段为【{expect_key}】的key'
+            assert check_value[
+                       expect_key] is not False, f'批量判断字段值均不为false：【{expect_key}】对应的值【{check_value[expect_key]}】不是false'
+
+
+def _14batch_is_null(check_value, expect_keys=[]):
+    """ 批量判断字段值均为null """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_null(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'批量判断字段值均为null：【{check_value}】没有字段为【{expect_key}】的key'
+            assert check_value[
+                       expect_key] is None, f'批量判断字段值均为null：【{expect_key}】对应的值【{check_value[expect_key]}】不是null'
+
+
+def _14batch_is_not_null(check_value, expect_keys=[]):
+    """ 批量判断字段值均不为null """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_not_null(check_value_item, expect_keys=[])
+    else:
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'批量判断字段值均不为null：【{check_value}】没有字段为【{expect_key}】的key'
+            assert check_value[
+                       expect_key] is not None, f'批量判断字段值均不为null：【{expect_key}】对应的值【{check_value[expect_key]}】为null'
 
 
 def _15less_than(check_value, expect_value):

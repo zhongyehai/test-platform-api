@@ -88,7 +88,7 @@ class BaseModel(db.Model, JsonUtil):
         "headers", "variables", "script_list", "pop_header_filed", "output",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to", "temp_variables",
-        "kym", "task_item", 'business_list', 'run_id'
+        "kym", "task_item", 'business_list', 'run_id', 'extends'
     ]
 
     def set_attr(self, column_list, value=None):

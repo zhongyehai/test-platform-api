@@ -86,7 +86,7 @@ class WebDriverSession(BaseSession):
             #     )
 
         except TimeoutException as error:
-            raise RunTimeException('浏览器等待元素超时')
+            raise RunTimeException('等待元素超时')
 
         except InvalidArgumentException as error:
             raise RunTimeException('元素与操作事件不匹配，请检查元素和操作事件，异常代码【InvalidArgumentException】')

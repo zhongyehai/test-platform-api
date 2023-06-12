@@ -73,11 +73,12 @@ class GetFindElementByView(NotLoginView):
             {"label": "根据name属性定位", "value": "name"},
             {"label": "根据tag名字定位 ", "value": "tag name"},
             {"label": "根据超链接文本定位", "value": "link text"},
-            {"label": "页面地址", "value": "url"}
+            {"label": "页面地址", "value": "url"},
+            {"label": "根据具体坐标定位", "value": "coordinate"}
         ]
         if request.args.get("test_type") == "appUi":
             data += [
-                {"label": "坐标定位", "value": "coordinate"},
+                {"label": "根据元素范围坐标定位", "value": "bounds"},
                 {"label": "accessibility_id", "value": "accessibility id"}
             ]
         return app.restful.success(data=data)

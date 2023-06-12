@@ -114,7 +114,8 @@ web_ui_test.add_url_rule("/step/list", view_func=WebUiGetStepListView.as_view("W
 web_ui_test.add_url_rule("/step", view_func=WebUiStepMethodViewView.as_view("WebUiStepMethodViewView"))
 web_ui_test.add_url_rule("/step/sort", view_func=WebUiChangeStepSortView.as_view("WebUiChangeStepSortView"))
 web_ui_test.add_url_rule("/step/status", view_func=WebUiChangeStepStatusView.as_view("WebUiChangeStepStatusView"))
-web_ui_test.add_url_rule("/step/execute", view_func=WebUiGetCaseExecuteListView.as_view("WebUiGetCaseExecuteListView"))
+web_ui_test.add_url_rule("/step/executeMapping",
+                         view_func=WebUiGetCaseExecuteListView.as_view("WebUiGetCaseExecuteListView"))
 web_ui_test.add_url_rule("/step/keyBoardCode",
                          view_func=WebUiGetKeyBoardCodeListView.as_view("WebUiGetKeyBoardCodeListView"))
 web_ui_test.add_url_rule("/step/assertMapping",

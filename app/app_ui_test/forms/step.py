@@ -78,19 +78,7 @@ class AddStepForm(BaseForm):
     def validate_validates(self, field):
         """ 校验断言信息 """
         if not self.quote_case.data:
-            for index, validate in enumerate(field.data):
-                row = f"断言，第【{index + 1}】行，"
-                validate_type, element = validate.get("validate_type"), validate.get("element")
-                data_type, value = validate.get("data_type"), validate.get("value")
-
-                if validate_type and element and data_type and value:  # 都存在
-                    self.validate_data_type_(row, data_type, value)  # 校验预期结果
-                elif validate_type and not element and data_type and not value:  # 仅断言方式和数据类型存在
-                    continue
-                elif not validate_type and not element and not data_type and not value:  # 所有数据都不存在
-                    continue
-                else:
-                    raise ValidationError(f"{row}，数据异常，请检查")
+            self.validate_base_validates(field.data)
 
 
 class EditStepForm(AddStepForm):

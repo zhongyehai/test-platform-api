@@ -81,7 +81,7 @@ class AddStepForm(BaseForm):
     def validate_validates(self, field):
         """ 校验断言信息 """
         if not self.quote_case.data:
-            self.validate_api_validates(field.data)
+            self.validate_base_validates(field.data)
 
     def validate_data_form(self, field):
         self.validate_variable_format(field.data, msg_title='form-data')

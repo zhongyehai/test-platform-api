@@ -115,34 +115,57 @@ class BaseForm(Form, JsonUtil):
         except Exception as error:
             return False
 
-    def validate_api_validates(self, data):
+    def validate_data_validates(self, validate_data, row_msg):
         """ 校验断言信息，全都有才视为有效 """
-        for index, validate in enumerate(data):
+        data_source, key = validate_data.get("data_source"), validate_data.get("key")
+        validate_method = validate_data.get("validate_method")
+        data_type, value = validate_data.get("data_type"), validate_data.get("value")
+
+        if (not data_source and not data_type) or (
+                data_source and not key and validate_method and data_type and not value):
+            return
+        elif (data_source and not data_type) or (not data_source and data_type):
+            raise ValidationError(f"{row_msg}若要进行断言，则数据源、预期结果、数据类型需同时存在")
+
+        else:  # 有效的断言
+            # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
+            if data_source == "regexp" and not self.validate_is_regexp(key):
+                raise ValidationError(f"{row_msg}正则表达式【{key}】错误")
+
+            if not validate_method:  # 没有选择断言方法
+                raise ValidationError(f"{row_msg}请选择断言方法")
+
+            if value is None:  # 要进行断言，则预期结果必须有值
+                raise ValidationError(f"{row_msg}预期结果需填写")
+
+            self.validate_data_type_(row_msg, data_type, value)  # 校验预期结果的合法性
+
+    def validate_page_validates(self, validate_data, row_msg):
+        validate_method, data_source = validate_data.get("validate_method"), validate_data.get("data_source")
+        data_type, value = validate_data.get("data_type"), validate_data.get("value")
+
+        if validate_method and data_source and data_type and value:  # 都存在
+            self.validate_data_type_(row_msg, data_type, value)  # 校验预期结果
+        elif validate_method and not data_source and data_type and not value:  # 仅断言方式和数据类型存在
+            return
+        elif not validate_method and not data_source and not data_type and not value:  # 所有数据都不存在
+            return
+        else:
+            raise ValidationError(f"{row_msg}，数据异常，请检查")
+
+    def validate_base_validates(self, data):
+        """ 校验断言信息，全都有才视为有效 """
+        for index, validate_data in enumerate(data):
             row_msg = f"断言，第【{index + 1}】行，"
-            data_source, key = validate.get("data_source"), validate.get("key")
-            validate_type = validate.get("validate_type")
-            data_type, value = validate.get("data_type"), validate.get("value")
+            validate_type = validate_data.get("validate_type")
 
-            if (not data_source and not data_type) or (
-                    data_source and not key and validate_type and data_type and not value):
-                continue
-            elif (data_source and not data_type) or (not data_source and data_type):
-                raise ValidationError(
-                    f"{row_msg}若要进行断言，则实际结果数据源和预期结果数据类型需同时存在，若不进行断言，则实际结果数据源和预期结果数据类型需同时不存在"
-                )
+            if not validate_type:  # 没有选择断言类型
+                raise ValidationError(f"{row_msg}请选择断言类型")
 
-            else:  # 有效的断言
-                # 实际结果，选择的数据源为正则表达式，但是正则表达式错误
-                if data_source == "regexp" and not self.validate_is_regexp(key):
-                    raise ValidationError(f"{row_msg}正则表达式【{key}】错误")
-
-                if not validate_type:  # 没有选择断言类型
-                    raise ValidationError(f"{row_msg}请选择断言类型")
-
-                if value is None:  # 要进行断言，则预期结果必须有值
-                    raise ValidationError(f"{row_msg}预期结果需填写")
-
-                self.validate_data_type_(row_msg, data_type, value)  # 校验预期结果的合法性
+            if validate_type == 'data':  # 数据断言
+                self.validate_data_validates(validate_data, row_msg)
+            else:  # 页面断言
+                self.validate_page_validates(validate_data, row_msg)
 
     def validate_data_type_(self, row, data_type, value):
         """ 校验数据类型 """

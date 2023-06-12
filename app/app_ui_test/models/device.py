@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 from app.baseModel import BaseModel, db
 
 
@@ -52,6 +54,7 @@ class AppUiRunPhone(BaseModel):
     os = db.Column(db.String(255), nullable=True, comment="设备系统类型：Android/ios")
     os_version = db.Column(db.String(255), nullable=True, comment="设备系统版本号")
     device_id = db.Column(db.String(255), nullable=True, comment="终端设备id")
+    extends = db.Column(db.Text(), default='{}', comment="设备扩展字段")
 
     @classmethod
     def make_pagination(cls, form):

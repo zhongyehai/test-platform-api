@@ -232,8 +232,8 @@ class Runner(object):
             self.resp_obj = response.ResponseObject(resp)
 
             # 数据提取
-            extracted_variables_mapping = self.resp_obj.extract_response(self.session_context,
-                                                                         extractors.get("extractors", []))
+            extracted_variables_mapping = self.resp_obj.extract_response(
+                self.session_context, extractors.get("extractors", []))
             self.session_context.update_test_variables("response", self.resp_obj)
         else:
             # 执行测试步骤浏览器操作
@@ -275,8 +275,10 @@ class Runner(object):
             raise
         finally:
             self.validation_results = self.session_context.validation_results
+            self.client_session.meta_data["data"][0]["validation_results"] = self.validation_results  # 保存断言结果
 
         self.client_session.meta_data["data"][0]['before'] = None  # 如果步骤执行成功，则把执行前截图去掉
+
 
     def run_test(self, step_dict):
         """ 运行用例的单个测试步骤

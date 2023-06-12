@@ -18,6 +18,6 @@ class AppUiStep(BaseStep):
     )
     validates = db.Column(
         db.Text(),
-        default='[{"element": null, "key": null, "validate_type": null, "data_type": null, "value": null, "remark": null}]',
+        default='[{"data_source": null, "key": null, "validate_type": "page", "validate_method": null, "data_type": null, "value": null, "remark": null}]',
         comment="断言信息")
     element_id = db.Column(db.Integer(), comment="步骤所引用的元素的id")

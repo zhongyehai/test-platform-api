@@ -77,6 +77,7 @@ class AddPhoneForm(BaseForm):
     os_version = StringField(validators=[DataRequired("手机设备系统版本不能为空")])
     device_id = StringField(validators=[DataRequired("设备id不能为空")])
     num = StringField()
+    extends = StringField()
 
     def validate_name(self, field):
         """ 校验手机名不重复 """

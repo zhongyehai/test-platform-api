@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import re
 
-from . import logger
+from . import logger, utils
 from .compat import OrderedDict
 from .parser import extract_functions, parse_function, get_mapping_variable, extract_variables
 
 text_extractor_regexp_compile = re.compile(r".*\(.*\).*")
 
 
-def extract_by_func(
+def extract_by_data(
+        extract_type,
         session_context_variables_mapping: dict,
         session_context,
         value: str):
@@ -40,6 +41,21 @@ def extract_by_func(
             *extract_function_data['args'],
             **extract_function_data['kwargs']
         )
+    else:
+        if extract_type == "const":  # 常量
+            return extract_type.split("const.")[1]
+        elif extract_type == "variable":  # 变量：variable.$data.data 或者 variable.$data
+            variable_expression_split = value.split(".", 1)
+            if len(variable_expression_split) > 1:  # $data.data
+                variable, extract_expression = variable_expression_split
+                variable_data = extract_variables(variable)[0]
+                return utils.query_json(
+                    get_mapping_variable(variable_data, session_context_variables_mapping),
+                    extract_expression
+                )
+            else:  # $data
+                variable_data = extract_variables(variable_expression_split[0])[0]
+                return get_mapping_variable(variable_data, session_context_variables_mapping)
 
 
 def extract_by_element(driver, value: dict):
@@ -70,8 +86,9 @@ def extract_data(session_context, driver, extractors):
     session_context_variables_mapping = session_context.test_variables_mapping
     for extractor in extractors:
         result = None
-        if extractor['type'] == 'func':  # 自定义函数
-            result = extract_by_func(
+        if extractor['type'] in ('const', 'func', 'variable'):  # 自定义函数、变量
+            result = extract_by_data(
+                extractor['type'],
                 session_context_variables_mapping,
                 session_context,
                 extractor['value']
@@ -81,5 +98,6 @@ def extract_data(session_context, driver, extractors):
             result = extract_by_element(driver, extractor['value'])
 
         extracted_variables_mapping[extractor['key']] = result
+        session_context_variables_mapping[extractor['key']] = result
 
     return extracted_variables_mapping

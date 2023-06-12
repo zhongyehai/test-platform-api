@@ -41,7 +41,7 @@ class AddElementForm(BaseForm):
             self.validate_data_is_true(f'第【{index + 1}】行，元素表达式必传', element)
             if name in name_list:
                 raise ValidationError(f'第【{index + 1}】行，与第【{name_list.index(name) + 1}】行，元素名重复')
-            if by == "coordinate":
+            if by in ("coordinate", "bounds"):
                 try:
                     if isinstance(eval(element), (tuple, list)) is False:
                         raise ValueError("元素表达式错误，请参照示例填写")
@@ -64,8 +64,7 @@ class EditElementForm(AddElementForm):
 
     name = StringField(validators=[DataRequired("元素名字必传"), Length(1, 255, "元素名字长度为1~255位")])
     by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
-    element = StringField(
-        validators=[DataRequired("定位元素表达式必传"), Length(1, 512, "定位元素表达式长度为1~512位")])
+    element = StringField(validators=[DataRequired("定位元素表达式必传")])
     desc = StringField()
     num = StringField()
     wait_time_out = IntegerField()
@@ -88,7 +87,7 @@ class EditElementForm(AddElementForm):
     def validate_by(self, field):
         """ 一个页面只能有一个url地址 """
         # 如果是坐标定位，校验坐标值
-        if field.data == "coordinate":
+        if field.data in ("coordinate", "bounds"):
             try:
                 if isinstance(eval(self.element.data), (tuple, list)) is False:
                     raise ValueError("元素表达式错误，请参照示例填写")
@@ -108,9 +107,8 @@ class ValidateProjectId(BaseForm):
 class ChangeElementById(BaseForm):
     """ 根据id更新元素 """
     id = IntegerField(validators=[DataRequired("元素id必传")])
-    by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
-    element = StringField(
-        validators=[DataRequired("定位元素表达式必传"), Length(1, 255, "定位元素表达式长度为1~255位")])
+    by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 1024, "定位方式长度为1~1024位")])
+    element = StringField(validators=[DataRequired("定位元素表达式必传")])
 
     def validate_id(self, field):
         """ 校验元素id已存在 """

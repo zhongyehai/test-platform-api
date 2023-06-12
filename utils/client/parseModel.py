@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from utils.util.fileUtil import FileUtil
 from utils.util.jsonUtil import JsonUtil
-from config import assert_mapping
+from config import assert_mapping, ui_assert_mapping_dict
 from utils.client.testRunner.parser import extract_functions, parse_function, extract_variables
 
 
@@ -84,12 +84,13 @@ class FormatModel(JsonUtil):
         validates:
             [
                 {
+                     "validate_type": "data/page",
                     "data_source": "content",
-                    "data_type": "int",
                     "key": "status",
-                    "remark": null,
-                    "validate_type": "相等",
-                    "value": "200"
+                    "validate_method": "相等",
+                    "data_type": "int",
+                    "value": "200",
+                    "remark": null
                 }
             ]
         return:
@@ -97,19 +98,21 @@ class FormatModel(JsonUtil):
         """
         parsed_validate = []
         for validate in validates_list:
+            validate_method = validate.get("validate_method")
             data_source, key = validate.get("data_source"), validate.get("key")
-            validate_type, element = validate.get("validate_type"), validate.get("element")
             data_type, value = validate.get("data_type"), validate.get("value")
-            if is_api:  # 接口
-                if data_source and data_type and validate_type and value:
+            if validate.get("validate_type") == 'data':  # 数据校验
+                if data_source and data_type and validate_method and value:
                     parsed_validate.append({
-                        assert_mapping[validate_type]: [
+                        assert_mapping[validate_method]: [
                             self.build_actual_result(data_source, key),  # 实际结果
                             self.build_data(data_type, value)  # 预期结果
                         ]
                     })
-            else:  # UI
-                if validate_type and element and data_type and value:
+            else:  # 页面校验
+                if data_source and validate_method and data_type and value:
+                    # 根据执行方法文字描述替换成具体的执行方法
+                    validate["validate_method"] = ui_assert_mapping_dict[validate_method]
                     parsed_validate.append(validate)
 
         return parsed_validate
@@ -129,7 +132,7 @@ class FormatModel(JsonUtil):
         """ 生成实际结果表达式 """
         if data_source == "regexp":  # 正则表达式
             return key
-        elif data_source == "other":  # 其他数据，常量、自定义函数、自定义变量
+        elif data_source in ("other", "variable", "func"):  # 其他数据，常量、自定义函数、自定义变量
             return key
         elif not key:  # 整个指定的响应对象
             return data_source

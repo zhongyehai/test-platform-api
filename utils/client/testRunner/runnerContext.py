@@ -207,7 +207,9 @@ class SessionContext(object):
             raise exceptions.ValidationFailure(error_msg)
 
     def validate(self, validators, test_type, resp_obj=None, driver=None):
-        """ 执行断言 """
+        """ 执行断言
+        [{'_01equals': ['content', 'True']}]
+        """
         self.validation_results = []
         if not validators:
             return
@@ -219,12 +221,12 @@ class SessionContext(object):
 
         for validator in validators:
             # evaluate validators with context variable mapping.
-            if test_type == "api":
+            if validator.get("check") is None:  # 数据校验，已经解析过了
                 evaluated_validator = self.__eval_check_item(parser.parse_validator(validator), resp_obj)
             else:
                 evaluated_validator = validator
             try:
-                if test_type == "api":
+                if validator.get("check") is None:  # 数据校验，已经解析过了
                     self.do_api_validation(evaluated_validator)
                 else:
                     self.do_ui_validation(driver, evaluated_validator)

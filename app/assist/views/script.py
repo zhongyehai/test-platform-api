@@ -64,14 +64,6 @@ class DebugScriptView(LoginRequiredView):
             ext_func = extract_functions(expression)
             func = parse_function(ext_func[0])
 
-            # 重定向print内容到文件
-            # redirect_print_log_to_file(name)
-            # result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])
-            # # 恢复输出到console、读取print内容、删除printlog文件，顺序不可改变
-            # sys.stdout = sys.__stdout__
-            # script_print = FileUtil.get_script_print_log(name)
-            # FileUtil.delete_script_print_addr(FileUtil.get_script_print_addr(name))
-
             # 重定向print内容到内存
             redirect = RedirectPrintLogToMemory()
             result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])

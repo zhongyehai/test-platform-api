@@ -105,7 +105,8 @@ app_ui_test.add_url_rule("/step/list", view_func=AppUiGetStepListView.as_view("A
 app_ui_test.add_url_rule("/step", view_func=AppUiStepMethodViewView.as_view("AppUiStepMethodViewView"))
 app_ui_test.add_url_rule("/step/sort", view_func=AppUiChangeStepSortView.as_view("AppUiChangeStepSortView"))
 app_ui_test.add_url_rule("/step/status", view_func=AppUiChangeStepStatusView.as_view("AppUiChangeStepStatusView"))
-app_ui_test.add_url_rule("/step/execute", view_func=AppUiGetCaseExecuteListView.as_view("AppUiGetCaseExecuteListView"))
+app_ui_test.add_url_rule("/step/executeMapping",
+                         view_func=AppUiGetCaseExecuteListView.as_view("AppUiGetCaseExecuteListView"))
 app_ui_test.add_url_rule("/step/assertMapping",
                          view_func=AppUiGetAssertMappingListView.as_view("AppUiGetAssertMappingListView"))
 app_ui_test.add_url_rule("/step/extractMapping",

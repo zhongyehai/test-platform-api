@@ -48,7 +48,7 @@ class Actions:
             if func_name.startswith(startswith):
                 doc = getattr(cls, func_name).__doc__.strip().split('，')[0]  # 函数注释
                 mapping_dict.setdefault(doc, func_name)
-                mapping_list.append({'label': doc, 'value': func_name})
+                mapping_list.append({'value': doc}if startswith == 'assert_' else {'label': doc, 'value': func_name})
         return {"mapping_dict": mapping_dict, "mapping_list": mapping_list}
 
     @classmethod
@@ -115,9 +115,11 @@ class Actions:
         return self.driver.switch_to.alert.dismiss()
 
     def action_01_05_click_alert_dismiss(self, locator: tuple, *args, **kwargs):
-        """ 【点击】点击坐标（APP），locator = ("coordinate","[[918,1079], [1080,1205]]")"""
-        bounds = json.loads(locator[1])
-        return TouchAction(self.driver).press(x=bounds[0][0], y=bounds[0][1]).release().perform()
+        """ 【点击】点击坐标（APP），locator = ("bounds","[[918,1079], [1080,1205]]")"""
+        bounds = json.loads(locator[1])  # [[918,1079], [1080,1205]]
+        bounds1, bounds2, = bounds[0], bounds[1]  # [918,1079], [1080,1205]
+        x1, y1, x2, y2 = bounds1[0], bounds1[1], bounds2[0], bounds2[1]  # 避免偏差，计算元素坐标的中心点
+        return TouchAction(self.driver).press(x=(x1 + x2) / 2, y=(y1 + y2) / 2).release().perform()
 
     #################################### 输入相关事件 ####################################
     def action_02_01_clear_and_send_keys_is_input(
@@ -436,6 +438,10 @@ class Actions:
     def action_11_02_nothing_to_do(self, *args, **kwargs):
         """ 【辅助】不操作元素 """
         return
+
+    def action_11_03_nothing_to_do(self, *args, **kwargs):
+        """ 【辅助】重启APP """
+        self.driver.reset()
 
     #################################### 数据提取相关事件 ####################################
     def extract_08_title(self, *args, **kwargs):

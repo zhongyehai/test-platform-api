@@ -31,7 +31,7 @@ class ApiMsg(BaseApi):
     )
     validates = db.Column(
         db.Text(),
-        default='[{"data_source": null, "key": null, "validate_type": null, "data_type": null, "value": null, "remark": null}]',
+        default='[{"data_source": null, "key": null, "validate_type": "data", "validate_method": null, "data_type": null, "value": null, "remark": null}]',
         comment="断言信息")
     deprecated = db.Column(db.Boolean(), default=False, comment="是否废弃")
     quote_count = db.Column(db.Integer(), nullable=True, default=0, comment="被引用次数，即多少个步骤直接使用了此接口")

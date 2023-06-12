@@ -119,9 +119,9 @@ class RunCase(RunTestRunner):
         """
         parsed_list = []
         for extract in extracts:
-            if extract["extract_type"] == "func":  # 自定义函数提取
+            if extract["extract_type"] in ("const", "func", "variable"):  # 自定义函数、变量提取、常量
                 parsed_list.append({
-                    "type": "func",
+                    "type": extract["extract_type"],
                     "key": extract.get("key"),
                     "value": extract.get("value")
                 })
@@ -141,23 +141,43 @@ class RunCase(RunTestRunner):
     def parse_validates(self, validates_list):
         """ 解析断言
         validates:
-            [{"element": 3, "data_type": "str", "key": "null", "validate_type": "assert_52_element_value_larger_than", "value": "123123"}]
+                [
+                    {
+                        '_01equals': ['variable.$a', '123']
+                    },
+                    {
+                        'id': '1686479480568',
+                        'validate_type': 'page',
+                        'data_source': 3,
+                        'key': None,
+                        'validate_method': '相等',
+                        'data_type': 'str',
+                        'value': '234'
+                    }
+                ]
         return:
-            [{
-                "comparator": "validate_type",  # 断言方式
-                "check": ("id", "kw"),  # 实际结果
-                "expect": "123123"  # 预期结果
-            }]
+            [
+                {          {
+                    '_01equals': ['variable.$a', '123']
+                },
+                {
+                    "comparator": "validate_type",  # 断言方式
+                    "check": ("id", "kw"),  # 实际结果
+                    "expect": "123123"  # 预期结果
+                }
+            ]
         """
         parsed_validate = []
         for validate in validates_list:
-            if validate["validate_type"]:
-                element = self.get_format_element(validate["element"])
+            if validate.get("data_source"):  # 页面断言，需要解析ui元素
+                element = self.get_format_element(validate["data_source"])
                 parsed_validate.append({
-                    "comparator": validate["validate_type"],  # 断言方式
+                    "comparator": validate["validate_method"],  # 断言方式
                     "check": (element.by, element.element),  # 实际结果
                     "expect": self.build_expect_result(validate["data_type"], validate["value"])  # 预期结果
                 })
+            else:
+                parsed_validate.append(validate)  # 已经解析过的数据断言
         return parsed_validate
 
     def build_expect_result(self, data_type, value):
