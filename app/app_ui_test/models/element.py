@@ -9,6 +9,7 @@ class AppUiElement(BaseApi):
     __table_args__ = {"comment": "APP测试元素表"}
 
     by = db.Column(db.String(255), nullable=True, comment="定位方式")
+    template_device = db.Column(db.Integer(), comment="元素定位时参照的设备，定位方式为bounds时根据此设备参照分辨率")
     element = db.Column(db.Text(), default="", nullable=True, comment="元素值")
     wait_time_out = db.Column(db.Integer(), default=3, nullable=True, comment="等待元素出现的时间，默认3秒")
     page_id = db.Column(db.Integer(), comment="所属的页面id")

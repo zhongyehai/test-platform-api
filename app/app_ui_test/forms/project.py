@@ -17,6 +17,7 @@ class AddUiProjectForm(BaseForm):
     app_package = StringField(validators=[DataRequired("app包名不能为空")])
     app_activity = StringField(validators=[DataRequired("activity不能为空")])
     business_id = StringField(validators=[DataRequired("请选择业务线")])
+    template_device = IntegerField(validators=[DataRequired("请选择元素定位时参照的设备")])
     script_list = StringField()
     num = StringField()
 

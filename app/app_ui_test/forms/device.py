@@ -28,7 +28,8 @@ class AddServerForm(BaseForm):
 
     def validate_ip(self, field):
         """ 校验ip格式 """
-        self.validate_data_is_true('服务器ip地址请去除协议标识', field.data.lower().startswith(('http', 'https')) is False)
+        self.validate_data_is_true('服务器ip地址请去除协议标识',
+                                   field.data.lower().startswith(('http', 'https')) is False)
         self.validate_data_is_true("服务器ip地址错误", validators.ipv4(field.data) or validators.ipv6(field.data))
 
     def validate_name(self, field):
@@ -76,12 +77,16 @@ class AddPhoneForm(BaseForm):
     os = StringField(validators=[DataRequired("手机设备系统类型不能为空")])
     os_version = StringField(validators=[DataRequired("手机设备系统版本不能为空")])
     device_id = StringField(validators=[DataRequired("设备id不能为空")])
+    screen = StringField(validators=[DataRequired("设备分辨率不能为空")])
     num = StringField()
     extends = StringField()
 
     def validate_name(self, field):
         """ 校验手机名不重复 """
         self.validate_data_is_not_exist(f"手机设备名【{field.data}】已存在", Phone, name=field.data)
+
+    def validate_screen(self, field):
+        self.validate_data_is_true(f"分辨率格式错误", len(field.data.lower().split('x')) == 2)
 
 
 class EditPhoneForm(HasPhoneIdForm, AddPhoneForm):

@@ -181,7 +181,7 @@ class CaseBusiness:
         """ 修改用例时，修改引用此用例的步骤的名字 """
         new_name = cls.get_quote_case_from(case_id, project_model, suite_model, case_model)
         for step in step_model.get_all(quote_case=case_id):
-            step.update({"name": f'引用【{new_name}】'})
+            step.update({"name": new_name})
 
 
 class StepBusiness:
@@ -315,6 +315,7 @@ class RunCaseBusiness:
                 case_id=case_id,
                 is_async=is_async,
                 env_code=env.code,
+                env_name=env.name,
                 browser=browser,
                 task=task,
                 temp_variables=temp_variables,

@@ -106,7 +106,8 @@ class FormatModel(JsonUtil):
                     parsed_validate.append({
                         assert_mapping[validate_method]: [
                             self.build_actual_result(data_source, key),  # 实际结果
-                            self.build_data(data_type, value)  # 预期结果
+                            self.build_data(data_type, value),  # 预期结果
+                            validate_method  # 断言方法的文本，用于渲染报告
                         ]
                     })
             else:  # 页面校验
@@ -284,6 +285,7 @@ class ElementModel(FormatModel):
         self.desc = kwargs.get("desc")
         self.by = kwargs.get("by")
         self.element = kwargs.get("element")
+        self.template_device = kwargs.get("template_device")
         self.wait_time_out = kwargs.get("wait_time_out")
         self.page_id = kwargs.get("page_id")
         self.module_id = kwargs.get("module_id")

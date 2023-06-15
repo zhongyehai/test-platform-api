@@ -43,7 +43,7 @@ def extract_by_data(
         )
     else:
         if extract_type == "const":  # 常量
-            return extract_type.split("const.")[1]
+            return value
         elif extract_type == "variable":  # 变量：variable.$data.data 或者 variable.$data
             variable_expression_split = value.split(".", 1)
             if len(variable_expression_split) > 1:  # $data.data

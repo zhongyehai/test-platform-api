@@ -128,18 +128,20 @@ def parse_validator(validator):
         else:
             raise validator_parse_error
         comparator = validator.get("comparator", "eq")
+        comparator_str = validator.get("comparator_str")
 
     elif len(validator) == 1:
         # 格式2
         comparator = list(validator.keys())[0]
         compare_values = validator[comparator]
-        if not isinstance(compare_values, list) or len(compare_values) != 2:
+        # if not isinstance(compare_values, list) or len(compare_values) != 2:
+        if not isinstance(compare_values, list):
             raise validator_parse_error
-        check_item, expect_value = compare_values
+        check_item, expect_value, comparator_str = compare_values
     else:
         raise validator_parse_error
 
-    return {"check": check_item, "expect": expect_value, "comparator": comparator}
+    return {"check": check_item, "expect": expect_value, "comparator": comparator, "comparator_str": comparator_str}
 
 
 def substitute_variables(content, variables_mapping):

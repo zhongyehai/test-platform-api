@@ -63,6 +63,7 @@ class WebDriverSession(BaseSession):
                         kwargs.get('element')
                     ),
                     kwargs.get('text'),
+                    screen=kwargs.get('screen'),
                     wait_time_out=kwargs.get('wait_time_out')
                 )
 

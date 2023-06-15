@@ -10,6 +10,7 @@ from app.web_ui_test.models.caseSuite import WebUiCaseSuite
 from app.web_ui_test.models.step import WebUiStep
 from app.app_ui_test.models.caseSuite import AppUiCaseSuite
 from app.app_ui_test.models.step import AppUiStep
+from app.app_ui_test.models.device import AppUiRunPhone
 from config import ui_action_mapping_reverse
 
 
@@ -27,6 +28,7 @@ class RunCase(RunTestRunner):
             is_async=True,
             browser=True,
             env_code="test",
+            env_name=None,
             trigger_type="page",
             is_rollback=False,
             appium_config={},
@@ -39,6 +41,7 @@ class RunCase(RunTestRunner):
             name=run_name,
             report_id=report_id,
             env_code=env_code,
+            env_name=env_name,
             trigger_type=trigger_type,
             is_rollback=is_rollback,
             run_type=run_type,
@@ -46,11 +49,13 @@ class RunCase(RunTestRunner):
         )
         self.temp_variables = temp_variables
         self.task = task
+        self.run_type = run_type
         if run_type == "webUi":
             self.suite_model = WebUiCaseSuite
             self.step_model = WebUiStep
             self.browser = browser
             self.device = self.device_id = self.run_server_id = self.run_phone_id = None
+            self.device_dict = {}
         else:
             self.suite_model = AppUiCaseSuite
             self.step_model = AppUiStep
@@ -58,7 +63,7 @@ class RunCase(RunTestRunner):
             self.run_phone_id = appium_config.pop("phone_id")
             self.device = appium_config.pop("device")
             self.device_id = self.device["device_id"]
-
+            self.device_dict = {device.id: device.to_dict() for device in AppUiRunPhone.get_all()}
 
         self.DataTemplate["is_async"] = is_async
         self.case_id_list = case_id  # 要执行的用例id_list
@@ -89,6 +94,7 @@ class RunCase(RunTestRunner):
                 "execute_name": step.execute_name,
                 "action": step.execute_type,
                 "by_type": element.by,
+                "screen": None if self.run_type == 'webUi' else self.device_dict[element.template_device]["screen"],
                 # 如果是打开页面，则设置为项目域名+页面地址
                 "element": build_url(project.host, element.element) if element.by == "url" else element.element,
                 "text": step.send_keys,

@@ -94,7 +94,7 @@ class Runner(object):
     def __get_step_test_data(self):
         """ 获取请求、响应、断言数据 """
         meta_data = self.client_session.meta_data
-        meta_data["validators"] = self.validation_results
+        # meta_data["validators"] = self.validation_results
         return meta_data
 
     def _handle_skip_feature(self, test_dict):

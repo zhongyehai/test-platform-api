@@ -11,6 +11,7 @@ class AppUiProject(BaseProject):
 
     app_package = db.Column(db.String(255), nullable=True, comment="被测app包名")
     app_activity = db.Column(db.String(255), nullable=True, comment="被测app要启动的AndroidActivity")
+    template_device = db.Column(db.Integer(), nullable=True, comment="元素定位时参照的设备")
 
     def delete_current_and_env(self):
         """ 删除app及app下的环境 """

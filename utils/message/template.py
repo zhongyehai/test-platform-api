@@ -16,7 +16,7 @@ def inspection_ding_ding(content, kwargs):
             "title": "巡检通知",
             "text": f'### 巡检通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
                     f'#### 任务名: {testcases["project"]} \n> '
-                    f'#### 环境code:<font color=#00FF00> {content["run_env"]} </font>\n> '
+                    f'#### 运行环境:<font color=#00FF00> {content["env_name"]} </font>\n> '
                     f'#### 执行用例:<font color=#409EFF> {testcases["total"]} </font>条 \n> '
                     f'#### 成功:<font color=#00FF00> {testcases["success"]} </font>条 \n> '
                     f'#### 失败:<font color=#FF0000> {testcases["fail"]} </font>条 \n> '
@@ -37,7 +37,7 @@ def inspection_we_chat(content, kwargs):
         "markdown": {
             "content": f'>巡检通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
                        f'>任务名: {testcases["project"]} \n'
-                       f'>环境code: {content["run_env"]} \n'
+                       f'>运行环境: {content["env_name"]} \n'
                        f'>执行用例:<font color="comment"> {testcases["total"]} </font>条\n'
                        f'>成功:<font color="info"> {testcases["success"]} </font>条\n'
                        f'>失败:<font color="warning"> {testcases["fail"]} </font>条\n'

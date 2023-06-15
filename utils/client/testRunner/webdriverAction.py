@@ -48,7 +48,7 @@ class Actions:
             if func_name.startswith(startswith):
                 doc = getattr(cls, func_name).__doc__.strip().split('，')[0]  # 函数注释
                 mapping_dict.setdefault(doc, func_name)
-                mapping_list.append({'value': doc}if startswith == 'assert_' else {'label': doc, 'value': func_name})
+                mapping_list.append({'value': doc} if startswith == 'assert_' else {'label': doc, 'value': func_name})
         return {"mapping_dict": mapping_dict, "mapping_list": mapping_list}
 
     @classmethod
@@ -115,10 +115,23 @@ class Actions:
         return self.driver.switch_to.alert.dismiss()
 
     def action_01_05_click_alert_dismiss(self, locator: tuple, *args, **kwargs):
-        """ 【点击】点击坐标（APP），locator = ("bounds","[[918,1079], [1080,1205]]")"""
+        """ 【点击】点击坐标（APP），locator = ("bounds","[[918,1079], [1080,1205]]")，kwargs={"screen": "1920x1080"}"""
         bounds = json.loads(locator[1])  # [[918,1079], [1080,1205]]
         bounds1, bounds2, = bounds[0], bounds[1]  # [918,1079], [1080,1205]
-        x1, y1, x2, y2 = bounds1[0], bounds1[1], bounds2[0], bounds2[1]  # 避免偏差，计算元素坐标的中心点
+        x1, y1, x2, y2 = bounds1[0], bounds1[1], bounds2[0], bounds2[1]
+
+        # 模板设备分辨率
+        screen = kwargs.get("screen")
+        if screen:
+            screen_list = screen.lower().split("x")
+            screen_width, screen_height = int(screen_list[0]), int(screen_list[1])
+
+            # 根据元素占模板的百分比来计算在当前设备上需要点击的问题
+            if screen_width != self.width or screen_height != self.height:
+                x1, y1 = x1 / screen_width * self.width, y1 / screen_height * self.height
+                x2, y2 = x2 / screen_width * self.width, y2 / screen_height * self.height
+
+        # 避免偏差，计算元素坐标的中心点
         return TouchAction(self.driver).press(x=(x1 + x2) / 2, y=(y1 + y2) / 2).release().perform()
 
     #################################### 输入相关事件 ####################################
@@ -635,12 +648,6 @@ class GetWebDriver(Actions):
             self.driver.close()
         except:
             pass
-
-        try:
-            self.driver.close_app()
-        except:
-            pass
-
         try:
             self.driver.quit()
         except:
@@ -694,8 +701,17 @@ class GetAppDriver(Actions):
         """
 
         self.host, self.port = kwargs.pop('host'), kwargs.pop('port')
-        self.appium_webdriver = appium_webdriver.Remote(f'http://{self.host}:{self.port}/wd/hub', kwargs)  # 启动app
+        try:
+            self.appium_webdriver = appium_webdriver.Remote(f'http://{self.host}:{self.port}/wd/hub', kwargs)  # 启动app
+            self.appium_webdriver.reset()
+        except Exception as error:
+            # TODO 根据异常，做对应的处理，服务器连不上、没有链接设备、设备系统版本不一致...
+            raise error
         super().__init__(self.appium_webdriver)
+
+    def __del__(self):
+        self.appium_webdriver.reset()
+        self.appium_webdriver.close_app()
 
 
 if __name__ == '__main__':

@@ -35,21 +35,23 @@ class AddElementForm(BaseForm):
         """ 校验元素信息 """
         name_list = []
         for index, element in enumerate(field.data):
-            name, by, element = element.get("name"), element.get("by"), element.get("element")
+            name, by, element_data = element.get("name"), element.get("by"), element.get("element")
             self.validate_data_is_true(f'第【{index + 1}】行，元素名必传', name)
             self.validate_data_is_true(f'第【{index + 1}】行，定位方式必传', by)
-            self.validate_data_is_true(f'第【{index + 1}】行，元素表达式必传', element)
+            self.validate_data_is_true(f'第【{index + 1}】行，元素表达式必传', element_data)
             if name in name_list:
                 raise ValidationError(f'第【{index + 1}】行，与第【{name_list.index(name) + 1}】行，元素名重复')
             if by in ("coordinate", "bounds"):
+                if by == "bounds":
+                    self.validate_data_is_true(f'第【{index + 1}】行，请选择元素定位时参照的设备', element.get("template_device"))
                 try:
-                    if isinstance(eval(element), (tuple, list)) is False:
-                        raise ValueError("元素表达式错误，请参照示例填写")
+                    if isinstance(eval(element_data), (tuple, list)) is False:
+                        raise ValueError(f'第【{index + 1}】行，元素表达式错误，请参照示例填写')
                 except:
-                    raise ValueError("元素表达式错误，请参照示例填写")
+                    raise ValueError(f'第【{index + 1}】行，元素表达式错误，请参照示例填写')
 
             self.validate_data_is_not_exist(
-                f"当前页面下，名为【{name}】的元素已存在",
+                f'第【{index + 1}】行，当前页面下，名为【{name}】的元素已存在',
                 Element,
                 name=name,
                 page_id=self.page_id.data
@@ -65,6 +67,7 @@ class EditElementForm(AddElementForm):
     name = StringField(validators=[DataRequired("元素名字必传"), Length(1, 255, "元素名字长度为1~255位")])
     by = StringField(validators=[DataRequired("定位方式必传"), Length(1, 255, "定位方式长度为1~255位")])
     element = StringField(validators=[DataRequired("定位元素表达式必传")])
+    template_device = IntegerField()
     desc = StringField()
     num = StringField()
     wait_time_out = IntegerField()
@@ -88,6 +91,8 @@ class EditElementForm(AddElementForm):
         """ 一个页面只能有一个url地址 """
         # 如果是坐标定位，校验坐标值
         if field.data in ("coordinate", "bounds"):
+            if field.data == "bounds":
+                self.validate_data_is_true(f'请选择元素定位时参照的设备', self.template_device.data)
             try:
                 if isinstance(eval(self.element.data), (tuple, list)) is False:
                     raise ValueError("元素表达式错误，请参照示例填写")

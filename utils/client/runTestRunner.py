@@ -47,12 +47,14 @@ class RunTestRunner:
             name=None,
             report_id=None,
             env_code=None,
+            env_name=None,
             trigger_type="page",
             is_rollback=False,
             run_type="api",
             extend={}
     ):
         self.env_code = env_code  # 运行环境id
+        self.env_name = env_name  # 运行环境名，用于发送即时通讯
         self.extend = extend
         self.project_id = project_id
         self.run_name = name
@@ -283,6 +285,7 @@ class RunTestRunner:
         summary["run_type"] = self.run_type
         summary["is_async"] = self.DataTemplate.get("is_async", 0)
         summary["run_env"] = self.env_code
+        summary["env_name"] = self.env_name
         summary["count_step"] = self.count_step
         summary["count_api"] = len(self.api_set)
         summary["count_element"] = len(self.element_set)
@@ -298,6 +301,7 @@ class RunTestRunner:
             all_summary["run_type"] = self.run_type
             all_summary["is_async"] = self.DataTemplate.get("is_async", 0)
             all_summary["run_env"] = self.env_code
+            all_summary["env_name"] = self.env_name
             all_summary["count_step"] = self.count_step
             all_summary["count_api"] = len(self.api_set)
             summary["count_element"] = len(self.element_set)
