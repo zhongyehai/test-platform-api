@@ -3,6 +3,7 @@ import platform
 import time
 import unittest
 from base64 import b64encode
+
 try:
     from collections import Iterable
 except:
@@ -13,6 +14,10 @@ import requests
 from . import logger
 from .compat import basestring, json, numeric_types
 from jinja2 import Template, escape
+
+from app.api_test.models.report import ApiReportStep
+from app.app_ui_test.models.report import AppUiReportStep
+from app.web_ui_test.models.report import WebUiReportStep
 
 
 def get_system_platform():
@@ -84,13 +89,8 @@ def format_summary(summary):
         if not suite_summary.get("name"):
             suite_summary["name"] = "testcase {}".format(index)
 
-        for record in suite_summary.get("records"):
-            meta_data = record['meta_datas']
-            format_meta_data(meta_data)
-            meta_data_expanded = []
-            expand_meta_data(meta_data, meta_data_expanded)
-            record["meta_datas_expanded"] = meta_data_expanded
-            record["response_time"] = __get_total_response_time(meta_data_expanded)
+        # for meta_data in suite_summary.get("records"):
+        #     format_meta_data(meta_data)
 
 
 def format_request(request_data: dict):
@@ -246,12 +246,32 @@ class HtmlTestResult(unittest.TextTestResult):
         self.start_at = None
         self.records = []
 
+    def _save_test_data(self, test, attachment=''):
+        """ 在记录的测试步骤数据中，加上attachment """
+        run_type = test.meta_datas.get("run_type")
+        if run_type == "api":
+            report_step_model = ApiReportStep
+        elif run_type == "webUi":
+            report_step_model = WebUiReportStep
+        else:
+            report_step_model = AppUiReportStep
+
+        report_step = report_step_model.get_first(id=test.meta_datas.get("report_step_id"))
+        step_data = json.loads(report_step.step_data)
+        step_data["attachment"] = attachment
+        report_step.update_test_data(step_data)
+
     def _record_test(self, test, status, attachment=''):
+        """ 添加测试步骤的测试结果到报告里面 """
+        self._save_test_data(test, attachment)
         self.records.append({
             'name': test.shortDescription(),
             'status': status,
             'attachment': attachment,
-            "meta_datas": test.meta_datas
+            'stat': test.meta_datas.get("stat", {}),
+            'case_id': test.meta_datas.get("case_id", None),
+            'report_step_id': test.meta_datas.get("report_step_id", None),
+            # "meta_datas": test.meta_datas  # 减小内存占用，只记录执行概要信息，详细内容需根据id查询
         })
 
     def startTestRun(self):
@@ -278,24 +298,24 @@ class HtmlTestResult(unittest.TextTestResult):
     def addFailure(self, test, err):
         """ 失败的用例 """
         super(HtmlTestResult, self).addFailure(test, err)
-        self._record_test(test, 'failure', self._exc_info_to_string(err, test))
+        self._record_test(test, 'fail', self._exc_info_to_string(err, test))
         print("")
 
     def addSkip(self, test, reason):
         """ 跳过的用例 """
         super(HtmlTestResult, self).addSkip(test, reason)
-        self._record_test(test, 'skipped', reason)
+        self._record_test(test, 'skip', reason)
         print("")
 
-    def addExpectedFailure(self, test, err):
-        super(HtmlTestResult, self).addExpectedFailure(test, err)
-        self._record_test(test, 'ExpectedFailure', self._exc_info_to_string(err, test))
-        print("")
-
-    def addUnexpectedSuccess(self, test):
-        super(HtmlTestResult, self).addUnexpectedSuccess(test)
-        self._record_test(test, 'UnexpectedSuccess')
-        print("")
+    # def addExpectedFailure(self, test, err):
+    #     super(HtmlTestResult, self).addExpectedFailure(test, err)
+    #     self._record_test(test, 'ExpectedFailure', self._exc_info_to_string(err, test))
+    #     print("")
+    #
+    # def addUnexpectedSuccess(self, test):
+    #     super(HtmlTestResult, self).addUnexpectedSuccess(test)
+    #     self._record_test(test, 'UnexpectedSuccess')
+    #     print("")
 
     @property
     def duration(self):

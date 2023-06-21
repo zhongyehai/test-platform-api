@@ -8,28 +8,28 @@ from email.header import Header
 class SendEmail:
     """ 发送测试报告到邮箱 """
 
-    def __init__(self, email_server, username, password, to_list, file):
+    def __init__(self, email_server, username, password, to_list, msg_content):
         self.email_server = email_server
         self.username = username
         self.password = password
         self.to_list = to_list
-        self.file = file
+        self.status = msg_content["status"]
+        self.content = msg_content["msg"]
 
     def send_email(self):
         """ 使用第三方SMTP服务发送邮件 """
-        message = MIMEMultipart()
-        body = MIMEText(_text=self.file, _subtype="html", _charset="utf-8")  # 邮件正文内容为报告附件body
-        message.attach(body)
-        message["From"] = Header("测试报告", "utf-8")
-        message["To"] = Header("".join(self.to_list), "utf-8")
-        subject = "接口自动化测试报告邮件" if ">失败</th>" not in self.file else "接口自动化测试报告邮件，有执行失败的用例，请查看附件或登录平台查看"
-        message["Subject"] = Header(subject, "utf-8")
+        message = MIMEMultipart()  # 邮件对象
 
-        # 添加附件
-        att = MIMEText(self.file, "base64", "utf-8")
-        att["Content-Type"] = "application/octet-stream"
-        att["Content-Disposition"] = 'attachment; filename= "report.html"'
-        message.attach(att)
+        # 邮件title
+        email_title = f'接口自动化测试报告邮件，执行结果为：{"成功" if self.status is True else "失败"}'
+        message["Subject"] = Header(email_title, "utf-8").encode()
+
+        # 邮件正文
+        email_body = MIMEText(_text=self.content, _subtype="html", _charset="utf-8")  # 邮件正文内容为报告附件body
+        message.attach(email_body)
+
+        message["From"] = self.username
+        message["To"] = Header("".join(self.to_list), "utf-8")
 
         try:
             # 发送邮件

@@ -8,6 +8,9 @@ from utils.client.testRunner.client.webdriver import WebDriverSession
 from .runnerContext import SessionContext
 from .webdriverAction import GetWebDriver, GetAppDriver
 from ...redirectPrintLog import RedirectPrintLogToMemory
+from app.api_test.models.report import ApiReportStep
+from app.app_ui_test.models.report import AppUiReportStep
+from app.web_ui_test.models.report import WebUiReportStep
 
 
 class Runner(object):
@@ -35,7 +38,7 @@ class Runner(object):
     """
 
     def __init__(self, config, functions, task_type='api'):
-        """ run testcase or testsuite.
+        """ 运行测试用例
 
         Args:
             config (dict): testcase/testsuite config dict
@@ -57,7 +60,9 @@ class Runner(object):
         self.resp_obj = None
         self.driver = None
 
-        testcase_setup_hooks = config.get("setup_hooks", [])  # 用例级别的前置条件
+        # 记录当前步骤的执行进度
+        self.report_step_model = ApiReportStep if self.run_type == "api" else WebUiReportStep if self.run_type == "webUi" else AppUiReportStep
+        self.report_step = None
         self.testcase_teardown_hooks = config.get("teardown_hooks", [])  # 用例级别的后置条件
 
         if self.run_type == "api":
@@ -76,6 +81,7 @@ class Runner(object):
 
         self.session_context = SessionContext(self.functions)
 
+        testcase_setup_hooks = config.get("setup_hooks", [])  # 用例级别的前置条件
         if testcase_setup_hooks:
             self.do_hook_actions(testcase_setup_hooks)
 
@@ -91,12 +97,6 @@ class Runner(object):
         self.validation_results = []
         self.client_session.init_step_meta_data()
 
-    def __get_step_test_data(self):
-        """ 获取请求、响应、断言数据 """
-        meta_data = self.client_session.meta_data
-        # meta_data["validators"] = self.validation_results
-        return meta_data
-
     def _handle_skip_feature(self, test_dict):
         """ 判断是否跳过当前测试
             - skip: skip current test unconditionally
@@ -108,6 +108,7 @@ class Runner(object):
             SkipTest: skip test
         """
         if test_dict.get("skip"):
+            # self.report_step.test_is_skip()
             raise SkipTest("skip触发跳过用例")
 
         elif test_dict.get("skipIf"):  # 只有 skipIf 条件为结果为True时才跳过，条件为假，或者执行报错，都不跳过
@@ -123,11 +124,13 @@ class Runner(object):
                 except Exception as error:
                     skip_if_result = error
                 if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
+                    # self.report_step.test_is_skip()
                     raise SkipTest(f"{skip_if_condition} skipIf触发跳过")
 
         elif test_dict.get("skipUnless"):
             skip_unless_condition = test_dict["skipUnless"]
             if not self.session_context.eval_content(skip_unless_condition):
+                # self.report_step.test_is_skip()
                 raise SkipTest(f'{skip_unless_condition} skipUnless触发跳过')
 
     def do_hook_actions(self, actions, hook_type='setup'):
@@ -207,6 +210,7 @@ class Runner(object):
             parsed_step['data'] = parsed_step['data'].encode('utf-8')
 
         # 执行前置函数
+        self.report_step.test_is_start_before()
         setup_hooks = step_dict.get("setup_hooks", [])
         if setup_hooks:
             self.do_hook_actions(setup_hooks)
@@ -216,6 +220,8 @@ class Runner(object):
         variables_mapping = copy.deepcopy(self.session_context.test_variables_mapping)
         self.session_context.test_variables_mapping['request'] = copy_request
 
+        # 开始执行测试
+        self.report_step.test_is_start_running()
         case_id, step_name, extractors = step_dict.get("case_id"), step_dict.get("name"), step_dict.get("extract", {})
         if self.run_type == "api":
             # 发送请求
@@ -232,6 +238,7 @@ class Runner(object):
             self.resp_obj = response.ResponseObject(resp)
 
             # 数据提取
+            self.report_step.test_is_start_extract()
             extracted_variables_mapping = self.resp_obj.extract_response(
                 self.session_context, extractors.get("extractors", []))
             self.session_context.update_test_variables("response", self.resp_obj)
@@ -245,6 +252,7 @@ class Runner(object):
                 **parsed_step
             )
             # 数据提取
+            self.report_step.test_is_start_extract()
             extracted_variables_mapping = extract.extract_data(self.session_context, self.driver, extractors)
 
         self.client_session.meta_data['data'][0]['extract_msgs'] = extracted_variables_mapping
@@ -258,11 +266,13 @@ class Runner(object):
             )
 
         # 后置函数
+        self.report_step.test_is_start_after(self.get_test_step_data())
         teardown_hooks = step_dict.get("teardown_hooks", [])
         if teardown_hooks:
             self.do_hook_actions(teardown_hooks, 'teardown')
 
         # 断言
+        self.report_step.test_is_start_validate()
         validators = step_dict.get("validate", [])
         try:
             self.session_context.validate(
@@ -278,7 +288,29 @@ class Runner(object):
             self.client_session.meta_data["data"][0]["validation_results"] = self.validation_results  # 保存断言结果
 
         self.client_session.meta_data["data"][0]['before'] = None  # 如果步骤执行成功，则把执行前截图去掉
+        self.report_step.test_is_success(self.get_test_step_data())
 
+    def get_test_step_data(self):
+        """ 获取测试数据 """
+        request = copy.deepcopy(self.client_session.meta_data["data"][0]['request'])
+        request_body = request.get("body")
+        if request_body and isinstance(request_body, bytes):
+            request['body'] = str(request_body)
+
+        data = {
+            'case_id': self.client_session.meta_data.get("case_id"),
+            'name': self.client_session.meta_data["name"],
+            'stat': self.client_session.meta_data["stat"],
+            'redirect_print': self.client_session.meta_data["redirect_print"],
+            'variables_mapping': self.client_session.meta_data.get("variables_mapping", {}),
+            'request': request,
+            'response': self.client_session.meta_data["data"][0]["response"],
+            'extract_msgs': self.client_session.meta_data['data'][0].get("extract_msgs", {}),
+            'validation_results': self.client_session.meta_data["data"][0].get("validation_results", {}),
+            'before': self.client_session.meta_data["data"][0].get("before"),
+            'after': self.client_session.meta_data["data"][0].get("after")
+        }
+        return data
 
     def run_test(self, step_dict):
         """ 运行用例的单个测试步骤
@@ -293,13 +325,34 @@ class Runner(object):
                 }
         """
         self.meta_datas = None
+        self.report_step = self.report_step_model.get_first(id=step_dict.pop("report_step_id"))
+        self.report_step.test_is_running()
+        self.report_step.test_is_start_parse(step_dict)
+
         try:
             self._run_test(step_dict)
         except Exception as error:  # 捕获步骤运行中报错(报错、断言不通过、跳过测试)
             # 如果不是跳过测试的异常，则把当前测试用例运行结果标识为失败，后续步骤可根据此状态判断是否继续执行
-            if isinstance(error, SkipTest) is False:
+            if isinstance(error, SkipTest):
+                self.report_step.test_is_skip()
+            else:
                 self.session_context.update_session_variables({"case_run_result": "fail"})
+
+                if isinstance(error, (
+                        exceptions.ParamsError,
+                        exceptions.ValidationFailure,
+                        exceptions.ExtractFailure
+                )) is False:
+                    self.report_step.test_is_error(self.get_test_step_data())
+                else:
+                    self.report_step.test_is_fail(self.get_test_step_data())
             raise
         finally:
-            self.client_session.meta_data["redirect_print"] = self.redirect_print.text  # 保存自定义函数的 print 打印
-            self.meta_datas = self.__get_step_test_data()
+            # 保存自定义函数的 print 打印, 并把print重定向到默认输出
+            self.client_session.meta_data["redirect_print"] = self.redirect_print.get_text_and_redirect_to_default()
+
+            self.report_step.update_test_data(self.get_test_step_data())
+
+            self.meta_datas = self.client_session.meta_data
+            self.meta_datas["report_step_id"] = self.report_step.id
+            self.meta_datas["run_type"] = self.run_type

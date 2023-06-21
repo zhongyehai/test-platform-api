@@ -710,8 +710,11 @@ class GetAppDriver(Actions):
         super().__init__(self.appium_webdriver)
 
     def __del__(self):
-        self.appium_webdriver.reset()
-        self.appium_webdriver.close_app()
+        try:
+            self.appium_webdriver.reset()
+            self.appium_webdriver.close_app()
+        except:
+            pass
 
 
 if __name__ == '__main__':

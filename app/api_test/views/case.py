@@ -90,7 +90,7 @@ class ApiRunCaseView(LoginRequiredView):
         project_id = CaseSuite.get_first(id=form.case_list[0].suite_id).project_id
         batch_id = Report.get_batch_id()
         for env_code in form.env_list.data:
-            RunCaseBusiness.run(
+            report_id = RunCaseBusiness.run(
                 batch_id=batch_id,
                 env_code=env_code,
                 is_async=form.is_async.data,
@@ -103,7 +103,12 @@ class ApiRunCaseView(LoginRequiredView):
                 run_type="api",
                 run_func=RunCase
             )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
+        return app.restful.success(
+            msg="触发执行成功，请等待执行完毕",
+            data={
+                "batch_id": batch_id,
+                "report_id": report_id if len(form.case_list) == 1 else None
+            })
 
 
 class ApiChangeCaseStatusView(LoginRequiredView):

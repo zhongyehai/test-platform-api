@@ -8,8 +8,10 @@ from utils.client.parseModel import StepModel, FormatModel
 from utils.client.testRunner.utils import build_url
 from app.web_ui_test.models.caseSuite import WebUiCaseSuite
 from app.web_ui_test.models.step import WebUiStep
+from app.web_ui_test.models.report import WebUiReportStep
 from app.app_ui_test.models.caseSuite import AppUiCaseSuite
 from app.app_ui_test.models.step import AppUiStep
+from app.app_ui_test.models.report import AppUiReportStep
 from app.app_ui_test.models.device import AppUiRunPhone
 from config import ui_action_mapping_reverse
 
@@ -53,12 +55,14 @@ class RunCase(RunTestRunner):
         if run_type == "webUi":
             self.suite_model = WebUiCaseSuite
             self.step_model = WebUiStep
+            self.reportStepModel = WebUiReportStep
             self.browser = browser
             self.device = self.device_id = self.run_server_id = self.run_phone_id = None
             self.device_dict = {}
         else:
             self.suite_model = AppUiCaseSuite
             self.step_model = AppUiStep
+            self.reportStepModel = AppUiReportStep
             self.run_server_id = appium_config.pop("server_id")
             self.run_phone_id = appium_config.pop("phone_id")
             self.device = appium_config.pop("device")
@@ -79,7 +83,7 @@ class RunCase(RunTestRunner):
         step: 原始step
         返回解析后的步骤 {}
         """
-        return {
+        step_data = {
             "case_id": step.case_id,
             "name": step.name,
             "setup_hooks": [up.strip() for up in step.up_func.split(";") if up] if step.up_func else [],
@@ -101,6 +105,18 @@ class RunCase(RunTestRunner):
                 "wait_time_out": float(step.wait_time_out or element.wait_time_out or self.wait_time_out)
             }
         }
+
+        report_step = self.reportStepModel().create({
+            "name": step_data["name"],
+            "from_id": element.id,
+            "step_id": step.id,
+            "step_data": step_data,
+            "report_id": self.report_id,
+        })
+
+        step_data["report_step_id"] = report_step.id
+        return step_data
+
 
     def parse_extracts(self, extracts: list):
         """ 解析数据提取

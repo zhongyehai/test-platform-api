@@ -7,6 +7,7 @@ from flask import g, current_app as app
 from flask_sqlalchemy import SQLAlchemy as _SQLAlchemy, BaseQuery, Pagination
 from sqlalchemy import MetaData
 from contextlib import contextmanager
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 from utils.util.jsonUtil import JsonUtil
 from utils.parse.parse import parse_list_to_dict, update_dict_to_list, parse_dict_to_list
@@ -88,7 +89,7 @@ class BaseModel(db.Model, JsonUtil):
         "headers", "variables", "script_list", "pop_header_filed", "output",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to", "temp_variables",
-        "kym", "task_item", 'business_list', 'run_id', 'extends'
+        "kym", "task_item", 'business_list', 'run_id', 'extends', 'step_data', 'summary'
     ]
 
     def set_attr(self, column_list, value=None):
@@ -96,7 +97,8 @@ class BaseModel(db.Model, JsonUtil):
         for column in column_list:
             try:
                 if column in ["create_user", "update_user"]:
-                    value = g.user_id
+                    a = g
+                    value = g.user_id if hasattr(g, "user_id") else None
                 setattr(self, column, value)
             except Exception as error:
                 pass
@@ -863,6 +865,7 @@ class BaseReport(BaseModel):
     batch_id = db.Column(db.String(128), comment="运行批次id，用于查询报告")
     run_id = db.Column(db.String(512), comment="运行id，用于触发重跑")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
+    summary = db.Column(db.Text(), default='{}', comment="报告数据")
 
     @classmethod
     def get_batch_id(cls):
@@ -958,8 +961,81 @@ class BaseReport(BaseModel):
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.created_time.desc()
+            order_by=cls.created_time.desc(),
+            pop_field=["summary"]
         )
+
+
+class BaseReportStep(BaseModel):
+    """ 步骤执行记录基类表 """
+    __abstract__ = True
+
+    name = db.Column(db.String(128), nullable=True, comment="测试步骤名称")
+    from_id = db.Column(db.Integer(), comment="步骤对应的元素/接口id")
+    step_id = db.Column(db.Integer(), default=None,comment="步骤id")
+    report_id = db.Column(db.Integer(), index=True, comment="测试报告id")
+    process = db.Column(db.String(128), default='waite',
+                        comment="步骤执行进度，waite：等待解析、parse: 解析数据、before：前置条件、after：后置条件、run：执行测试、extract：数据提取、validate：断言")
+    result = db.Column(db.String(128), default='waite',
+                       comment="步骤测试结果，waite：等待执行、running：执行中、fail：执行失败、success：执行成功、skip：跳过、error：报错")
+    step_data = db.Column(LONGTEXT, default='{}', comment="步骤的数据")
+
+    @classmethod
+    def delete_by_report(cls, report_id):
+        """ 根据报告id批量删除 """
+        with db.auto_commit():
+            cls.query.filter(cls.report_id == report_id).delete()
+
+    def update_test_data(self, step_data):
+        """ 更新测试数据 """
+        self.update({"step_data": step_data})
+
+    def update_test_result(self, result, step_data):
+        """ 更新测试状态 """
+        update_dict = {"result": result}
+        if step_data:
+            update_dict["step_data"] = step_data
+        self.update(update_dict)
+
+    def test_is_running(self, step_data=None):
+        self.update_test_result("running", step_data)
+
+    def test_is_fail(self, step_data=None):
+        self.update_test_result("fail", step_data)
+
+    def test_is_success(self, step_data=None):
+        self.update_test_result("success", step_data)
+
+    def test_is_skip(self, step_data=None):
+        self.update_test_result("skip", step_data)
+
+    def test_is_error(self, step_data=None):
+        self.update_test_result("error", step_data)
+
+    def update_test_process(self, process, step_data):
+        """ 更新数据和执行进度 """
+        update_dict = {"process": process}
+        if step_data:
+            update_dict["step_data"] = step_data
+        self.update(update_dict)
+
+    def test_is_start_parse(self, step_data=None):
+        self.update_test_process("parse", step_data)
+
+    def test_is_start_before(self, step_data=None):
+        self.update_test_process("before", step_data)
+
+    def test_is_start_running(self, step_data=None):
+        self.update_test_process("run", step_data)
+
+    def test_is_start_extract(self, step_data=None):
+        self.update_test_process("extract", step_data)
+
+    def test_is_start_after(self, step_data=None):
+        self.update_test_process("after", step_data)
+
+    def test_is_start_validate(self, step_data=None):
+        self.update_test_process("validate", step_data)
 
 
 class ConfigType(BaseModel):

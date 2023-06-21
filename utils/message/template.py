@@ -16,7 +16,7 @@ def inspection_ding_ding(content, kwargs):
             "title": "巡检通知",
             "text": f'### 巡检通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
                     f'#### 任务名: {testcases["project"]} \n> '
-                    f'#### 运行环境:<font color=#00FF00> {content["env_name"]} </font>\n> '
+                    f'#### 运行环境:<font color=#409EFF> {content["env_name"]} </font>\n> '
                     f'#### 执行用例:<font color=#409EFF> {testcases["total"]} </font>条 \n> '
                     f'#### 成功:<font color=#00FF00> {testcases["success"]} </font>条 \n> '
                     f'#### 失败:<font color=#FF0000> {testcases["fail"]} </font>条 \n> '
@@ -53,15 +53,35 @@ def get_inspection_msg(_type, content, kwargs):
     return inspection_ding_ding(content, kwargs) if _type == "ding_ding" else inspection_we_chat(content, kwargs)
 
 
-def render_html_report(summary):
-    """ 巡检-邮件模板, html报告文件 """
-    report_template = os.path.join(os.path.abspath(os.path.dirname(__file__)), r"report_template.html")
-    # report_template = os.path.join(os.path.abspath(os.path.dirname(__file__)), r"extent_report_template.html")
-    with io.open(report_template, "r", encoding='utf-8') as fp_r:
-        template_content = fp_r.read()
-        rendered_content = Template(template_content, extensions=["jinja2.ext.loopcontrols"]).render(summary)
+def render_html_report(summary, kwargs):
+    """ 巡检-邮件模板 """
+    testcases = summary["stat"]["testcases"]
+    pass_rate = round(testcases["success"] / testcases["total"] * 100, 3) if testcases["total"] else 100
+    msg = f"""
+    <div>
+        <h2>巡检通知：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</h2>
+        <div><span>任务名: <span style="color: #60C0DDFF">{testcases["project"]}</span></span></div>
+        <div><span>运行环境: <span style="color: #60C0DDFF">{summary["env_name"]}</span></span></div>
+        <div><span>执行用例: <span style="color: #60C0DDFF">{testcases["total"]}</span> 条</span></div>
+        <div><span>成功: <span style="color: #9BCA63FF">{testcases["success"]}</span> 条</span></div>
+        <div><span>失败: <span style="color: #FA6E86FF">{testcases["fail"]}</span> 条</span></div>
+        <div><span>通过率: <span style="color: #60C0DDFF">{pass_rate}</span>%</span></div>
+        <div>
+            <span>
+                此次共运行: 
+                <span style="color: #60C0DDFF"> {summary["count_step"]} </span>
+                个步骤, 涉及 
+                <span style="color: #60C0DDFF"> {summary["count_api"]} </span> 
+                个接口 
+            </span>
+        </div>
+        <div>
+            <span>详情请登录【<a style="color: #60C0DDFF" href="{kwargs["report_addr"] + str(kwargs["report_id"])}">测试平台</a>】查看</span>
+        </div>
+    </div>
+    """
 
-        return rendered_content
+    return {"status": summary["success"], "msg": msg}
 
 
 def diff_api_msg(content, host, diff_api_addr, report_id):

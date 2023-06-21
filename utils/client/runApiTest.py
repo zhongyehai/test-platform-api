@@ -4,6 +4,7 @@ import copy
 from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.step import ApiStep as Step
+from app.api_test.models.report import ApiReportStep as reportStep
 from utils.log import logger
 from utils.client.parseModel import StepModel, FormatModel
 from utils.client.runTestRunner import RunTestRunner
@@ -53,6 +54,14 @@ class RunApi(RunTestRunner):
             headers.update(self.project.headers)
             headers.update(api["request"]["headers"])
             api["request"]["headers"] = headers
+
+            report_step = reportStep().create({
+                "name": api["name"],
+                "from_id": api["id"],
+                "step_data": api,
+                "report_id": self.report_id,
+            })
+            api["report_step_id"] = report_step.id
 
             # 把api加入到步骤
             test_case_template["teststeps"].append(api)
@@ -126,7 +135,7 @@ class RunCase(RunTestRunner):
             if filed in headers:
                 headers.pop(filed)
 
-        return {
+        step_data = {
             "case_id": step.case_id,
             "name": step.name,
             "setup_hooks": [up.strip() for up in step.up_func.split(";") if up] if step.up_func else [],
@@ -149,6 +158,15 @@ class RunCase(RunTestRunner):
                 "files": step.data_file,
             }
         }
+        report_step = reportStep().create({
+            "name": step_data["name"],
+            "from_id": api["id"],
+            "step_id": step.id,
+            "step_data": step_data,
+            "report_id": self.report_id,
+        })
+        step_data["report_step_id"] = report_step.id
+        return step_data
 
     def get_all_steps(self, case_id: int):
         """ 解析引用的用例 """
@@ -208,7 +226,7 @@ class RunCase(RunTestRunner):
                 api_project = self.get_format_project(api_temp.project_id)
                 api = self.get_format_api(api_project, api_temp)
 
-                if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动
+                if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动， 此功能废弃
                     """
                     数据驱动格式
                     [

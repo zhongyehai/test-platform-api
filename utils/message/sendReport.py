@@ -36,7 +36,7 @@ def send_inspection_by_email(content, kwargs):
         kwargs.get("email_from").strip(),
         kwargs.get("email_pwd"),
         [email.strip() for email in kwargs.get("email_to") if email],
-        render_html_report(content)
+        render_html_report(content, kwargs)
     ).send_email()
 
 

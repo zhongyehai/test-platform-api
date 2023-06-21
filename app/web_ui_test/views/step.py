@@ -44,7 +44,7 @@ class WebUiGetExtractMappingListView(NotLoginView):
         return app.restful.success("获取成功", data=ui_extract_mapping_list)
 
 
-class WebUiGetAssertMappingListView(LoginRequiredView):
+class WebUiGetAssertMappingListView(NotLoginView):
 
     def get(self):
         """ 断言方法列表 """

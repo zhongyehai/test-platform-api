@@ -53,12 +53,13 @@ class FormatModel(JsonUtil):
                 "update_to_header_filed_list": []
             }
             for extract in extracts_list:
-                if extract.get("key") and extract.get("data_source"):  # 有设置key和数据源的，则视为有效提取表达式
-                    parsed["extractors"].append({
-                        extract["key"]: self.build_extract_expression(extract.get("data_source"), extract["value"])
-                    })
-                    if extract.get("update_to_header"):
-                        parsed["update_to_header_filed_list"].append(extract["key"])
+                if extract.get("status") == 1:
+                    if extract.get("key") and extract.get("data_source"):  # 有设置key和数据源的，则视为有效提取表达式
+                        parsed["extractors"].append({
+                            extract["key"]: self.build_extract_expression(extract.get("data_source"), extract["value"])
+                        })
+                        if extract.get("update_to_header"):
+                            parsed["update_to_header_filed_list"].append(extract["key"])
             return parsed
         else:
             """ 解析ui自动化要提取的参数，key、element、extract_type均有值才有效
@@ -76,10 +77,11 @@ class FormatModel(JsonUtil):
             """
             return [
                 extract for extract in extracts_list
-                if extract.get("key") and extract.get("value") and extract.get("extract_type")
+                if extract.get("status") == 1 and extract.get("key") and extract.get("value") and extract.get(
+                    "extract_type")
             ]
 
-    def parse_validates(self, validates_list, is_api=True):
+    def parse_validates(self, validates_list):
         """ 解析断言
         validates:
             [
@@ -98,23 +100,25 @@ class FormatModel(JsonUtil):
         """
         parsed_validate = []
         for validate in validates_list:
-            validate_method = validate.get("validate_method")
-            data_source, key = validate.get("data_source"), validate.get("key")
-            data_type, value = validate.get("data_type"), validate.get("value")
-            if validate.get("validate_type") == 'data':  # 数据校验
-                if data_source and data_type and validate_method and value:
-                    parsed_validate.append({
-                        assert_mapping[validate_method]: [
-                            self.build_actual_result(data_source, key),  # 实际结果
-                            self.build_data(data_type, value),  # 预期结果
-                            validate_method  # 断言方法的文本，用于渲染报告
-                        ]
-                    })
-            else:  # 页面校验
-                if data_source and validate_method and data_type and value:
-                    # 根据执行方法文字描述替换成具体的执行方法
-                    validate["validate_method"] = ui_assert_mapping_dict[validate_method]
-                    parsed_validate.append(validate)
+            if validate.get("status") == 1:
+                validate_method = validate.get("validate_method")
+                data_source, key = validate.get("data_source"), validate.get("key")
+                data_type, value = validate.get("data_type"), validate.get("value")
+
+                if validate.get("validate_type") == 'data':  # 数据校验
+                    if data_source and data_type and validate_method and value:
+                        parsed_validate.append({
+                            assert_mapping[validate_method]: [
+                                self.build_actual_result(data_source, key),  # 实际结果
+                                self.build_data(data_type, value),  # 预期结果
+                                validate_method  # 断言方法的文本，用于渲染报告
+                            ]
+                        })
+                else:  # 页面校验
+                    if data_source and validate_method and data_type and value:
+                        # 根据执行方法文字描述替换成具体的执行方法
+                        validate["validate_method"] = ui_assert_mapping_dict[validate_method]
+                        parsed_validate.append(validate)
 
         return parsed_validate
 
@@ -350,5 +354,5 @@ class StepModel(FormatModel):
         self.page_id = kwargs.get("page_id")
         self.element_id = kwargs.get("element_id")
 
-        self.validates = self.parse_validates(kwargs.get("validates", {}), self.api_id)
+        self.validates = self.parse_validates(kwargs.get("validates", {}))
         self.extracts = self.parse_extracts(kwargs.get("extracts", []), self.api_id)

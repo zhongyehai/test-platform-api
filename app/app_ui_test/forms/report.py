@@ -1,31 +1,10 @@
 # -*- coding: utf-8 -*-
-import os
-
 from wtforms import IntegerField, StringField
 from wtforms.validators import DataRequired
 
 from app.assist.models.hits import Hits
-from utils.util.fileUtil import APP_UI_REPORT_ADDRESS, FileUtil
 from app.baseForm import BaseForm
-from app.app_ui_test.models.report import AppUiReport as Report
-
-
-class DownloadReportForm(BaseForm):
-    """ 报告下载 """
-    id = IntegerField(validators=[DataRequired("请选择报告")])
-
-    def validate_id(self, field):
-        """ 校验报告是否存在 """
-        report = self.validate_data_is_exist("报告不存在", Report, id=field.data)
-        report_path = os.path.join(APP_UI_REPORT_ADDRESS, f"{report.id}.txt")
-        self.validate_data_is_true("报告文件不存在", os.path.exists(report_path))
-        setattr(self, "report", report)
-        setattr(self, "report_path", report_path)
-        setattr(self, "report_content", FileUtil.get_app_ui_test_report(field.data))
-
-
-class GetReportDetailForm(DownloadReportForm):
-    """ 查看报告 """
+from app.app_ui_test.models.report import AppUiReport as Report, AppUiReportStep
 
 
 class GetReportForm(BaseForm):
@@ -34,9 +13,7 @@ class GetReportForm(BaseForm):
 
     def validate_id(self, field):
         report = self.validate_data_is_exist("报告不存在", Report, id=field.data)
-        report_path = os.path.join(APP_UI_REPORT_ADDRESS, f"{report.id}.txt")
         setattr(self, "report", report)
-        setattr(self, "report_path", report_path)
 
 
 class DeleteReportForm(BaseForm):
@@ -48,7 +25,6 @@ class DeleteReportForm(BaseForm):
         for report_id in field.data:
             report = Report.get_first(id=report_id)
             if report and Hits.get_first(report_id=report.id) is None:  # 没有被登记失败记录的报告
-                report.report_path = os.path.join(APP_UI_REPORT_ADDRESS, f"{report.id}.txt")
                 report_list.append(report)
         setattr(self, "report_list", report_list)
 
@@ -64,3 +40,17 @@ class FindReportForm(BaseForm):
     run_type = StringField()
     is_passed = StringField()
     env_list = StringField()
+
+
+class FindReportStepListForm(BaseForm):
+    """ 查找报告步骤列表 """
+    report_id = IntegerField(validators=[DataRequired("报告id必传")])
+
+
+class FindReportStepForm(BaseForm):
+    """ 查找报告步骤数据 """
+    id = IntegerField(validators=[DataRequired("步骤id必传")])
+
+    def validate_id(self, field):
+        data = self.validate_data_is_exist('数据不存在', AppUiReportStep, id=field.data)
+        setattr(self, 'step_data', data)

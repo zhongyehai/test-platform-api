@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import ast
 import re
-import sys
 import traceback
 from datetime import datetime
 
@@ -11,7 +10,6 @@ from .compat import basestring, builtin_str, numeric_types
 from app.baseModel import FuncErrorRecord
 from utils.message.sendReport import send_run_func_error_message
 from utils.variables.regexp import variable_regexp, function_regexp, function_regexp_compile
-from ...util.fileUtil import SCRIPT_PRINT_LOG_ADDRESS
 
 
 def parse_string_value(str_value):

@@ -12,8 +12,8 @@ from utils.util.fileUtil import FileUtil
 from utils.client.testRunner.parser import parse_function, extract_functions
 from app.assist.blueprint import assist
 from app.assist.models.script import Script
-from app.assist.forms.script import HasScriptForm, CreatScriptForm, EditScriptForm, DebuggerScriptForm, DeleteScriptForm, \
-    GetScriptFileForm
+from app.assist.forms.script import HasScriptForm, CreatScriptForm, EditScriptForm, DebuggerScriptForm, \
+    DeleteScriptForm, GetScriptFileForm
 
 
 class GetScriptListView(LoginRequiredView):
@@ -66,13 +66,14 @@ class DebugScriptView(LoginRequiredView):
 
             # 重定向print内容到内存
             redirect = RedirectPrintLogToMemory()
-            result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])
-            sys.stdout = sys.__stdout__  # 恢复输出到console
+            result = module_functions_dict[func["func_name"]](*func["args"], **func["kwargs"])  # 执行脚本
+            script_print = redirect.get_text_and_redirect_to_default()
+
             return app.restful.success(msg="执行成功，请查看执行结果", result={
                 "env": form.env.data,
                 "expression": form.expression.data,
                 "result": result,
-                "script_print": redirect.text,
+                "script_print": script_print,
                 "script": FileUtil.get_func_data_by_script_name(f'{form.env.data}_{form.script.name}')
             })
         except Exception as e:

@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 import json
 
+from flask.json import JSONEncoder
+
+from utils.parse.parse import encode_object
+
 
 class JsonUtil:
     """ 处理json事件，主要是在dumps时处理编码问题 """
@@ -17,7 +21,7 @@ class JsonUtil:
         """ json.dumps """
         kwargs.setdefault("ensure_ascii", False)
         # kwargs.setdefault("indent", 4)
-        return json.dumps(obj, *args, **kwargs)
+        return json.dumps(obj, default=encode_object, cls=JSONEncoder, *args, **kwargs)
 
     @classmethod
     def loads(cls, obj, *args, **kwargs):

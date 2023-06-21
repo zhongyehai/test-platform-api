@@ -9,13 +9,8 @@ from utils.variables.contentType import CONTENT_TYPE
 
 # 各模块的路径
 LOG_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/logs/"))  # 日志路径
-RUN_LOG_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/run_logs/"))  # 测试运行日志路径
-SCRIPT_PRINT_LOG_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/script_print_logs/"))  # 自定义函数print打印内容
 STATIC_ADDRESS = os.path.abspath(os.path.join(basedir, r"static"))  # 导入模板存放路径
 SCRIPT_ADDRESS = os.path.abspath(os.path.join(basedir, "." + r"/script_list"))  # 自定义函数文件存放地址
-API_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/reports_api/"))  # api测试报告文件存放地址
-WEB_UI_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/reports_web_ui/"))  # web-ui测试报告文件存放地址
-APP_UI_REPORT_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/reports_app_ui/"))  # app-ui测试报告文件存放地址
 DIFF_RESULT = os.path.abspath(os.path.join(basedir, ".." + r"/diff_result/"))  # yapi接口监控结果存放地址
 CASE_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/case_files/"))  # 用例数据文件存放地址
 UI_CASE_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/ui_case_files/"))  # ui用例数据文件存放地址
@@ -41,14 +36,10 @@ def _check_file_path(paths):
 
 
 _check_file_path([
-    LOG_ADDRESS, SCRIPT_PRINT_LOG_ADDRESS, SCRIPT_ADDRESS, API_REPORT_ADDRESS, WEB_UI_REPORT_ADDRESS,
-    APP_UI_REPORT_ADDRESS, DIFF_RESULT, CASE_FILE_ADDRESS, UI_CASE_FILE_ADDRESS, MOCK_DATA_ADDRESS, CALL_BACK_ADDRESS,
-    CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, GIT_FILE_ADDRESS, DB_BACK_UP_ADDRESS, SWAGGER_FILE_ADDRESS, RUN_LOG_ADDRESS,
+    LOG_ADDRESS, SCRIPT_ADDRESS, DIFF_RESULT, CASE_FILE_ADDRESS, UI_CASE_FILE_ADDRESS, MOCK_DATA_ADDRESS,
+    CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, GIT_FILE_ADDRESS, DB_BACK_UP_ADDRESS, SWAGGER_FILE_ADDRESS,
     BROWSER_DRIVER_ADDRESS
 ])
-
-run_api_test_log = os.path.join(RUN_LOG_ADDRESS, "api_test.log")
-run_ui_test_log = os.path.join(RUN_LOG_ADDRESS, "ui_test.log")
 
 
 class FileUtil:
@@ -80,38 +71,6 @@ class FileUtil:
             os.remove(file_path)
 
     @classmethod
-    def save_api_test_report(cls, report_id, content):
-        """ 保存接口自动化测试报告 """
-        cls.save_file(os.path.join(API_REPORT_ADDRESS, f'{report_id}.txt'), content)
-
-    @classmethod
-    def save_web_ui_test_report(cls, report_id, content):
-        """ 保存web_ui自动化测试报告 """
-        cls.save_file(os.path.join(WEB_UI_REPORT_ADDRESS, f'{report_id}.txt'), content)
-
-    @classmethod
-    def save_app_ui_test_report(cls, report_id, content):
-        """ 保存app_ui自动化测试报告 """
-        cls.save_file(os.path.join(APP_UI_REPORT_ADDRESS, f'{report_id}.txt'), content)
-
-    @classmethod
-    def get_script_print_addr(cls, file_name):
-        """ 获取脚本打印记录文件 """
-        return os.path.join(SCRIPT_PRINT_LOG_ADDRESS, file_name)
-
-    @classmethod
-    def get_script_print_log(cls, file_name):
-        """ 获取脚本打印内容 """
-        with io.open(cls.get_script_print_addr(file_name), "r", encoding="utf-8") as file:
-            content = file.read()
-        return content
-
-    @classmethod
-    def delete_script_print_addr(cls, file_name):
-        """ 删除脚本打印记录文件 """
-        cls.delete_file(cls.get_script_print_addr(file_name))
-
-    @classmethod
     def save_diff_result(cls, diff_record_id, diff_detail):
         """ 保存对比数据 """
         with io.open(os.path.join(DIFF_RESULT, f'{diff_record_id}.json'), "w", encoding="utf-8") as fp:
@@ -136,28 +95,6 @@ class FileUtil:
         with io.open(os.path.join(SCRIPT_ADDRESS, f'{script_name}.py'), "r", encoding="utf-8") as fp:
             script = fp.read()
         return script
-
-    @classmethod
-    def get_report(cls, file_path, report_id):
-        """ 获取自动化测试报告 """
-        with io.open(os.path.join(file_path, f'{report_id}.txt'), "r", encoding="utf-8") as file:
-            report_content = json.load(file)
-        return report_content
-
-    @classmethod
-    def get_api_test_report(cls, report_id):
-        """ 获取接口自动化测试报告 """
-        return cls.get_report(API_REPORT_ADDRESS, report_id)
-
-    @classmethod
-    def get_web_ui_test_report(cls, report_id):
-        """ 获取web_ui自动化测试报告 """
-        return cls.get_report(WEB_UI_REPORT_ADDRESS, report_id)
-
-    @classmethod
-    def get_app_ui_test_report(cls, report_id):
-        """ 获取app_ui自动化测试报告 """
-        return cls.get_report(APP_UI_REPORT_ADDRESS, report_id)
 
     @classmethod
     def get_diff_result(cls, diff_id):

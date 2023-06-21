@@ -1,14 +1,5 @@
 import sys
 
-from utils.util.fileUtil import FileUtil
-
-
-def redirect_print_log_to_file(file_name):
-    """ 重定向print内容到文本中 """
-    sys.stdout = open(FileUtil.get_script_print_addr(file_name), "a", encoding='utf8')
-
-    # sys.stdout = sys.__stdout__  # 恢复输出到console
-
 
 class RedirectPrintLogToMemory:
     """ 重定向print内容到内存中 """
@@ -22,6 +13,10 @@ class RedirectPrintLogToMemory:
 
     def flush(self):
         pass
+
+    def get_text_and_redirect_to_default(self):
+        self.redirect_to_default()
+        return self.text
 
     @classmethod
     def redirect_to_default(cls):

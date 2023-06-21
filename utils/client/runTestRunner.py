@@ -32,7 +32,6 @@ from app.config.models.config import Config
 from utils.client.testRunner.api import TestRunner
 from utils.client.testRunner.utils import build_url
 from utils.log import logger
-from utils.util.fileUtil import FileUtil, API_REPORT_ADDRESS, WEB_UI_REPORT_ADDRESS, APP_UI_REPORT_ADDRESS
 from utils.parse.parse import encode_object
 from utils.client.parseModel import ProjectModel, ApiModel, CaseModel, ElementModel
 from utils.message.sendReport import async_send_report, call_back_for_pipeline
@@ -73,7 +72,6 @@ class RunTestRunner:
             self.case_model = ApiCase
             self.step_model = ApiStep
             self.report_model = ApiReport
-            self.report_file_path = API_REPORT_ADDRESS
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_api_report_addr()}'
         elif self.run_type == "webUi":  # web-ui自动化
             self.project_model = WebUiProject
@@ -83,7 +81,6 @@ class RunTestRunner:
             self.case_model = WebUiCase
             self.step_model = WebUiStep
             self.report_model = WebUiReport
-            self.report_file_path = WEB_UI_REPORT_ADDRESS
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_web_ui_report_addr()}'
         else:  # app-ui自动化
             self.project_model = AppUiProject
@@ -93,7 +90,6 @@ class RunTestRunner:
             self.case_model = AppUiCase
             self.step_model = AppUiStep
             self.report_model = AppUiReport
-            self.report_file_path = APP_UI_REPORT_ADDRESS
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_app_ui_report_addr()}'
 
         self.report_id = report_id
@@ -216,15 +212,6 @@ class RunTestRunner:
             }
         }
 
-    def save_report_file(self, report_id, result):
-        """ 保存测试报告文件 """
-        if self.run_type == "api":
-            FileUtil.save_api_test_report(report_id, result)
-        elif self.run_type == "webUi":
-            FileUtil.save_web_ui_test_report(report_id, result)
-        else:
-            FileUtil.save_app_ui_test_report(report_id, result)
-
     def save_report_and_send_message(self, json_result):
         """ 写入测试报告到数据库, 并把数据写入到文本中 """
         self.report_model.save_report_start(self.report_id)
@@ -232,7 +219,7 @@ class RunTestRunner:
 
         report = self.report_model.get_first(id=self.report_id)
         report.update_status(result["success"])
-        self.save_report_file(report.id, result)  # 测试报告写入到文本文件
+        report.update({"summary": result})  # 保存测试报告概要数据
         self.report_model.save_report_finish(self.report_id)
 
         # 定时任务需要把连接放回连接池，不放回去会报错
@@ -245,7 +232,7 @@ class RunTestRunner:
             not_passed_report = self.report_model.get_first(batch_id=batch_id, is_passed=0)  # 有失败的，则获取失败的报告
             if not_passed_report:
                 self.report_id = not_passed_report.id
-                result = FileUtil.get_report(self.report_file_path, not_passed_report.id)
+                result = json.loads(self.report_model.get_first(id=not_passed_report.id).summary)
 
             self.send_report(self.report_id, result)  # 发送报告
 
@@ -337,6 +324,7 @@ class RunTestRunner:
     def parse_api(project, api):
         """ 把解析后的接口对象 解析为testRunner的数据结构 """
         return {
+            "id": api.id,
             "name": api.name,  # 接口名
             "setup_hooks": [up.strip() for up in api.up_func.split(";") if up] if api.up_func else [],
             "teardown_hooks": [func.strip() for func in api.down_func.split(";") if func] if api.down_func else [],
