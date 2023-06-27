@@ -136,6 +136,8 @@ class RunTestRunner:
         """ 从已解析的用例字典中取指定id的用例，如果没有，则取出来解析后放进去 """
         if case_id not in self.parsed_case_dict:
             case = self.case_model.get_first(id=case_id)
+            if not case:
+                return  # 可能存在任务选择了用例，在那边直接把这条用例删掉了的情况
             self.parse_functions(json.loads(case.script_list))
             self.parsed_case_dict.update({case_id: CaseModel(**case.to_dict())})
         return self.parsed_case_dict[case_id]

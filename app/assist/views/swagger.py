@@ -30,7 +30,8 @@ def get_parsed_module(module_dict, project_id, controller_name, controller_tags)
     # 已解析，则直接获取
     module = ApiModule.get_first(project_id=project_id, controller=controller_name)
     if module:
-        module_dict[module.name] = module
+        # module_dict[module.name] = module
+        module_dict[module.controller] = module
         return module
 
     # 未解析，则先解析并保存，再返回
@@ -40,7 +41,8 @@ def get_parsed_module(module_dict, project_id, controller_name, controller_tags)
         "name": controller_tags.get(controller_name, controller_name),  # 有tag就用tag，没有就用controller名字
         "num": ApiModule.get_insert_num(project_id=project_id)
     })
-    module_dict[module.name] = module
+    # module_dict[module.name] = module
+    module_dict[module.controller] = module
     return module
 
 
@@ -363,12 +365,10 @@ class SwaggerPullView(LoginRequiredView):
                     # 处理接口
                     app.logger.info(f"解析接口地址：{api_addr}")
                     app.logger.info(f"解析接口数据：{swagger_api}")
-                    api_name = swagger_api.get("summary", "接口未命名")
                     api_template = {
                         "deprecated": swagger_api.get("deprecated", 0),
                         "project_id": project.id,
                         "module_id": module.id,
-                        "name": api_name,
                         "method": api_method.upper(),
                         "addr": api_addr,
                         "data_type": "json"
@@ -377,17 +377,12 @@ class SwaggerPullView(LoginRequiredView):
                     # 根据接口地址 获取/实例化 接口对象
                     if "{" in api_addr:  # URL中可能有参数化"/XxXx/xx/{batchNo}"
                         split_swagger_addr = api_addr.split("{")[0]
-                        db_api = ApiMsg.query.filter(
-                            ApiMsg.addr.like(f"%{split_swagger_addr}%"),
-                            # ApiMsg.name == api_name,
-                            ApiMsg.module_id == module.id
-                        ).first() or ApiMsg()
+                        db_api = ApiMsg.query.filter(ApiMsg.addr.like(f"%{split_swagger_addr}%"), ApiMsg.module_id == module.id).first() or ApiMsg()
                         if db_api.id and "$" in db_api.addr:  # 已经在测试平台修改过接口地址的路径参数
                             api_msg_addr_split = db_api.addr.split("$")
                             api_msg_addr_split[0] = split_swagger_addr
                             api_template["addr"] = "$".join(api_msg_addr_split)
                     else:
-                        # db_api = ApiMsg.get_first(addr=api_addr, name=api_name, module_id=module.id) or ApiMsg()
                         db_api = ApiMsg.get_first(addr=api_addr, module_id=module.id) or ApiMsg()
 
                     # swagger2和openapi3格式不一样，处理方法不一样
@@ -409,6 +404,7 @@ class SwaggerPullView(LoginRequiredView):
                             setattr(db_api, key, value)
 
                     if db_api.id is None:  # 没有id，则为新增
+                        db_api.name = swagger_api.get("summary", "接口未命名")
                         db_api.num = ApiMsg.get_insert_num(module_id=module.id)
                         add_list.append(db_api)
 

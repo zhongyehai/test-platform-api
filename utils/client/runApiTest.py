@@ -189,6 +189,9 @@ class RunCase(RunTestRunner):
         for case_id in self.case_id_list:
 
             current_case = self.get_format_case(case_id)
+            if current_case is None:
+                continue
+
             if self.temp_variables:
                 current_case.variables = FormatModel().parse_variables(self.temp_variables.get("variables"))
                 current_case.headers = FormatModel().parse_list_data(self.temp_variables.get("headers"))

@@ -154,11 +154,11 @@ class DeleteCaseForm(BaseForm):
             )
 
             # 校验是否有定时任务已引用此用例
-            for task in Task.query.filter(Task.case_ids.like(f"%{field.data}%")).all():
-                self.validate_data_is_false(
-                    f"定时任务【{task.name}】已引用此用例，请先解除引用",
-                    field.data in json.loads(task.case_ids)
-                )
+            # for task in Task.query.filter(Task.case_ids.like(f"%{field.data}%")).all():
+            #     self.validate_data_is_false(
+            #         f"定时任务【{task.name}】已引用此用例，请先解除引用",
+            #         field.data in json.loads(task.case_ids)
+            #     )
 
             # 校验是否有其他用例已引用此用例
             step = Step.get_first(quote_case=field.data)

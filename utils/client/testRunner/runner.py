@@ -305,6 +305,7 @@ class Runner(object):
             'variables_mapping': self.client_session.meta_data.get("variables_mapping", {}),
             'request': request,
             'response': self.client_session.meta_data["data"][0]["response"],
+            'test_action': self.client_session.meta_data["data"][0]["test_action"],
             'extract_msgs': self.client_session.meta_data['data'][0].get("extract_msgs", {}),
             'validation_results': self.client_session.meta_data["data"][0].get("validation_results", {}),
             'before': self.client_session.meta_data["data"][0].get("before"),

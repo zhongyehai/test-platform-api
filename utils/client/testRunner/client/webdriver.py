@@ -25,7 +25,7 @@ class WebDriverSession(BaseSession):
         self.meta_data["data"][0]["test_action"] = kwargs  # 记录原始的请求信息
 
         # 执行前截图
-        self.meta_data["data"][0]['before'] = getattr(driver, 'get_screenshot_as_base64')()
+        self.meta_data["data"][0]['before'] = driver.get_screenshot_as_base64()
 
         # 执行测试步骤
         start_timestamp = time.time()
@@ -33,7 +33,7 @@ class WebDriverSession(BaseSession):
         end_timestamp = time.time()
 
         # 执行后截图
-        self.meta_data["data"][0]['after'] = getattr(driver, 'get_screenshot_as_base64')()
+        self.meta_data["data"][0]['after'] = driver.get_screenshot_as_base64()
 
         # 记录消耗的时间
         self.meta_data["stat"] = {"response_time_ms": round((end_timestamp - start_timestamp) * 1000, 2)}

@@ -34,7 +34,7 @@ class ApiReportGetReportIdView(NotLoginView):
         return app.restful.success("获取成功", data=Report.select_show_report_id(batch_id))
 
 
-class ApiReportView(LoginRequiredView):
+class ApiReportView(NotLoginView):
 
     def get(self):
         """ 获取测试报告 """

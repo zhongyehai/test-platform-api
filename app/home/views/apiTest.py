@@ -47,7 +47,7 @@ class GetApiTestCountTitleView(LoginRequiredView):
                 "project": {"title": "服务数", "total": len(Project.get_all())},
                 "module": {"title": "模块数", "total": len(Module.get_all())},
                 "api": {"title": "接口数", "total": len(Api.get_all())},
-                "hit": {"title": "触发问题数", "total": len(Hits.get_all())},
+                "hit": {"title": "记录问题数", "total": len(Hits.get_all())},
                 "case": {"title": "用例数", "total": len(Case.get_all())},
                 "step": {"title": "测试步骤数", "total": len(Step.get_all())},
                 "task": {"title": "定时任务数", "total": len(Task.get_all())},
@@ -273,7 +273,7 @@ class GetHitCountView(LoginRequiredView):
         time_data = get_data_by_time(Hits)
 
         return app.restful.success("获取成功", data={
-            "title": "触发问题",
+            "title": "记录问题",
             "options": [
                 "总数", *hit_type_data.keys(),
                 "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"

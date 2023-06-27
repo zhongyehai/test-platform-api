@@ -8,6 +8,25 @@ from jinja2 import Template
 
 def inspection_ding_ding(content, kwargs):
     """ 巡检-钉钉报告模板 """
+    # todo 消息加@
+    """
+    {
+         "msgtype": "markdown",
+         "markdown": {
+             "title":"杭州天气",
+             "text": "#### 杭州天气 @150XXXXXXXX \n> 9度，西北风1级，空气良89，相对温度73%\n> ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png)\n> ###### 10点20分发布 [天气](https://www.dingalk.com) \n"
+         },
+          "at": {
+              "atMobiles": [
+                  "150XXXXXXXX"
+              ],
+              "atUserIds": [
+                  "user123"
+              ],
+              "isAtAll": false
+          }
+     }
+    """
     testcases = content["stat"]["testcases"]
     pass_rate = round(testcases["success"] / testcases["total"] * 100, 3) if testcases["total"] else 100
     return {
@@ -30,6 +49,16 @@ def inspection_ding_ding(content, kwargs):
 
 def inspection_we_chat(content, kwargs):
     """ 巡检-企业微信报告模板 """
+    """
+    {
+        "msgtype": "text",
+        "text": {
+            "content": "广州今日天气：29度，大部分多云，降雨概率：60%",
+            "mentioned_list":["wangqing","@all"],
+            "mentioned_mobile_list":["13800001111","@all"]
+        }
+    }
+    """
     testcases = content["stat"]["testcases"]
     pass_rate = round(testcases["success"] / testcases["total"] * 100, 3) if testcases["total"] else 100
     return {
@@ -189,7 +218,7 @@ def business_stage_count_ding_ding(content):
         for hit_title, hit_count in data["hitRecord"].items():
             total_hit_count += hit_count
             hit_record_total += f'#### {hit_title}: <font color=#FF0000>{hit_count}</font> 个\n>'
-        hit_record_total = f'#### 共触发问题: <font color=#FF0000>{total_hit_count}</font> 个\n>' + hit_record_total
+        hit_record_total = f'#### 共记录问题: <font color=#FF0000>{total_hit_count}</font> 个\n>' + hit_record_total
         detail_template += hit_record_total
         return detail_template
 
@@ -198,7 +227,7 @@ def business_stage_count_ding_ding(content):
 
     # 业务线汇总
     builtins_msg = f'### <font color=#409EFF>自动化测试{count_type}统计报告</font>\n>' \
-                   f'#### 触发时间 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n>'
+                   f'#### 统计时间 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n>'
     builtins_msg += get_detail_msg(count_type, "本业务线", content)
 
     # 遍历每个服务
