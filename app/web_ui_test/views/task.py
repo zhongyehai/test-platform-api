@@ -25,7 +25,7 @@ class WebUiRunTaskView(NotLoginView):
         batch_id = Report.get_batch_id()
         env_list = form.env_list.data or form.loads(form.task.env_list)
         for env_code in env_list:
-            RunCaseBusiness.run(
+            report_id = RunCaseBusiness.run(
                 batch_id=batch_id,
                 env_code=env_code,
                 browser=form.browser.data if hasattr(form, 'browser') else form.task.browser,
@@ -42,7 +42,12 @@ class WebUiRunTaskView(NotLoginView):
                 task=form.task.to_dict(),
                 create_user=g.user_id or User.get_first(account="common").id
         )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
+        return app.restful.success(
+            msg="触发执行成功，请等待执行完毕",
+            data={
+                "batch_id": batch_id,
+                "report_id": report_id if len(env_list) == 1 else None
+            })
 
 
 class WebUiGetTaskListView(LoginRequiredView):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseReport, BaseReportStep
+from app.baseModel import BaseReport, BaseReportCase, BaseReportStep
 
 
 class AppUiReport(BaseReport):
@@ -7,6 +7,13 @@ class AppUiReport(BaseReport):
     __abstract__ = False
     __tablename__ = "app_ui_test_report"
     __table_args__ = {"comment": "APP测试报告表"}
+
+
+class AppUiReportCase(BaseReportCase):
+    """ 测试报告用例表 """
+    __abstract__ = False
+    __tablename__ = "app_ui_test_report_case"
+    __table_args__ = {"comment": "APP测试报告的用例数据表"}
 
 
 class AppUiReportStep(BaseReportStep):

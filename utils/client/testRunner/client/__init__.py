@@ -11,12 +11,12 @@ class BaseSession:
                 {
                     "extract_msgs": {},
                     "request": {
-                        "url": "N/A",
-                        "method": "N/A",
+                        "url": "",
+                        "method": "",
                         "headers": {}
                     },
                     "response": {
-                        "status_code": "N/A",
+                        "status_code": "",
                         "headers": {},
                         "encoding": None,
                         "content_type": ""
@@ -24,8 +24,8 @@ class BaseSession:
                 }
             ],
             "stat": {
-                "content_size": "N/A",
-                "response_time_ms": "N/A",
-                "elapsed_ms": "N/A",
+                "content_size": "",
+                "response_time_ms": "",
+                "elapsed_ms": "",
             }
         }

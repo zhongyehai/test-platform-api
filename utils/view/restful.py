@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import json
+from ..util.jsonUtil import JsonUtil
 
 
 def restful_result(code, message, data, **kwargs):
     """ 统一返 result风格 """
-    return json.dumps({"status": code, "message": message, "data": data, **kwargs}, ensure_ascii=False)
+    return JsonUtil.dumps({"status": code, "message": message, "data": data, **kwargs}, ensure_ascii=False)
 
 
 def success(msg=None, data=None, **kwargs):

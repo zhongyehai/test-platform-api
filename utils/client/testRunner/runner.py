@@ -59,6 +59,7 @@ class Runner(object):
         self.run_type = config.get("run_type") or "api"
         self.resp_obj = None
         self.driver = None
+        self.case_id = None
 
         # 记录当前步骤的执行进度
         self.report_step_model = ApiReportStep if self.run_type == "api" else WebUiReportStep if self.run_type == "webUi" else AppUiReportStep
@@ -108,8 +109,7 @@ class Runner(object):
             SkipTest: skip test
         """
         if test_dict.get("skip"):
-            # self.report_step.test_is_skip()
-            raise SkipTest("skip触发跳过用例")
+            raise SkipTest("skip触发跳过此步骤")
 
         elif test_dict.get("skipIf"):  # 只有 skipIf 条件为结果为True时才跳过，条件为假，或者执行报错，都不跳过
             # [{"expect": 200, "comparator": "_01equals", "check_value": 200, "check_result": "unchecked"}]
@@ -124,14 +124,19 @@ class Runner(object):
                 except Exception as error:
                     skip_if_result = error
                 if ('true' in skip_type and not skip_if_result) or ('false' in skip_type and skip_if_result):
-                    # self.report_step.test_is_skip()
-                    raise SkipTest(f"{skip_if_condition} skipIf触发跳过")
+                    raise SkipTest(f"skipIf触发跳过此步骤 \n{skip_if_condition}")
 
         elif test_dict.get("skipUnless"):
             skip_unless_condition = test_dict["skipUnless"]
             if not self.session_context.eval_content(skip_unless_condition):
-                # self.report_step.test_is_skip()
-                raise SkipTest(f'{skip_unless_condition} skipUnless触发跳过')
+                raise SkipTest(f'skipUnless触发跳过此步骤 \n{skip_unless_condition}')
+
+    def _reset_app_and_update_case_id(self, case_id):
+        """ 执行下一条用例时更新用例id和重置app """
+        if self.run_type == 'appUi' and self.case_id and self.case_id != case_id:  # app自动化测试，非第一条用例
+            self.driver.reset()
+
+        self.case_id = case_id
 
     def do_hook_actions(self, actions, hook_type='setup'):
         """ 执行前置/后置自定义函数
@@ -244,6 +249,7 @@ class Runner(object):
             self.session_context.update_test_variables("response", self.resp_obj)
         else:
             # 执行测试步骤浏览器操作
+            self._reset_app_and_update_case_id(case_id)
             self.client_session.do_action(
                 self.driver,
                 name=step_name,
@@ -307,7 +313,7 @@ class Runner(object):
             'response': self.client_session.meta_data["data"][0]["response"],
             'test_action': self.client_session.meta_data["data"][0].get("test_action"),
             'extract_msgs': self.client_session.meta_data['data'][0].get("extract_msgs", {}),
-            'validation_results': self.client_session.meta_data["data"][0].get("validation_results", {}),
+            'validation_results': self.client_session.meta_data["data"][0].get("validation_results", []),
             'before': self.client_session.meta_data["data"][0].get("before"),
             'after': self.client_session.meta_data["data"][0].get("after")
         }
@@ -352,7 +358,7 @@ class Runner(object):
             # 保存自定义函数的 print 打印, 并把print重定向到默认输出
             self.client_session.meta_data["redirect_print"] = self.redirect_print.get_text_and_redirect_to_default()
 
-            self.report_step.update_test_data(self.get_test_step_data())
+            self.report_step.update_test_data(self.get_test_step_data(), self.client_session.meta_data["stat"])
 
             self.meta_datas = self.client_session.meta_data
             self.meta_datas["report_step_id"] = self.report_step.id

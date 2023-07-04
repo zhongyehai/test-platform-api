@@ -8,10 +8,10 @@ from utils.client.parseModel import StepModel, FormatModel
 from utils.client.testRunner.utils import build_url
 from app.web_ui_test.models.caseSuite import WebUiCaseSuite
 from app.web_ui_test.models.step import WebUiStep
-from app.web_ui_test.models.report import WebUiReportStep
+from app.web_ui_test.models.report import WebUiReportStep, WebUiReportCase
 from app.app_ui_test.models.caseSuite import AppUiCaseSuite
 from app.app_ui_test.models.step import AppUiStep
-from app.app_ui_test.models.report import AppUiReportStep
+from app.app_ui_test.models.report import AppUiReportStep, AppUiReportCase
 from app.app_ui_test.models.device import AppUiRunPhone
 from config import ui_action_mapping_reverse
 
@@ -56,6 +56,7 @@ class RunCase(RunTestRunner):
             self.suite_model = WebUiCaseSuite
             self.step_model = WebUiStep
             self.reportStepModel = WebUiReportStep
+            self.reportStepCase = WebUiReportCase
             self.browser = browser
             self.device = self.device_id = self.run_server_id = self.run_phone_id = None
             self.device_dict = {}
@@ -63,6 +64,7 @@ class RunCase(RunTestRunner):
             self.suite_model = AppUiCaseSuite
             self.step_model = AppUiStep
             self.reportStepModel = AppUiReportStep
+            self.reportStepCase = AppUiReportCase
             self.run_server_id = appium_config.pop("server_id")
             self.run_phone_id = appium_config.pop("phone_id")
             self.device = appium_config.pop("device")
@@ -109,9 +111,11 @@ class RunCase(RunTestRunner):
         report_step = self.reportStepModel().create({
             "name": step_data["name"],
             "from_id": element.id,
+            "case_id": step.case_id,
             "step_id": step.id,
             "step_data": step_data,
             "report_id": self.report_id,
+            "report_case_id": step.report_case_id
         })
 
         step_data["report_step_id"] = report_step.id
@@ -241,14 +245,25 @@ class RunCase(RunTestRunner):
                 current_case.skip_if = FormatModel().parse_skip_if(self.temp_variables.get("skip_if"))
                 current_case.run_times = self.temp_variables.get("run_times", 1)
 
+            # 记录解析下后的用例
+            report_case = self.reportStepCase().create({
+                "name": current_case.name,
+                "from_id": current_case.id,
+                "report_id": self.report_id,
+                "case_data": current_case.get_attr(),
+                "summary": self.reportStepCase.getsummary_template()
+            })
+
             # 满足跳过条件则跳过
             if self.parse_case_is_skip(current_case.skip_if, self.run_server_id, self.run_phone_id) is True:
+                report_case.test_is_skip()
                 continue
 
             current_project = self.get_format_project(self.suite_model.get_first(id=current_case.suite_id).project_id)
 
             case_template = {
                 "config": {
+                    "report_case_id": report_case.id,
                     "case_id": case_id,
                     "project_id": current_project.id,
                     "variables": {},
@@ -272,6 +287,7 @@ class RunCase(RunTestRunner):
                 step_case = self.get_format_case(step.case_id)
                 step_element = self.get_format_element(step.element_id)
                 step = StepModel(**step.to_dict())
+                step.report_case_id = report_case.id
                 step.execute_name = ui_action_mapping_reverse[step.execute_type]  # 执行方式的别名，用于展示测试报告
                 step.extracts = self.parse_extracts(step.extracts)  # 解析数据提取
                 step.validates = self.parse_validates(step.validates)  # 解析断言

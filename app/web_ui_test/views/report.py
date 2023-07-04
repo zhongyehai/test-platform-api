@@ -3,9 +3,9 @@ from flask import request, current_app as app
 
 from app.baseView import LoginRequiredView, NotLoginView
 from app.web_ui_test.blueprint import web_ui_test
-from app.web_ui_test.models.report import WebUiReport as Report, WebUiReportStep
-from app.web_ui_test.forms.report import GetReportForm, FindReportForm, DeleteReportForm, FindReportStepListForm, \
-    FindReportStepForm
+from app.web_ui_test.models.report import WebUiReport as Report, WebUiReportStep, WebUiReportCase
+from app.web_ui_test.forms.report import GetReportForm, FindReportForm, DeleteReportForm, GetReportCaseForm, \
+    GetReportCaseListForm, GetReportStepForm, GetReportStepListForm
 from utils.view.required import login_required
 
 
@@ -47,26 +47,39 @@ class WebUiReportView(LoginRequiredView):
         """ 删除测试报告 """
         form = DeleteReportForm().do_validate()
         for report in form.report_list:
+            WebUiReportCase.delete_by_report(report.id)
             WebUiReportStep.delete_by_report(report.id)
             report.delete()
         return app.restful.success("删除成功")
 
 
-class WebUiGetReportStepListView(LoginRequiredView):
+class WebUiGetReportCaseListView(NotLoginView):
+    def get(self):
+        """ 报告的用例列表 """
+        form = GetReportCaseListForm().do_validate()
+        case_list = WebUiReportCase.get_case_list(form.report_id.data, form.get_summary.data)
+        return app.restful.success(data=case_list)
+
+
+class WebUiGetReportCaseView(NotLoginView):
+    def get(self):
+        """ 报告的用例数据 """
+        form = GetReportCaseForm().do_validate()
+        return app.restful.success(data=form.case_data.to_dict())
+
+
+class WebUiGetReportStepListView(NotLoginView):
     def get(self):
         """ 报告的步骤列表 """
-        form = FindReportStepListForm().do_validate()
-        fields = ["id", "name", "process", "result"]
-        query_data = WebUiReportStep.query.filter(WebUiReportStep.report_id == form.report_id.data).with_entities(
-            WebUiReportStep.id, WebUiReportStep.name, WebUiReportStep.process, WebUiReportStep.result
-        ).all()  # [(24, '登录', 'before', 'running')]
-        return app.restful.success(data=[dict(zip(fields, d)) for d in query_data])
+        form = GetReportStepListForm().do_validate()
+        step_list = WebUiReportStep.get_step_list(form.report_case_id.data, form.get_summary.data)
+        return app.restful.success(data=step_list)
 
 
 class WebUiGetReportStepView(NotLoginView):
     def get(self):
         """ 报告的步骤数据 """
-        form = FindReportStepForm().do_validate()
+        form = GetReportStepForm().do_validate()
         return app.restful.success(data=form.step_data.to_dict())
 
 
@@ -74,6 +87,9 @@ web_ui_test.add_url_rule("/report", view_func=WebUiReportView.as_view("WebUiRepo
 web_ui_test.add_url_rule("/report/list", view_func=WebUiReportListView.as_view("WebUiReportListView"))
 web_ui_test.add_url_rule("/report/status", view_func=WebUiReportIsDoneView.as_view("WebUiReportIsDoneView"))
 web_ui_test.add_url_rule("/report/showId", view_func=WebUiReportGetReportIdView.as_view("WebUiReportGetReportIdView"))
+web_ui_test.add_url_rule("/report/step", view_func=WebUiGetReportCaseView.as_view("WebUiGetReportCaseView"))
+web_ui_test.add_url_rule("/report/step/list",
+                         view_func=WebUiGetReportCaseListView.as_view("WebUiGetReportCaseListView"))
 web_ui_test.add_url_rule("/report/step", view_func=WebUiGetReportStepView.as_view("WebUiGetReportStepView"))
 web_ui_test.add_url_rule("/report/step/list",
                          view_func=WebUiGetReportStepListView.as_view("WebUiGetReportStepListView"))

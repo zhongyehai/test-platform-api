@@ -20,29 +20,34 @@ def get_swagger_data(swagger_addr):
     return requests.get(swagger_addr, verify=False).json()
 
 
-def get_parsed_module(module_dict, project_id, controller_name, controller_tags):
+def get_parsed_module(module_dict, project_id, controller_name, controller_tags, options):
     """ 获取已解析的模块 """
 
-    # 已获取，则直接返回
+    # 已解析，则直接返回
     if controller_name in module_dict:
         return module_dict.get(controller_name)
 
-    # 已解析，则直接获取
+    # 已拉取过，则直接从数据库获取
     module = ApiModule.get_first(project_id=project_id, controller=controller_name)
     if module:
-        # module_dict[module.name] = module
+        if 'controller_name' in options:  # 用户选择了要跟新模块名字
+            module.update({
+                "controller": controller_name,
+                "name": controller_tags.get(controller_name, controller_name)
+            })
+
         module_dict[module.controller] = module
         return module
 
-    # 未解析，则先解析并保存，再返回
+    # 未拉取过，则先解析并保存，再返回
     module = ApiModule().create({
         "project_id": project_id,
         "controller": controller_name,
         "name": controller_tags.get(controller_name, controller_name),  # 有tag就用tag，没有就用controller名字
         "num": ApiModule.get_insert_num(project_id=project_id)
     })
-    # module_dict[module.name] = module
     module_dict[module.controller] = module
+
     return module
 
 
@@ -332,8 +337,9 @@ class SwaggerPullView(LoginRequiredView):
 
     def post(self):
         """ 根据指定服务的swagger拉取所有数据 """
+        # options: ['controller_name', 'api_name', 'headers', 'query', 'json', 'form', 'response']
         options, project, module_dict = request.json.get("options"), ApiProject.get_first(id=request.json.get("id")), {}
-        pull_log = SwaggerPullLog().create({"project_id": project.id})
+        pull_log = SwaggerPullLog().create({"project_id": project.id, "pull_args": json.dumps(options)})
         swagger_data = {}
         try:
             swagger_data = get_swagger_data(project.swagger)  # swagger数据
@@ -360,7 +366,7 @@ class SwaggerPullView(LoginRequiredView):
                 for api_method, swagger_api in api_data.items():
                     # 处理模块
                     controller_name = swagger_api.get("tags")[0] if swagger_api.get("tags") else "默认分组"
-                    module = get_parsed_module(module_dict, project.id, controller_name, controller_tags)
+                    module = get_parsed_module(module_dict, project.id, controller_name, controller_tags, options)
 
                     # 处理接口
                     app.logger.info(f"解析接口地址：{api_addr}")
@@ -377,7 +383,8 @@ class SwaggerPullView(LoginRequiredView):
                     # 根据接口地址 获取/实例化 接口对象
                     if "{" in api_addr:  # URL中可能有参数化"/XxXx/xx/{batchNo}"
                         split_swagger_addr = api_addr.split("{")[0]
-                        db_api = ApiMsg.query.filter(ApiMsg.addr.like(f"%{split_swagger_addr}%"), ApiMsg.module_id == module.id).first() or ApiMsg()
+                        db_api = ApiMsg.query.filter(ApiMsg.addr.like(f"%{split_swagger_addr}%"),
+                                                     ApiMsg.module_id == module.id).first() or ApiMsg()
                         if db_api.id and "$" in db_api.addr:  # 已经在测试平台修改过接口地址的路径参数
                             api_msg_addr_split = db_api.addr.split("$")
                             api_msg_addr_split[0] = split_swagger_addr
@@ -407,6 +414,9 @@ class SwaggerPullView(LoginRequiredView):
                         db_api.name = swagger_api.get("summary", "接口未命名")
                         db_api.num = ApiMsg.get_insert_num(module_id=module.id)
                         add_list.append(db_api)
+                    else:
+                        if 'api_name' in options:  # 用户选择了要更新接口名字
+                            db_api.name = swagger_api.get("summary", "接口未命名")
 
             db.session.add_all(add_list)
 

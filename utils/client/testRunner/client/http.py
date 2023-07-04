@@ -149,8 +149,8 @@ class HttpSession(requests.Session, BaseSession):
             "response_time_ms": response_time_ms,
             "elapsed_ms": response.elapsed.microseconds / 1000.0,
             "content_size": content_size,
-            "request_at": datetime.fromtimestamp(request_timestamp).strftime("%Y-%m-%d %H:%M:%S.%f"),
-            "response_at": datetime.fromtimestamp(response_timestamp).strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "request_at": datetime.fromtimestamp(request_timestamp).strftime("%Y-%m-%d %H:%M:%S"),
+            "response_at": datetime.fromtimestamp(response_timestamp).strftime("%Y-%m-%d %H:%M:%S"),
         }
         # 记录请求和响应历史记录，包括 3x 的重定向
         response_list = response.history + [response]
@@ -162,7 +162,8 @@ class HttpSession(requests.Session, BaseSession):
             logger.log_error(u"{exception}".format(exception=str(e)))
         else:
             logger.log_info(
-                f"""status_code: {response.status_code}, response_time(ms): {response_time_ms} ms, response_length: {content_size} bytes\n"""
+                # f"""status_code: {response.status_code}, response_time(ms): {response_time_ms} ms, response_length: {content_size} bytes\n"""
+                f"""步骤: {name}, 响应状态码: {response.status_code}, 耗时: {response_time_ms} ms, response_length: {content_size} bytes\n"""
             )
 
         return response

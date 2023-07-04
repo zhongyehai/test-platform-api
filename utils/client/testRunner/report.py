@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import platform
 import time
 import unittest
@@ -51,6 +52,8 @@ def build_case_summary(result):
 
     return {
         "success": success,
+        "case_id": None,
+        "project_id": None,
         "stat": {
             'total': total,
             'failures': failures,
@@ -62,12 +65,10 @@ def build_case_summary(result):
         },
         "time": {
             'start_at': result.start_at,
-            # 'start_date': result.start_date,
+            'start_date': datetime.datetime.fromtimestamp(result.start_at).strftime("%Y-%m-%d %H:%M:%S"),
             'duration': result.duration
         },
-        "case_id": None,
-        "project_id": None,
-        "records": result.records
+        # "records": result.records  # 改为分用例列表和步骤列表，从数据库获取，减小测试报告体积
     }
 
 
@@ -82,15 +83,15 @@ def merge_stat(origin_stat, new_stat):
             origin_stat[key] += new_stat[key]
 
 
-def format_summary(summary):
-    """ 格式化测试结果数据，以便转储json文件并生成html报告。 """
-    for index, suite_summary in enumerate(summary["details"]):
-
-        if not suite_summary.get("name"):
-            suite_summary["name"] = "testcase {}".format(index)
-
-        # for meta_data in suite_summary.get("records"):
-        #     format_meta_data(meta_data)
+# def format_summary(summary):
+#     """ 格式化测试结果数据，以便转储json文件并生成html报告。 """
+#     for index, suite_summary in enumerate(summary["details"]):
+#
+#         if not suite_summary.get("name"):
+#             suite_summary["name"] = "testcase {}".format(index)
+#
+#         # for meta_data in suite_summary.get("records"):
+#         #     format_meta_data(meta_data)
 
 
 def format_request(request_data: dict):

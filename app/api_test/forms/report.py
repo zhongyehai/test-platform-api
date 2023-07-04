@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from wtforms import IntegerField, StringField
+from wtforms import IntegerField, StringField, BooleanField
 from wtforms.validators import DataRequired
 
 from app.assist.models.hits import Hits
 from app.baseForm import BaseForm
-from app.api_test.models.report import ApiReport as Report, ApiReportStep
+from app.api_test.models.report import ApiReport as Report, ApiReportStep, ApiReportCase
 
 
 class GetReportForm(BaseForm):
@@ -37,7 +37,7 @@ class DeleteReportForm(BaseForm):
 
 
 class FindReportForm(BaseForm):
-    """ 查找报告 """
+    """ 获取报告 """
     projectId = IntegerField(validators=[DataRequired("请选择服务")])
     pageNum = IntegerField()
     pageSize = IntegerField()
@@ -49,13 +49,29 @@ class FindReportForm(BaseForm):
     env_list = StringField()
 
 
-class FindReportStepListForm(BaseForm):
-    """ 查找报告步骤列表 """
+class GetReportCaseListForm(BaseForm):
+    """ 获取报告用例列表 """
     report_id = IntegerField(validators=[DataRequired("报告id必传")])
+    get_summary = BooleanField()
 
 
-class FindReportStepForm(BaseForm):
-    """ 查找报告步骤数据 """
+class GetReportCaseForm(BaseForm):
+    """ 获取报告步骤数据 """
+    id = IntegerField(validators=[DataRequired("报告用例id必传")])
+
+    def validate_id(self, field):
+        data = self.validate_data_is_exist('数据不存在', ApiReportCase, id=field.data)
+        setattr(self, 'case_data', data)
+
+
+class GetReportStepListForm(BaseForm):
+    """ 获取报告步骤列表 """
+    report_case_id = IntegerField(validators=[DataRequired("报告用例id必传")])
+    get_summary = BooleanField()
+
+
+class GetReportStepForm(BaseForm):
+    """ 获取报告步骤数据 """
     id = IntegerField(validators=[DataRequired("步骤id必传")])
 
     def validate_id(self, field):

@@ -26,7 +26,7 @@ class GetCaseForm(BaseForm):
 class ChangeCaseStatusForm(BaseForm):
     """ 批量修改用例状态 """
     id = StringField(validators=[DataRequired("用例id必传")])
-    status = IntegerField(validators=[DataRequired("状态必传")])
+    status = StringField()
 
     def validate_id(self, field):
         case_list = []
@@ -213,6 +213,7 @@ class RunCaseForm(BaseForm):
     def validate_server_id(self, field):
         """ 校验服务id存在 """
         server = self.validate_data_is_exist(f"id为【{field.data}】的服务器不存在", Server, id=field.data)
+        self.validate_appium_server_is_running(server.ip, server.port)
         setattr(self, "server", server)
 
     def validate_phone_id(self, field):

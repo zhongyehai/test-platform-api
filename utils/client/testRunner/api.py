@@ -3,6 +3,9 @@ import time
 import unittest
 
 from . import (exceptions, logger, parser, report, runner)
+from app.api_test.models.report import ApiReportCase
+from app.web_ui_test.models.report import WebUiReportCase
+from app.app_ui_test.models.report import AppUiReportCase
 
 
 class TestRunner(object):
@@ -22,6 +25,7 @@ class TestRunner(object):
         self.unittest_runner = unittest.TextTestRunner(**kwargs)
         self.test_loader = unittest.TestLoader()
         self._summary = None
+        self.report_case_model = None
         if log_file:
             logger.setup_logger(log_level, log_file)
 
@@ -32,8 +36,10 @@ class TestRunner(object):
         Returns:
             unittest.TestSuite()
         """
+
         def _build_step_function(test_runner, step_dict):
             """ 把测试数据构建为测试方法"""
+
             def test(self):
                 try:
                     test_runner.run_test(step_dict)
@@ -71,33 +77,59 @@ class TestRunner(object):
         return test_suite
 
     def _run_suite(self, test_suite):
-        """ 运行test_suite中的测试
+        """ 执行测试用例
         Args:
             test_suite: unittest.TestSuite()
         Returns:
             list: tests_results
         """
-        tests_results = []
+        case_summary_list = []
 
-        for testcase in test_suite:
-            logger.log_info(f'开始运行测试用例: {testcase.config.get("name")}')
+        for test_case in test_suite:
+            # 记录用例开始执行
+            report_case_id = test_case.config.get("report_case_id")
+            report_case = self._get_report_case_model(test_case.config["run_type"]).get_first(id=report_case_id)
+            report_case.test_is_running()
 
-            result = self.unittest_runner.run(testcase)
-            tests_results.append((testcase, result))
+            result = self.unittest_runner.run(test_case)
 
-        return tests_results
+            # 记录用例执行结束
+            summary = report.build_case_summary(result)
+            summary["name"] = test_case.config.get("name")
+            summary["case_id"] = test_case.config.get("case_id")
+            summary["project_id"] = test_case.config.get("project_id")
+            report_case.test_is_success(
+                summary=summary) if result.wasSuccessful() else report_case.test_is_fail(summary=summary)
 
-    def merge_test_result(self, tests_results, project_name):
+            case_summary_list.append(summary)
+
+        return case_summary_list
+
+    def _get_report_case_model(self, run_type):
+        """ 获取报告的用例模型 """
+        if self.report_case_model:
+            return self.report_case_model
+        elif run_type == 'api':
+            self.report_case_model = ApiReportCase
+            return self.report_case_model
+        elif run_type == 'webUi':
+            self.report_case_model = WebUiReportCase
+            return self.report_case_model
+        else:
+            self.report_case_model = AppUiReportCase
+            return self.report_case_model
+
+    def merge_test_result(self, case_summary_list, project_name):
         """ 汇总测试数据和结果
         Args:
-            tests_results (list): list of (testcase, result)
+            case_summary_list (list): list of (testcase, result)
         """
         summary = {
             "success": True,
             "stat": {
                 "testcases": {
                     "project": project_name,
-                    "total": len(tests_results),
+                    "total": len(case_summary_list),
                     "success": 0,
                     "fail": 0
                 },
@@ -106,28 +138,18 @@ class TestRunner(object):
             "time": {
                 'start_at': time.time()
             },
-            "platform": report.get_system_platform(),
-            "details": []
+            # "details": []
         }
 
-        for tests_result in tests_results:
-            testcase, result = tests_result
-            testcase_summary = report.build_case_summary(result)
-
+        for testcase_summary in case_summary_list:
             if testcase_summary["success"]:
                 summary["stat"]["testcases"]["success"] += 1
             else:
                 summary["stat"]["testcases"]["fail"] += 1
 
             summary["success"] &= testcase_summary["success"]
-            testcase_summary["name"] = testcase.config.get("name")
-            testcase_summary["case_id"] = testcase.config.get("case_id")
-            testcase_summary["project_id"] = testcase.config.get("project_id")
-
             report.merge_stat(summary["stat"]["teststeps"], testcase_summary["stat"])
             report.merge_stat(summary["time"], testcase_summary["time"])
-
-            summary["details"].append(testcase_summary)
 
         return summary
 
@@ -141,13 +163,10 @@ class TestRunner(object):
         test_suite = self._add_case_to_suite(parsed_tests_mapping)
 
         self.exception_stage = "运行测试套件"
-        results = self._run_suite(test_suite)
+        case_summary_list = self._run_suite(test_suite)
 
         self.exception_stage = "生成测试结果"
-        self._summary = self.merge_test_result(results, project_name=tests_dict.get('project'))
-
-        self.exception_stage = "格式化测试报告数据"
-        report.format_summary(self._summary)
+        self._summary = self.merge_test_result(case_summary_list, project_name=tests_dict.get('project'))
 
     @property
     def summary(self):

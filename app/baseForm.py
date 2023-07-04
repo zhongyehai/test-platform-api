@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
+import requests
 import validators
 from flask import request, g, abort
 from wtforms import Form, ValidationError
@@ -298,3 +299,9 @@ class BaseForm(Form, JsonUtil):
             mail = mail.strip()
             if mail and not validators.email(mail):
                 raise ValidationError(f"收件人邮箱【{mail}】格式错误")
+
+    def validate_appium_server_is_running(self, server_ip, server_port):
+        try:
+            return requests.get(f'http://{server_ip}:{server_port}', timeout=5).status_code
+        except Exception as error:
+            raise ValidationError("设置的appium服务器地址不能访问，请检查")

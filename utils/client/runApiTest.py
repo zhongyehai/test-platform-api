@@ -4,7 +4,7 @@ import copy
 from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.step import ApiStep as Step
-from app.api_test.models.report import ApiReportStep as reportStep
+from app.api_test.models.report import ApiReportCase as ReportCase, ApiReportStep as reportStep
 from utils.log import logger
 from utils.client.parseModel import StepModel, FormatModel
 from utils.client.runTestRunner import RunTestRunner
@@ -37,9 +37,18 @@ class RunApi(RunTestRunner):
         for api_obj in self.api_ids:
             api = self.get_format_api(self.project, api_obj)
 
+            # 记录解析下后的用例，单接口运行时，没有用例，为了统一数据结构，所以把接口视为一条用例
+            report_case = ReportCase().create({
+                "name": api["name"],
+                "from_id": api["id"],
+                "report_id": self.report_id,
+                "case_data": api,
+            })
+
             # 用例的数据结构
             test_case_template = {
                 "config": {
+                    "report_case_id": report_case.id,
                     "run_type": self.run_type,
                     "name": api.get("name"),
                     "variables": {},
@@ -60,6 +69,7 @@ class RunApi(RunTestRunner):
                 "from_id": api["id"],
                 "step_data": api,
                 "report_id": self.report_id,
+                "report_case_id": report_case.id,
             })
             api["report_step_id"] = report_step.id
 
@@ -161,9 +171,11 @@ class RunCase(RunTestRunner):
         report_step = reportStep().create({
             "name": step_data["name"],
             "from_id": api["id"],
+            "case_id": step.case_id,
             "step_id": step.id,
             "step_data": step_data,
             "report_id": self.report_id,
+            "report_case_id": current_case.report_case_id
         })
         step_data["report_step_id"] = report_step.id
         return step_data
@@ -192,14 +204,26 @@ class RunCase(RunTestRunner):
             if current_case is None:
                 continue
 
+            # 如果传了临时参数
             if self.temp_variables:
                 current_case.variables = FormatModel().parse_variables(self.temp_variables.get("variables"))
                 current_case.headers = FormatModel().parse_list_data(self.temp_variables.get("headers"))
                 current_case.skip_if = FormatModel().parse_skip_if(self.temp_variables.get("skip_if"))
                 current_case.run_times = self.temp_variables.get("run_times", 1)
 
+            # 记录解析下后的用例
+            report_case = ReportCase().create({
+                "name": current_case.name,
+                "from_id": current_case.id,
+                "report_id": self.report_id,
+                "case_data": current_case.get_attr(),
+                "summary": ReportCase.getsummary_template()
+            })
+            current_case.report_case_id = report_case.id
+
             # 满足跳过条件则跳过
             if self.parse_case_is_skip(current_case.skip_if) is True:
+                report_case.test_is_skip()
                 continue
 
             current_project = self.get_format_project(CaseSuite.get_first(id=current_case.suite_id).project_id)
@@ -207,6 +231,7 @@ class RunCase(RunTestRunner):
             # 用例格式模板
             case_template = {
                 "config": {
+                    "report_case_id": report_case.id,
                     "case_id": case_id,
                     "project_id": current_project.id,
                     "run_type": self.run_type,

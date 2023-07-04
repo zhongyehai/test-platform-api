@@ -34,6 +34,7 @@ class SwaggerPullLog(BaseModel):
     status = db.Column(db.Integer, default=1, comment="拉取结果，0失败，1拉取中，2拉取成功")
     project_id = db.Column(db.Integer, comment="服务id")
     desc = db.Column(db.Text, comment="备注")
+    pull_args = db.Column(db.Text, comment="备注")
 
     @classmethod
     def make_pagination(cls, attr):

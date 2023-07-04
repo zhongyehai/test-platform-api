@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from wtforms import IntegerField, StringField
+from wtforms import IntegerField, StringField, BooleanField
 from wtforms.validators import DataRequired
 
 from app.assist.models.hits import Hits
 from app.baseForm import BaseForm
-from app.web_ui_test.models.report import WebUiReport as Report, WebUiReportStep
+from app.web_ui_test.models.report import WebUiReport as Report, WebUiReportStep, WebUiReportCase
 
 
 class GetReportForm(BaseForm):
@@ -24,13 +24,20 @@ class DeleteReportForm(BaseForm):
         report_list = []
         for report_id in field.data:
             report = Report.get_first(id=report_id)
-            if report and Hits.get_first(report_id=report.id) is None:
+            if report:
+                # 出于周统计、月统计的数据准确性考虑，触发方式为 pipeline 和 cron，只有管理员权限能删
+                if report.trigger_type in ['pipeline', 'cron'] and self.is_not_admin():
+                    continue
+
+                # 没有被登记失败记录的报告可以删
+                # if Hits.get_first(report_id=report.id) is None:
+                #     report_list.append(report)
                 report_list.append(report)
         setattr(self, "report_list", report_list)
 
 
 class FindReportForm(BaseForm):
-    """ 查找报告 """
+    """ 获取报告 """
     projectId = IntegerField(validators=[DataRequired("请选择服务")])
     pageNum = IntegerField()
     pageSize = IntegerField()
@@ -42,15 +49,31 @@ class FindReportForm(BaseForm):
     env_list = StringField()
 
 
-class FindReportStepListForm(BaseForm):
-    """ 查找报告步骤列表 """
+class GetReportCaseListForm(BaseForm):
+    """ 获取报告用例列表 """
     report_id = IntegerField(validators=[DataRequired("报告id必传")])
+    get_summary = BooleanField()
 
 
-class FindReportStepForm(BaseForm):
-    """ 查找报告步骤数据 """
+class GetReportCaseForm(BaseForm):
+    """ 获取报告步骤数据 """
+    id = IntegerField(validators=[DataRequired("报告用例id必传")])
+
+    def validate_id(self, field):
+        data = self.validate_data_is_exist('数据不存在', WebUiReportCase, id=field.data)
+        setattr(self, 'case_data', data)
+
+
+class GetReportStepListForm(BaseForm):
+    """ 获取报告步骤列表 """
+    report_case_id = IntegerField(validators=[DataRequired("报告用例id必传")])
+    get_summary = BooleanField()
+
+
+class GetReportStepForm(BaseForm):
+    """ 获取报告步骤数据 """
     id = IntegerField(validators=[DataRequired("步骤id必传")])
 
     def validate_id(self, field):
-        data = self.validate_data_is_exist('报告数据不存在', WebUiReportStep, id=field.data)
+        data = self.validate_data_is_exist('数据不存在', WebUiReportStep, id=field.data)
         setattr(self, 'step_data', data)

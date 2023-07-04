@@ -104,6 +104,7 @@ class RunTaskForm(HasTaskIdForm):
         data = field.data or self.loads(self.task.conf)["server_id"]
         self.validate_data_is_true('请设置运行服务器', data)
         server = self.validate_data_is_exist(f"id为【{field.data}】的服务器不存在", Server, id=data)
+        self.validate_appium_server_is_running(server.ip, server.port)
         setattr(self, "server", server)
 
     def validate_phone_id(self, field):

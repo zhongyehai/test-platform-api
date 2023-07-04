@@ -220,8 +220,8 @@ class RunTestRunner:
         result = json.loads(json_result)
 
         report = self.report_model.get_first(id=self.report_id)
-        report.update_status(result["success"])
-        report.update({"summary": result})  # 保存测试报告概要数据
+        report.update_status(result["success"], summary=result)
+        # report.update({"summary": result})  # 保存测试报告概要数据
         self.report_model.save_report_finish(self.report_id)
 
         # 定时任务需要把连接放回连接池，不放回去会报错
@@ -300,7 +300,7 @@ class RunTestRunner:
             for index, res in enumerate(run_dict.values()):
                 if index != 0:
                     self.build_summary(all_summary, res, ["testcases", "teststeps"])  # 合并用例统计, 步骤统计
-                    all_summary["details"].extend(res["details"])  # 合并测试用例数据
+                    # all_summary["details"].extend(res["details"])  # 合并测试用例数据
                     all_summary["success"] = all([all_summary["success"], res["success"]])  # 测试报告状态
                     all_summary["time"]["duration"] = summary["time"]["duration"]  # 总共耗时取运行最长的
 

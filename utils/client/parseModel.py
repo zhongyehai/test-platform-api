@@ -316,6 +316,24 @@ class CaseModel(FormatModel):
         # 接口自动化字段
         self.headers = self.parse_list_data(kwargs.get("headers", {}))
 
+    def get_attr(self):
+        return {
+            "id": self.id,
+            "num": self.num,
+            "name": self.name,
+            "desc": self.desc,
+            "env": self.env,
+            "script_list": self.script_list,
+            "variables": self.variables,
+            "skip_if": self.skip_if,
+            "status": self.status,
+            "run_times": self.run_times,
+            "module_id": self.module_id,
+            "suite_id": self.suite_id,
+            "create_user": self.create_user,
+            "headers": self.headers
+        }
+
 
 class StepModel(FormatModel):
     """ 格式化步骤信息 """

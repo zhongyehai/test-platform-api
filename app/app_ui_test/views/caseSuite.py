@@ -39,7 +39,9 @@ class AppUiRunCaseSuiteView(LoginRequiredView):
         """ 运行用例集下的用例 """
         form = RunCaseSuiteForm().do_validate()
         appium_config = RunCaseBusiness.get_appium_config(form.suite.project_id, form)
+        batch_id = Report.get_batch_id()
         report_id = RunCaseBusiness.run(
+            batch_id=batch_id,
             env_code=form.env_list.data[0],
             is_async=form.is_async.data,
             project_id=form.suite.project_id,
@@ -52,7 +54,12 @@ class AppUiRunCaseSuiteView(LoginRequiredView):
             run_func=RunCase,
             appium_config=appium_config
         )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"report_id": report_id})
+        return app.restful.success(
+            msg="触发执行成功，请等待执行完毕",
+            data={
+                "batch_id": batch_id,
+                "report_id": report_id if len(form.env_list.data) == 1 else None
+            })
 
 
 class AppUiCaseSuiteView(LoginRequiredView):

@@ -6,6 +6,7 @@ import time
 import os
 from unittest.case import SkipTest
 
+import psutil
 from appium import webdriver as appium_webdriver
 from appium.webdriver.common.touch_action import TouchAction
 from appium.webdriver.mobilecommand import MobileCommand
@@ -653,6 +654,16 @@ class GetWebDriver(Actions):
         except:
             pass
 
+    def kill_driver_process(self):
+        """ 有时候会遇到执行结束后，driver进程仍然存在的情况，加一个强制kill机制 """
+        # 有可能kill到其他任务的进程，暂时不使用此机制
+        # TODO 判断Linux和windows下的进程名字
+        # TODO 精确kill当前driver的进程
+        process_name = f'{self.browser_name}driver.exe'  # 进程名称 'chromedriver.exe'
+        process_list = [process for process in psutil.process_iter() if process.name() == process_name]  # 所有的驱动进程
+        for process in process_list:
+            process.kill()
+
     def get_driver(self):
         """ 获取浏览器实例 """
         return getattr(self, self.browser_name)()  # 获取浏览器对象
@@ -703,7 +714,6 @@ class GetAppDriver(Actions):
         self.host, self.port = kwargs.pop('host'), kwargs.pop('port')
         try:
             self.appium_webdriver = appium_webdriver.Remote(f'http://{self.host}:{self.port}/wd/hub', kwargs)  # 启动app
-            self.appium_webdriver.reset()
         except Exception as error:
             # TODO 根据异常，做对应的处理，服务器连不上、没有链接设备、设备系统版本不一致...
             raise error
@@ -711,7 +721,6 @@ class GetAppDriver(Actions):
 
     def __del__(self):
         try:
-            self.appium_webdriver.reset()
             self.appium_webdriver.close_app()
         except:
             pass

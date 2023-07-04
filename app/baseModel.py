@@ -89,7 +89,7 @@ class BaseModel(db.Model, JsonUtil):
         "headers", "variables", "script_list", "pop_header_filed", "output",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to", "temp_variables",
-        "kym", "task_item", 'business_list', 'run_id', 'extends', 'step_data', 'summary'
+        "kym", "task_item", 'business_list', 'run_id', 'extends', 'case_data', 'step_data', 'summary'
     ]
 
     def set_attr(self, column_list, value=None):
@@ -865,16 +865,53 @@ class BaseReport(BaseModel):
     batch_id = db.Column(db.String(128), comment="运行批次id，用于查询报告")
     run_id = db.Column(db.String(512), comment="运行id，用于触发重跑")
     project_id = db.Column(db.Integer(), comment="所属的服务id")
-    summary = db.Column(db.Text(), default='{}', comment="报告数据")
+    summary = db.Column(db.Text(), default='{}', comment="报告的统计")
+
+    @staticmethod
+    def get_summary_template():
+        return {
+            "success": True,
+            "stat": {
+                "testcases": {
+                    "total": 1,  # 初始化的时候给个1，方便用户查看运行中的报告，后续会在流程中更新为实际的total
+                    "success": 0,
+                    "fail": 0
+                },
+                "teststeps": {
+                    "total": 0,
+                    "failures": 0,
+                    "errors": 0,
+                    "skipped": 0,
+                    "expectedFailures": 0,
+                    "unexpectedSuccesses": 0,
+                    "successes": 0
+                }
+            },
+            "time": {
+                "start_at": "",
+                "start_date": "",
+                "duration": 0
+            },
+            "run_type": "case",
+            "is_async": 0,
+            "run_env": "",
+            "env_name": "",
+            "count_step": 0,
+            "count_api": 0,
+            "count_element": 0
+        }
 
     @classmethod
     def get_batch_id(cls):
         """ 生产运行id """
         return f'{g.user_id}_{int(time.time() * 1000000)}'
 
-    def update_status(self, run_result, status=2):
+    def update_status(self, run_result, status=2, summary=None):
         """ 测试运行结束后，更新状态和结果 """
-        self.update({"is_passed": 1 if run_result else 0, "status": status})
+        update_dict = {"is_passed": 1 if run_result else 0, "status": status}
+        if summary:
+            update_dict["summary"] = summary
+        self.update(update_dict)
 
     def retry_count_increase(self):
         """ 增加重试次数 """
@@ -966,19 +1003,53 @@ class BaseReport(BaseModel):
         )
 
 
-class BaseReportStep(BaseModel):
-    """ 步骤执行记录基类表 """
+class BaseReportCase(BaseModel):
+    """ 用例执行记录基类表 """
     __abstract__ = True
 
-    name = db.Column(db.String(128), nullable=True, comment="测试步骤名称")
-    from_id = db.Column(db.Integer(), comment="步骤对应的元素/接口id")
-    step_id = db.Column(db.Integer(), default=None,comment="步骤id")
+    name = db.Column(db.String(128), nullable=True, comment="测试用例名称")
+    from_id = db.Column(db.Integer(), comment="执行记录对应的用例id")
     report_id = db.Column(db.Integer(), index=True, comment="测试报告id")
-    process = db.Column(db.String(128), default='waite',
-                        comment="步骤执行进度，waite：等待解析、parse: 解析数据、before：前置条件、after：后置条件、run：执行测试、extract：数据提取、validate：断言")
     result = db.Column(db.String(128), default='waite',
-                       comment="步骤测试结果，waite：等待执行、running：执行中、fail：执行失败、success：执行成功、skip：跳过、error：报错")
-    step_data = db.Column(LONGTEXT, default='{}', comment="步骤的数据")
+                       comment="步骤测试结果，waite：等待执行、running：执行中、fail：执行不通过、success：执行通过、skip：跳过、error：报错")
+    case_data = db.Column(LONGTEXT, default='{}', comment="用例的数据")
+    summary = db.Column(db.Text(), default='{}', comment="用例的报告统计")
+
+    @staticmethod
+    def getsummary_template():
+        return {
+            "success": 'skip',
+            "case_id": None,
+            "project_id": None,
+            "stat": {
+                'total': 1,  # 初始化的时候给个1，方便用户查看运行中的报告，后续会在流程中更新为实际的total
+                'failures': 0,
+                'errors': 0,
+                'skipped': 0,
+                'expectedFailures': 0,
+                'unexpectedSuccesses': 0,
+                'successes': 0
+            },
+            "time": {
+                'start_at': '',
+                'start_date': '',
+                'duration': 0
+            }
+        }
+
+    @classmethod
+    def get_case_list(cls, report_id, get_summary):
+        """ 根据报告id，获取用例列表，性能考虑，只查关键字段 """
+        field_title = ["id", "from_id", "name", "result", "summary"]
+        query_fields = [cls.id, cls.from_id, cls.name, cls.result]
+        if get_summary is True:
+            query_fields.append(cls.summary)
+
+        # [(1, '用例1', 'running')]
+        query_data = cls.query.filter(cls.report_id == report_id).with_entities(*query_fields).all()
+
+        # [{ 'id': 1, 'name': '用例1', 'result': 'running' }]
+        return [dict(zip(field_title, d)) for d in query_data]
 
     @classmethod
     def delete_by_report(cls, report_id):
@@ -986,9 +1057,84 @@ class BaseReportStep(BaseModel):
         with db.auto_commit():
             cls.query.filter(cls.report_id == report_id).delete()
 
-    def update_test_data(self, step_data):
+    def update_test_data(self, case_data, summary=None):
         """ 更新测试数据 """
-        self.update({"step_data": step_data})
+        update_dict = {"case_data": case_data}
+        if summary:
+            update_dict["summary"] = summary
+        self.update(update_dict)
+
+    def update_test_result(self, result, case_data, summary):
+        """ 更新测试状态 """
+        update_dict = {"result": result}
+        if case_data:
+            update_dict["case_data"] = case_data
+        if summary:
+            update_dict["summary"] = summary
+        self.update(update_dict)
+
+    def test_is_running(self, case_data=None, summary=None):
+        self.update_test_result("running", case_data, summary)
+
+    def test_is_fail(self, case_data=None, summary=None):
+        self.update_test_result("fail", case_data, summary)
+
+    def test_is_success(self, case_data=None, summary=None):
+        self.update_test_result("success", case_data, summary)
+
+    def test_is_skip(self, case_data=None, summary=None):
+        self.update_test_result("skip", case_data, summary)
+
+    def test_is_error(self, case_data=None, summary=None):
+        self.update_test_result("error", case_data, summary)
+
+
+class BaseReportStep(BaseModel):
+    """ 步骤执行记录基类表 """
+    __abstract__ = True
+
+    name = db.Column(db.String(128), nullable=True, comment="测试步骤名称")
+    from_id = db.Column(db.Integer(), comment="步骤对应的元素/接口id")
+    case_id = db.Column(db.Integer(), default=None, comment="步骤所在的用例id")
+    step_id = db.Column(db.Integer(), default=None, comment="步骤id")
+    report_case_id = db.Column(db.Integer(), default=None, comment="用例数据id")
+    report_id = db.Column(db.Integer(), index=True, comment="测试报告id")
+    process = db.Column(db.String(128), default='waite',
+                        comment="步骤执行进度，waite：等待解析、parse: 解析数据、before：前置条件、after：后置条件、run：执行测试、extract：数据提取、validate：断言")
+    result = db.Column(db.String(128), default='waite',
+                       comment="步骤测试结果，waite：等待执行、running：执行中、fail：执行不通过、success：执行通过、skip：跳过、error：报错")
+    step_data = db.Column(LONGTEXT, default='{}', comment="步骤的数据")
+    summary = db.Column(db.Text(),
+                        default='{"response_time_ms": 0, "elapsed_ms": 0, "content_size": 0, "request_at": "", "response_at": ""}',
+                        comment="步骤的统计")
+
+    @classmethod
+    def get_step_list(cls, report_case_id, get_summary):
+        """ 获取步骤列表，性能考虑，只查关键字段 """
+        field_title = ["id", "case_id", "name", "process", "result", "summary"]
+        query_fields = [cls.id, cls.case_id, cls.name, cls.process, cls.result]
+
+        if get_summary is True:
+            query_fields.append(cls.summary)
+
+        # [(1, '步骤1', 'before', 'running')]
+        query_data = cls.query.filter(cls.report_case_id == report_case_id).with_entities(*query_fields).all()
+
+        # [{ 'id': 1, 'name': '步骤1', 'process': 'before', 'result': 'success' }]
+        return [dict(zip(field_title, d)) for d in query_data]
+
+    @classmethod
+    def delete_by_report(cls, report_id):
+        """ 根据报告id批量删除 """
+        with db.auto_commit():
+            cls.query.filter(cls.report_id == report_id).delete()
+
+    def update_test_data(self, step_data, summary=None):
+        """ 更新测试数据 """
+        update_dict = {"step_data": step_data}
+        if summary:
+            update_dict["summary"] = summary
+        self.update(update_dict)
 
     def update_test_result(self, result, step_data):
         """ 更新测试状态 """

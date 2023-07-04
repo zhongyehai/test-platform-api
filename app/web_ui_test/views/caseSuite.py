@@ -54,7 +54,12 @@ class WebUiRunCaseSuiteView(LoginRequiredView):
                 run_type="webUi",
                 run_func=RunCase
             )
-        return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
+        return app.restful.success(
+            msg="触发执行成功，请等待执行完毕",
+            data={
+                "batch_id": batch_id,
+                "report_id": report_id if len(form.env_list.data) == 1 else None
+            })
 
 
 class WebUiCaseSuiteView(LoginRequiredView):

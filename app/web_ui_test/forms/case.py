@@ -25,7 +25,7 @@ class GetCaseForm(BaseForm):
 class ChangeCaseStatusForm(BaseForm):
     """ 批量修改用例状态 """
     id = StringField(validators=[DataRequired("用例id必传")])
-    status = IntegerField(validators=[DataRequired("状态必传")])
+    status = StringField()
 
     def validate_id(self, field):
         case_list = []

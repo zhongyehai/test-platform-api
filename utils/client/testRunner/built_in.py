@@ -175,7 +175,7 @@ def _14batch_is_has_data(check_value, expect_keys=[]):
     """ 批量判断字段值均为真 """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_has_data(check_value_item, expect_keys=[])
+            _14batch_is_has_data(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
@@ -187,7 +187,7 @@ def _14batch_is_not_has_data(check_value, expect_keys=[]):
     """ 批量判断字段值均为假 """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_not_has_data(check_value_item, expect_keys=[])
+            _14batch_is_not_has_data(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
@@ -199,7 +199,7 @@ def _14batch_is_true(check_value, expect_keys=[]):
     """ 批量判断字段值均为true """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_true(check_value_item, expect_keys=[])
+            _14batch_is_true(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
@@ -211,7 +211,7 @@ def _14batch_is_not_true(check_value, expect_keys=[]):
     """ 批量判断字段值均不为true """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_not_true(check_value_item, expect_keys=[])
+            _14batch_is_not_true(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
@@ -224,7 +224,7 @@ def _14batch_is_false(check_value, expect_keys=[]):
     """ 批量判断字段值均为false """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_false(check_value_item, expect_keys=[])
+            _14batch_is_false(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
@@ -236,7 +236,7 @@ def _14batch_is_not_false(check_value, expect_keys=[]):
     """ 批量判断字段值均不为false """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_not_false(check_value_item, expect_keys=[])
+            _14batch_is_not_false(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
@@ -249,7 +249,7 @@ def _14batch_is_null(check_value, expect_keys=[]):
     """ 批量判断字段值均为null """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_null(check_value_item, expect_keys=[])
+            _14batch_is_null(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
@@ -262,13 +262,46 @@ def _14batch_is_not_null(check_value, expect_keys=[]):
     """ 批量判断字段值均不为null """
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
-            _14batch_is_not_null(check_value_item, expect_keys=[])
+            _14batch_is_not_null(check_value_item, expect_keys)
     else:
         assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
         for expect_key in expect_keys:
             assert expect_key in check_value.keys(), f'批量判断字段值均不为null：【{check_value}】没有字段为【{expect_key}】的key'
             assert check_value[
                        expect_key] is not None, f'批量判断字段值均不为null：【{expect_key}】对应的值【{check_value[expect_key]}】为null'
+
+
+def _14batch_is_equal(check_value, expect_keys=[]):
+    """ 批量判断字典中的字段值相等 """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_equal(check_value_item, expect_keys)
+    else:
+        assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
+
+        data_list = []  # 把字段对应的素有值都拿出来，去重后长度等于1，则说明值都一样
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'批量判断字典中的字段值相等：【{check_value}】没有字段为【{expect_key}】的key'
+            data_list.append(check_value[expect_key])
+
+        assert len(set(data_list)) == 1, f'批量判断字典中的字段值相等：有不相等的值: {data_list}'
+
+
+def _14batch_is_not_equal(check_value, expect_keys=[]):
+    """ 批量判断字典中的字段值不相等 """
+    if isinstance(check_value, (list, tuple)):
+        for check_value_item in check_value:
+            _14batch_is_not_equal(check_value_item, expect_keys)
+    else:
+        assert isinstance(check_value, dict), f'实际结果【{check_value}】不为字典'
+
+        data_list = []  # 把字段对应的所有值都拿出来，去重后长度大于1，则说明有不同的值
+        for expect_key in expect_keys:
+            assert expect_key in check_value.keys(), f'批量判断字典中的字段值不相等：【{check_value}】没有字段为【{expect_key}】的key'
+
+            data_list.append(check_value[expect_key])
+
+        assert len(set(data_list)) > 1, f'批量判断字典中的字段值不相等：所有值都相同: {data_list}'
 
 
 def _15less_than(check_value, expect_value):

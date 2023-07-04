@@ -295,6 +295,10 @@ class RunCaseBusiness:
         """ 运行用例/任务 """
 
         env = RunEnv.get_data_byid_or_code(env_code)
+        summary = report_model.get_summary_template()
+        summary["run_type"], summary["is_async"] = run_type, is_async
+        summary["run_env"], summary["env_name"] = env.code, env.name
+
         report = report_id or report_model.get_new_report(
             name=report_name,
             run_type=task_type,
@@ -304,7 +308,8 @@ class RunCaseBusiness:
             trigger_type=trigger_type,
             temp_variables=temp_variables,
             batch_id=batch_id,
-            run_id=trigger_id or case_id
+            run_id=trigger_id or case_id,
+            summary=summary
         )
         # 新起线程运行任务
         Thread(
@@ -333,21 +338,27 @@ class RunCaseBusiness:
         project = AppUiProject.get_first(id=project_id).to_dict()  # app配置
         server = form.server.to_dict()  # appium服务器配置
         phone = form.phone.to_dict()  # 运行手机配置
+
         return {
             "host": server["ip"],
             "port": server["port"],
+            "unicodeKeyboard": True,  # 使用 appium-ime 输入法
+            "resetKeyboard": True,  # 表示在测试结束后切回系统输入法
+            "noReset": form.no_reset.data,  # 控制APP记录的信息是否不重置
+            # newCommandTimeout  # 两条appium命令间的最长时间间隔，若超过这个时间，appium会自动结束并退出app
+
+            # 安卓参数
             "platformName": phone["os"],
-            "platformVersion": phone["os_version"],
-            "deviceName": phone["device_id"],
+            # "deviceName": phone["device_id"],
             "appPackage": project["app_package"],
             "appActivity": project["app_activity"],
-            "unicodeKeyboard": True,  # 使用Unicode编码方式发送字符串
-            "resetKeyboard": True,  # 是否调用appium键盘
-            "noReset": form.no_reset.data,  # 控制APP记录的信息是否不重置
+            # "platformVersion": phone["os_version"],
+
+            # 用于后续自动化测试中的参数
             "server_id": server["id"],  # 用于判断跳过条件
             "phone_id": phone["id"],  # 用于判断跳过条件
-            "device": phone  # 用于插入到公共变量
-            # "app": "",  # 安装路径
+            "device": phone,  # 用于插入到公共变量
+            # "app": r"D:\app-debug.apk",  # 安装路径
             # "browserName": "",  # 直接测web用, Chrome
             # "autoWebview": "",  # 开机进入webview模式
         }
