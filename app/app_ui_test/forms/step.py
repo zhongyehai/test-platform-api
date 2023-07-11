@@ -48,7 +48,8 @@ class AddStepForm(BaseForm):
 
     def validate_extracts(self, field):
         """ 校验数据提取 """
-        self.validate_ui_extracts(field.data)
+        if not self.quote_case.data:
+            self.validate_ui_extracts(field.data)
 
     def validate_element_id(self, field):
         """ 校验元素存在 """

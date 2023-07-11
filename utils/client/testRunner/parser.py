@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import ast
+import json
 import re
 import traceback
 from datetime import datetime
@@ -8,6 +9,9 @@ from . import exceptions, utils
 from .compat import basestring, builtin_str, numeric_types
 
 from app.baseModel import FuncErrorRecord
+from app.api_test.models.report import ApiReportCase
+from app.web_ui_test.models.report import WebUiReportCase
+from app.app_ui_test.models.report import AppUiReportCase
 from utils.message.sendReport import send_run_func_error_message
 from utils.variables.regexp import variable_regexp, function_regexp, function_regexp_compile
 
@@ -718,7 +722,7 @@ def __parse_test_case_step(steps: list, case_config: dict, project_mapping: dict
 
 
 def _parse_test_case(testcase, project_mapping):
-    """ 解析测试用例
+    """ 解析测试用例和测试步骤
     Args:
         testcase: {"config": {}, "teststeps": []}
     """
@@ -908,9 +912,27 @@ def parse_test_data(tests_dict):
         "project_mapping": project_mapping,
         "testcases": []
     }
-
+    report_case = get_report_case_model(tests_dict["run_type"])
     for testcase in tests_dict["testcases"]:
-        _parse_test_case(testcase, project_mapping)
+        # 如果解析用例报错了，就记录并跳过这条用例
+        try:
+            _parse_test_case(testcase, project_mapping)
+        except Exception as error:
+            report_case_data = report_case.get_first(id=testcase["config"]["report_case_id"])
+            summary = json.loads(report_case_data.summary)
+            summary["success"] = 'error'
+            report_case_data.test_is_error(summary=summary, error_msg=error)
+            continue
         parsed_tests_mapping["testcases"].append(testcase)
 
     return parsed_tests_mapping
+
+
+def get_report_case_model(run_type):
+    """ 获取报告的用例模型 """
+    if run_type == 'api':
+        return ApiReportCase
+    elif run_type == 'webUi':
+        return WebUiReportCase
+    else:
+        return AppUiReportCase

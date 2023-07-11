@@ -162,12 +162,6 @@ class CaseBusiness:
                 step.add_quote_count()
 
     @classmethod
-    def put(cls, form, project_model, suite_model, case_model, step_model):
-        """ 更新步骤 """
-        form.case.update(form.data)
-        cls.change_quote_case_name(form.id.data, project_model, suite_model, case_model, step_model)
-
-    @classmethod
     def get_quote_case_from(cls, case_id, project_model, suite_model, case_model):
         """ 获取用例的归属 """
         case = case_model.get_first(id=case_id)
@@ -175,13 +169,6 @@ class CaseBusiness:
         suite = suite_model.get_first(id=case.suite_id)
         project = project_model.get_first(id=suite.project_id)
         return f'{project.name}/{suite_path_name}/{case.name}'
-
-    @classmethod
-    def change_quote_case_name(cls, case_id, project_model, suite_model, case_model, step_model):
-        """ 修改用例时，修改引用此用例的步骤的名字 """
-        new_name = cls.get_quote_case_from(case_id, project_model, suite_model, case_model)
-        for step in step_model.get_all(quote_case=case_id):
-            step.update({"name": new_name})
 
 
 class StepBusiness:
@@ -342,10 +329,10 @@ class RunCaseBusiness:
         return {
             "host": server["ip"],
             "port": server["port"],
-            "unicodeKeyboard": True,  # 使用 appium-ime 输入法
-            "resetKeyboard": True,  # 表示在测试结束后切回系统输入法
+            # "newCommandTimeout": 6000,  # 两条appium命令间的最长时间间隔，若超过这个时间，appium会自动结束并退出app，单位为秒
             "noReset": form.no_reset.data,  # 控制APP记录的信息是否不重置
-            # newCommandTimeout  # 两条appium命令间的最长时间间隔，若超过这个时间，appium会自动结束并退出app
+            # "unicodeKeyboard": True,  # 使用 appium-ime 输入法
+            # "resetKeyboard": True,  # 表示在测试结束后切回系统输入法
 
             # 安卓参数
             "platformName": phone["os"],

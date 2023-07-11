@@ -710,6 +710,15 @@ class BaseCase(BaseModel):
         )
 
     @classmethod
+    def get_quote_case_from(cls, case_id, project_model, suite_model, case_model):
+        """ 获取用例的归属 """
+        case = case_model.get_first(id=case_id)
+        suite_path_name = suite_model.get_from_path(case.suite_id)
+        suite = suite_model.get_first(id=case.suite_id)
+        project = project_model.get_first(id=suite.project_id)
+        return f'{project.name}/{suite_path_name}/{case.name}'
+
+    @classmethod
     def merge_variables(cls, from_case_id, to_case_id):
         """ 当用例引用的时候，自动将被引用用例的自定义变量合并到发起引用的用例上 """
         if from_case_id:
@@ -775,16 +784,17 @@ class BaseStep(BaseModel):
 
     @classmethod
     def set_has_step_for_step(cls, step_list, case_model):
-        """ 增加是否有步骤的标识 """
+        """ 增加步骤下是否有步骤的标识（是否为引用用例，为引用用例的话，该用例下是否有步骤）"""
         data_list = []
         for step in step_list:
             if isinstance(step, dict) is False:
                 step = step.to_dict()
-            step["hasStep"] = cls.get_first(case_id=step["quote_case"]) is not None
-            step["children"] = []
-            if step["quote_case"]:  # 若果是引用用例，把对应用例的入参出参一起返回
+
+            if step["quote_case"]:  # 若果是引用用例，把对应用例的入参出参、用例来源一起返回
                 case_data = case_model.get_first(id=step["quote_case"])
                 if case_data:  # 如果手动从数据库删过数据，可能没有
+                    # step["hasStep"] = cls.get_first(case_id=step["quote_case"]) is not None
+                    step["children"] = []
                     case = case_data.to_dict()
                     step["desc"] = case["desc"]
                     step["skip_if"] = case.get("skip_if")
@@ -1014,6 +1024,7 @@ class BaseReportCase(BaseModel):
                        comment="步骤测试结果，waite：等待执行、running：执行中、fail：执行不通过、success：执行通过、skip：跳过、error：报错")
     case_data = db.Column(LONGTEXT, default='{}', comment="用例的数据")
     summary = db.Column(db.Text(), default='{}', comment="用例的报告统计")
+    error_msg = db.Column(db.Text(), default='', comment="用例错误信息")
 
     @staticmethod
     def getsummary_template():
@@ -1040,10 +1051,12 @@ class BaseReportCase(BaseModel):
     @classmethod
     def get_case_list(cls, report_id, get_summary):
         """ 根据报告id，获取用例列表，性能考虑，只查关键字段 """
-        field_title = ["id", "from_id", "name", "result", "summary"]
+        field_title = ["id", "from_id", "name", "result", "summary", "case_data", "error_msg"]
         query_fields = [cls.id, cls.from_id, cls.name, cls.result]
         if get_summary is True:
             query_fields.append(cls.summary)
+            query_fields.append(cls.case_data)
+            query_fields.append(cls.error_msg)
 
         # [(1, '用例1', 'running')]
         query_data = cls.query.filter(cls.report_id == report_id).with_entities(*query_fields).all()
@@ -1064,29 +1077,31 @@ class BaseReportCase(BaseModel):
             update_dict["summary"] = summary
         self.update(update_dict)
 
-    def update_test_result(self, result, case_data, summary):
+    def update_test_result(self, result, case_data, summary, error_msg):
         """ 更新测试状态 """
         update_dict = {"result": result}
         if case_data:
             update_dict["case_data"] = case_data
         if summary:
             update_dict["summary"] = summary
+        if error_msg:
+            update_dict["error_msg"] = error_msg
         self.update(update_dict)
 
     def test_is_running(self, case_data=None, summary=None):
-        self.update_test_result("running", case_data, summary)
+        self.update_test_result("running", case_data, summary, error_msg=None)
 
     def test_is_fail(self, case_data=None, summary=None):
-        self.update_test_result("fail", case_data, summary)
+        self.update_test_result("fail", case_data, summary, error_msg=None)
 
     def test_is_success(self, case_data=None, summary=None):
-        self.update_test_result("success", case_data, summary)
+        self.update_test_result("success", case_data, summary, error_msg=None)
 
     def test_is_skip(self, case_data=None, summary=None):
-        self.update_test_result("skip", case_data, summary)
+        self.update_test_result("skip", case_data, summary, error_msg=None)
 
-    def test_is_error(self, case_data=None, summary=None):
-        self.update_test_result("error", case_data, summary)
+    def test_is_error(self, case_data=None, summary=None, error_msg=None):
+        self.update_test_result("error", case_data, summary, error_msg)
 
 
 class BaseReportStep(BaseModel):

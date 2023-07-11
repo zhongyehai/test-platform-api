@@ -28,7 +28,7 @@ class GetStepForm(BaseForm):
 
 class AddStepForm(BaseForm):
     """ 添加步骤校验 """
-    case_id = IntegerField(validators=[DataRequired("用例id必传")])
+    case_id = IntegerField(validators=[DataRequired("步骤id必传")])
     element_id = IntegerField()
     quote_case = IntegerField()
 

@@ -177,7 +177,7 @@ class ApiCaseView(LoginRequiredView):
     def put(self):
         """ 修改用例 """
         form = EditCaseForm().do_validate()
-        CaseBusiness.put(form, Project, CaseSuite, Case, Step)
+        form.case.update(form.data)
         return app.restful.success(msg=f"用例【{form.case.name}】修改成功", data=form.case.to_dict())
 
     def delete(self):
