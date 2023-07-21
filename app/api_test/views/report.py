@@ -3,7 +3,7 @@ from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView, NotLoginView
 from app.api_test.blueprint import api_test
-from app.api_test.models.report import ApiReport as Report, ApiReportStep, ApiReportCase
+from app.api_test.models.report import ApiReport as Report, ApiReportStep, ApiReportCase, ApiReport
 from app.api_test.forms.report import GetReportForm, FindReportForm, DeleteReportForm, GetReportCaseForm, \
     GetReportCaseListForm, GetReportStepForm, GetReportStepListForm
 from utils.view.required import login_required
@@ -45,10 +45,7 @@ class ApiReportView(NotLoginView):
     def delete(self):
         """ 删除测试报告 """
         form = DeleteReportForm().do_validate()
-        for report in form.report_list:
-            ApiReportCase.delete_by_report(report.id)
-            ApiReportStep.delete_by_report(report.id)
-            report.delete()
+        ApiReport.batch_delete(form.report_list, ApiReportCase, ApiReportStep)
         return app.restful.success("删除成功")
 
 

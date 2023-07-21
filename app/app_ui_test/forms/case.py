@@ -63,7 +63,7 @@ class AddCaseForm(BaseForm):
                 raise ValidationError(f'第【{index + 1}】行，与第【{name_list.index(case_name) + 1}】行，用例名重复')
             self.validate_data_is_true(f'第【{index + 1}】行，用例描述必传', desc)
             self.validate_data_is_not_exist(
-                f'第【{index}】行，用例名【{field.data}】已存在',
+                f'第【{index + 1}】行，用例名【{case_name}】已存在',
                 Case,
                 name=case_name,
                 suite_id=self.suite_id.data)

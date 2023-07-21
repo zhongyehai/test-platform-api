@@ -75,8 +75,13 @@ class RunCase(RunTestRunner):
         self.case_id_list = case_id  # 要执行的用例id_list
         self.appium_config = appium_config
         self.all_case_steps = []  # 所有测试步骤
+
+
+    def parse_and_run(self):
+        """ 把解析放到异步线程里面 """
         self.parse_all_case()
         self.report_model.parse_data_finish(self.report_id)
+        self.run_case()
 
     def parse_step(self, project, element, step):
         """ 解析测试步骤
@@ -245,89 +250,90 @@ class RunCase(RunTestRunner):
                 current_case.skip_if = FormatModel().parse_skip_if(self.temp_variables.get("skip_if"))
                 current_case.run_times = self.temp_variables.get("run_times", 1)
 
-            # 记录解析下后的用例
-            report_case = self.reportStepCase().create({
-                "name": current_case.name,
-                "from_id": current_case.id,
-                "report_id": self.report_id,
-                "case_data": current_case.get_attr(),
-                "summary": self.reportStepCase.getsummary_template()
-            })
-
-            # 满足跳过条件则跳过
-            if self.parse_case_is_skip(current_case.skip_if, self.run_server_id, self.run_phone_id) is True:
-                report_case.test_is_skip()
-                continue
-
-            current_project = self.get_format_project(self.suite_model.get_first(id=current_case.suite_id).project_id)
-
-            case_template = {
-                "config": {
-                    "report_case_id": report_case.id,
-                    "case_id": case_id,
-                    "project_id": current_project.id,
-                    "variables": {},
-                    "name": current_case.name,
-                    "run_type": self.run_type
-                },
-                "teststeps": []
-            }
-            if self.run_type == 'webUi':
-                # 用例格式模板, # 火狐：geckodriver
-                case_template["config"]["browser_type"] = self.browser
-                case_template["config"]["browser_path"] = FileUtil.get_driver_path(self.browser)
-            else:
-                case_template["config"]["appium_config"] = self.appium_config
-
-            self.get_all_steps(case_id)  # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
-
-            # 循环解析测试步骤
-            all_variables = {}  # 当前用例的所有公共变量
-            for step in self.all_case_steps:
-                step_case = self.get_format_case(step.case_id)
-                step_element = self.get_format_element(step.element_id)
-                step = StepModel(**step.to_dict())
-                step.report_case_id = report_case.id
-                step.execute_name = ui_action_mapping_reverse[step.execute_type]  # 执行方式的别名，用于展示测试报告
-                step.extracts = self.parse_extracts(step.extracts)  # 解析数据提取
-                step.validates = self.parse_validates(step.validates)  # 解析断言
-                element_project = self.get_format_project(step_element.project_id)  # 元素所在的项目
-
-                if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动
-                    """
-                    数据驱动格式
-                    [
-                        {"comment": "用例1描述", "data": "请求数据，支持参数化"},
-                        {"comment": "用例2描述", "data": "请求数据，支持参数化"}
-                    ]
-                    """
-                    for driver_data in step.data_driver:
-                        # 数据驱动的 comment 字段，用于做标识
-                        step.name += driver_data.get("comment", "")
-                        step.params = step.params = step.data_json = step.data_form = driver_data.get("data", {})
-                        case_template["teststeps"].append(self.parse_step(element_project, step_element, step))
-                else:
-                    case_template["teststeps"].append(self.parse_step(element_project, step_element, step))
-
-                # 把服务和用例的的自定义变量留下来
-                all_variables.update(element_project.variables)
-                all_variables.update(step_case.variables)
-
-            # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
-            all_variables.update(current_project.variables)
-            all_variables.update(current_case.variables)
-            all_variables.update({"device": self.device})  # 强制增加一个变量为设备id，用于去数据库查数据
-            all_variables.update({"device_id": self.device_id})  # 强制增加一个变量为设备id，用于去数据库查数据
-            case_template["config"]["variables"].update(all_variables)
-
-            # 设置的用例执行多少次就加入多少次
-            name = case_template["config"]["name"]
             for index in range(current_case.run_times or 1):
-                case_template["config"]["name"] = f'{name}_{index + 1}' if current_case.run_times > 1 else name
+                case_name = f'{current_case.name}_{index + 1}' if current_case.run_times > 1 else current_case.name
+
+                # 记录解析下后的用例
+                report_case = self.reportStepCase().create({
+                    "name": case_name,
+                    "from_id": current_case.id,
+                    "report_id": self.report_id,
+                    "case_data": current_case.get_attr(),
+                    "summary": self.reportStepCase.getsummary_template()
+                })
+
+                # 满足跳过条件则跳过
+                if self.parse_case_is_skip(current_case.skip_if, self.run_server_id, self.run_phone_id) is True:
+                    report_case.test_is_skip()
+                    continue
+
+                current_project = self.get_format_project(self.suite_model.get_first(id=current_case.suite_id).project_id)
+
+                case_template = {
+                    "config": {
+                        "report_case_id": report_case.id,
+                        "case_id": case_id,
+                        "project_id": current_project.id,
+                        "variables": {},
+                        "name": case_name,
+                        "run_type": self.run_type
+                    },
+                    "teststeps": []
+                }
+                if self.run_type == 'webUi':
+                    # 用例格式模板, # 火狐：geckodriver
+                    case_template["config"]["browser_type"] = self.browser
+                    case_template["config"]["browser_path"] = FileUtil.get_driver_path(self.browser)
+                else:
+                    case_template["config"]["appium_config"] = self.appium_config
+
+                self.get_all_steps(case_id)  # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
+
+                # 循环解析测试步骤
+                all_variables = {}  # 当前用例的所有公共变量
+                for step in self.all_case_steps:
+                    step_case = self.get_format_case(step.case_id)
+                    step_element = self.get_format_element(step.element_id)
+                    step = StepModel(**step.to_dict())
+                    step.report_case_id = report_case.id
+                    step.execute_name = ui_action_mapping_reverse[step.execute_type]  # 执行方式的别名，用于展示测试报告
+                    step.extracts = self.parse_extracts(step.extracts)  # 解析数据提取
+                    step.validates = self.parse_validates(step.validates)  # 解析断言
+                    element_project = self.get_format_project(step_element.project_id)  # 元素所在的项目
+
+                    if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动
+                        """
+                        数据驱动格式
+                        [
+                            {"comment": "用例1描述", "data": "请求数据，支持参数化"},
+                            {"comment": "用例2描述", "data": "请求数据，支持参数化"}
+                        ]
+                        """
+                        for driver_data in step.data_driver:
+                            # 数据驱动的 comment 字段，用于做标识
+                            step.name += driver_data.get("comment", "")
+                            step.params = step.params = step.data_json = step.data_form = driver_data.get("data", {})
+                            case_template["teststeps"].append(self.parse_step(element_project, step_element, step))
+                    else:
+                        case_template["teststeps"].append(self.parse_step(element_project, step_element, step))
+
+                    # 把服务和用例的的自定义变量留下来
+                    all_variables.update(element_project.variables)
+                    all_variables.update(step_case.variables)
+
+                # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
+                all_variables.update(current_project.variables)
+                all_variables.update(current_case.variables)
+                all_variables.update({"device": self.device})  # 强制增加一个变量为设备id，用于去数据库查数据
+                all_variables.update({"device_id": self.device_id})  # 强制增加一个变量为设备id，用于去数据库查数据
+                case_template["config"]["variables"].update(all_variables)
+
+                if current_case.run_times > 1:
+                    case_template["config"]["name"] = f'{name}_{index + 1}' if current_case.run_times > 1 else name
                 self.DataTemplate["testcases"].append(copy.deepcopy(case_template))
 
-            # 完整的解析完一条用例后，去除对应的解析信息
-            self.all_case_steps = []
+                # 完整的解析完一条用例后，去除对应的解析信息
+                self.all_case_steps = []
 
         # 去除服务级的公共变量，保证用步骤上解析后的公共变量
         self.DataTemplate["project_mapping"]["variables"] = {}

@@ -3,14 +3,43 @@ import json
 import os
 import time
 import datetime
+import importlib
+import traceback
 
 import requests
-from flask import request, jsonify
+from flask import request, jsonify, current_app as app
 
 from app.baseView import NotLoginView
 from app.tools.blueprint import tool
 from utils.util.fileUtil import CALL_BACK_ADDRESS, FileUtil
+from app.assist.models.script import Script
 from app.config.models.config import Config
+
+
+@tool.route("/mock/<script_name>", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def mock_by_file(script_name):
+    """ 根据python脚本文件处理mock机制 """
+    script = Script.get_first(name=script_name)
+    if not script:
+        return app.restful.fail('mock脚本文件不存在')
+
+    # 动态导入脚本
+    try:
+        script_file_name = f"mock_{script.name}"
+        import_path = f'script_list.{script_file_name}'
+        FileUtil.save_mock_script_data(
+            script_file_name,
+            script.script_data,
+            path=request.path,
+            headers=dict(request.headers),
+            query=request.args.to_dict(),
+            body=request.json or request.form.to_dict()
+        )
+        script_obj = importlib.reload(importlib.import_module(import_path))
+        return script_obj.result
+    except Exception as e:
+        error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
+        return app.restful.fail(msg="脚本执行错误，请检查", result=error_data)
 
 
 def send_msg_by_webhook(msg_type, msg):

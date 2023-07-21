@@ -56,8 +56,8 @@ class TestRunner(object):
         functions = tests_mapping.get("project_mapping", {}).get("functions", {})
 
         for testcase in tests_mapping["testcases"]:
-            config = testcase.get("config", {})
-            test_runner = runner.Runner(config, functions)
+            case_config = testcase.get("config", {})
+            test_runner = runner.Runner(case_config, functions)
             TestSequense = type('TestSequense', (unittest.TestCase,), {})
 
             steps = testcase.get("teststeps", [])
@@ -69,7 +69,7 @@ class TestRunner(object):
                     setattr(TestSequense, test_function_name, test_function)
 
             loaded_testcase = self.test_loader.loadTestsFromTestCase(TestSequense)
-            setattr(loaded_testcase, "config", config)
+            setattr(loaded_testcase, "config", case_config)
             setattr(loaded_testcase, "teststeps", steps)
             setattr(loaded_testcase, "runner", test_runner)
             test_suite.addTest(loaded_testcase)

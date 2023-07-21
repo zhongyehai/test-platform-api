@@ -26,6 +26,7 @@ class WebDriverSession(BaseSession):
 
         # 执行前截图
         self.meta_data["data"][0]['before'] = driver.get_screenshot_as_base64()
+        # self.meta_data["data"][0]['before'] = self._do_action(driver, action="get_screenshot_as_base64")
 
         # 执行测试步骤
         start_timestamp = time.time()
@@ -34,6 +35,7 @@ class WebDriverSession(BaseSession):
 
         # 执行后截图
         self.meta_data["data"][0]['after'] = driver.get_screenshot_as_base64()
+        # self.meta_data["data"][0]['after'] = self._do_action(driver, action="get_screenshot_as_base64")
 
         # 记录消耗的时间
         self.meta_data["stat"] = {"response_time_ms": round((end_timestamp - start_timestamp) * 1000, 2)}
@@ -44,8 +46,8 @@ class WebDriverSession(BaseSession):
         """ 发送HTTP请求，并捕获由于连接问题而可能发生的任何异常。 """
         try:
             doc = getattr(driver, kwargs.get('action')).__doc__.split('，')[0]
-            msg = f"解析后的执行数据:\n> 执行动作：{doc}，定位方式：{kwargs.get('by_type')}，定位元素：{kwargs.get('element')}，文本内容：{kwargs.get('text')}\n"
-            logger.log_debug(msg)
+            msg = f"解析后的执行数据:\n 执行动作：{doc}，\n 定位方式：{kwargs.get('by_type')}，\n 定位元素：{kwargs.get('element')}，\n 文本内容：{kwargs.get('text')}\n"
+            print(msg)
 
             # 以反射机制执行浏览器操作
             action_name = kwargs.get('action')
@@ -54,7 +56,8 @@ class WebDriverSession(BaseSession):
             if 'open' in action_name:  # 打开页面
                 return action_func(kwargs.get('element'))
 
-            elif any(key in action_name for key in ['close', 'quit']):  # 不需要定位元素、不需要输入数据的方法，直接执行
+            # 不需要定位元素、不需要输入数据的方法，直接执行
+            elif any(key in action_name for key in ['close', 'quit', 'get_screenshot_as_base64']):
                 return action_func()
             else:
                 return action_func(
@@ -93,10 +96,12 @@ class WebDriverSession(BaseSession):
             raise RunTimeException('元素与操作事件不匹配，请检查元素和操作事件，异常代码【InvalidArgumentException】')
 
         except InvalidElementStateException as error:
-            raise RunTimeException(f'元素与操作事件不匹配，请检查元素和操作事件\n异常代码【InvalidElementStateException】\n异常内容{error.msg}')
+            raise RunTimeException(
+                f'元素与操作事件不匹配，请检查元素和操作事件\n异常代码【InvalidElementStateException】\n异常内容{error.msg}')
 
         except SessionNotCreatedException as error:
-            raise RunTimeException('实例化浏览器失败，请联系管理员检查驱动与浏览器是否匹配，异常代码【SessionNotCreatedException】')
+            raise RunTimeException(
+                '实例化浏览器失败，请联系管理员检查驱动与浏览器是否匹配，异常代码【SessionNotCreatedException】')
 
         except WebDriverException as error:
             raise RunTimeException('事件驱动异常，请查看日志')

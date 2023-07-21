@@ -9,6 +9,7 @@ from flask import g, request
 from app.api_test.models.project import ApiProject, ApiProjectEnv
 from app.app_ui_test.models.project import AppUiProject, AppUiProjectEnv
 from app.config.models.runEnv import RunEnv
+from app.config.models.config import Config
 from app.web_ui_test.models.project import WebUiProject, WebUiProjectEnv
 from utils.makeData.makeXmind import get_xmind_first_sheet_data
 from utils.util.fileUtil import TEMP_FILE_ADDRESS
@@ -315,7 +316,7 @@ class RunCaseBusiness:
                 run_type=run_type,
                 extend=extend_data,
                 appium_config=appium_config
-            ).run_case
+            ).parse_and_run
         ).start()
         return report.id
 
@@ -325,27 +326,33 @@ class RunCaseBusiness:
         project = AppUiProject.get_first(id=project_id).to_dict()  # app配置
         server = form.server.to_dict()  # appium服务器配置
         phone = form.phone.to_dict()  # 运行手机配置
-
-        return {
+        appium_new_command_timeout = Config.get_appium_new_command_timeout() or 120
+        appium_config = {
             "host": server["ip"],
             "port": server["port"],
-            # "newCommandTimeout": 6000,  # 两条appium命令间的最长时间间隔，若超过这个时间，appium会自动结束并退出app，单位为秒
+            "newCommandTimeout": int(appium_new_command_timeout),  # 两条appium命令间的最长时间间隔，若超过这个时间，appium会自动结束并退出app，单位为秒
             "noReset": form.no_reset.data,  # 控制APP记录的信息是否不重置
             # "unicodeKeyboard": True,  # 使用 appium-ime 输入法
             # "resetKeyboard": True,  # 表示在测试结束后切回系统输入法
 
-            # 安卓参数
+            # 设备参数
             "platformName": phone["os"],
-            # "deviceName": phone["device_id"],
-            "appPackage": project["app_package"],
-            "appActivity": project["app_activity"],
-            # "platformVersion": phone["os_version"],
+            "platformVersion": phone["os_version"],
+            "deviceName": phone["device_id"],
 
             # 用于后续自动化测试中的参数
             "server_id": server["id"],  # 用于判断跳过条件
             "phone_id": phone["id"],  # 用于判断跳过条件
-            "device": phone,  # 用于插入到公共变量
-            # "app": r"D:\app-debug.apk",  # 安装路径
-            # "browserName": "",  # 直接测web用, Chrome
-            # "autoWebview": "",  # 开机进入webview模式
+            "device": phone  # 用于插入到公共变量
         }
+        if phone["os"] == "Android":  # 安卓参数
+            appium_config["automationName"] = "UIAutomator2"
+            appium_config["appPackage"] = project["app_package"]
+            appium_config["appActivity"] = project["app_activity"]
+        else:  # IOS参数
+            appium_config["automationName"] = "XCUITest"
+            appium_config["udid"] = phone["device_id"]  # 设备唯一识别号(可以使用Itunes查看UDID, 点击左上角手机图标 - 点击序列号直到出现UDID为止)
+            appium_config["xcodeOrgId"] = ""  # 开发者账号id，可在xcode的账号管理中查看
+            appium_config["xcodeSigningId"] = "iPhone Developer"
+
+        return appium_config

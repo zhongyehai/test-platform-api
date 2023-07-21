@@ -173,6 +173,7 @@ def _14is_not_none(check_value, expect_value=None):
 
 def _14batch_is_has_data(check_value, expect_keys=[]):
     """ 批量判断字段值均为真 """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_has_data(check_value_item, expect_keys)
@@ -186,6 +187,7 @@ def _14batch_is_has_data(check_value, expect_keys=[]):
 
 def _14batch_is_not_has_data(check_value, expect_keys=[]):
     """ 批量判断字段值均为假 """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_not_has_data(check_value_item, expect_keys)
@@ -199,6 +201,7 @@ def _14batch_is_not_has_data(check_value, expect_keys=[]):
 
 def _14batch_is_true(check_value, expect_keys=[]):
     """ 批量判断字段值均为true """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_true(check_value_item, expect_keys)
@@ -212,6 +215,7 @@ def _14batch_is_true(check_value, expect_keys=[]):
 
 def _14batch_is_not_true(check_value, expect_keys=[]):
     """ 批量判断字段值均不为true """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_not_true(check_value_item, expect_keys)
@@ -225,6 +229,7 @@ def _14batch_is_not_true(check_value, expect_keys=[]):
 
 def _14batch_is_false(check_value, expect_keys=[]):
     """ 批量判断字段值均为false """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_false(check_value_item, expect_keys)
@@ -238,6 +243,7 @@ def _14batch_is_false(check_value, expect_keys=[]):
 
 def _14batch_is_not_false(check_value, expect_keys=[]):
     """ 批量判断字段值均不为false """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_not_false(check_value_item, expect_keys)
@@ -251,6 +257,7 @@ def _14batch_is_not_false(check_value, expect_keys=[]):
 
 def _14batch_is_null(check_value, expect_keys=[]):
     """ 批量判断字段值均为null """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_null(check_value_item, expect_keys)
@@ -264,6 +271,7 @@ def _14batch_is_null(check_value, expect_keys=[]):
 
 def _14batch_is_not_null(check_value, expect_keys=[]):
     """ 批量判断字段值均不为null """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_not_null(check_value_item, expect_keys)
@@ -277,6 +285,7 @@ def _14batch_is_not_null(check_value, expect_keys=[]):
 
 def _14batch_is_equal(check_value, expect_keys=[]):
     """ 批量判断字典中的字段值相等 """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_equal(check_value_item, expect_keys)
@@ -293,6 +302,7 @@ def _14batch_is_equal(check_value, expect_keys=[]):
 
 def _14batch_is_not_equal(check_value, expect_keys=[]):
     """ 批量判断字典中的字段值不相等 """
+    assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
             _14batch_is_not_equal(check_value_item, expect_keys)

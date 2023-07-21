@@ -198,6 +198,10 @@
       {
         "name": "测试管理-测试账号菜单",
         "source_addr": "/testManage/account"
+      },
+      {
+        "name": "测试管理-生产bug跟踪菜单",
+        "source_addr": "/testManage/bugTrack"
       }
     ],
     "自动化辅助菜单": [

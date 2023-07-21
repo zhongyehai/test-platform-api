@@ -170,7 +170,7 @@ class ApiRunApiMsgView(LoginRequiredView):
                     api_ids=api_list,
                     report_id=report.id,
                     env_code=env_code
-                ).run_case
+                ).parse_and_run
             ).start()
         return app.restful.success(msg="触发执行成功，请等待执行完毕", data={"batch_id": batch_id})
 

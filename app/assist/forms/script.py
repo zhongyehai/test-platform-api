@@ -64,13 +64,14 @@ class CreatScriptForm(BaseForm):
                         "result": "当前用户暂无权限保存脚本文件内容"
                     })
 
-            # 防止要改函数时不知道函数属于哪个脚本的情况，强校验函数名必须以脚本名开头
-            # importlib.import_module有缓存，所有用正则提取
-            functions_name_list = re.findall('\ndef (.+?):', self.script_data.data)
+            if self.script_type.data != 'mock':
+                # 防止要改函数时不知道函数属于哪个脚本的情况，强校验函数名必须以脚本名开头
+                # importlib.import_module有缓存，所有用正则提取
+                functions_name_list = re.findall('\ndef (.+?):', self.script_data.data)
 
-            for func_name in functions_name_list:
-                if func_name.startswith(self.name.data) is False:
-                    raise ValidationError(f'函数【{func_name}】命名格式错误，请以【脚本名_函数名】命名')
+                for func_name in functions_name_list:
+                    if func_name.startswith(self.name.data) is False:
+                        raise ValidationError(f'函数【{func_name}】命名格式错误，请以【脚本名_函数名】命名')
 
             # 把自定义函数脚本内容写入到python脚本中,
             Script.create_script_file(default_env)  # 重新发版时会把文件全部删除，所以全部创建

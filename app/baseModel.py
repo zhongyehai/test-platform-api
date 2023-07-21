@@ -370,14 +370,6 @@ class BaseProject(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="当前服务的序号")
     business_id = db.Column(db.Integer(), comment="所属业务线")
 
-    def is_not_manager(self):
-        """ 判断用户非服务负责人 """
-        return g.user_id != self.manager
-
-    @classmethod
-    def is_not_manager_id(cls, project_id):
-        """ 判断当前用户非当前数据的负责人 """
-        return cls.get_first(id=project_id).manager != g.user_id
 
     @classmethod
     def is_manager_id(cls, project_id):
@@ -912,6 +904,15 @@ class BaseReport(BaseModel):
         }
 
     @classmethod
+    def batch_delete(cls, report_list, report_case_mode, report_step_mode):
+        """ 批量删除报告 """
+        for report in report_list:
+            with db.auto_commit():
+                report_case_mode.query.filter(report_case_mode.report_id == report.id).delete()
+                report_step_mode.query.filter(report_step_mode.report_id == report.id).delete()
+                cls.query.filter(cls.id == report.id).delete()
+
+    @classmethod
     def get_batch_id(cls):
         """ 生产运行id """
         return f'{g.user_id}_{int(time.time() * 1000000)}'
@@ -1326,6 +1327,10 @@ class Config(BaseModel):
     @classmethod
     def get_app_ui_report_addr(cls):
         return cls.get_first(name="app_ui_report_addr").value
+
+    @classmethod
+    def get_appium_new_command_timeout(cls):
+        return cls.get_first(name="appium_new_command_timeout").value
 
     @classmethod
     def get_find_element_option(cls):

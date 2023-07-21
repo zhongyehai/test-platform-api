@@ -68,9 +68,9 @@ def assert_is_update(api_msg, options):
         header_update = True
     if "query" in options and (api_msg.params is None or json.loads(api_msg.params)[0]["key"] is None):
         params_update = True
-    if "data_json" in options and (api_msg.data_json is None or not json.loads(api_msg.data_json)):
+    if "json" in options and (api_msg.data_json is None or not json.loads(api_msg.data_json)):
         data_json_update = True
-    if "data_form" in options and (api_msg.data_form is None or json.loads(api_msg.data_form)[0]["key"] is None):
+    if "form" in options and (api_msg.data_form is None or json.loads(api_msg.data_form)[0]["key"] is None):
         data_form_update = True
     return header_update, params_update, data_json_update, data_form_update
 

@@ -50,7 +50,7 @@ class Runner(object):
                     "teardown_hooks", []
                 }
         """
-        base_url = config.get("base_url")
+        self.base_url = config.get("base_url")
         self.run_env = config.get("run_env")
         self.verify = config.get("verify", True)
         self.output = config.get("output", [])
@@ -59,32 +59,34 @@ class Runner(object):
         self.run_type = config.get("run_type") or "api"
         self.resp_obj = None
         self.driver = None
-        self.case_id = None
+        self.client_session = None
+
+        self.browser_driver_path = config.get('browser_path')
+        self.browser_name = config.get('browser_type')
+        self.appium_config = config.get('appium_config', {})
 
         # 记录当前步骤的执行进度
         self.report_step_model = ApiReportStep if self.run_type == "api" else WebUiReportStep if self.run_type == "webUi" else AppUiReportStep
         self.report_step = None
         self.testcase_teardown_hooks = config.get("teardown_hooks", [])  # 用例级别的后置条件
 
-        if self.run_type == "api":
-            self.client_session = HttpSession(base_url)
-        elif self.run_type == "webUi":
-            self.client_session = WebDriverSession()
-            # 每一次执行用例时会先实例化Runner，此时实例化driver
-            self.driver = GetWebDriver(
-                browser_driver_path=config.get('browser_path'),
-                browser_name=config.get('browser_type')
-            )
-        else:
-            self.client_session = WebDriverSession()
-            # 每一次执行用例时会先实例化Runner，此时实例化driver
-            self.driver = GetAppDriver(**config.get("appium_config", {}))
-
         self.session_context = SessionContext(self.functions)
 
         testcase_setup_hooks = config.get("setup_hooks", [])  # 用例级别的前置条件
         if testcase_setup_hooks:
             self.do_hook_actions(testcase_setup_hooks)
+
+    def init_client_session(self):
+        """ 根据不同的测试类型获取不同的client_session """
+        if self.client_session is None:
+            if self.run_type == "api":
+                self.client_session = HttpSession(self.base_url)
+            elif self.run_type == "webUi":
+                self.client_session = WebDriverSession()
+                self.driver = GetWebDriver(browser_driver_path=self.browser_driver_path, browser_name=self.browser_name)
+            else:
+                self.client_session = WebDriverSession()
+                self.driver = GetAppDriver(**self.appium_config)
 
     def __del__(self):
         if self.testcase_teardown_hooks:
@@ -131,12 +133,6 @@ class Runner(object):
             if not self.session_context.eval_content(skip_unless_condition):
                 raise SkipTest(f'skipUnless触发跳过此步骤 \n{skip_unless_condition}')
 
-    def _reset_app_and_update_case_id(self, case_id):
-        """ 执行下一条用例时更新用例id和重置app """
-        if self.run_type == 'appUi' and self.case_id and self.case_id != case_id:  # app自动化测试，非第一条用例
-            self.driver.reset()
-
-        self.case_id = case_id
 
     def do_hook_actions(self, actions, hook_type='setup'):
         """ 执行前置/后置自定义函数
@@ -249,7 +245,6 @@ class Runner(object):
             self.session_context.update_test_variables("response", self.resp_obj)
         else:
             # 执行测试步骤浏览器操作
-            self._reset_app_and_update_case_id(case_id)
             self.client_session.do_action(
                 self.driver,
                 name=step_name,
@@ -332,6 +327,7 @@ class Runner(object):
                 }
         """
         self.meta_datas = None
+        self.init_client_session()  # 执行步骤前判断有没有初始化client_session
         self.report_step = self.report_step_model.get_first(id=step_dict.pop("report_step_id"))
         self.report_step.test_is_running()
         self.report_step.test_is_start_parse(step_dict)

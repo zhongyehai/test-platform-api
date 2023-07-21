@@ -19,7 +19,7 @@ class Script(BaseModel):
     desc = db.Column(db.Text(), comment="函数文件描述")
     num = db.Column(db.Integer(), nullable=True, comment="当前函数文件的序号")
     script_type = db.Column(
-        db.String(16), default="test", comment="脚本类型，test：执行测试、encryption：加密、decryption：解密")
+        db.String(16), default="test", comment="脚本类型，test：执行测试、mock：mock脚本、encryption：加密、decryption：解密")
 
     @classmethod
     def create_script_file(cls, env_code=None, not_create_list=[]):
