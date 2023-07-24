@@ -15,7 +15,7 @@ class BugTrack(BaseModel):
     iteration = db.Column(db.String(128), default='', comment="迭代")
     bug_from = db.Column(db.String(128), default='', comment="缺陷来源")
     trigger_time = db.Column(db.String(128), default='', comment="发现时间")
-    manager = db.Column(db.String(128), default='', comment="跟进负责人")
+    manager = db.Column(db.Integer(), default='', comment="跟进负责人")
     reason = db.Column(db.String(128), default='', comment="原因")
     solution = db.Column(db.String(128), default='', comment="解决方案")
     status = db.Column(db.String(64), default='todo', comment="bug状态，todo：待解决、doing：解决中、done：已解决")

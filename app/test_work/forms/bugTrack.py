@@ -40,7 +40,7 @@ class AddBugForm(BaseForm):
     iteration = StringField(validators=[DataRequired("请输入或选择迭代")])
     bug_from = StringField()
     trigger_time = StringField()
-    manager = StringField()
+    manager = IntegerField()
     reason = StringField()
     solution = StringField()
     num = IntegerField()

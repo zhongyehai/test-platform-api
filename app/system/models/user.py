@@ -99,8 +99,10 @@ class Role(BaseModel):
 
     def delete_role_permissions(self):
         """ 根据角色删除权限映射 """
-        for role_permission in RolePermissions.get_all(role_id=self.id):
-            role_permission.delete()
+        with db.auto_commit():
+            RolePermissions.query.filter(RolePermissions.role_id == self.id).delete()
+        # for role_permission in RolePermissions.get_all(role_id=self.id):
+        #     role_permission.delete()
 
     def update_role_permissions(self, permission_id_list):
         """ 更新角色权限映射 """
