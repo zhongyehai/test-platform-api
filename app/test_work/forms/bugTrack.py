@@ -74,4 +74,4 @@ class ChangeBugStatusForm(GetBugForm):
 
 class ChangeBugReplayForm(GetBugForm):
     """ 修改bug是否复盘 """
-    replay = StringField(validators=[DataRequired("复盘状态必传")])
+    replay = StringField()
