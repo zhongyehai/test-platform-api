@@ -84,8 +84,8 @@ web_ui_test.add_url_rule("/report", view_func=WebUiReportView.as_view("WebUiRepo
 web_ui_test.add_url_rule("/report/list", view_func=WebUiReportListView.as_view("WebUiReportListView"))
 web_ui_test.add_url_rule("/report/status", view_func=WebUiReportIsDoneView.as_view("WebUiReportIsDoneView"))
 web_ui_test.add_url_rule("/report/showId", view_func=WebUiReportGetReportIdView.as_view("WebUiReportGetReportIdView"))
-web_ui_test.add_url_rule("/report/step", view_func=WebUiGetReportCaseView.as_view("WebUiGetReportCaseView"))
-web_ui_test.add_url_rule("/report/step/list",
+web_ui_test.add_url_rule("/report/case", view_func=WebUiGetReportCaseView.as_view("WebUiGetReportCaseView"))
+web_ui_test.add_url_rule("/report/case/list",
                          view_func=WebUiGetReportCaseListView.as_view("WebUiGetReportCaseListView"))
 web_ui_test.add_url_rule("/report/step", view_func=WebUiGetReportStepView.as_view("WebUiGetReportStepView"))
 web_ui_test.add_url_rule("/report/step/list",
