@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import validators
+from flask import g
 from wtforms import StringField, IntegerField
 from wtforms.validators import ValidationError, Length, DataRequired
 
@@ -52,6 +53,11 @@ class FindProjectForm(BaseForm):
     create_user = StringField()
     pageNum = IntegerField()
     pageSize = IntegerField()
+
+    def validate_business_id(self, filed):
+        if self.is_not_admin():
+            if filed.data and (filed.data not in g.business_list):
+                raise ValidationError("当前用户没有权限")
 
 
 class GetProjectByIdForm(BaseForm):

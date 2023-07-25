@@ -370,7 +370,6 @@ class BaseProject(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="当前服务的序号")
     business_id = db.Column(db.Integer(), comment="所属业务线")
 
-
     @classmethod
     def is_manager_id(cls, project_id):
         """ 判断当前用户为当前数据的负责人 """
@@ -391,11 +390,16 @@ class BaseProject(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        if form.business_id.data and form.business_id.data in g.business_list:
-            filters.append(cls.business_id == form.business_id.data)
-        else:
-            if cls.is_not_admin():  # 非管理员则校验业务线权限
+
+        if cls.is_admin():  # 管理员
+            if form.business_id.data:  # 传了业务线id，就获取对应的业务线的服务，否则获取所有业务线的服务
+                filters.append(cls.business_id == form.business_id.data)
+        else:  # 非管理员
+            if form.business_id.data:
+                filters.append(cls.business_id == form.business_id.data)
+            else:
                 filters.append(cls.business_id.in_(g.business_list))
+
         if form.name.data:
             filters.append(cls.name.like(f'%{form.name.data}%'))
         if form.manager.data:
