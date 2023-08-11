@@ -170,7 +170,12 @@ class FormatModel(JsonUtil):
             if extract_variables(arg).__len__() >= 1:
                 args_and_kwargs.append(arg)
             else:
-                args_and_kwargs.append(f'{data_source}.{arg}')
+                # 有可能是常量
+                try:
+                    eval(str(arg))
+                    args_and_kwargs.append(str(arg))
+                except:
+                    args_and_kwargs.append(f'{data_source}.{arg}')
 
         # 处理kwargs参数
         for kw_key, kw_value in kwargs.items():

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import request, current_app as app
 
-from app.baseView import LoginRequiredView, NotLoginView
+from app.baseView import LoginRequiredView, NotLoginView, AdminRequiredView
 from app.app_ui_test.blueprint import app_ui_test
 from app.app_ui_test.models.report import AppUiReport as Report, AppUiReportStep, AppUiReportCase, AppUiReport
 from app.app_ui_test.forms.report import GetReportForm, FindReportForm, DeleteReportForm, GetReportCaseForm, \
@@ -46,8 +46,15 @@ class AppUiReportView(NotLoginView):
     def delete(self):
         """ 删除测试报告 """
         form = DeleteReportForm().do_validate()
-        AppUiReport.batch_delete(form.report_list, AppUiReportCase, AppUiReportStep)
+        AppUiReport.batch_delete_report(form.report_id_list)
         return app.restful.success("删除成功")
+
+
+class AppUiReportClearView(LoginRequiredView):
+    def delete(self):
+        """ 清除测试报告 """
+        AppUiReport.batch_delete_report_case(AppUiReportCase, AppUiReportStep)
+        return app.restful.success("清除成功")
 
 
 class AppUiGetReportCaseListView(NotLoginView):
@@ -82,6 +89,7 @@ class AppUiGetReportStepView(NotLoginView):
 
 app_ui_test.add_url_rule("/report", view_func=AppUiReportView.as_view("AppUiReportView"))
 app_ui_test.add_url_rule("/report/list", view_func=AppUiReportListView.as_view("AppUiReportListView"))
+app_ui_test.add_url_rule("/report/clear", view_func=AppUiReportClearView.as_view("AppUiReportClearView"))
 app_ui_test.add_url_rule("/report/status", view_func=AppReportIsDoneView.as_view("AppReportIsDoneView"))
 app_ui_test.add_url_rule("/report/showId", view_func=AppReportGetReportIdView.as_view("AppReportGetReportIdView"))
 app_ui_test.add_url_rule("/report/case", view_func=AppUiGetReportCaseView.as_view("AppUiGetReportCaseView"))

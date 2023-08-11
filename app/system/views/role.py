@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app
 
-from app.baseView import AdminRequiredView
+from app.baseView import AdminRequiredView, PermissionRequiredView
 from app.system.blueprint import system_manage
 from app.system.forms.role import FindRoleForm, GetRoleForm, CreateRoleForm, EditRoleForm, DeleteRoleForm
 from app.system.models.user import Role, Permission
 
 
-class GetRoleListView(AdminRequiredView):
+class GetRoleListView(PermissionRequiredView):
 
     def get(self):
         """ 获取角色列表 """

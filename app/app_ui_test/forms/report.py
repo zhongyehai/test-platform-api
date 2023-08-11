@@ -21,7 +21,7 @@ class DeleteReportForm(BaseForm):
     id = StringField(validators=[DataRequired("请选择报告")])
 
     def validate_id(self, field):
-        report_list = []
+        report_id_list = []
         for report_id in field.data:
             report = Report.get_first(id=report_id)
             if report:
@@ -32,8 +32,8 @@ class DeleteReportForm(BaseForm):
                 # 没有被登记失败记录的报告可以删
                 # if Hits.get_first(report_id=report.id) is None:
                 #     report_list.append(report)
-                report_list.append(report)
-        setattr(self, "report_list", report_list)
+                report_id_list.append(report.id)
+        setattr(self, "report_id_list", report_id_list)
 
 
 class FindReportForm(BaseForm):

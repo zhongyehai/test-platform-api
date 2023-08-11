@@ -15,7 +15,7 @@ def parse_token(token):
         g.api_permissions, g.business_list = data["api_permissions"], data["business_list"]
         return True
     except:
-        g.user_id, g.user_name, g.api_permissions = None, None, []
+        g.user_id, g.user_name, g.api_permissions, g.business_list = None, None, [], []
         return False
 
 
@@ -35,14 +35,24 @@ def login_required(func):
     return decorated_view
 
 
+def permission_required(func):
+    """ 校验当前用户是否有访问当前接口的权限 """
+
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        from app.system.models.user import User
+        if User.is_admin() or request.path in g.api_permissions:  # 校验接口权限
+            return func(*args, **kwargs)
+        return app.restful.forbidden(msg="没有权限")
+
+    return decorated_function
+
+
 def admin_required(func):
     """ 校验当前用户是否有访问当前接口的权限 """
 
     @wraps(func)
     def decorated_function(*args, **kwargs):
-        # if 2 not in g.get("user_role"):
-        #     return app.restful.forbidden(msg="没有权限")
-        # return func(*args, **kwargs)
         from app.system.models.user import User
         if User.is_admin():
             return func(*args, **kwargs)

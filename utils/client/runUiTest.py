@@ -259,7 +259,7 @@ class RunCase(RunTestRunner):
                     "from_id": current_case.id,
                     "report_id": self.report_id,
                     "case_data": current_case.get_attr(),
-                    "summary": self.reportStepCase.getsummary_template()
+                    "summary": self.reportStepCase.get_summary_template()
                 })
 
                 # 满足跳过条件则跳过

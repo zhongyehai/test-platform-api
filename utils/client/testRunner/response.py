@@ -5,7 +5,7 @@ from . import exceptions, logger, utils
 from .compat import OrderedDict, basestring
 from .parser import extract_functions, parse_function, get_mapping_variable
 from utils.client.testRunner.parser import extract_variables
-from .validator import is_extract_expression
+from .validator import is_extract_expression, is_const
 from ...variables.regexp import text_extractor_regexp_compile
 
 
@@ -247,7 +247,10 @@ class ResponseObject(object):
                     if variable:
                         extract_arg_data.append(get_mapping_variable(variable[0], session_context_variables_mapping))
                     else:
-                        extract_arg_data.append(self.extract_field(arg) if is_extract_expression(arg) else arg)
+                        if is_const(arg):
+                            extract_arg_data.append(str(arg))
+                        else:
+                            extract_arg_data.append(self.extract_field(arg) if is_extract_expression(arg) else arg)
 
                 extract_kwarg_data = {}  # kwarg
                 for key, value in extract_function_data.get('kwargs', {}).items():

@@ -229,7 +229,7 @@ class RunCase(RunTestRunner):
                     "from_id": current_case.id,
                     "report_id": self.report_id,
                     "case_data": current_case.get_attr(),
-                    "summary": ReportCase.getsummary_template()
+                    "summary": ReportCase.get_summary_template()
                 })
                 current_case.report_case_id = report_case.id
 

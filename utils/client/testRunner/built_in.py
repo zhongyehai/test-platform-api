@@ -173,6 +173,7 @@ def _14is_not_none(check_value, expect_value=None):
 
 def _14batch_is_has_data(check_value, expect_keys=[]):
     """ 批量判断字段值均为真 """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -180,13 +181,20 @@ def _14batch_is_has_data(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均为真：\n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert check_value[
-                expect_key], f'批量判断字段值均为真：\n【{expect_key}】对应的值\n【{check_value[expect_key]}】不为真'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均为真：\n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert check_value[
+                    expect_key], f'批量判断字段值均为真：\n【{expect_key}】对应的值\n【{check_value[expect_key]}】不为真'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_not_has_data(check_value, expect_keys=[]):
     """ 批量判断字段值均为假 """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -194,13 +202,20 @@ def _14batch_is_not_has_data(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均为假：\n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert not check_value[
-                expect_key], f'批量判断字段值均为假：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不为假'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均为假：\n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert not check_value[
+                    expect_key], f'批量判断字段值均为假：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不为假'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_true(check_value, expect_keys=[]):
     """ 批量判断字段值均为true """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -208,13 +223,20 @@ def _14batch_is_true(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均为true：\n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert check_value[
-                       expect_key] is True, f'批量判断字段值均为true：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是True'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均为true：\n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert check_value[
+                           expect_key] is True, f'批量判断字段值均为true：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是True'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_not_true(check_value, expect_keys=[]):
     """ 批量判断字段值均不为true """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -222,13 +244,20 @@ def _14batch_is_not_true(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均不为true：\n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert check_value[
-                       expect_key] is not True, f'批量判断字段值均不为true：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是true'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均不为true：\n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert check_value[
+                           expect_key] is not True, f'批量判断字段值均不为true：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是true'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_false(check_value, expect_keys=[]):
     """ 批量判断字段值均为false """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -236,13 +265,20 @@ def _14batch_is_false(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均为false: \n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert check_value[
-                       expect_key] is False, f'批量判断字段值均为false: \n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是False'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均为false: \n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert check_value[
+                           expect_key] is False, f'批量判断字段值均为false: \n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是False'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_not_false(check_value, expect_keys=[]):
     """ 批量判断字段值均不为false """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -250,13 +286,20 @@ def _14batch_is_not_false(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均不为false：\n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert check_value[
-                       expect_key] is not False, f'批量判断字段值均不为false：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是false'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均不为false：\n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert check_value[
+                           expect_key] is not False, f'批量判断字段值均不为false：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是false'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_null(check_value, expect_keys=[]):
     """ 批量判断字段值均为null """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -264,13 +307,20 @@ def _14batch_is_null(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均为null：\n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert check_value[
-                       expect_key] is None, f'批量判断字段值均为null：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是null'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均为null：\n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert check_value[
+                           expect_key] is None, f'批量判断字段值均为null：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】不是null'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_not_null(check_value, expect_keys=[]):
     """ 批量判断字段值均不为null """
+    check_status, error_msg = True, ''
     assert check_value, f'实际结果为空：\n【{check_value}】'
     if isinstance(check_value, (list, tuple)):
         for check_value_item in check_value:
@@ -278,9 +328,15 @@ def _14batch_is_not_null(check_value, expect_keys=[]):
     else:
         assert isinstance(check_value, dict), f'实际结果不为字典：\n【{check_value}】'
         for expect_key in expect_keys:
-            assert expect_key in check_value.keys(), f'批量判断字段值均不为null：\n【{check_value}】\n没有字段为【{expect_key}】的key'
-            assert check_value[
-                       expect_key] is not None, f'批量判断字段值均不为null：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】为null'
+            try:
+                assert expect_key in check_value.keys(), f'批量判断字段值均不为null：\n【{check_value}】\n没有字段为【{expect_key}】的key'
+                assert check_value[
+                           expect_key] is not None, f'批量判断字段值均不为null：\n【{expect_key}】\n对应的值【{check_value[expect_key]}】为null'
+            except Exception as error:
+                check_status = False
+                error_msg += f'\n\n{"*" * 50}\n{str(error)}'
+        if check_status is False:
+            raise AssertionError(error_msg)
 
 
 def _14batch_is_equal(check_value, expect_keys=[]):

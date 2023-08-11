@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app
 
-from app.baseView import AdminRequiredView, NotLoginView, LoginRequiredView
+from app.baseView import AdminRequiredView, NotLoginView, LoginRequiredView, PermissionRequiredView
 from app.system.blueprint import system_manage
 from app.system.models.user import User
 from app.system.forms.user import (
@@ -28,7 +28,7 @@ class GetUserListView(LoginRequiredView):
         )
 
 
-class GetUserRoleListView(LoginRequiredView):
+class GetUserRoleListView(PermissionRequiredView):
 
     def get(self):
         """ 获取用户的角色 """
@@ -42,8 +42,9 @@ class UserLoginView(NotLoginView):
         """ 登录 """
         form = LoginForm().do_validate()
         user_info = form.user.to_dict()
-        user_info["token"] = form.user.generate_reset_token()
-        user_info["front_permissions"] = form.user.get_front_permissions()
+        user_permissions = form.user.get_permissions()
+        user_info["token"] = form.user.generate_reset_token(user_permissions["api_addr_list"])
+        user_info["front_permissions"] = user_permissions["front_addr_list"]
         return app.restful.success("登录成功", user_info)
 
 
@@ -54,7 +55,7 @@ class UserLogoutView(NotLoginView):
         return app.restful.success(msg="登出成功")
 
 
-class ChangeUserPasswordView(AdminRequiredView):
+class ChangeUserPasswordView(LoginRequiredView):
 
     def put(self):
         """ 修改密码 """
@@ -63,7 +64,7 @@ class ChangeUserPasswordView(AdminRequiredView):
         return app.restful.success(f'密码已修改为 {form.newPassword.data}')
 
 
-class ChangeUserStatusView(AdminRequiredView):
+class ChangeUserStatusView(PermissionRequiredView):
 
     def put(self):
         """ 改变用户状态 """
@@ -72,7 +73,7 @@ class ChangeUserStatusView(AdminRequiredView):
         return app.restful.success(f'{"禁用" if user.status == 0 else "启用"}成功')
 
 
-class UserView(AdminRequiredView):
+class UserView(PermissionRequiredView):
     """ 用户管理 """
 
     def get(self):

@@ -50,6 +50,13 @@ class WebUiReportView(NotLoginView):
         return app.restful.success("删除成功")
 
 
+class WebUiReportClearView(LoginRequiredView):
+    def delete(self):
+        """ 清除测试报告 """
+        WebUiReport.batch_delete_report_case(WebUiReportCase, WebUiReportStep)
+        return app.restful.success("清除成功")
+
+
 class WebUiGetReportCaseListView(NotLoginView):
     def get(self):
         """ 报告的用例列表 """
@@ -82,6 +89,7 @@ class WebUiGetReportStepView(NotLoginView):
 
 web_ui_test.add_url_rule("/report", view_func=WebUiReportView.as_view("WebUiReportView"))
 web_ui_test.add_url_rule("/report/list", view_func=WebUiReportListView.as_view("WebUiReportListView"))
+web_ui_test.add_url_rule("/report/clear", view_func=WebUiReportClearView.as_view("WebUiReportClearView"))
 web_ui_test.add_url_rule("/report/status", view_func=WebUiReportIsDoneView.as_view("WebUiReportIsDoneView"))
 web_ui_test.add_url_rule("/report/showId", view_func=WebUiReportGetReportIdView.as_view("WebUiReportGetReportIdView"))
 web_ui_test.add_url_rule("/report/case", view_func=WebUiGetReportCaseView.as_view("WebUiGetReportCaseView"))

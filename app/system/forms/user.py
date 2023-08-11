@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import g
+from flask import request, g
 from wtforms import StringField, IntegerField
 from wtforms.validators import Length, DataRequired, ValidationError
 
@@ -79,7 +79,7 @@ class FindUserForm(BaseForm):
     def validate_detail(self, field):
         """ 如果要获取详情，需有管理员权限 """
         if field.data:
-            self.validate_data_is_true("当前角色无权限", self.is_admin())
+            self.validate_data_is_true("当前角色无权限", self.is_admin() or request.path in g.api_permissions)
 
 
 class GetUserForm(BaseForm):

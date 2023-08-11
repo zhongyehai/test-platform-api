@@ -2,7 +2,7 @@
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from flask import current_app as app
+from flask import current_app as app, g
 
 from app.baseModel import BaseModel, db
 
@@ -17,7 +17,8 @@ class Permission(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="序号")
     source_addr = db.Column(db.String(256), comment="权限路径")
     source_type = db.Column(db.String(256), default="api", comment="权限类型， front前端, api后端")
-    source_class = db.Column(db.String(256), default="api", comment="权限分类, source_type为front时, menu菜单, button按钮;  source_type为api时, 为请求方法")
+    source_class = db.Column(db.String(256), default="api",
+                             comment="权限分类, source_type为front时, menu菜单, button按钮;  source_type为api时, 为请求方法")
 
     @classmethod
     def get_role_permissions(cls, role_id):
@@ -86,53 +87,55 @@ class Role(BaseModel):
     def insert_role_permissions(self, permission_id_list):
         """ 插入角色权限映射 """
         for permission_id in permission_id_list:
-            RolePermissions().create({
-                "role_id": self.id,
-                "permission_id": permission_id
-            })
+            RolePermissions().create({"role_id": self.id, "permission_id": permission_id})
 
     @classmethod
     def get_user_role_list(cls, user_id):
         """ 获取用户的角色 """
-        role_id_list = [user_role.role_id for user_role in UserRoles.get_all(user_id=user_id)]
-        return cls.query.filter(cls.id.in_(role_id_list)).all()
+        id_list = []
+        query_list = UserRoles.query.with_entities(UserRoles.role_id).filter(UserRoles.user_id == user_id).all()
+        role_id_list = cls.format_with_entities_query_list(query_list)
+
+        for role_id in role_id_list:
+            cls.get_extend_role(role_id, id_list)
+
+        return id_list
+
+    @classmethod
+    def get_extend_role(cls, role_id, id_list=[]):
+        """ 获取继承的角色的id """
+        id_list.append(role_id)
+        query_res = Role.query.with_entities(Role.extend_role).filter(Role.id == role_id).first()
+        extend_role = cls.loads(query_res[0])
+
+        for role_id in extend_role:
+            cls.get_extend_role(role_id, id_list)
+        return id_list
 
     def delete_role_permissions(self):
         """ 根据角色删除权限映射 """
         with db.auto_commit():
             RolePermissions.query.filter(RolePermissions.role_id == self.id).delete()
-        # for role_permission in RolePermissions.get_all(role_id=self.id):
-        #     role_permission.delete()
 
     def update_role_permissions(self, permission_id_list):
         """ 更新角色权限映射 """
         self.delete_role_permissions()
         self.insert_role_permissions(permission_id_list)
 
-    def get_role_permissions_addr(self, source_type):
-        """ 获取角色的权限地址 """
-        role_id_list, addr_list = [], []
-        self.get_all_role_id(self.id, role_id_list)
-        for role_id in role_id_list:
-            role_permissions = RolePermissions.get_all(role_id=role_id)
-            for data in role_permissions:
-                permission = Permission.get_first(id=data.permission_id, source_type=source_type)
-                if permission:  # 区分前后端，可能查不到
-                    addr_list.append(permission.source_addr)
-        return addr_list
-
-    def get_role_permissions_front_addr(self):
-        """ 获取角色的前端权限地址 """
-        return self.get_role_permissions_addr('front')
-
-    def get_role_permissions_api_addr(self):
-        """ 获取角色的后端权限地址 """
-        return self.get_role_permissions_addr('api')
-
     @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
+        # 如果不是管理员，则不返回管理员角色
+        if User.is_not_admin():
+            # 管理员权限
+            admin_permission = [p.id for p in Permission.query.filter(Permission.source_addr == "admin").all()]
+            # 没有管理员权限的角色
+            not_admin_roles = Role.query.filter().join(
+                RolePermissions, Role.id == RolePermissions.role_id).filter(
+                RolePermissions.permission_id.notin_(admin_permission)
+            ).all()
+            filters.append(cls.id.in_([role.id for role in not_admin_roles]))
         if form.name.data:
             filters.append(cls.name.like(f"%{form.name.data}%"))
         return cls.pagination(
@@ -175,7 +178,7 @@ class User(BaseModel):
         """ 校验密码 """
         return check_password_hash(self.password_hash, password)
 
-    def generate_reset_token(self, expiration=None):
+    def generate_reset_token(self, api_permissions=[], expiration=None):
         """ 生成token，默认有效期为系统配置的时长 """
         return Serializer(
             app.config["SECRET_KEY"],
@@ -184,7 +187,7 @@ class User(BaseModel):
             "id": self.id,
             "name": self.name,
             "role_list": self.roles,
-            "api_permissions": self.get_api_permissions(),
+            "api_permissions": api_permissions,
             "business_list": self.loads(self.business_list),
         }).decode("utf-8")
 
@@ -193,19 +196,26 @@ class User(BaseModel):
         """ 获取用户的角色id """
         return [user_role.role_id for user_role in UserRoles.get_all(user_id=self.id)]
 
-    def get_front_permissions(self):
+    def get_permissions(self):
         """ 获取用户的前端权限 """
-        permission_list = []
-        for role in Role.get_user_role_list(self.id):
-            permission_list.extend(role.get_role_permissions_front_addr())
-        return list(set(permission_list))
+        role_id_list = Role.get_user_role_list(self.id)
 
-    def get_api_permissions(self):
-        """ 获取用户的后端权限 """
-        permission_list = []
-        for role in Role.get_user_role_list(self.id):
-            permission_list.extend(role.get_role_permissions_api_addr())
-        return list(set(permission_list))
+        # 所有权限的id
+        all_permission_id_list = RolePermissions.query.with_entities(
+            RolePermissions.permission_id).filter(RolePermissions.role_id.in_(role_id_list)).distinct().all()
+        permission_id_list = list(self.format_with_entities_query_list(all_permission_id_list))
+
+        # 所有前端权限
+        all_front_addr_list = Permission.query.with_entities(Permission.source_addr).filter(
+            Permission.id.in_(permission_id_list), Permission.source_type == 'front').distinct().all()
+        front_addr_list = list(self.format_with_entities_query_list(all_front_addr_list))
+
+        # 所有后端权限
+        all_api_addr_list = Permission.query.with_entities(Permission.source_addr).filter(
+            Permission.id.in_(permission_id_list), Permission.source_type == 'api').distinct().all()
+        api_addr_list = list(self.format_with_entities_query_list(all_api_addr_list))
+
+        return {"front_addr_list": front_addr_list, "api_addr_list": api_addr_list}
 
     def insert_user_roles(self, role_id_list):
         """ 插入用户角色映射 """
@@ -226,15 +236,35 @@ class User(BaseModel):
     # def is_admin(cls, user_id=None):
     #     """返回当前用户是否为管理员权限 """
     #     return UserRoles.get_first(user_id=user_id or cls.id, role_id=Role.get_admin_id())
-        # role_id = Role.get_admin_id()
-        # if user_id:
-        #     return cls.get_first(id=user_id).role_id == role_id
-        # return cls.role == role_id
+    # role_id = Role.get_admin_id()
+    # if user_id:
+    #     return cls.get_first(id=user_id).role_id == role_id
+    # return cls.role == role_id
 
     @classmethod
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
+        """
+        # 非管理员，只能获取到当前用户有的业务线的人
+        request.app.user_list = []
+        if User.is_not_admin(request.app.current_user.api_permissions):
+            user_list = set()
+            for business_id in request.app.current_user.business_list:
+                users = await User.filter(business_list__contains=business_id, id__not_in=user_list).all().values("id")
+                user_list = user_list.union({user["id"] for user in users})
+            request.app.user_list = list(user_list)
+        """
+        if User.is_not_admin():
+            user_id_list = []
+            for business_id in g.business_list:
+                # 业务线可能包含指定业务线id的用户
+                user_list = User.query.filter(User.business_list.like(f"%{business_id}%")).all()
+                for user in user_list:
+                    if business_id in cls.loads(user.business_list):  # 精确包含指定业务线id的用户
+                        user_id_list.append(user.id)
+            filters.append(User.id.in_(list(set(user_id_list))))
+
         if form.name.data:
             filters.append(User.name.like(f"%{form.name.data}%"))
         if form.account.data:

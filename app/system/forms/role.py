@@ -21,7 +21,7 @@ class CreateRoleForm(BaseForm):
     desc_length = Role.desc.property.columns[0].type.length
     name = StringField(
         validators=[DataRequired("请设置角色名"), Length(1, name_length, message=f"角色名长度不超过{name_length}位")])
-    desc = StringField(validators=[Length(0, name_length, message=f"备注名长度不超过{desc_length}位")])
+    desc = StringField(validators=[Length(0, desc_length, message=f"备注名长度不超过{desc_length}位")])
     extend_role = StringField()
     api_permission = StringField()
     front_permission = StringField()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app, request
 
-from app.baseView import LoginRequiredView, NotLoginView
+from app.baseView import LoginRequiredView, NotLoginView, AdminRequiredView
 from app.api_test.blueprint import api_test
 from app.api_test.models.report import ApiReport as Report, ApiReportStep, ApiReportCase, ApiReport
 from app.api_test.forms.report import GetReportForm, FindReportForm, DeleteReportForm, GetReportCaseForm, \
@@ -43,10 +43,17 @@ class ApiReportView(NotLoginView):
 
     @login_required
     def delete(self):
-        """ 删除测试报告 """
+        """ 删除测试报告主数据 """
         form = DeleteReportForm().do_validate()
-        ApiReport.batch_delete(form.report_list, ApiReportCase, ApiReportStep)
+        ApiReport.batch_delete_report(form.report_id_list)
         return app.restful.success("删除成功")
+
+
+class ApiReportClearView(LoginRequiredView):
+    def delete(self):
+        """ 清除测试报告 """
+        ApiReport.batch_delete_report_case(ApiReportCase, ApiReportStep)
+        return app.restful.success("清除成功")
 
 
 class ApiGetReportCaseListView(NotLoginView):
@@ -80,6 +87,7 @@ class ApiGetReportStepView(NotLoginView):
 
 
 api_test.add_url_rule("/report", view_func=ApiReportView.as_view("ApiReportView"))
+api_test.add_url_rule("/report/clear", view_func=ApiReportClearView.as_view("ApiReportClearView"))
 api_test.add_url_rule("/report/list", view_func=ApiGetReportListView.as_view("ApiGetReportListView"))
 api_test.add_url_rule("/report/status", view_func=ApiReportIsDoneView.as_view("ApiReportIsDoneView"))
 api_test.add_url_rule("/report/showId", view_func=ApiReportGetReportIdView.as_view("ApiReportGetReportIdView"))

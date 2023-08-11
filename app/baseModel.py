@@ -183,6 +183,11 @@ class BaseModel(db.Model, JsonUtil):
         """ 判断数据是否为禁用状态 """
         return self.status == 0
 
+    @classmethod
+    def format_with_entities_query_list(cls, query_list):
+        """ 格式化查询集 [(1,), (2,)] -> [1, 2] """
+        return [res[0] for res in query_list]
+
     def delete_current_and_children(self, child_model, filter_field):
         """ 删除当前数据，并且删除下游数据 """
         with db.auto_commit():
@@ -908,13 +913,18 @@ class BaseReport(BaseModel):
         }
 
     @classmethod
-    def batch_delete(cls, report_list, report_case_mode, report_step_mode):
+    def batch_delete_report(cls, report_list):
         """ 批量删除报告 """
-        for report in report_list:
-            with db.auto_commit():
-                report_case_mode.query.filter(report_case_mode.report_id == report.id).delete()
-                report_step_mode.query.filter(report_step_mode.report_id == report.id).delete()
-                cls.query.filter(cls.id == report.id).delete()
+        with db.auto_commit():
+            cls.query.filter(cls.id.in_(report_list)).delete()
+
+    @classmethod
+    def batch_delete_report_case(cls, report_case_mode, report_step_mode):
+        """ 批量删除报告 """
+        report_list = cls.format_with_entities_query_list(cls.query.with_entities(cls.id).all())
+        with db.auto_commit():
+            report_case_mode.query.filter(report_case_mode.report_id.notin_(report_list)).delete()
+            report_step_mode.query.filter(report_step_mode.report_id.notin_(report_list)).delete()
 
     @classmethod
     def get_batch_id(cls):
@@ -1032,7 +1042,7 @@ class BaseReportCase(BaseModel):
     error_msg = db.Column(db.Text(), default='', comment="用例错误信息")
 
     @staticmethod
-    def getsummary_template():
+    def get_summary_template():
         return {
             "success": 'skip',
             "case_id": None,

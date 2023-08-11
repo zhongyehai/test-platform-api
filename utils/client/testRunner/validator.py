@@ -10,6 +10,13 @@ def is_function(item):
     return isinstance(item, types.FunctionType)
 
 
+def is_const(variable):
+    try:
+        return eval(str(variable))
+    except:
+        return False
+
+
 def is_extract_expression(expression):
     """ 判断字符串是否为提取表达式 """
     return text_extractor_regexp_compile.match(expression) or expression.startswith(extract_exp_start)

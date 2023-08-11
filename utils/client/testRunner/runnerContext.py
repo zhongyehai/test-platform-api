@@ -237,5 +237,4 @@ class SessionContext(object):
             self.validation_results.append(evaluated_validator)
 
         if not validate_pass:  # 断言未通过
-            failures_string = "\n".join([failure for failure in failures])
-            raise exceptions.ValidationFailure(failures_string)
+            raise exceptions.ValidationFailure(f'\n\n{"*" * 50}\n'.join(failures))
