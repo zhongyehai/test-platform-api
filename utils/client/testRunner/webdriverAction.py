@@ -472,21 +472,15 @@ class Actions:
 
     def extract_09_cookie(self, locator: tuple, wait_time_out=None, *args, **kwargs):
         """ 获取cookie值 """
-        data = self.driver.get_cookies()
-        print(data)
-        return data
+        return self.driver.get_cookies()
 
     def extract_09_session_storage(self, locator: tuple, wait_time_out=None, *args, **kwargs):
         """ 获取sessionStorage值 """
-        data = self.driver.execute_script(f"return sessionStorage;")
-        print(data)
-        return data
+        return self.driver.execute_script(f"return sessionStorage;")
 
     def extract_09_local_storage(self, locator: tuple, wait_time_out=None, *args, **kwargs):
         """ 获取localStorage值 """
-        data = self.driver.execute_script(f"return localStorage;")
-        print(data)
-        return data
+        return self.driver.execute_script(f"return localStorage;")
 
     def extract_10_attribute_is_input(self, locator: tuple, name: str, wait_time_out=None, *args, **kwargs):
         """ 获取指定属性 """
@@ -644,7 +638,7 @@ class GetWebDriver(Actions):
         self.driver = self.get_driver()
         super().__init__(self.driver)
 
-    def __del__(self):
+    def close_browser(self):
         try:
             self.driver.close()
         except:
@@ -653,6 +647,9 @@ class GetWebDriver(Actions):
             self.driver.quit()
         except:
             pass
+
+    def __del__(self):
+        self.close_browser()
 
     def kill_driver_process(self):
         """ 有时候会遇到执行结束后，driver进程仍然存在的情况，加一个强制kill机制 """

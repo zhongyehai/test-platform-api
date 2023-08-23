@@ -157,16 +157,25 @@ class RunCase(RunTestRunner):
                     "value": extract.get("value")
                 })
             elif extract["extract_type"]:  # 页面元素提取
-                element = self.get_format_element(extract["value"])
-                parsed_list.append({
-                    "type": "element",
-                    "key": extract.get("key"),
-                    "value": {
-                        "action": extract.get("extract_type"),
-                        "by_type": element.by,
-                        "element": element.element
-                    }
-                })
+                if extract["value"]:
+                    element = self.get_format_element(extract["value"])
+                    parsed_list.append({
+                        "type": "element",
+                        "key": extract.get("key"),
+                        "value": {
+                            "action": extract.get("extract_type"),
+                            "by_type": element.by,
+                            "element": element.element
+                        }
+                    })
+                else:
+                    parsed_list.append({
+                        "type": "element",
+                        "key": extract.get("key"),
+                        "value": {
+                            "action": extract.get("extract_type")
+                        }
+                    })
         return parsed_list
 
     def parse_validates(self, validates_list):

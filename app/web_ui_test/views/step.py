@@ -22,14 +22,14 @@ class WebUiGetStepListView(LoginRequiredView):
         return app.restful.success("获取成功", data={"total": step_list.__len__(), "data": step_list})
 
 
-class WebUiGetCaseExecuteListView(LoginRequiredView):
+class WebUiGetCaseExecuteListView(NotLoginView):
 
     def get(self):
         """ 获取执行动作类型列表 """
         return app.restful.success("获取成功", data=ui_action_mapping_list)
 
 
-class WebUiGetKeyBoardCodeListView(LoginRequiredView):
+class WebUiGetKeyBoardCodeListView(NotLoginView):
 
     def get(self):
         """ 获取键盘映射 """

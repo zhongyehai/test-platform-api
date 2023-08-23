@@ -93,6 +93,12 @@ class TestRunner(object):
 
             result = self.unittest_runner.run(test_case)
 
+            # 执行完一条用例，强制关闭浏览器
+            try:
+                test_case.runner.driver.close_browser()
+            except Exception:
+                pass
+
             # 记录用例执行结束
             summary = report.build_case_summary(result)
             summary["name"] = test_case.config.get("name")

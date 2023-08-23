@@ -75,11 +75,20 @@ class FormatModel(JsonUtil):
             return:
                 [{"key": "project_id", "element": "id", "extract_type": "123"}]
             """
-            return [
-                extract for extract in extracts_list
-                if extract.get("status") == 1 and extract.get("key") and extract.get("value") and extract.get(
-                    "extract_type")
-            ]
+            extractor_list = []
+            for extract in extracts_list:
+                extract_type = extract.get("extract_type")
+                if extract.get("status") and extract.get("key") and extract_type:
+                    extract_type_lower = extract_type.lower()
+                    if ("cookie" in extract_type_lower
+                            or "session_storage" in extract_type_lower
+                            or "local_storage" in extract_type_lower
+                            or "title" in extract_type_lower):
+                        extractor_list.append(extract)
+                    else:
+                        if extract.get("value"):
+                            extractor_list.append(extract)
+            return extractor_list
 
     def parse_validates(self, validates_list):
         """ 解析断言

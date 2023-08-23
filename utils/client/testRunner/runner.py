@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
+import traceback
 from unittest.case import SkipTest
 
 from . import exceptions, logger, response, extract
@@ -60,6 +61,7 @@ class Runner(object):
         self.resp_obj = None
         self.driver = None
         self.client_session = None
+        self.redirect_print = None
 
         self.browser_driver_path = config.get('browser_path')
         self.browser_name = config.get('browser_type')
@@ -188,7 +190,6 @@ class Runner(object):
 
         """
         self.__clear_step_test_data()
-        self.redirect_print = RedirectPrintLogToMemory()  # 重定向自定义函数的打印到内存中
 
         test_variables = step_dict.get("variables", {})
         self.session_context.init_test_variables(test_variables)
@@ -327,7 +328,11 @@ class Runner(object):
                 }
         """
         self.meta_datas = None
-        self.init_client_session()  # 执行步骤前判断有没有初始化client_session
+        self.redirect_print = RedirectPrintLogToMemory()  # 重定向自定义函数的打印到内存中
+        try:
+            self.init_client_session()  # 执行步骤前判断有没有初始化client_session
+        except Exception as error:
+            print(traceback.format_exc())
         self.report_step = self.report_step_model.get_first(id=step_dict.pop("report_step_id"))
         self.report_step.test_is_running()
         self.report_step.test_is_start_parse(step_dict)

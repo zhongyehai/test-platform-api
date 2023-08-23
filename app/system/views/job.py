@@ -12,11 +12,33 @@ from app.system.blueprint import system_manage
 from app.system.models.job import JobRunLog
 from app.config.models.business import BusinessLine
 from app.api_test.models.project import ApiProject as Project
+from app.api_test.models.report import ApiReport, ApiReportCase, ApiReportStep
+from app.web_ui_test.models.report import WebUiReport, WebUiReportCase, WebUiReportStep
+from app.app_ui_test.models.report import AppUiReport, AppUiReportCase, AppUiReportStep
 from utils.message.sendReport import send_business_stage_count
 
 
 class JobFuncs:
     """ 定时任务，方法以cron_开头，参数放在文档注释里面 """
+
+    @classmethod
+    def cron_clear_report(cls):
+        """
+        {
+            "name": "清理测试报告",
+            "id": "cron_clear_report",
+            "cron": "0 0 2 * * ?"
+        }
+        """
+        # 清理接口自动化
+        report_type_model_list = [
+            [ApiReport, ApiReportCase, ApiReportStep],
+            [WebUiReport, WebUiReportCase, WebUiReportStep],
+            [AppUiReport, AppUiReportCase, AppUiReportStep]
+        ]
+        for report_model_list in report_type_model_list:
+            report_model, report_case_model, report_step_model = report_model_list
+            report_model.batch_delete_report_case(report_case_model, report_step_model)
 
     @classmethod
     def cron_count_of_week(cls):
@@ -132,7 +154,7 @@ class SystemGetJobFuncListView(AdminRequiredView):
         for func_name in dir(JobFuncs):
             if func_name.startswith("cron_"):
                 attr_doc = json.loads(getattr(JobFuncs, func_name).__doc__)
-                func = {"name": attr_doc["name"], "func_name": attr_doc["id"], }
+                func = {"name": attr_doc["name"], "func_name": attr_doc["id"],  "cron": attr_doc["cron"]}
                 job = ApschedulerJobs.get_first(id=f'cron_{attr_doc["id"]}')
                 if job:
                     func["id"] = job.id

@@ -95,7 +95,7 @@ def parse_swagger2_args(api_msg, api_detail, swagger_data, options):
         if update_params and arg["in"] == "query":  # 查询字符串参数
             query.insert(0, {
                 "key": arg["name"],
-                "value": f'{arg.get("description", "")} {arg["type"]} {required}'
+                "value": f'{arg.get("description", "")} {arg.get("type", "string")} {required}'
             })
         elif update_header and arg["in"] == "header":  # 头部参数
             header.insert(0, {

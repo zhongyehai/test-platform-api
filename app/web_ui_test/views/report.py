@@ -46,7 +46,7 @@ class WebUiReportView(NotLoginView):
     def delete(self):
         """ 删除测试报告 """
         form = DeleteReportForm().do_validate()
-        WebUiReport.batch_delete(form.report_list, WebUiReportCase, WebUiReportStep)
+        WebUiReport.batch_delete_report(form.report_id_list)
         return app.restful.success("删除成功")
 
 
