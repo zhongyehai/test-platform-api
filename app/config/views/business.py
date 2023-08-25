@@ -29,7 +29,7 @@ class BusinessView(LoginRequiredView):
     def get(self):
         """ 获取业务线 """
         form = GetBusinessForm().do_validate()
-        return app.restful.success("获取成功", data=form.conf.to_dict())
+        return app.restful.success("获取成功", data=form.business.to_dict())
 
     def post(self):
         """ 新增业务线 """

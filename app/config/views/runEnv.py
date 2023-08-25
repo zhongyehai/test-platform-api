@@ -47,7 +47,7 @@ class RunEnvView(LoginRequiredView):
     def get(self):
         """ 获取运行环境 """
         form = GetRunEnvForm().do_validate()
-        return app.restful.success("获取成功", data=form.conf.to_dict())
+        return app.restful.success("获取成功", data=form.run_env.to_dict())
 
     def post(self):
         """ 新增运行环境 """

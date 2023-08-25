@@ -21,7 +21,7 @@ class ConfigTypeView(LoginRequiredView):
     def get(self):
         """ 获取配置类型 """
         form = GetConfigTypeForm().do_validate()
-        return app.restful.success("获取成功", data=form.conf.to_dict())
+        return app.restful.success("获取成功", data=form.conf_type.to_dict())
 
     def post(self):
         """ 新增配置类型 """
