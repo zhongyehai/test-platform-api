@@ -3,6 +3,7 @@ from flask import current_app as app, request
 
 from app.baseView import LoginRequiredView, NotLoginView
 from app.busines import ProjectEnvBusiness
+from app.config.models.business import BusinessLine
 from app.config.models.runEnv import RunEnv
 from app.config.forms.runEnv import (
     GetRunEnvForm, DeleteRunEnvForm, PostRunEnvForm, PutRunEnvForm, GetRunEnvListForm, EnvToBusinessForm
@@ -54,7 +55,14 @@ class RunEnvView(LoginRequiredView):
         form = PostRunEnvForm().do_validate()
         form.num.data = RunEnv.get_insert_num()
         run_env = RunEnv().create(form.data)
-        ProjectEnvBusiness.add_env(run_env.id)  # 给所有的服务/项目/app创建此运行环境的数据
+
+        # 给所有的服务/项目/app创建此运行环境的数据
+        ProjectEnvBusiness.add_env(run_env.id)
+
+        # 把环境分配给设置了自动绑定的业务线
+        business_list = BusinessLine.get_auto_bind_env_id_list()
+        RunEnv.env_to_business([run_env.id], business_list, "add")
+
         return app.restful.success("新增成功", data=run_env.to_dict())
 
     def put(self):

@@ -27,13 +27,6 @@ class AddUiProjectForm(BaseForm):
         """ 校验项目负责人是否存在 """
         self.validate_data_is_exist(f"id为【{field.data}】的用户不存在", User, id=field.data)
 
-    def validate_swagger(self, field):
-        """ 校验swagger地址是否正确 """
-        self.validate_data_is_false(
-            f"swagger地址【{field.data}】不正确",
-            field.data and validators.url(field.data) is not True
-        )
-
 
 class FindUiProjectForm(BaseForm):
     """ 查找项目form """

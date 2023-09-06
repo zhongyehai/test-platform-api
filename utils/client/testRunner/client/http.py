@@ -38,6 +38,7 @@ class HttpSession(requests.Session, BaseSession):
     def __init__(self, base_url=None, *args, **kwargs):
         super(HttpSession, self).__init__(*args, **kwargs)
         self.base_url = base_url if base_url else ""
+        self.request_at = self.response_at = datetime.now()
         self.init_step_meta_data()
 
     def get_req_resp_record(self, resp_obj):
@@ -123,16 +124,7 @@ class HttpSession(requests.Session, BaseSession):
             copy_kwargs["headers"].pop("Content-Type")
             copy_kwargs["data"] = parse.urlencode(copy_kwargs["data"])
 
-        # 记录开始请求时间
-        request_timestamp = time.time()
-
         response = self._send_request_safe_mode(method, url, **copy_kwargs)  # 发送请求
-
-        # 记录响应时间
-        response_timestamp = time.time()
-
-        # 记录耗时
-        response_time_ms = round((response_timestamp - request_timestamp) * 1000, 2)
 
         # requests包get响应内容中文乱码解决
         if response.content:
@@ -146,11 +138,10 @@ class HttpSession(requests.Session, BaseSession):
 
         # 记录消耗的时间
         self.meta_data["stat"] = {
-            "response_time_ms": response_time_ms,
-            "elapsed_ms": response.elapsed.microseconds / 1000.0,
             "content_size": content_size,
-            "request_at": datetime.fromtimestamp(request_timestamp).strftime("%Y-%m-%d %H:%M:%S"),
-            "response_at": datetime.fromtimestamp(response_timestamp).strftime("%Y-%m-%d %H:%M:%S"),
+            "elapsed_ms": round(response.elapsed.total_seconds() * 1000, 3),  # 请求耗时, 秒转毫秒
+            "request_at": self.request_at.strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "response_at": self.response_at.strftime("%Y-%m-%d %H:%M:%S.%f"),
         }
         # 记录请求和响应历史记录，包括 3x 的重定向
         response_list = response.history + [response]
@@ -163,7 +154,7 @@ class HttpSession(requests.Session, BaseSession):
         else:
             logger.log_info(
                 # f"""status_code: {response.status_code}, response_time(ms): {response_time_ms} ms, response_length: {content_size} bytes\n"""
-                f"""步骤: {name}, 响应状态码: {response.status_code}, 耗时: {response_time_ms} ms, response_length: {content_size} bytes\n"""
+                f"""步骤: {name}, 响应状态码: {response.status_code}, 耗时: {self.meta_data["stat"]["elapsed_ms"]} ms, response_length: {content_size} bytes\n"""
             )
 
         return response
@@ -171,12 +162,10 @@ class HttpSession(requests.Session, BaseSession):
     def _send_request_safe_mode(self, method, url, **kwargs):
         """ 发送HTTP请求，并捕获由于连接问题而可能发生的任何异常。 """
         try:
-            # msg = "processed request:\n"
-            # msg += "> {method} {url}\n".format(method=method, url=url)
-            # msg += "> kwargs: {kwargs}".format(kwargs=kwargs)
-            msg = f'解析后的请求数据:\n> {method} {url}\n> kwargs: {kwargs}'
-            logger.log_debug(msg)
-            return requests.Session.request(self, method, url, **kwargs)
+            self.request_at = datetime.now()
+            response = requests.Session.request(self, method, url, **kwargs)
+            self.response_at = datetime.now()
+            return response
         except (MissingSchema, InvalidSchema, InvalidURL):
             raise
         except RequestException as ex:

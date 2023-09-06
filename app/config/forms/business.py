@@ -38,6 +38,7 @@ class PostBusinessForm(BaseForm):
     name = StringField(validators=[DataRequired("请输业务线名字")])
     code = StringField(validators=[DataRequired("请输业务线code")])
     receive_type = StringField()
+    bind_env = StringField()
     webhook_list = StringField()
     env_list = StringField()
     num = StringField()

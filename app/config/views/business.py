@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import current_app as app
+from flask import current_app as app, g
 
 from app.baseView import LoginRequiredView, AdminRequiredView
 from app.config.models.business import BusinessLine
@@ -7,6 +7,7 @@ from app.config.forms.business import (
     GetBusinessForm, DeleteBusinessForm, PostBusinessForm, PutBusinessForm, GetBusinessListForm, BusinessToUserForm
 )
 from app.config.blueprint import config_blueprint
+from app.system.models.user import User
 
 
 class GetBusinessListView(LoginRequiredView):
@@ -36,7 +37,17 @@ class BusinessView(LoginRequiredView):
         form = PostBusinessForm().do_validate()
         form.num.data = BusinessLine.get_insert_num()
         business = BusinessLine().create(form.data)
-        return app.restful.success("新增成功", data=business.to_dict())
+
+        # 给创建者添加绑定关系，并生成新的token
+        user = User.get_first(id=g.user_id)
+        user_business_list = user.loads(user.business_list)
+        user_business_list.append(business.id)
+        user.business_list = user_business_list
+        user.update({"business_list": user.business_list})
+
+        # 重新生成token
+        token = user.generate_reset_token(g.api_permissions)
+        return app.restful.success("新增成功", data={"token": token, "business_id": user_business_list})
 
     def put(self):
         """ 修改业务线 """

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import validators
 from flask import g
 from wtforms import StringField, IntegerField
 from wtforms.validators import Length, DataRequired, ValidationError
@@ -29,13 +28,6 @@ class AddUiProjectForm(BaseForm):
     def validate_manager(self, field):
         """ 校验app负责人是否存在 """
         self.validate_data_is_exist(f"id为【{field.data}】的用户不存在", User, id=field.data)
-
-    def validate_swagger(self, field):
-        """ 校验swagger地址是否正确 """
-        self.validate_data_is_false(
-            f"swagger地址【{field.data}】不正确",
-            field.data and validators.url(field.data) is not True
-        )
 
 
 class FindUiProjectForm(BaseForm):

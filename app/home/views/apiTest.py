@@ -201,7 +201,7 @@ class GetApiTestCountTaskView(LoginRequiredView):
         """ 统计定时任务数 """
         status = db.execute_query_sql("""
             select status, count(*) as totle
-                from (select IF(status = "启用中", "enable", "disable") as status from `api_test_task` ) as t
+                from (select IF(status = 1, "enable", "disable") as status from `api_test_task` ) as t
                 group by status
             """)
 

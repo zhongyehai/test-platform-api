@@ -16,7 +16,15 @@ class BusinessLine(BaseModel):
     webhook_list = db.Column(db.Text(), default='[]', comment="接收该业务线自动化测试阶段统计通知地址")
     env_list = db.Column(db.Text(), default='[]', comment="业务线能使用的运行环境")
     num = db.Column(db.Integer(), nullable=True, comment="序号")
+    bind_env = db.Column(db.String(8), default="human",
+                         comment="绑定环境机制，auto：新增环境时自动绑定，human：新增环境后手动绑定")
     desc = db.Column(db.Text(), comment="描述")
+
+    @classmethod
+    def get_auto_bind_env_id_list(cls):
+        """ 获取设置为自动绑定的业务线 """
+        query_res = cls.query.filter(BusinessLine.bind_env == "auto").with_entities(BusinessLine.id).all()
+        return cls.format_with_entities_query_list(query_res)
 
     @classmethod
     def get_env_list(cls, business_id):
