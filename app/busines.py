@@ -11,6 +11,7 @@ from app.app_ui_test.models.project import AppUiProject, AppUiProjectEnv
 from app.config.models.runEnv import RunEnv
 from app.config.models.config import Config
 from app.web_ui_test.models.project import WebUiProject, WebUiProjectEnv
+from config import job_server_host
 from utils.makeData.makeXmind import get_xmind_first_sheet_data
 from utils.util.fileUtil import TEMP_FILE_ADDRESS
 
@@ -217,7 +218,7 @@ class TaskBusiness:
         """ 启用任务 """
         try:
             res = requests.post(
-                url="http://localhost:8025/api/job/status",
+                url=job_server_host,
                 headers=request.headers,
                 json={
                     "userId": g.user_id,
@@ -238,7 +239,7 @@ class TaskBusiness:
         """ 禁用任务 """
         try:
             res = requests.delete(
-                url="http://localhost:8025/api/job/status",
+                url=job_server_host,
                 headers=request.headers,
                 json={
                     "taskId": form.task.id,

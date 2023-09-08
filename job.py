@@ -4,6 +4,7 @@ from flask import request
 from flask.views import MethodView
 from flask_apscheduler import APScheduler
 
+from config import job_server_port, main_server_host
 from utils.view import restful
 from utils.parse.parseCron import parse_cron
 from app import create_app
@@ -15,12 +16,10 @@ scheduler = APScheduler()
 scheduler.init_app(job)
 scheduler.start()
 
-api_host = 'http://localhost:8024'
-
 
 def login():
     response = requests.post(
-        url=f'{api_host}/api/system/user/login',
+        url=f'{main_server_host}/api/system/user/login',
         json={
             "account": "common",
             "password": "common"
@@ -39,7 +38,7 @@ def request_run_task_api(task_id, task_type):
         api_addr = f'/{task_type}Test/task/run'
 
     re = requests.post(
-        url=f'{api_host}/api{api_addr}',
+        url=f'{main_server_host}/api{api_addr}',
         headers=login(),
         json={
             "id": task_id,
@@ -80,4 +79,4 @@ class JobStatus(MethodView):
 job.add_url_rule('/api/job/status', view_func=JobStatus.as_view('jobStatus'))
 
 if __name__ == '__main__':
-    job.run(host='0.0.0.0', port=8025)
+    job.run(host='0.0.0.0', port=job_server_port)

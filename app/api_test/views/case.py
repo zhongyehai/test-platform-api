@@ -35,7 +35,7 @@ class ApiGetAssertCaseListView(LoginRequiredView):
         suite_list = CaseSuite.get_all(project_id=request.args.get("project_id"), suite_type='assist')
         suite_id_list = [suite.id for suite in suite_list]
 
-        db_case_list = Case.query.filter(Case.suite_id.in_(suite_id_list), Case.status == 1).all()
+        db_case_list = Case.query.filter(Case.suite_id.in_(suite_id_list), Case.status == 1).order_by(Case.num).all()
         case_list = [case.to_dict() for case in db_case_list]
 
         return app.restful.success(data={"total": len(case_list), "data": case_list})

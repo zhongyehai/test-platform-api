@@ -15,6 +15,7 @@ from app.api_test.models.project import ApiProject as Project
 from app.api_test.models.report import ApiReport, ApiReportCase, ApiReportStep
 from app.web_ui_test.models.report import WebUiReport, WebUiReportCase, WebUiReportStep
 from app.app_ui_test.models.report import AppUiReport, AppUiReportCase, AppUiReportStep
+from config import job_server_host
 from utils.message.sendReport import send_business_stage_count
 
 
@@ -179,7 +180,6 @@ class SystemGetRunJobLogView(LoginRequiredView):
 
 
 class SystemJobView(AdminRequiredView):
-    job_host = "http://localhost:8025"
 
     def get(self):
         """ 获取定时任务 """
@@ -192,7 +192,7 @@ class SystemJobView(AdminRequiredView):
         task_conf = getattr(JobFuncs, job_func_name).__doc__
         try:
             res = requests.post(
-                url="http://localhost:8025/api/job/status",
+                url=job_server_host,
                 headers=request.headers,
                 json={
                     "task": json.loads(task_conf),
@@ -209,7 +209,7 @@ class SystemJobView(AdminRequiredView):
         job_id = request.json.get("id")
         try:
             res = requests.delete(
-                url="http://localhost:8025/api/job/status",
+                url=job_server_host,
                 headers=request.headers,
                 json={
                     "taskId": job_id,

@@ -9,6 +9,7 @@ from sqlalchemy import MetaData
 from contextlib import contextmanager
 from sqlalchemy.dialects.mysql import LONGTEXT
 
+from config import main_server_host
 from utils.util.jsonUtil import JsonUtil
 from utils.parse.parse import parse_list_to_dict, update_dict_to_list, parse_dict_to_list
 
@@ -422,7 +423,7 @@ class BaseProjectEnv(BaseModel):
     """ 服务环境基类表 """
     __abstract__ = True
 
-    host = db.Column(db.String(255), default="http://localhost:8023", comment="服务地址")
+    host = db.Column(db.String(255), default=main_server_host, comment="服务地址")
     variables = db.Column(
         db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="服务的公共变量"
     )
