@@ -157,8 +157,8 @@ class RunCase(RunTestRunner):
         step_data = {
             "case_id": step.case_id,
             "name": step.name,
-            "setup_hooks": [up.strip() for up in step.up_func.split(";") if up] if step.up_func else [],
-            "teardown_hooks": [func.strip() for func in step.down_func.split(";") if func] if step.down_func else [],
+            "setup_hooks": step.up_func,
+            "teardown_hooks": step.down_func,
             "skip": not step.status,  # 直接指定当前步骤是否执行
             "skipIf": step.skip_if,  # 如果条件为真，则当前步骤不执行
             # "skipUnless": "",  # 除非条件为真，否则跳过当前测试

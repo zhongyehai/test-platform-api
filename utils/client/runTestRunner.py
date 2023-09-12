@@ -195,8 +195,8 @@ class RunTestRunner:
         """
         return {
             "name": step.name,
-            "setup_hooks": [up.strip() for up in step.up_func.split(";") if up] if step.up_func else [],
-            "teardown_hooks": [func.strip() for func in step.down_func.split(";") if func] if step.down_func else [],
+            "setup_hooks": step.up_func,
+            "teardown_hooks": step.down_func,
             "skip": not step.status,  # 无条件跳过当前测试
             "skipIf": step.skip_if,  # 如果条件为真，则跳过当前测试
             # "skipUnless": "",  # 除非条件为真，否则跳过当前测试
@@ -328,8 +328,8 @@ class RunTestRunner:
         return {
             "id": api.id,
             "name": api.name,  # 接口名
-            "setup_hooks": [up.strip() for up in api.up_func.split(";") if up] if api.up_func else [],
-            "teardown_hooks": [func.strip() for func in api.down_func.split(";") if func] if api.down_func else [],
+            "setup_hooks": api.up_func,
+            "teardown_hooks": api.down_func,
             "skip": "",  # 无条件跳过当前测试
             "skipIf": "",  # 如果条件为真，则跳过当前测试
             "skipUnless": "",  # 除非条件为真，否则跳过当前测试

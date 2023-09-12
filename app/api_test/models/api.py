@@ -10,8 +10,8 @@ class ApiMsg(BaseApi):
 
     time_out = db.Column(db.Integer(), default=60, nullable=True, comment="request超时时间，默认60秒")
     addr = db.Column(db.String(255), nullable=True, comment="地址")
-    up_func = db.Column(db.Text(), default="", comment="接口执行前的函数")
-    down_func = db.Column(db.Text(), default="", comment="接口执行后的函数")
+    up_func = db.Column(db.Text(), default='[]', comment="接口执行前的函数")
+    down_func = db.Column(db.Text(), default='[]', comment="接口执行后的函数")
     method = db.Column(db.String(10), nullable=True, comment="请求方式")
     level = db.Column(db.String(10), nullable=True, default="P1", comment="接口重要程度：P0、P1、P2")
     headers = db.Column(db.Text(), default='[{"key": null, "value": null, "remark": null}]', comment="头部信息")

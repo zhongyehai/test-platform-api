@@ -93,8 +93,8 @@ class RunCase(RunTestRunner):
         step_data = {
             "case_id": step.case_id,
             "name": step.name,
-            "setup_hooks": [up.strip() for up in step.up_func.split(";") if up] if step.up_func else [],
-            "teardown_hooks": [func.strip() for func in step.down_func.split(";") if func] if step.down_func else [],
+            "setup_hooks": step.up_func,
+            "teardown_hooks": step.down_func,
             "skip": not step.status,  # 无条件跳过当前测试
             "skipIf": step.skip_if,  # 如果条件为真，则跳过当前测试
             # "skipUnless": "",  # 除非条件为真，否则跳过当前测试
@@ -337,8 +337,6 @@ class RunCase(RunTestRunner):
                 all_variables.update({"device_id": self.device_id})  # 强制增加一个变量为设备id，用于去数据库查数据
                 case_template["config"]["variables"].update(all_variables)
 
-                if current_case.run_times > 1:
-                    case_template["config"]["name"] = f'{name}_{index + 1}' if current_case.run_times > 1 else name
                 self.DataTemplate["testcases"].append(copy.deepcopy(case_template))
 
                 # 完整的解析完一条用例后，去除对应的解析信息

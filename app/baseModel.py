@@ -87,7 +87,7 @@ class BaseModel(db.Model, JsonUtil):
     # 需要做序列化和反序列化的字段
     serialization_file_list = [
         "extend_role",
-        "headers", "variables", "script_list", "pop_header_filed", "output",
+        "headers", "variables", "script_list", "pop_header_filed", "output", "up_func", "down_func",
         "params", "data_form", "data_json", "data_urlencoded", "extracts", "validates", "data_driver", "skip_if",
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to", "temp_variables",
         "kym", "task_item", 'business_list', 'run_id', 'extends', 'case_data', 'step_data', 'summary'
@@ -764,8 +764,8 @@ class BaseStep(BaseModel):
     status = db.Column(db.Integer(), default=1, comment="是否执行此步骤，1执行，0不执行，默认执行")
     run_times = db.Column(db.Integer(), default=1, comment="执行次数，默认执行1次")
     name = db.Column(db.String(255), comment="步骤名称")
-    up_func = db.Column(db.Text(), default="", comment="步骤执行前的函数")
-    down_func = db.Column(db.Text(), default="", comment="步骤执行后的函数")
+    up_func = db.Column(db.Text(), default='[]', comment="步骤执行前的函数")
+    down_func = db.Column(db.Text(), default='[]', comment="步骤执行后的函数")
     skip_if = db.Column(
         db.Text(),
         default=BaseModel.dumps([

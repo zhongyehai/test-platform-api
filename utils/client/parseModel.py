@@ -7,6 +7,10 @@ from utils.client.testRunner.parser import extract_functions, parse_function, ex
 
 class FormatModel(JsonUtil):
 
+    def parse_hook_func(self, hook_func_list):
+        """ 解析前后置hook """
+        return [func.strip() for func in hook_func_list if func]
+
     def parse_list_data(self, data_list):
         """ 解析头部参数、params参数
         headers_list:
@@ -274,8 +278,8 @@ class ApiModel(FormatModel):
         self.name = kwargs.get("name")
         self.time_out = kwargs.get("time_out")
         self.desc = kwargs.get("desc")
-        self.up_func = kwargs.get("up_func")
-        self.down_func = kwargs.get("down_func")
+        self.up_func = self.parse_hook_func(kwargs.get("up_func", []))
+        self.down_func = self.parse_hook_func(kwargs.get("down_func", []))
         self.env = kwargs.get("env")
         self.method = kwargs.get("method")
         self.addr = kwargs.get("addr")
@@ -357,8 +361,8 @@ class StepModel(FormatModel):
         self.num = kwargs.get("num")
         self.name = kwargs.get("name")
         self.run_times = kwargs.get("run_times")
-        self.up_func = kwargs.get("up_func")
-        self.down_func = kwargs.get("down_func")
+        self.up_func = self.parse_hook_func(kwargs.get("up_func", []))
+        self.down_func = self.parse_hook_func(kwargs.get("down_func", []))
         self.skip_if = self.parse_skip_if(kwargs.get("skip_if"), kwargs.get("skip_on_fail", 1))
         self.status = kwargs.get("status")
         self.data_driver = kwargs.get("data_driver", {})
