@@ -6,13 +6,6 @@ try:
 except ImportError:
     import json
 
-import sys
-
-try:
-    JSONDecodeError = json.JSONDecodeError
-except AttributeError:
-    JSONDecodeError = ValueError
-
 builtin_str = str
 basestring = (str, bytes)
 numeric_types = (int, float)

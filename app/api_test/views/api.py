@@ -105,7 +105,7 @@ class ApiGetApiToStepView(LoginRequiredView):
                 project = project_dict[suite.project_id]
 
                 case_dict = case.to_dict()
-                case_dict["from"] = f'【{project.name}_{suite_from_path}_{case.name}_{step.name}】'
+                case_dict["from"] = f'【{project.name if project else None}_{suite_from_path}_{case.name}_{step.name}】'
                 case_list.append(copy.deepcopy(case_dict))
 
         return app.restful.success(msg='获取成功', data=case_list)

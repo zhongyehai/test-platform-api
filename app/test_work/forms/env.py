@@ -10,7 +10,7 @@ class GetEnvListForm(BaseForm):
     """ 获取数据列表 """
     page_num = IntegerField()
     page_size = IntegerField()
-    business = IntegerField()
+    business = StringField()
     name = StringField()
     parent = StringField()
     source_type = StringField()

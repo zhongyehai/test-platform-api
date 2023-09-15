@@ -28,8 +28,8 @@ class BugTrack(BaseModel):
         """ 解析分页条件 """
         filters = []
         if form.get("business_list"):
-            business_list = set(form.get("business_list")) & set(g.business_list)  # 取并集
-            filters.append(cls.business_id == business_list)
+            # business_list = set(form.get("business_list")) & set(g.business_list)  # 取并集
+            filters.append(cls.business_id.in_(form.get("business_list")))
         else:
             if cls.is_not_admin():  # 非管理员则校验业务线权限
                 filters.append(cls.business_id.in_(g.business_list))

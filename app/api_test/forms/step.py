@@ -36,8 +36,8 @@ class AddStepForm(BaseForm):
         DataRequired("步骤名称不能为空"),
         Length(1, name_length, f"步骤长度不可超过{name_length}位")
     ])
-    up_func = StringField()
-    down_func = StringField()
+    up_func = StringField(default=[])
+    down_func = StringField(default=[])
     skip_if = StringField()
     status = IntegerField()
     run_times = IntegerField()

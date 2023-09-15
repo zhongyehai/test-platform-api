@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 from selenium.common.exceptions import WebDriverException, TimeoutException, InvalidElementStateException
+from .compat import json
+
+try:
+    JSONDecodeError = json.JSONDecodeError
+except AttributeError:
+    JSONDecodeError = ValueError
 
 
 # ====================== 失败类型的异常，触发这些异常时，将会把测试结果标记为失败 ======================
