@@ -77,3 +77,10 @@ class GetReportStepForm(BaseForm):
     def validate_id(self, field):
         data = self.validate_data_is_exist('数据不存在', WebUiReportStep, id=field.data)
         setattr(self, 'step_data', data)
+
+
+class GetReportStepImgForm(BaseForm):
+    """ 获取报告步骤截图 """
+    report_id = IntegerField(validators=[DataRequired("测试报告id必传")])
+    report_step_id = IntegerField(validators=[DataRequired("步骤id必传")])
+    img_type = StringField(validators=[DataRequired("截图类型，before_page, after_page")])

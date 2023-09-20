@@ -5,7 +5,8 @@ from app.baseView import LoginRequiredView, NotLoginView, AdminRequiredView
 from app.app_ui_test.blueprint import app_ui_test
 from app.app_ui_test.models.report import AppUiReport as Report, AppUiReportStep, AppUiReportCase, AppUiReport
 from app.app_ui_test.forms.report import GetReportForm, FindReportForm, DeleteReportForm, GetReportCaseForm, \
-    GetReportCaseListForm, GetReportStepForm, GetReportStepListForm
+    GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStepImgForm
+from utils.util.fileUtil import FileUtil
 from utils.view.required import login_required
 
 
@@ -47,6 +48,7 @@ class AppUiReportView(NotLoginView):
         """ 删除测试报告 """
         form = DeleteReportForm().do_validate()
         AppUiReport.batch_delete_report(form.report_id_list)
+        FileUtil.delete_report_img_by_report_id(form.report_id_list, 'app')
         return app.restful.success("删除成功")
 
 
@@ -87,6 +89,14 @@ class AppUiGetReportStepView(NotLoginView):
         return app.restful.success(data=form.step_data.to_dict())
 
 
+class AppUiGetReportStepImgView(NotLoginView):
+    def post(self):
+        """ 报告的步骤截图 """
+        form = GetReportStepImgForm().do_validate()
+        data = FileUtil.get_report_step_img(form.report_id.data, form.report_step_id.data, form.img_type.data, 'app')
+        return app.restful.get_success({"data": data, "total": 1})
+
+
 app_ui_test.add_url_rule("/report", view_func=AppUiReportView.as_view("AppUiReportView"))
 app_ui_test.add_url_rule("/report/list", view_func=AppUiReportListView.as_view("AppUiReportListView"))
 app_ui_test.add_url_rule("/report/clear", view_func=AppUiReportClearView.as_view("AppUiReportClearView"))
@@ -98,3 +108,5 @@ app_ui_test.add_url_rule("/report/case/list",
 app_ui_test.add_url_rule("/report/step", view_func=AppUiGetReportStepView.as_view("AppUiGetReportStepView"))
 app_ui_test.add_url_rule("/report/step/list",
                          view_func=AppUiGetReportStepListView.as_view("AppUiGetReportStepListView"))
+app_ui_test.add_url_rule("/report/step/img",
+                         view_func=AppUiGetReportStepImgView.as_view("AppUiGetReportStepImgView"))

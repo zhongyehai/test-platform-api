@@ -5,7 +5,8 @@ from app.baseView import LoginRequiredView, NotLoginView
 from app.web_ui_test.blueprint import web_ui_test
 from app.web_ui_test.models.report import WebUiReport as Report, WebUiReportStep, WebUiReportCase, WebUiReport
 from app.web_ui_test.forms.report import GetReportForm, FindReportForm, DeleteReportForm, GetReportCaseForm, \
-    GetReportCaseListForm, GetReportStepForm, GetReportStepListForm
+    GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStepImgForm
+from utils.util.fileUtil import FileUtil
 from utils.view.required import login_required
 
 
@@ -47,6 +48,7 @@ class WebUiReportView(NotLoginView):
         """ 删除测试报告 """
         form = DeleteReportForm().do_validate()
         WebUiReport.batch_delete_report(form.report_id_list)
+        FileUtil.delete_report_img_by_report_id(form.report_id_list, 'ui')
         return app.restful.success("删除成功")
 
 
@@ -87,6 +89,14 @@ class WebUiGetReportStepView(NotLoginView):
         return app.restful.success(data=form.step_data.to_dict())
 
 
+class WebUiGetReportStepImgView(NotLoginView):
+    def post(self):
+        """ 报告的步骤截图 """
+        form = GetReportStepImgForm().do_validate()
+        data = FileUtil.get_report_step_img(form.report_id.data, form.report_step_id.data, form.img_type.data, 'ui')
+        return app.restful.get_success({"data": data, "total": 1})
+
+
 web_ui_test.add_url_rule("/report", view_func=WebUiReportView.as_view("WebUiReportView"))
 web_ui_test.add_url_rule("/report/list", view_func=WebUiReportListView.as_view("WebUiReportListView"))
 web_ui_test.add_url_rule("/report/clear", view_func=WebUiReportClearView.as_view("WebUiReportClearView"))
@@ -98,3 +108,5 @@ web_ui_test.add_url_rule("/report/case/list",
 web_ui_test.add_url_rule("/report/step", view_func=WebUiGetReportStepView.as_view("WebUiGetReportStepView"))
 web_ui_test.add_url_rule("/report/step/list",
                          view_func=WebUiGetReportStepListView.as_view("WebUiGetReportStepListView"))
+web_ui_test.add_url_rule("/report/step/img",
+                         view_func=WebUiGetReportStepImgView.as_view("WebUiGetReportStepImgView"))

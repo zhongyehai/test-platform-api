@@ -289,7 +289,6 @@ class Runner(object):
             self.validation_results = self.session_context.validation_results
             self.client_session.meta_data["data"][0]["validation_results"] = self.validation_results  # 保存断言结果
 
-        self.client_session.meta_data["data"][0]['before'] = None  # 如果步骤执行成功，则把执行前截图去掉
         self.report_step.test_is_success(self.get_test_step_data())
 
     def get_test_step_data(self):

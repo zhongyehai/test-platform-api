@@ -11,9 +11,7 @@ def save_response_log(app, result):
     run请求不打日志
     获取报告详情不打日志
     """
-    if request.method == "HEAD" or request.path.endswith("report/detail"):
-            # or ("run" in request.path) \
-            # or request.path.endswith("report/detail"):
+    if request.method == "HEAD" or request.path.endswith("report/detail") or request.path.endswith("/report/step/img"):
         return
     else:
         app.logger.info(f'【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.url}】, \n响应数据:{json.loads(result[0])}\n')

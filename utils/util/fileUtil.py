@@ -3,6 +3,7 @@ import json
 import os
 import io
 import platform
+import shutil
 
 from config import basedir
 from utils.variables.contentType import CONTENT_TYPE
@@ -16,12 +17,13 @@ CASE_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/case_files/"
 UI_CASE_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/ui_case_files/"))  # ui用例数据文件存放地址
 MOCK_DATA_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/mock_data/"))  # mock数据文件存放地址
 CALL_BACK_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/call_back/"))  # 回调数据文件存放地址
-CFCA_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/cfca_files/"))  # CFCA文件存放地址
 TEMP_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/temp_files/"))  # 临时文件存放地址
 GIT_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/git_files/"))  # git文件存放地址
 SWAGGER_FILE_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/swagger_files/"))  # swagger文件存放地址
 DB_BACK_UP_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/db_back_up_files/"))  # 数据库备份地址
 BROWSER_DRIVER_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/browser_drivers/"))  # 浏览器驱动文件存放地址
+REPORT_IMG_UI_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/report_img_ui/"))  # 截图存放路径
+REPORT_IMG_APP_ADDRESS = os.path.abspath(os.path.join(basedir, ".." + r"/report_img_app/"))  # 截图存放路径
 
 
 def _check_file_path(paths):
@@ -37,8 +39,8 @@ def _check_file_path(paths):
 
 _check_file_path([
     LOG_ADDRESS, SCRIPT_ADDRESS, DIFF_RESULT, CASE_FILE_ADDRESS, UI_CASE_FILE_ADDRESS, MOCK_DATA_ADDRESS,
-    CALL_BACK_ADDRESS, CFCA_FILE_ADDRESS, TEMP_FILE_ADDRESS, GIT_FILE_ADDRESS, DB_BACK_UP_ADDRESS, SWAGGER_FILE_ADDRESS,
-    BROWSER_DRIVER_ADDRESS
+    CALL_BACK_ADDRESS, TEMP_FILE_ADDRESS, GIT_FILE_ADDRESS, DB_BACK_UP_ADDRESS, SWAGGER_FILE_ADDRESS,
+    BROWSER_DRIVER_ADDRESS, REPORT_IMG_UI_ADDRESS, REPORT_IMG_APP_ADDRESS
 ])
 
 
@@ -122,6 +124,34 @@ class FileUtil:
             BROWSER_DRIVER_ADDRESS,
             f'{browser}driver{".exe" if "Windows" in platform.platform() else ""}'
         )
+
+    @classmethod
+    def get_report_img_path(cls, report_type='ui'):
+        return REPORT_IMG_UI_ADDRESS if report_type == 'ui' else REPORT_IMG_APP_ADDRESS
+
+    @classmethod
+    def delete_report_img_by_report_id(cls, report_id_list, report_type='ui'):
+        """ 根据测试报告id，删除此测试报告下的截图 """
+        report_path = cls.get_report_img_path(report_type)
+        for report_id in report_id_list:
+            shutil.rmtree(os.path.join(report_path, str(report_id)))
+
+    @classmethod
+    def make_img_folder_by_report_id(cls, report_id, report_type='ui'):
+        """ 生成存放截图的文件夹 """
+        report_path = cls.get_report_img_path(report_type)
+        folder_path = os.path.join(report_path, str(report_id))
+        os.makedirs(folder_path)
+        return folder_path
+
+    @classmethod
+    def get_report_step_img(cls, report_id, report_step_id, img_type, report_type='ui'):
+        """ 获取步骤的截图 """
+        report_path = cls.get_report_img_path(report_type)
+        folder_path = os.path.join(report_path, str(report_id))
+        with io.open(os.path.join(folder_path, f'{report_step_id}_{img_type}.txt')) as file:
+            data = file.read()
+        return data
 
 
 if __name__ == "__main__":

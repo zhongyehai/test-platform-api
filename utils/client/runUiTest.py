@@ -60,6 +60,7 @@ class RunCase(RunTestRunner):
             self.browser = browser
             self.device = self.device_id = self.run_server_id = self.run_phone_id = None
             self.device_dict = {}
+            self.report_img_folder = FileUtil.make_img_folder_by_report_id(report_id, 'ui')
         else:
             self.suite_model = AppUiCaseSuite
             self.step_model = AppUiStep
@@ -70,6 +71,7 @@ class RunCase(RunTestRunner):
             self.device = appium_config.pop("device")
             self.device_id = self.device["device_id"]
             self.device_dict = {device.id: device.to_dict() for device in AppUiRunPhone.get_all()}
+            self.report_img_folder = FileUtil.make_img_folder_by_report_id(report_id, 'app')
 
         self.DataTemplate["is_async"] = is_async
         self.case_id_list = case_id  # 要执行的用例id_list
@@ -109,7 +111,8 @@ class RunCase(RunTestRunner):
                 # 如果是打开页面，则设置为项目域名+页面地址
                 "element": build_url(project.host, element.element) if element.by == "url" else element.element,
                 "text": step.send_keys,
-                "wait_time_out": float(step.wait_time_out or element.wait_time_out or self.wait_time_out)
+                "wait_time_out": float(step.wait_time_out or element.wait_time_out or self.wait_time_out),
+                "report_img_folder": self.report_img_folder  # 步骤截图的存放路径
             }
         }
 
@@ -124,6 +127,7 @@ class RunCase(RunTestRunner):
         })
 
         step_data["report_step_id"] = report_step.id
+        step_data["test_action"]["report_step_id"] = report_step.id  # 方便存截图
         return step_data
 
 
