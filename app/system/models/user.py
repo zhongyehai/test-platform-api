@@ -245,16 +245,6 @@ class User(BaseModel):
     def make_pagination(cls, form):
         """ 解析分页条件 """
         filters = []
-        """
-        # 非管理员，只能获取到当前用户有的业务线的人
-        request.app.user_list = []
-        if User.is_not_admin(request.app.current_user.api_permissions):
-            user_list = set()
-            for business_id in request.app.current_user.business_list:
-                users = await User.filter(business_list__contains=business_id, id__not_in=user_list).all().values("id")
-                user_list = user_list.union({user["id"] for user in users})
-            request.app.user_list = list(user_list)
-        """
         if User.is_not_admin():
             user_id_list = []
             for business_id in g.business_list:

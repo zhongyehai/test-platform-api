@@ -6,7 +6,7 @@
 
 ## Python版本：python => 3.9+
 
-### 1.安装依赖包：sudo pip install -i https://pypi.douban.com/simple/ -r requirements.txt
+### 1.安装依赖包：sudo pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 ### 2.创建MySQL数据库
     数据库名自己取，编码选择utf8mb4，对应config.yaml下db配置为当前数据库信息即可

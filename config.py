@@ -43,8 +43,8 @@ ui_extract_mapping_list.extend([
 
 # 跳过条件判断类型映射
 skip_if_type_mapping = [
-    {"label": "满足则跳过", "value": "skip_if_true"},
-    {"label": "不满足则跳过", "value": "skip_if_false"},
+    {"label": "且", "value": "and"},
+    {"label": "或", "value": "or"}
 ]
 
 basedir = os.path.abspath(".")

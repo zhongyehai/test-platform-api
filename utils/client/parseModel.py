@@ -210,9 +210,9 @@ class FormatModel(JsonUtil):
                 skip_if["comparator"] = assert_mapping[skip_if["comparator"]]
                 data_list.append(skip_if)
 
-        if skip_on_fail == 1:  # 如果设置了失败则跳过
+        if skip_on_fail == 1:  # 如果设置了失败则跳过，则自动在步骤的跳过条件加上
             data_list.append({
-                'skip_type': 'skip_if_true',
+                'skip_type': 'or',
                 'data_source': 'variable',
                 'check_value': '$case_run_result',
                 'comparator': '_01equals',

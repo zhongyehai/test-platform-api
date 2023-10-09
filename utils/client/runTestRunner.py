@@ -179,11 +179,11 @@ class RunTestRunner:
             elif skip_if["data_source"] == "run_device":
                 skip_if["check_value"] = phone_id
             try:
-                comparator = getattr(built_in, skip_if["comparator"])
-                skip_if_result = comparator(skip_if["check_value"], skip_if["expect"])  # 借用断言来判断条件是否为真
+                comparator = getattr(built_in, skip_if["comparator"])  # 借用断言来判断条件是否为真
+                skip_if_result = comparator(skip_if["check_value"], skip_if["expect"])  # 通过没有返回值
             except Exception as error:
                 skip_if_result = error
-            if ("true" in skip_type and not skip_if_result) or ("false" in skip_type and skip_if_result):
+            if (skip_type == "and" and skip_if_result is None) or (skip_type == "or" and skip_if_result is None):
                 return True
 
     def parse_ui_test_step(self, project, element, step):

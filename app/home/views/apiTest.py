@@ -17,16 +17,16 @@ from utils.util.timeUtil import get_now, time_calculate, get_week_start_and_end
 
 def get_data_by_time(model):
     """ 获取时间维度的统计 """
-    last_day_add = len(model.query.filter(model.created_time.between(time_calculate(-1), time_calculate(0))).all())
-    to_day_add = len(model.query.filter(model.created_time.between(time_calculate(0), get_now())).all())
+    last_day_add = model.query.filter(model.created_time.between(time_calculate(-1), time_calculate(0))).count()
+    to_day_add = model.query.filter(model.created_time.between(time_calculate(0), get_now())).count()
 
     last_start_time, last_end_time = get_week_start_and_end(1)
-    last_week_add = len(model.query.filter(model.created_time.between(last_start_time, last_end_time)).all())
+    last_week_add = model.query.filter(model.created_time.between(last_start_time, last_end_time)).count()
 
     current_start_time, current_end_time = get_week_start_and_end(0)
-    current_week_add = len(model.query.filter(model.created_time.between(current_start_time, current_end_time)).all())
+    current_week_add = model.query.filter(model.created_time.between(current_start_time, current_end_time)).count()
 
-    last_month_add = len(model.query.filter(model.created_time.between(time_calculate(-30), get_now())).all())
+    last_month_add = model.query.filter(model.created_time.between(time_calculate(-30), get_now())).count()
 
     return {
         "last_day_add": last_day_add,
@@ -44,14 +44,14 @@ class GetApiTestCountTitleView(LoginRequiredView):
         return app.restful.success(
             "获取成功",
             data={
-                "project": {"title": "服务数", "total": len(Project.get_all())},
-                "module": {"title": "模块数", "total": len(Module.get_all())},
-                "api": {"title": "接口数", "total": len(Api.get_all())},
-                "hit": {"title": "记录问题数", "total": len(Hits.get_all())},
-                "case": {"title": "用例数", "total": len(Case.get_all())},
-                "step": {"title": "测试步骤数", "total": len(Step.get_all())},
-                "task": {"title": "定时任务数", "total": len(Task.get_all())},
-                "report": {"title": "测试报告数", "total": len(Report.get_all())}
+                "project": {"title": "服务数", "total": Project.query.filter().count()},
+                "module": {"title": "模块数", "total": Module.query.filter().count()},
+                "api": {"title": "接口数", "total": Api.query.filter().count()},
+                "hit": {"title": "记录问题数", "total": Hits.query.filter().count()},
+                "case": {"title": "用例数", "total": Case.query.filter().count()},
+                "step": {"title": "测试步骤数", "total": Step.query.filter().count()},
+                "task": {"title": "定时任务数", "total": Task.query.filter().count()},
+                "report": {"title": "测试报告数", "total": Report.query.filter().count()}
             })
 
 
@@ -64,7 +64,7 @@ class GetApiTestCountProjectView(LoginRequiredView):
             "title": "服务",
             "options": ["总数", "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"],
             "data": [
-                len(Project.get_all()),
+                Project.query.filter().count(),
                 time_data["last_day_add"],
                 time_data["to_day_add"],
                 time_data["current_week_add"],
@@ -83,7 +83,7 @@ class GetApiTestCountModuleView(LoginRequiredView):
             "title": "模块",
             "options": ["总数", "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"],
             "data": [
-                len(Module.get_all()),
+                Module.query.filter().count(),
                 time_data["last_day_add"],
                 time_data["to_day_add"],
                 time_data["current_week_add"],

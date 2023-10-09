@@ -26,12 +26,12 @@ class ApiMsg(BaseApi):
     response = db.Column(db.Text(), default="{}", comment="响应对象")
     extracts = db.Column(
         db.Text(),
-        default='[{"key": null, "data_source": null, "value": null, "remark": null, "update_to_header": null}]',
+        default='[{"status": 1, "key": null, "data_source": null, "value": null, "remark": null, "update_to_header": null}]',
         comment="提取信息"
     )
     validates = db.Column(
         db.Text(),
-        default='[{"data_source": null, "key": null, "validate_type": "data", "validate_method": null, "data_type": null, "value": null, "remark": null}]',
+        default='[{"status": 1, "data_source": null, "key": null, "validate_type": "data", "validate_method": null, "data_type": null, "value": null, "remark": null}]',
         comment="断言信息")
     deprecated = db.Column(db.Boolean(), default=False, comment="是否废弃")
     quote_count = db.Column(db.Integer(), nullable=True, default=0, comment="被引用次数，即多少个步骤直接使用了此接口")
