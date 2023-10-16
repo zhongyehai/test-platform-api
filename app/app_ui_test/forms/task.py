@@ -46,6 +46,8 @@ class AddTaskForm(BaseForm):
             CronTab(field.data)
         except Exception as error:
             raise ValidationError(f"时间配置【{field.data}】错误，需为cron格式, 请检查")
+        if field.data.startswith("*"):  # 每秒钟
+            raise ValidationError(f"设置的执行频率过高，请重新设置")
 
     def validate_conf(self, field):
         """ 校验任务运行配置 """

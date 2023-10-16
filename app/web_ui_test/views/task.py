@@ -39,6 +39,7 @@ class WebUiRunTaskView(NotLoginView):
                 case_id=case_id,
                 run_type="webUi",
                 run_func=RunCase,
+                extend_data=form.extend.data,
                 task=form.task.to_dict(),
                 create_user=g.user_id or User.get_first(account="common").id
         )

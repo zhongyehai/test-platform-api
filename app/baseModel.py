@@ -374,7 +374,7 @@ class BaseProject(BaseModel):
     manager = db.Column(db.Integer(), nullable=True, default=1, comment="服务管理员id，默认为admin")
     script_list = db.Column(db.Text(), nullable=True, default="[]", comment="引用的脚本文件")
     num = db.Column(db.Integer(), nullable=True, comment="当前服务的序号")
-    business_id = db.Column(db.Integer(), comment="所属业务线")
+    business_id = db.Column(db.Integer(), index=True, comment="所属业务线")
 
     @classmethod
     def is_manager_id(cls, project_id):
@@ -428,8 +428,8 @@ class BaseProjectEnv(BaseModel):
         db.Text(), default='[{"key": "", "value": "", "remark": "", "data_type": ""}]', comment="服务的公共变量"
     )
 
-    env_id = db.Column(db.Integer(), nullable=True, comment="对应环境id")
-    project_id = db.Column(db.Integer(), nullable=True, comment="所属的服务id")
+    env_id = db.Column(db.Integer(), index=True, nullable=True, comment="对应环境id")
+    project_id = db.Column(db.Integer(), index=True, nullable=True, comment="所属的服务id")
 
     @classmethod
     def synchronization(cls, from_env, to_env_id_list: list, filed_list: list):
@@ -479,7 +479,7 @@ class BaseModule(BaseModel):
     name = db.Column(db.String(255), nullable=True, comment="模块名")
     num = db.Column(db.Integer(), nullable=True, comment="模块在对应服务下的序号")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级模块id")
-    project_id = db.Column(db.Integer(), comment="所属的服务id")
+    project_id = db.Column(db.Integer(), index=True, comment="所属的服务id")
 
     @classmethod
     def make_pagination(cls, form):
@@ -504,8 +504,8 @@ class BaseApi(BaseModel):
     num = db.Column(db.Integer(), nullable=True, comment="序号")
     name = db.Column(db.String(255), nullable=True, comment="名称")
     desc = db.Column(db.Text(), default="", nullable=True, comment="描述")
-    project_id = db.Column(db.Integer(), nullable=True, comment="所属的服务id")
-    module_id = db.Column(db.Integer(), comment="所属的模块id")
+    project_id = db.Column(db.Integer(), index=True, nullable=True, comment="所属的服务id")
+    module_id = db.Column(db.Integer(), index=True, comment="所属的模块id")
 
 
 class BaseCaseSuite(BaseModel):
@@ -517,7 +517,7 @@ class BaseCaseSuite(BaseModel):
     suite_type = db.Column(db.String(64), default="base",
                            comment="用例集类型，base: 基础用例集，api: 单接口用例集，process: 流程用例集，assist: 造数据用例集")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级用例集id")
-    project_id = db.Column(db.Integer(), comment="所属的服务id")
+    project_id = db.Column(db.Integer(), index=True, comment="所属的服务id")
 
     @classmethod
     def upload(cls, project_id, data_tree, case_model):
@@ -692,7 +692,7 @@ class BaseCase(BaseModel):
         ]),
         comment="是否跳过的判断条件"
     )
-    suite_id = db.Column(db.Integer(), comment="所属的用例集id")
+    suite_id = db.Column(db.Integer(), index=True, comment="所属的用例集id")
 
     @classmethod
     def make_pagination(cls, form):
@@ -777,7 +777,7 @@ class BaseStep(BaseModel):
                              comment="当用例有失败的步骤时，是否跳过此步骤，1跳过，0不跳过，默认跳过")
     data_driver = db.Column(db.Text(), default="[]", comment="数据驱动，若此字段有值，则走数据驱动的解析")
     quote_case = db.Column(db.String(5), default="", comment="引用用例的id")
-    case_id = db.Column(db.Integer(), comment="步骤所在的用例的id")
+    case_id = db.Column(db.Integer(), index=True, comment="步骤所在的用例的id")
 
     @classmethod
     def delete_by_case_id(cls, case_id):
@@ -840,7 +840,7 @@ class BaseTask(BaseModel):
     is_async = db.Column(db.Integer(), default=1, comment="任务的运行机制，0：单线程，1：多线程，默认1")
     suite_ids = db.Column(db.Text(), comment="用例集id")
     call_back = db.Column(db.Text(), comment="回调给流水线")
-    project_id = db.Column(db.Integer(), comment="所属的服务id")
+    project_id = db.Column(db.Integer(), index=True, comment="所属的服务id")
     conf = db.Column(
         db.Text(),
         default='{"browser": "chrome", "server_id": "", "phone_id": "", "no_reset": ""}',
@@ -874,9 +874,9 @@ class BaseReport(BaseModel):
     process = db.Column(db.Integer(), default=1, comment="进度节点, 1: 解析数据、2: 执行测试、3: 写入报告")
     trigger_type = db.Column(
         db.String(128), nullable=True, default="page", comment="触发类型，pipeline:流水线、page:页面、cron:定时任务")
-    batch_id = db.Column(db.String(128), comment="运行批次id，用于查询报告")
+    batch_id = db.Column(db.String(128), index=True, comment="运行批次id，用于查询报告")
     run_id = db.Column(db.String(512), comment="运行id，用于触发重跑")
-    project_id = db.Column(db.Integer(), comment="所属的服务id")
+    project_id = db.Column(db.Integer(), index=True, comment="所属的服务id")
     summary = db.Column(db.Text(), default='{}', comment="报告的统计")
 
     @staticmethod
@@ -1034,7 +1034,7 @@ class BaseReportCase(BaseModel):
     __abstract__ = True
 
     name = db.Column(db.String(128), nullable=True, comment="测试用例名称")
-    from_id = db.Column(db.Integer(), comment="执行记录对应的用例id")
+    from_id = db.Column(db.Integer(), index=True, comment="执行记录对应的用例id")
     report_id = db.Column(db.Integer(), index=True, comment="测试报告id")
     result = db.Column(db.String(128), default='waite',
                        comment="步骤测试结果，waite：等待执行、running：执行中、fail：执行不通过、success：执行通过、skip：跳过、error：报错")
@@ -1127,8 +1127,8 @@ class BaseReportStep(BaseModel):
     name = db.Column(db.String(128), nullable=True, comment="测试步骤名称")
     from_id = db.Column(db.Integer(), comment="步骤对应的元素/接口id")
     case_id = db.Column(db.Integer(), default=None, comment="步骤所在的用例id")
-    step_id = db.Column(db.Integer(), default=None, comment="步骤id")
-    report_case_id = db.Column(db.Integer(), default=None, comment="用例数据id")
+    step_id = db.Column(db.Integer(), index=True, default=None, comment="步骤id")
+    report_case_id = db.Column(db.Integer(), index=True, default=None, comment="用例数据id")
     report_id = db.Column(db.Integer(), index=True, comment="测试报告id")
     process = db.Column(db.String(128), default='waite',
                         comment="步骤执行进度，waite：等待解析、parse: 解析数据、before：前置条件、after：后置条件、run：执行测试、extract：数据提取、validate：断言")
@@ -1247,9 +1247,9 @@ class Config(BaseModel):
     __tablename__ = "config_config"
     __table_args__ = {"comment": "配置表"}
 
-    name = db.Column(db.String(128), nullable=True, unique=True, comment="字段名")
+    name = db.Column(db.String(128), nullable=True, index=True, unique=True, comment="字段名")
     value = db.Column(db.Text(), nullable=True, comment="字段值")
-    type = db.Column(db.Integer(), nullable=True, comment="配置类型")
+    type = db.Column(db.Integer(), index=True, nullable=True, comment="配置类型")
     desc = db.Column(db.Text(), comment="描述")
 
     @classmethod

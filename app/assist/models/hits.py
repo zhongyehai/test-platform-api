@@ -13,9 +13,9 @@ class Hits(BaseModel):
     hit_type = db.Column(db.String(128), default="", comment="问题类型")
     hit_detail = db.Column(db.Text(), default="", comment="问题内容")
     test_type = db.Column(db.Text(), default="", comment="测试类型，接口、appUi、webUi")
-    project_id = db.Column(db.Integer(),  comment="服务id")
-    env = db.Column(db.String(128),  comment="运行环境")
-    report_id = db.Column(db.Integer(),  comment="测试报告id")
+    project_id = db.Column(db.Integer(), index=True, comment="服务id")
+    env = db.Column(db.String(128), index=True, comment="运行环境")
+    report_id = db.Column(db.Integer(), index=True, comment="测试报告id")
     desc = db.Column(db.Text(), comment="备注")
 
     @classmethod

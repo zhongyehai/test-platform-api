@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from threading import Thread
 
 import requests
@@ -8,7 +9,7 @@ from utils.message.template import diff_api_msg, run_time_error_msg, call_back_w
     get_inspection_msg, get_business_stage_count_msg
 from app.baseModel import Config
 from app.assist.models.callBack import CallBack
-from config import error_push
+from config import error_push, default_web_hook
 
 
 def send_msg(addr, msg):
@@ -18,6 +19,19 @@ def send_msg(addr, msg):
         print(f'发送消息：{requests.post(addr, json=msg, verify=False).json()}')
     except Exception as error:
         print(f'向机器人发送测试报告失败，错误信息：\n{error}')
+
+
+def send_server_status(server_name, app_title=None, action_type="启动"):
+    """ 服务启动/关闭成功 """
+    msg = {
+        "msgtype": "markdown",
+        "markdown": {
+            "title": f"服务{action_type}通知",
+            "text": f'### 服务{action_type}通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
+                    f'#### 服务<font color=#FF0000>【{server_name}】【{app_title}】</font>{action_type}完成 \n> '
+        }
+    }
+    send_msg(default_web_hook, msg)
 
 
 def send_inspection_by_msg(receive_type, content, kwargs):

@@ -38,6 +38,7 @@ class ApiRunTaskView(NotLoginView):
                 run_type="api",
                 run_func=RunCase,
                 task=form.task.to_dict(),
+                extend_data=form.extend.data,
                 create_user=g.user_id or User.get_first(account="common").id
             )
         return app.restful.success(

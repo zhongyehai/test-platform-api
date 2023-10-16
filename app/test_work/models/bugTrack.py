@@ -9,7 +9,7 @@ class BugTrack(BaseModel):
     __tablename__ = "test_work_bug_track"
     __table_args__ = {"comment": "生产Bug跟踪表"}
 
-    business_id = db.Column(db.Integer(), comment="业务线id")
+    business_id = db.Column(db.Integer(), index=True, comment="业务线id")
     name = db.Column(db.String(255), default='', comment="bug名")
     detail = db.Column(db.Text(), default='', comment="bug详情")
     iteration = db.Column(db.String(128), default='', comment="迭代")

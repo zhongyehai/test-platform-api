@@ -96,8 +96,8 @@ class WeeklyModel(BaseModel):
     __tablename__ = "test_work_weekly"
     __table_args__ = {"comment": "周报明细表"}
 
-    product_id = db.Column(db.String(5), comment="产品id")
-    project_id = db.Column(db.String(5), comment="项目id")
+    product_id = db.Column(db.String(5), index=True, comment="产品id")
+    project_id = db.Column(db.String(5), index=True, comment="项目id")
     version = db.Column(db.String(255), comment="版本号")
     task_item = db.Column(db.Text(), comment="任务明细和进度")
     start_time = db.Column(db.DateTime, default=datetime.now, comment="开始时间")

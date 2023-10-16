@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from flask import current_app as app, request, g
+from flask import current_app as app, request
+from sqlalchemy import func
 
 from app.api_test.forms.stat import AnalyseForm
 from app.baseView import LoginRequiredView
@@ -9,6 +10,7 @@ from app.api_test.models.project import ApiProject as Project, db
 from app.api_test.models.caseSuite import ApiCaseSuite as Suite
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.report import ApiReport as Report, ApiReportCase as ReportCase
+from app.system.models.user import User
 from utils.util.timeUtil import time_calculate, get_now
 
 
@@ -114,12 +116,27 @@ class ApiStatAnalyseChartView(LoginRequiredView):
         pass_count = Report.query.filter(*filters, Report.is_passed == 1).count()
         fail_count = all_count - pass_count
 
-        # TODO 创建人维度统计
+        # 创建人执行次数统计
+        create_user_count = db.session.query(
+            User.name, func.count(User.id)).filter(
+            *filters, User.id == Report.create_user).group_by(Report.create_user).all()
         return app.restful.success("获取成功", data={
             "use_count": {
-                "all_count": all_count, "pass_count": pass_count, "fail_count": fail_count
+                "stat": {
+                    "title": "执行次数统计",
+                    "stat_list": [
+                        {"name": "通过数量", "value": pass_count},
+                        {"name": "不通过数量", "value": fail_count},
+                    ]
+                },
+                "detail": {"all_count": all_count, "pass_count": pass_count, "fail_count": fail_count}
             },
-            "create": []
+            "create": {
+                "stat": {
+                    "title": "执行人员统计",
+                    "stat_list": [{"name": data[0], "value": data[1]} for data in create_user_count]
+                }
+            }
         })
 
 

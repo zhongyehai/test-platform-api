@@ -14,12 +14,12 @@ class Script(BaseModel):
     __tablename__ = "python_script"
     __table_args__ = {"comment": "python脚本"}
 
-    name = db.Column(db.String(128), nullable=True, unique=True, comment="脚本名称")
+    name = db.Column(db.String(128), nullable=True, index=True, unique=True, comment="脚本名称")
     script_data = db.Column(LONGTEXT, default="", comment="脚本代码")
     desc = db.Column(db.Text(), comment="函数文件描述")
     num = db.Column(db.Integer(), nullable=True, comment="当前函数文件的序号")
     script_type = db.Column(
-        db.String(16), default="test", comment="脚本类型，test：执行测试、mock：mock脚本、encryption：加密、decryption：解密")
+        db.String(16), index=True, default="test", comment="脚本类型，test：执行测试、mock：mock脚本、encryption：加密、decryption：解密")
 
     @classmethod
     def create_script_file(cls, env_code=None, not_create_list=[]):
