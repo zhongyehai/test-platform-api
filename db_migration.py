@@ -351,16 +351,16 @@ def init_role():
                 for rule_type, source_addr_list in permission_rules.items():
                     for source in source_addr_list:
                         addr = source["source_addr"]
-                        if addr.startswith(('/system', '/config', '/help', 'admin')) is False and "task" not in addr:
+                        if addr.startswith(('/system', '/system', '/help', 'admin')) is False:
                             permission = Permission.get_first(source_addr=addr)
                             RolePermissions().create({"role_id": test_role.id, "permission_id": permission.id})
     print_type_delimiter("测试人员角色创建完成")
 
-    print_type_delimiter("开始创建项目负责人角色")
-    if Role.get_first(name="项目负责人") is None:
+    print_type_delimiter("开始创建业务线负责人角色")
+    if Role.get_first(name="业务线负责人") is None:
         test_role = Role.get_first(name="测试人员")
         manager_role = Role().create({
-            "name": "项目负责人",
+            "name": "业务线负责人",
             "desc": "有权限访问项目的任何页面、按钮和配置管理",
             "extend_role": [test_role.id]
         })
@@ -369,10 +369,13 @@ def init_role():
                 for rule_type, source_addr_list in permission_rules.items():
                     for source in source_addr_list:
                         addr = source["source_addr"]
-                        if addr.startswith('/config'):
+                        # 负责人给配置管理、用户管理权限
+                        if addr in ['/system', '/api/system/role/list'] or addr.startswith(
+                                ('/config', '/system/user', '/api/system/user')):
                             permission = Permission.get_first(source_addr=addr)
                             RolePermissions().create({"role_id": manager_role.id, "permission_id": permission.id})
-    print_type_delimiter("项目负责人角色创建完成")
+
+    print_type_delimiter("业务线负责人角色创建完成")
 
     print_type_delimiter("角色创建完成")
 
@@ -395,7 +398,7 @@ def init_user():
     print_type_delimiter("开始创建用户")
     user_list = [
         {"account": "admin", "password": "123456", "name": "管理员", "role": ["管理员-后端", "管理员-前端"]},
-        {"account": "manager", "password": "manager", "name": "项目负责人", "role": ["项目负责人"]},
+        {"account": "manager", "password": "manager", "name": "业务线负责人", "role": ["业务线负责人"]},
         {"account": "common", "password": "common", "name": "测试员", "role": ["测试人员"]}
     ]
     for user_info in user_list:
@@ -454,6 +457,7 @@ def init_config():
             {"name": "kym", "value": JsonUtil.dumps(kym_keyword), "desc": "KYM分析项"},
             {"name": "sync_mock_data", "value": JsonUtil.dumps({}), "desc": "同步回调数据源"},
             {"name": "async_mock_data", "value": JsonUtil.dumps({}), "desc": "异步回调数据源"},
+            {"name": "holiday_list", "value": '["01-01", "04-05", "05-01", "10-01"]', "desc": "节假日/调休日期，需每年手动更新"},
             {"name": "default_diff_message_send_addr", "value": "", "desc": "yapi接口监控报告默认发送钉钉机器人地址"},
             {"name": "run_time_out", "value": "600", "desc": "前端运行测试时，等待的超时时间，秒"},
             {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名"},
@@ -517,7 +521,13 @@ def init_config():
             {"name": "server_os_mapping", "value": JsonUtil.dumps(server_os_mapping), "desc": "appium服务器系统类型"},
             {"name": "phone_os_mapping", "value": JsonUtil.dumps(phone_os_mapping), "desc": "运行app自动化的手机系统"},
             {"name": "app_key_code", "value": JsonUtil.dumps(app_key_code), "desc": "模拟手机键盘输入code"},
-            {"name": "device_extends", "value": JsonUtil.dumps(device_extends), "desc": "设备详细数据"},
+            {"name": "device_extends", "value": JsonUtil.dumps(device_extends),
+             "desc": "创建设备时，默认的设备详细数据"},
+            {
+                "name": "appium_new_command_timeout",
+                "value": 120,
+                "desc": "两条appium命令间的最长时间间隔，若超过这个时间，appium会自动结束并退出app，单位为秒"
+            },
             {
                 "name": "app_ui_report_addr",
                 "value": "/#/appUiTest/reportShow?id=",
@@ -588,12 +598,12 @@ def init():
 
 """
 初始化数据库
-python dbMigration.py db init
-python dbMigration.py db migrate
-python dbMigration.py db upgrade
+python db_migration.py db init
+python db_migration.py db migrate
+python db_migration.py db upgrade
 
 初始化数据
-python dbMigration.py init
+python db_migration.py init
 """
 
 if __name__ == "__main__":

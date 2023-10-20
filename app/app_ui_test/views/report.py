@@ -94,7 +94,7 @@ class AppUiGetReportStepImgView(NotLoginView):
         """ 报告的步骤截图 """
         form = GetReportStepImgForm().do_validate()
         data = FileUtil.get_report_step_img(form.report_id.data, form.report_step_id.data, form.img_type.data, 'app')
-        return app.restful.get_success({"data": data, "total": 1})
+        return app.restful.get_success({"data": data, "total": 1 if data else 0})
 
 
 app_ui_test.add_url_rule("/report", view_func=AppUiReportView.as_view("AppUiReportView"))

@@ -49,12 +49,6 @@ skip_if_type_mapping = [
 
 basedir = os.path.abspath(".")
 
-# 即时达推送的 系统错误通道，不接受错误信息可不配置
-error_push = {
-    "url": "http://push.ijingniu.cn/send",
-    "key": ""
-}
-
 
 def my_format_header_param(name, value):
     if not any(ch in value for ch in '"\\\r\n'):
@@ -88,9 +82,6 @@ class ProductionConfig:
     DB_USER = ""
     DB_PASSWORD = ""
     DB_DATABASE = ""
-
-    ERROR_PUSH_URL = error_push.get("url")
-    ERROR_PUSH_KEY = error_push.get("key")
 
     # 数据库链接
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}?charset=utf8mb4&autocommit=true"

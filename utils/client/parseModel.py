@@ -211,7 +211,7 @@ class FormatModel(JsonUtil):
                 data_list.append(skip_if)
 
         if skip_on_fail == 1:  # 如果设置了失败则跳过，则自动在步骤的跳过条件加上
-            data_list.append({
+            data_list.insert(0, {
                 'skip_type': 'or',
                 'data_source': 'variable',
                 'check_value': '$case_run_result',

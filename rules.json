@@ -5,6 +5,28 @@
         "name": "管理员-后端",
         "source_addr": "admin"
       }
+    ],
+    "系统管理菜单": [
+      {
+        "name": "用户管理",
+        "source_addr": "/api/system/user"
+      },
+      {
+        "name": "用户管理-用户的权限",
+        "source_addr": "/api/system/user/role"
+      },
+      {
+        "name": "用户管理-用户列表",
+        "source_addr": "/api/system/user/list"
+      },
+      {
+        "name": "用户管理-修改状态",
+        "source_addr": "/api/system/user/status"
+      },
+      {
+        "name": "权限列表",
+        "source_addr": "/api/system/role/list"
+      }
     ]
   },
   "front": {
@@ -176,6 +198,18 @@
       {
         "name": "系统管理-系统错误记录菜单",
         "source_addr": "/system/permission"
+      },
+      {
+        "name": "系统管理-平台使用分析",
+        "source_addr": "/system/platform"
+      },
+      {
+        "name": "系统管理-平台使用分析-数据总览",
+        "source_addr": "/system/platform/overview"
+      },
+      {
+        "name": "系统管理-平台使用分析-业务线分析",
+        "source_addr": "/system/platform/analyse"
       }
     ],
     "测试管理菜单": [

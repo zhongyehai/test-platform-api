@@ -132,26 +132,27 @@ class FileUtil:
     @classmethod
     def delete_report_img_by_report_id(cls, report_id_list, report_type='ui'):
         """ 根据测试报告id，删除此测试报告下的截图 """
-        report_path = cls.get_report_img_path(report_type)
         for report_id in report_id_list:
-            shutil.rmtree(os.path.join(report_path, str(report_id)))
+            report_path = os.path.join(cls.get_report_img_path(report_type), str(report_id))
+            if os.path.exists(report_path):  # 有可能先手动去服务器删了截图，先判断报告目录是否存在
+                shutil.rmtree(report_path)
 
     @classmethod
     def make_img_folder_by_report_id(cls, report_id, report_type='ui'):
         """ 生成存放截图的文件夹 """
-        report_path = cls.get_report_img_path(report_type)
-        folder_path = os.path.join(report_path, str(report_id))
+        folder_path = os.path.join(cls.get_report_img_path(report_type), str(report_id))
         os.makedirs(folder_path)
         return folder_path
 
     @classmethod
     def get_report_step_img(cls, report_id, report_step_id, img_type, report_type='ui'):
         """ 获取步骤的截图 """
-        report_path = cls.get_report_img_path(report_type)
-        folder_path = os.path.join(report_path, str(report_id))
-        with io.open(os.path.join(folder_path, f'{report_step_id}_{img_type}.txt')) as file:
-            data = file.read()
-        return data
+        folder_path = os.path.join(cls.get_report_img_path(report_type), str(report_id))
+        file_path = os.path.join(folder_path, f'{report_step_id}_{img_type}.txt')
+        if os.path.exists(file_path):
+            with io.open(os.path.join(folder_path, f'{report_step_id}_{img_type}.txt')) as file:
+                data = file.read()
+            return data
 
 
 if __name__ == "__main__":

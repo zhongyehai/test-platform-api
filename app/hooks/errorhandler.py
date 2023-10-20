@@ -2,10 +2,10 @@
 import platform
 import traceback
 
-import requests
 from flask import current_app as _app, request
 
 from app.system.models.errorRecord import SystemErrorRecord
+from utils.message.sendReport import send_system_error
 
 
 def register_errorhandler_hook(app):
@@ -53,15 +53,7 @@ def register_errorhandler_hook(app):
 
             # 发送即时通讯通知
             if platform.platform().startswith('Linux'):
-                send_error_msg_res = requests.post(
-                    url=_app.config["ERROR_PUSH_URL"],
-                    json={
-                        "key": _app.config["ERROR_PUSH_KEY"],
-                        "head": f'{_app.config["SECRET_KEY"]}报错，数据id：{error_record.id}',
-                        "body": f'{error_record}   \n\n{error}'
-                    }
-                ).text
-                _app.logger.info(f'发送错误消息结果: {send_error_msg_res}')
+                send_system_error(title=f'{_app.config["SECRET_KEY"]}报错通知，数据id：{error_record.id}', content=error)
         except:
             pass
 
