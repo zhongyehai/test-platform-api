@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint
+from ..baseView import Blueprint
 
 config_blueprint = Blueprint("config", __name__)
 

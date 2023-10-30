@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint
+from ..baseView import Blueprint
 
-web_ui_test = Blueprint("uiTest", __name__)
+ui_test = Blueprint("uiTest", __name__)
 
-from .views import project, module, page, element, caseSuite, case, step, task, report
+from .views import project, module, page, element, suite, case, step, task, report

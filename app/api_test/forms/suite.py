@@ -5,7 +5,7 @@ from wtforms.validators import Length, DataRequired
 from app.baseForm import BaseForm
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.project import ApiProject as Project
-from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
+from app.api_test.models.suite import ApiCaseSuite as CaseSuite
 
 
 class GetCaseSuiteForm(BaseForm):

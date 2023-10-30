@@ -6,10 +6,10 @@ from utils.client.runTestRunner import RunTestRunner
 from utils.util.fileUtil import FileUtil
 from utils.client.parseModel import StepModel, FormatModel
 from utils.client.testRunner.utils import build_url
-from app.web_ui_test.models.caseSuite import WebUiCaseSuite
+from app.web_ui_test.models.suite import WebUiCaseSuite
 from app.web_ui_test.models.step import WebUiStep
 from app.web_ui_test.models.report import WebUiReportStep, WebUiReportCase
-from app.app_ui_test.models.caseSuite import AppUiCaseSuite
+from app.app_ui_test.models.suite import AppUiCaseSuite
 from app.app_ui_test.models.step import AppUiStep
 from app.app_ui_test.models.report import AppUiReportStep, AppUiReportCase
 from app.app_ui_test.models.device import AppUiRunPhone

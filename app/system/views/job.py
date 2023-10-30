@@ -7,7 +7,6 @@ from datetime import datetime
 import requests
 from flask import current_app as app, request
 from app.baseModel import ApschedulerJobs, db
-from app.baseView import AdminRequiredView, LoginRequiredView
 from app.system.blueprint import system_manage
 from app.system.models.job import JobRunLog
 from app.config.models.business import BusinessLine
@@ -139,91 +138,86 @@ class JobFuncs:
             run_log.run_success(business_template)
 
 
-class SystemGetJobListView(AdminRequiredView):
-    def get(self):
-        """ 获取定时任务列表 """
-        job_list = ApschedulerJobs.get_all()
-        return app.restful.success("获取成功",
-                                   data=[{"id": job.id, "next_run_time": job.next_run_time} for job in job_list])
+@system_manage.admin_get("/job/list")
+def system_manage_get_job_list():
+    """ 获取定时任务列表 """
+    job_list = ApschedulerJobs.get_all()
+    return app.restful.success("获取成功",
+                               data=[{"id": job.id, "next_run_time": job.next_run_time} for job in job_list])
 
 
-class SystemGetJobFuncListView(AdminRequiredView):
+@system_manage.admin_get("/job/func/list")
+def system_manage_get_job_func_list():
+    """ 获取定时任务方法列表 """
+    data_list = []
+    for func_name in dir(JobFuncs):
+        if func_name.startswith("cron_"):
+            attr_doc = json.loads(getattr(JobFuncs, func_name).__doc__)
+            func = {"name": attr_doc["name"], "func_name": attr_doc["id"], "cron": attr_doc["cron"]}
+            job = ApschedulerJobs.get_first(id=f'cron_{attr_doc["id"]}')
+            if job:
+                func["id"] = job.id
+                func["next_run_time"] = datetime.fromtimestamp(int(job.next_run_time)).strftime('%Y-%m-%d %H:%M:%S')
+            data_list.append(func)
 
-    def get(self):
-        """ 获取定时任务方法列表 """
-        data_list = []
-        for func_name in dir(JobFuncs):
-            if func_name.startswith("cron_"):
-                attr_doc = json.loads(getattr(JobFuncs, func_name).__doc__)
-                func = {"name": attr_doc["name"], "func_name": attr_doc["id"],  "cron": attr_doc["cron"]}
-                job = ApschedulerJobs.get_first(id=f'cron_{attr_doc["id"]}')
-                if job:
-                    func["id"] = job.id
-                    func["next_run_time"] = datetime.fromtimestamp(int(job.next_run_time)).strftime('%Y-%m-%d %H:%M:%S')
-                data_list.append(func)
-
-        return app.restful.success("获取成功", data=data_list)
-
-
-class SystemRunJobView(LoginRequiredView):
-    def post(self):
-        """ 执行任务 """
-        task_func_str = request.json.get("id")
-        Thread(target=getattr(JobFuncs, task_func_str)).start()  # 异步执行，释放资源
-        return app.restful.success("触发成功")
+    return app.restful.success("获取成功", data=data_list)
 
 
-class SystemGetRunJobLogView(LoginRequiredView):
-    def get(self):
-        """ 执行任务记录 """
-        return app.restful.success("获取成功", data=JobRunLog.make_pagination(request.args))
+@system_manage.admin_post("/job/run")
+def system_manage_run_job():
+    """ 执行任务 """
+    task_func_str = request.json.get("id")
+    Thread(target=getattr(JobFuncs, task_func_str)).start()  # 异步执行，释放资源
+    return app.restful.success("触发成功")
 
 
-class SystemJobView(AdminRequiredView):
-
-    def get(self):
-        """ 获取定时任务 """
-        job_id = request.args.get("id")
-        return app.restful.success("获取成功", data=ApschedulerJobs.get_first(id=job_id).to_dict())
-
-    def post(self):
-        """ 新增定时任务 """
-        job_func_name = request.json.get("func")
-        task_conf = getattr(JobFuncs, job_func_name).__doc__
-        try:
-            res = requests.post(
-                url=job_server_host,
-                headers=request.headers,
-                json={
-                    "task": json.loads(task_conf),
-                    "type": "cron"
-                }
-            ).json()
-            app.logger.info(f'添加任务【{job_func_name}】响应: \n{res}')
-            return app.restful.success('操作成功')
-        except:
-            return app.restful.error('操作失败')
-
-    def delete(self):
-        """ 删除定时任务 """
-        job_id = request.json.get("id")
-        try:
-            res = requests.delete(
-                url=job_server_host,
-                headers=request.headers,
-                json={
-                    "taskId": job_id,
-                    "type": "cron"
-                }
-            ).json()
-            app.logger.info(f'删除任务【{job_id}】响应: \n{res}')
-            return app.restful.success('操作成功')
-        except:
-            return app.restful.error('操作失败')
+@system_manage.admin_get("/job/log")
+def system_manage_get_run_job_log():
+    """ 执行任务记录 """
+    return app.restful.success("获取成功", data=JobRunLog.make_pagination(request.args))
 
 
-system_manage.add_url_rule("/job", view_func=SystemJobView.as_view("SystemJobView"))
-system_manage.add_url_rule("/job/run", view_func=SystemRunJobView.as_view("SystemRunJobView"))
-system_manage.add_url_rule("/job/list", view_func=SystemGetJobListView.as_view("SystemGetJobListView"))
-system_manage.add_url_rule("/job/log", view_func=SystemGetRunJobLogView.as_view("SystemGetRunJobLogView"))
-system_manage.add_url_rule("/job/func/list", view_func=SystemGetJobFuncListView.as_view("SystemGetJobFuncListView"))
+@system_manage.admin_get("/job")
+def system_manage_get_job():
+    """ 获取定时任务 """
+    job_id = request.args.get("id")
+    return app.restful.success("获取成功", data=ApschedulerJobs.get_first(id=job_id).to_dict())
+
+
+@system_manage.admin_post("/job")
+def system_manage_enable_job():
+    """ 新增定时任务 """
+    job_func_name = request.json.get("func")
+    task_conf = getattr(JobFuncs, job_func_name).__doc__
+    try:
+        res = requests.post(
+            url=job_server_host,
+            headers=request.headers,
+            json={
+                "task": json.loads(task_conf),
+                "type": "cron"
+            }
+        ).json()
+        app.logger.info(f'添加任务【{job_func_name}】响应: \n{res}')
+        return app.restful.success('操作成功')
+    except:
+        return app.restful.error('操作失败')
+
+
+@system_manage.admin_delete("/job")
+def system_manage_disable_job():
+    """ 删除定时任务 """
+    job_id = request.json.get("id")
+    try:
+        res = requests.delete(
+            url=job_server_host,
+            headers=request.headers,
+            json={
+                "taskId": job_id,
+                "type": "cron"
+            }
+        ).json()
+        app.logger.info(f'删除任务【{job_id}】响应: \n{res}')
+        return app.restful.success('操作成功')
+    except:
+        return app.restful.error('操作失败')

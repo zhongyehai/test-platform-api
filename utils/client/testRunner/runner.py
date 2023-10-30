@@ -118,21 +118,33 @@ class Runner(object):
         elif test_dict.get("skipIf"):  # 只有 skipIf 条件为结果为True时才跳过，条件为假，或者执行报错，都不跳过
             # [{"expect": 200, "comparator": "_01equals", "check_value": 200, "check_result": "unchecked"}]
             skip_if_condition = self.session_context.eval_content(test_dict["skipIf"])
+            skip_if_length, user_setting_skip_step = len(skip_if_condition), False  # 用户设置了不通过就跳过
+            for index, skip_if in enumerate(skip_if_condition):
 
-            for skip_if in skip_if_condition:
-                skip_type = skip_if["skip_type"]
+                if index == 0:  # 如果用户设置了不通过就跳过，解析时会放到第一个条件
+                    if skip_if["data_source"] == "variable" and skip_if["check_value"] == "success":
+                        user_setting_skip_step = True
+
                 if skip_if["data_source"] == "run_env":
                     skip_if["check_value"] = self.run_env
+
                 try:
                     # 借用断言来判断条件是否为真，满足条件时返回值为None
                     skip_if_res = self.session_context.do_api_validation(skip_if)
-                except Exception as error:
+                except Exception as error:  # 断言不通过
                     skip_if_res = error
 
-                # 或，任意一个满足，则跳过
-                # 且，任意一个不满足，则跳过
-                if (skip_type == "or" and skip_if_res is None) or (skip_type == "and" and skip_if_res is not None):
-                    raise SkipTest(f"skipIf触发跳过此步骤 \n{skip_if}")
+                if skip_if["skip_type"] == "or":  # 或
+                    if skip_if_res is None:  # 任意一个满足就跳过
+                        raise SkipTest(f"skipIf触发跳过此步骤 \n{skip_if}")
+                else:  # 且
+                    # 把用胡设置的步骤“不通过就跳过”除开，剩余用户手动设置的步骤跳过条件，如果只有一个条件，满足就跳过
+                    if (user_setting_skip_step is False and skip_if_length == 1) or (
+                            user_setting_skip_step is True and skip_if_length == 2):
+                        if skip_if_res is None:
+                            raise SkipTest(f"skipIf触发跳过此步骤 \n{skip_if}")
+                    elif skip_if_res is not None:  # 如果有多个条件，任意一个不满足，则跳过
+                        raise SkipTest(f"skipIf触发跳过此步骤 \n{skip_if}\n{skip_if_res}")
 
         elif test_dict.get("skipUnless"):
             skip_unless_condition = test_dict["skipUnless"]

@@ -7,7 +7,7 @@ from wtforms.validators import ValidationError, Length, DataRequired
 from app.baseForm import BaseForm
 from app.assist.models.script import Script
 from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
-from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
+from app.api_test.models.suite import ApiCaseSuite as CaseSuite
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.task import ApiTask as Task
 from app.api_test.models.case import ApiCase as Case

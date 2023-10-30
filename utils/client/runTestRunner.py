@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask.json import JSONEncoder
 
-from app.api_test.models.caseSuite import ApiCaseSuite
+from app.api_test.models.suite import ApiCaseSuite
 from app.api_test.models.api import ApiMsg
 from app.api_test.models.case import ApiCase
 from app.api_test.models.step import ApiStep
@@ -15,13 +15,13 @@ from app.api_test.models.project import ApiProject, ApiProjectEnv, db
 from app.api_test.models.report import ApiReport
 from app.web_ui_test.models.project import WebUiProject, WebUiProjectEnv
 from app.web_ui_test.models.element import WebUiElement
-from app.web_ui_test.models.caseSuite import WebUiCaseSuite
+from app.web_ui_test.models.suite import WebUiCaseSuite
 from app.web_ui_test.models.case import WebUiCase
 from app.web_ui_test.models.step import WebUiStep
 from app.web_ui_test.models.report import WebUiReport
 from app.app_ui_test.models.project import AppUiProject, AppUiProjectEnv
 from app.app_ui_test.models.element import AppUiElement
-from app.app_ui_test.models.caseSuite import AppUiCaseSuite
+from app.app_ui_test.models.suite import AppUiCaseSuite
 from app.app_ui_test.models.case import AppUiCase
 from app.app_ui_test.models.step import AppUiStep
 from app.app_ui_test.models.report import AppUiReport

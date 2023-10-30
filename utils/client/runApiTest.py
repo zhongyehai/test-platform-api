@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 
-from app.api_test.models.caseSuite import ApiCaseSuite as CaseSuite
+from app.api_test.models.suite import ApiCaseSuite as CaseSuite
 from app.api_test.models.api import ApiMsg as Api
 from app.api_test.models.step import ApiStep as Step
 from app.api_test.models.report import ApiReportCase as ReportCase, ApiReportStep as reportStep

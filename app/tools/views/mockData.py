@@ -9,37 +9,10 @@ import traceback
 import requests
 from flask import request, jsonify, current_app as app
 
-from app.baseView import NotLoginView
 from app.tools.blueprint import tool
 from utils.util.fileUtil import CALL_BACK_ADDRESS, FileUtil
 from app.assist.models.script import Script
 from app.config.models.config import Config
-
-
-@tool.route("/mock/<script_name>", methods=['GET', 'POST', 'PUT', 'DELETE'])
-def mock_by_file(script_name):
-    """ 根据python脚本文件处理mock机制 """
-    script = Script.get_first(name=script_name)
-    if not script:
-        return app.restful.fail('mock脚本文件不存在')
-
-    # 动态导入脚本
-    try:
-        script_file_name = f"mock_{script.name}"
-        import_path = f'script_list.{script_file_name}'
-        FileUtil.save_mock_script_data(
-            script_file_name,
-            script.script_data,
-            path=request.path,
-            headers=dict(request.headers),
-            query=request.args.to_dict(),
-            body=request.json or request.form.to_dict()
-        )
-        script_obj = importlib.reload(importlib.import_module(import_path))
-        return script_obj.result
-    except Exception as e:
-        error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
-        return app.restful.fail(msg="脚本执行错误，请检查", result=error_data)
 
 
 def send_msg_by_webhook(msg_type, msg):
@@ -106,42 +79,9 @@ def get_auto_test_mock_data():
     return jsonify(datas)
 
 
-class GetAutoTestMockDataView(NotLoginView):
-
-    def get(self):
-        """自动化测试模拟数据源"""
-        return get_auto_test_mock_data()
-
-    def post(self):
-        """自动化测试模拟数据源"""
-        return get_auto_test_mock_data()
-
-    def put(self):
-        """自动化测试模拟数据源"""
-        return get_auto_test_mock_data()
-
-    def delete(self):
-        """自动化测试模拟数据源"""
-        return get_auto_test_mock_data()
-
-
 def get_sync_mock_data():
     """ 模拟数据源(同步) """
     return Config.get_sync_mock_data()
-
-
-class MockDataSyncView(NotLoginView):
-    def get(self):
-        return get_sync_mock_data()
-
-    def post(self):
-        return get_sync_mock_data()
-
-    def put(self):
-        return get_sync_mock_data()
-
-    def delete(self):
-        return get_sync_mock_data()
 
 
 def call_back():
@@ -165,24 +105,6 @@ def call_back():
         "data": name})
 
 
-class GetCallBackMockDataView(NotLoginView):
-    def get(self):
-        """模拟回调"""
-        return call_back()
-
-    def post(self):
-        """模拟回调"""
-        return call_back()
-
-    def put(self):
-        """模拟回调"""
-        return call_back()
-
-    def delete(self):
-        """模拟回调"""
-        return call_back()
-
-
 def mock_api():
     """ mock_api， 收到什么就返回什么 """
     params, json_data, form_data = request.args.to_dict(), request.get_json(silent=True), request.form.to_dict()
@@ -194,25 +116,50 @@ def mock_api():
     })
 
 
-class MockApiView(NotLoginView):
-    def get(self):
-        """ 模拟接口处理，收到什么就返回什么 """
-        return mock_api()
+@tool.route("/mock/<script_name>", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def tool_mock_by_script(script_name):
+    """ 根据python脚本文件处理mock机制 """
+    script = Script.get_first(name=script_name)
+    if not script:
+        return app.restful.fail('mock脚本文件不存在')
 
-    def post(self):
-        """ 模拟接口处理，收到什么就返回什么 """
-        return mock_api()
+    # 动态导入脚本
+    try:
+        script_file_name = f"mock_{script.name}"
+        import_path = f'script_list.{script_file_name}'
+        FileUtil.save_mock_script_data(
+            script_file_name,
+            script.script_data,
+            path=request.path,
+            headers=dict(request.headers),
+            query=request.args.to_dict(),
+            body=request.json or request.form.to_dict()
+        )
+        script_obj = importlib.reload(importlib.import_module(import_path))
+        return script_obj.result
+    except Exception as e:
+        error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
+        return app.restful.fail(msg="脚本执行错误，请检查", result=error_data)
 
-    def put(self):
-        """ 模拟接口处理，收到什么就返回什么 """
-        return mock_api()
 
-    def delete(self):
-        """ 模拟接口处理，收到什么就返回什么 """
-        return mock_api()
+@tool.route("/mock/autoTest", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def tool_mock_auto_test():
+    """自动化测试模拟数据源"""
+    return get_auto_test_mock_data()
 
 
-tool.add_url_rule("/mock", view_func=MockApiView.as_view("MockApiView"))
-tool.add_url_rule("/mock/sync", view_func=MockDataSyncView.as_view("MockDataSyncView"))
-tool.add_url_rule("/mock/callBack", view_func=GetCallBackMockDataView.as_view("GetCallBackMockDataView"))
-tool.add_url_rule("/mock/autoTest", view_func=GetAutoTestMockDataView.as_view("GetAutoTestMockDataView"))
+@tool.route("/mock/sync", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def tool_mock_sync():
+    return get_sync_mock_data()
+
+
+@tool.route("/mock/callBack", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def tool_mock_call_back():
+    """模拟回调"""
+    return call_back()
+
+
+@tool.route("/mock", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def tool_mock_api():
+    """ 模拟接口处理，收到什么就返回什么 """
+    return mock_api()

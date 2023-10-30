@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint
+from ..baseView import Blueprint
 
 api_test = Blueprint("apiTest", __name__)
 
-from .views import project, module, api, caseSuite, case, step, task, report, stat
+from .views import project, module, api, suite, case, step, task, report, stat

@@ -5,7 +5,7 @@ from wtforms.validators import Length, DataRequired
 from app.baseForm import BaseForm
 from app.app_ui_test.models.case import AppUiCase as Case
 from app.app_ui_test.models.project import AppUiProject as Project
-from app.app_ui_test.models.caseSuite import AppUiCaseSuite as CaseSuite
+from app.app_ui_test.models.suite import AppUiCaseSuite as CaseSuite
 from app.app_ui_test.models.device import AppUiRunServer as Server, AppUiRunPhone as Phone
 
 

@@ -38,13 +38,13 @@ class SQLAlchemy(_SQLAlchemy):
             return res
 
 
-class Qeury(BaseQuery):
+class Query(BaseQuery):
     """ 重写query方法，使其默认加上status=0 """
 
     def filter_by(self, **kwargs):
         """ 如果传过来的参数中不含is_delete，则默认加一个is_delete参数，状态为0 查询有效的数据"""
         # kwargs.setdefault("is_delete", 0)
-        return super(Qeury, self).filter_by(**kwargs)
+        return super(Query, self).filter_by(**kwargs)
 
     def paginate(self, page=1, per_page=20, error_out=True, max_per_page=None):
         """ 重写分页器，把页码和页数强制转成int，解决服务器吧int识别为str导致分页报错的问题"""
@@ -67,7 +67,7 @@ naming_convention = {
     "pk": "pk_%(table_name)s"
 }
 db = SQLAlchemy(
-    query_class=Qeury,  # 指定使用修改过后的Qeury
+    query_class=Query,  # 指定使用修改过后的Qeury
     metadata=MetaData(naming_convention=naming_convention),
     use_native_unicode="utf8"
 )
@@ -92,6 +92,11 @@ class BaseModel(db.Model, JsonUtil):
         "call_back", "suite_ids", "case_ids", "conf", "env_list", "webhook_list", "email_to", "temp_variables",
         "kym", "task_item", 'business_list', 'run_id', 'extends', 'case_data', 'step_data', 'summary'
     ]
+
+    @classmethod
+    def db(cls):
+        """ 方便直接使用，不用每次都导入 """
+        return db
 
     def set_attr(self, column_list, value=None):
         """ 插入属性，如果是执行初始化脚本，获取不到g，try一下 """

@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
-from flask import request, abort, g
+from flask import request, g
 
 from app.config.models.config import Config
 from app.system.models.userOperationLog import UserOperationLog
-from utils.view.required import before_request_required
+from utils.view.required import check_login_and_permissions
 
 
 def register_before_hook(app):
     """ 注册前置钩子函数，有请求时，会按函数所在位置，以从近到远的序顺序执行以下钩子函数 """
-
-    @app.before_request
-    def parse_request_ip():
-        """ 获取用户ip """
-        g.user_ip = request.headers.get("X-Forwarded-History") or request.headers.get(
-            "X-Forwarded-From") or request.remote_addr
 
     @app.before_first_request
     def set_config():
@@ -24,15 +18,15 @@ def register_before_hook(app):
         app.config["page_size"] = pagination["page_size"]
 
     @app.before_request
-    def request_endpoint_is_exist():
-        """ 若终结点不存在，则抛出404 """
-        if not request.endpoint:
-            abort(404)
+    def parse_request_ip():
+        """ 获取用户ip """
+        g.user_ip = request.headers.get("X-Forwarded-History") or request.headers.get(
+            "X-Forwarded-From") or request.remote_addr
 
     @app.before_request
     def login_and_permission_required():
         """ 登录校验和权限校验 """
-        before_request_required()  # 校验登录状态和权限
+        check_login_and_permissions()  # 校验登录状态和权限
 
     @app.before_request
     def save_requests_by_log():

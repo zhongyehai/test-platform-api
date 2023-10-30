@@ -3,11 +3,10 @@ from flask import current_app as app, request
 from sqlalchemy import func
 
 from app.api_test.forms.stat import AnalyseForm
-from app.baseView import LoginRequiredView
 from app.api_test.blueprint import api_test
 from app.config.models.business import BusinessLine
 from app.api_test.models.project import ApiProject as Project, db
-from app.api_test.models.caseSuite import ApiCaseSuite as Suite
+from app.api_test.models.suite import ApiCaseSuite as Suite
 from app.api_test.models.case import ApiCase as Case
 from app.api_test.models.report import ApiReport as Report, ApiReportCase as ReportCase
 from app.system.models.user import User
@@ -59,87 +58,81 @@ def get_use_stat(time_slot, project_list: list = []):
     }
 
 
-class ApiStatUseCardView(LoginRequiredView):
+@api_test.login_get("/stat/use/card")
+def api_get_stat_use_card():
     """ 使用统计卡片 """
-
-    def get(self):
-        use_stat = get_use_stat(request.args.get("time_slot"))
-        return app.restful.success("获取成功", data=use_stat)
+    use_stat = get_use_stat(request.args.get("time_slot"))
+    return app.restful.success("获取成功", data=use_stat)
 
 
-class ApiStatUseChartView(LoginRequiredView):
+@api_test.login_get("/stat/use/chart")
+def api_get_stat_use_chart():
     """ 使用统计图表 """
+    options_list = []
+    use_count_list, use_pass_count_list, use_pass_rate_list = [], [], []  # 使用维度
+    patrol_count_list, patrol_pass_count_list, patrol_pass_rate_list = [], [], []  # 巡检维度
+    make_data_count_list = []  # 造数据维度
 
-    def get(self):
-        options_list = []
-        use_count_list, use_pass_count_list, use_pass_rate_list = [], [], []  # 使用维度
-        patrol_count_list, patrol_pass_count_list, patrol_pass_rate_list = [], [], []  # 巡检维度
-        make_data_count_list = []  # 造数据维度
+    business_query_set = (
+        BusinessLine.query.with_entities(BusinessLine.id, BusinessLine.name).filter().all())  # [(1, '公共业务线')]
+    for business_line in business_query_set:
+        options_list.append(business_line[1])
+        project_query_set = Project.query.with_entities(Project.id).filter(
+            Project.business_id == business_line[0]).all()  # [(1,)]
+        project_list = [query_set[0] for query_set in project_query_set]
+        business_stat = get_use_stat(request.args.get("time_slot"), project_list)
 
-        business_query_set = (
-            BusinessLine.query.with_entities(BusinessLine.id, BusinessLine.name).filter().all())  # [(1, '公共业务线')]
-        for business_line in business_query_set:
-            options_list.append(business_line[1])
-            project_query_set = Project.query.with_entities(Project.id).filter(
-                Project.business_id == business_line[0]).all()  # [(1,)]
-            project_list = [query_set[0] for query_set in project_query_set]
-            business_stat = get_use_stat(request.args.get("time_slot"), project_list)
+        use_count_list.append(business_stat.get("use_count", 0))
+        use_pass_count_list.append(business_stat.get("use_pass_count", 0))
+        use_pass_rate_list.append(business_stat.get("use_pass_rate", 0))
+        patrol_count_list.append(business_stat.get("patrol_count", 0))
+        patrol_pass_count_list.append(business_stat.get("patrol_pass_count", 0))
+        patrol_pass_rate_list.append(business_stat.get("patrol_pass_rate", 0))
+        make_data_count_list.append(business_stat.get("make_data_count", 0))
 
-            use_count_list.append(business_stat.get("use_count", 0))
-            use_pass_count_list.append(business_stat.get("use_pass_count", 0))
-            use_pass_rate_list.append(business_stat.get("use_pass_rate", 0))
-            patrol_count_list.append(business_stat.get("patrol_count", 0))
-            patrol_pass_count_list.append(business_stat.get("patrol_pass_count", 0))
-            patrol_pass_rate_list.append(business_stat.get("patrol_pass_rate", 0))
-            make_data_count_list.append(business_stat.get("make_data_count", 0))
-
-        return app.restful.success("获取成功", data={
-            "options_list": options_list,
-            "use_count_list": use_count_list,
-            "use_pass_count_list": use_pass_count_list,
-            "use_pass_rate_list": use_pass_rate_list,
-            "patrol_count_list": patrol_count_list,
-            "patrol_pass_count_list": patrol_pass_count_list,
-            "patrol_pass_rate_list": patrol_pass_rate_list,
-            "make_data_count_list": make_data_count_list
-        })
+    return app.restful.success("获取成功", data={
+        "options_list": options_list,
+        "use_count_list": use_count_list,
+        "use_pass_count_list": use_pass_count_list,
+        "use_pass_rate_list": use_pass_rate_list,
+        "patrol_count_list": patrol_count_list,
+        "patrol_pass_count_list": patrol_pass_count_list,
+        "patrol_pass_rate_list": patrol_pass_rate_list,
+        "make_data_count_list": make_data_count_list
+    })
 
 
-class ApiStatAnalyseChartView(LoginRequiredView):
+@api_test.login_get("/stat/analyse")
+def api_get_analyse():
+    """ 使用分析饼图 """
 
-    def get(self):
-        form = AnalyseForm().do_validate()
-        filters = form.get_filters()
+    form = AnalyseForm().do_validate()
+    filters = form.get_filters()
 
-        # 执行次数维度统计
-        all_count = Report.query.filter(*filters).count()
-        pass_count = Report.query.filter(*filters, Report.is_passed == 1).count()
-        fail_count = all_count - pass_count
+    # 执行次数维度统计
+    all_count = Report.query.filter(*filters).count()
+    pass_count = Report.query.filter(*filters, Report.is_passed == 1).count()
+    fail_count = all_count - pass_count
 
-        # 创建人执行次数统计
-        create_user_count = db.session.query(
-            User.name, func.count(User.id)).filter(
-            *filters, User.id == Report.create_user).group_by(Report.create_user).all()
-        return app.restful.success("获取成功", data={
-            "use_count": {
-                "stat": {
-                    "title": "执行次数统计",
-                    "stat_list": [
-                        {"name": "通过数量", "value": pass_count},
-                        {"name": "不通过数量", "value": fail_count},
-                    ]
-                },
-                "detail": {"all_count": all_count, "pass_count": pass_count, "fail_count": fail_count}
+    # 创建人执行次数统计
+    create_user_count = db.session.query(
+        User.name, func.count(User.id)).filter(
+        *filters, User.id == Report.create_user).group_by(Report.create_user).all()
+    return app.restful.success("获取成功", data={
+        "use_count": {
+            "stat": {
+                "title": "执行次数统计",
+                "stat_list": [
+                    {"name": "通过数量", "value": pass_count},
+                    {"name": "不通过数量", "value": fail_count},
+                ]
             },
-            "create": {
-                "stat": {
-                    "title": "执行人员统计",
-                    "stat_list": [{"name": data[0], "value": data[1]} for data in create_user_count]
-                }
+            "detail": {"all_count": all_count, "pass_count": pass_count, "fail_count": fail_count}
+        },
+        "create": {
+            "stat": {
+                "title": "执行人员统计",
+                "stat_list": [{"name": data[0], "value": data[1]} for data in create_user_count]
             }
-        })
-
-
-api_test.add_url_rule("/stat/use/card", view_func=ApiStatUseCardView.as_view("ApiStatUseCardView"))
-api_test.add_url_rule("/stat/use/chart", view_func=ApiStatUseChartView.as_view("ApiStatUseChartView"))
-api_test.add_url_rule("/stat/analyse", view_func=ApiStatAnalyseChartView.as_view("ApiStatAnalyseChartView"))
+        }
+    })

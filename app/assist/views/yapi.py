@@ -12,12 +12,14 @@ from app.api_test.models.project import ApiProject, ApiProjectEnv
 from app.assist.blueprint import assist
 from app.assist.models.yapi import YapiProject, YapiModule, YapiApiMsg, YapiDiffRecord
 from app.baseModel import db
-from app.baseView import LoginRequiredView
 from app.config.models.config import Config
 from utils.util.fileUtil import DIFF_RESULT, FileUtil
 from utils.makeData.makeXmind import make_xmind
 from utils.message.sendReport import send_diff_api_message
 
+
+class LoginRequiredView:
+    pass
 
 def assert_coding_format(data):
     """ 判断字符串是否为utf-8 """
