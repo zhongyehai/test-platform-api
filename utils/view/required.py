@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 
-from flask import current_app as app, request, g
+from flask import current_app as app, request, g, abort
 
 from app.enums import AuthType
 
@@ -31,10 +31,10 @@ def check_login_and_permissions():
 
     if auth_type == AuthType.login:
         if not g.user_id:
-            return app.restful.not_login()
+            abort(401)
     elif auth_type == AuthType.permission:
         if User.is_not_admin() and request.path not in g.api_permissions:
-            return app.restful.forbidden()
+            abort(403)
     elif auth_type == AuthType.admin:
         if User.is_not_admin():
-            return app.restful.forbidden()
+            abort(403)
