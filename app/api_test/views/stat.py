@@ -18,20 +18,22 @@ def get_use_stat(time_slot, project_list: list = []):
     start_time, end_time = time_calculate(time_slot), get_now()
     time_slot = Report.created_time.between(start_time, end_time)
     project_id_in = Report.project_id.in_(project_list)
-    run_type, is_passed = Report.run_type == "task", Report.is_passed == 1
-    use_count, use_pass_count, use_pass_rate = 0, 0, 0  # 使用次数维度
+    is_passed = Report.is_passed == 1
+    page_use_count, page_use_pass_count, page_use_pass_rate = 0, 0, 0  # page使用次数维度
     patrol_count, patrol_pass_count, patrol_pass_rate = 0, 0, 0  # 巡检维度
 
-    # 使用统计
-    use_count_query = Report.query.filter(time_slot, project_id_in) if project_list else Report.query.filter(time_slot)
-    use_count = use_count_query.count()
-    if use_count > 0:
-        pass_count_query = Report.query.filter(
-            time_slot, is_passed, project_id_in) if project_list else Report.query.filter(time_slot, is_passed)
-        use_pass_count = pass_count_query.count()
-        use_pass_rate = round(use_pass_count / use_count, 4)
+    # page使用统计
+    run_type = Report.trigger_type == "page"
+    page_use_count_query = Report.query.filter(time_slot, project_id_in, run_type) if project_list else Report.query.filter(time_slot)
+    page_use_count = page_use_count_query.count()
+    if page_use_count > 0:
+        page_use_pass_count_query = Report.query.filter(
+            time_slot, run_type, is_passed, project_id_in) if project_list else Report.query.filter(time_slot, is_passed)
+        page_use_pass_count = page_use_pass_count_query.count()
+        page_use_pass_rate = round(page_use_pass_count / page_use_count, 4)
 
-    # 巡检统计
+    # cron巡检统计
+    run_type = Report.trigger_type == "cron"
     patrol_count_query = Report.query.filter(
         time_slot, run_type, project_id_in) if project_list else Report.query.filter(time_slot, run_type)
     patrol_count = patrol_count_query.count()
@@ -42,19 +44,23 @@ def get_use_stat(time_slot, project_list: list = []):
         patrol_pass_count = patrol_pass_query.count()
         patrol_pass_rate = round(patrol_pass_count / patrol_count, 4)
 
-    # 造数据统计
-    if not project_list:
-        project_query_set = Project.query.with_entities(Project.id).filter().all()
-        project_list = [query_set[0] for query_set in project_query_set]
-
-    make_data_count = db.session.query(ReportCase.report_id).filter(Suite.project_id.in_(project_list)).filter(
-        Suite.suite_type == 'assist').filter(Case.suite_id == Suite.id).filter(ReportCase.from_id == Case.id).filter(
-        ReportCase.created_time.between(start_time, end_time)).distinct().count()
+    # # 造数据统计
+    # if not project_list:
+    #     project_query_set = Project.query.with_entities(Project.id).filter().all()
+    #     project_list = [query_set[0] for query_set in project_query_set]
+    #
+    # make_data_count = db.session.query(ReportCase.report_id).filter(Suite.project_id.in_(project_list)).filter(
+    #     Suite.suite_type == 'assist').filter(Case.suite_id == Suite.id).filter(ReportCase.from_id == Case.id).filter(
+    #     ReportCase.created_time.between(start_time, end_time)).distinct().count()
 
     return {
-        "use_count": use_count, "use_pass_count": use_pass_count, "use_pass_rate": use_pass_rate,
-        "patrol_count": patrol_count, "patrol_pass_count": patrol_pass_count, "patrol_pass_rate": patrol_pass_rate,
-        "make_data_count": make_data_count
+        "page_use_count": page_use_count,
+        "page_use_pass_count": page_use_pass_count,
+        "page_use_pass_rate": page_use_pass_rate,
+        "patrol_count": patrol_count,
+        "patrol_pass_count": patrol_pass_count,
+        "patrol_pass_rate": patrol_pass_rate,
+        # "make_data_count": make_data_count
     }
 
 
@@ -69,9 +75,9 @@ def api_get_stat_use_card():
 def api_get_stat_use_chart():
     """ 使用统计图表 """
     options_list = []
-    use_count_list, use_pass_count_list, use_pass_rate_list = [], [], []  # 使用维度
+    page_use_count_list, page_use_pass_count_list, page_use_pass_rate_list = [], [], []  # 页面使用维度
     patrol_count_list, patrol_pass_count_list, patrol_pass_rate_list = [], [], []  # 巡检维度
-    make_data_count_list = []  # 造数据维度
+    # make_data_count_list = []  # 造数据维度
 
     business_query_set = (
         BusinessLine.query.with_entities(BusinessLine.id, BusinessLine.name).filter().all())  # [(1, '公共业务线')]
@@ -82,23 +88,23 @@ def api_get_stat_use_chart():
         project_list = [query_set[0] for query_set in project_query_set]
         business_stat = get_use_stat(request.args.get("time_slot"), project_list)
 
-        use_count_list.append(business_stat.get("use_count", 0))
-        use_pass_count_list.append(business_stat.get("use_pass_count", 0))
-        use_pass_rate_list.append(business_stat.get("use_pass_rate", 0))
+        page_use_count_list.append(business_stat.get("page_use_count", 0))
+        page_use_pass_count_list.append(business_stat.get("page_use_pass_count", 0))
+        page_use_pass_rate_list.append(business_stat.get("page_use_pass_rate", 0))
         patrol_count_list.append(business_stat.get("patrol_count", 0))
         patrol_pass_count_list.append(business_stat.get("patrol_pass_count", 0))
         patrol_pass_rate_list.append(business_stat.get("patrol_pass_rate", 0))
-        make_data_count_list.append(business_stat.get("make_data_count", 0))
+        # make_data_count_list.append(business_stat.get("make_data_count", 0))
 
     return app.restful.success("获取成功", data={
         "options_list": options_list,
-        "use_count_list": use_count_list,
-        "use_pass_count_list": use_pass_count_list,
-        "use_pass_rate_list": use_pass_rate_list,
+        "page_use_count_list": page_use_count_list,
+        "page_use_pass_count_list": page_use_pass_count_list,
+        "page_use_pass_rate_list": page_use_pass_rate_list,
         "patrol_count_list": patrol_count_list,
         "patrol_pass_count_list": patrol_pass_count_list,
         "patrol_pass_rate_list": patrol_pass_rate_list,
-        "make_data_count_list": make_data_count_list
+        # "make_data_count_list": make_data_count_list
     })
 
 
