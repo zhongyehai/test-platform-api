@@ -13,6 +13,8 @@ main_server_port = 8024  # 主程序端口
 main_server_host = f'http://localhost:{main_server_port}'  # 主程序后端服务
 job_server_port = 8025  # job服务端口
 job_server_host = f'http://localhost:{job_server_port}/api/job/status'  # job服务接口
+# 默认的webhook地址，用于接收系统状态通知、系统异常/错误通知...
+default_web_hook = ''
 
 # 从 testRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
 assert_mapping, assert_mapping_list = {}, []
