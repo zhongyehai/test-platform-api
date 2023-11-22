@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 from flask import request, g
 
+from ..system.model_factory import User
 from app.config.models.config import Config
-from app.system.models.userOperationLog import UserOperationLog
+from app.system.models.user_operation_log import UserOperationLog
 from utils.view.required import check_login_and_permissions
 
 
@@ -10,12 +11,10 @@ def register_before_hook(app):
     """ 注册前置钩子函数，有请求时，会按函数所在位置，以从近到远的序顺序执行以下钩子函数 """
 
     @app.before_first_request
-    def set_config():
-        """ 第一次请求时，获取并初始化配置 """
-        # 获取分页信息
-        pagination = Config.get_pagination_size()
-        app.config["page_num"] = pagination["page_num"]
-        app.config["page_size"] = pagination["page_size"]
+    def set_common_user_id():
+        """ 第一次请求时，设置一个默认用户 """
+        current_user_query = User.db.session.query(User.id).filter(User.account == "common").first()
+        g.common_user_id = current_user_query[0] if current_user_query else None
 
     @app.before_request
     def parse_request_ip():
@@ -41,7 +40,7 @@ def register_before_hook(app):
     # def save_requests_by_db():
     #     """ 存操作日志 """
     #     if request.method in ("POST", "PUT", "DELETE"):
-    #         UserOperationLog().create({
+    #         UserOperationLog.model_create({
     #             "ip": g.user_ip,
     #             "url": request.path,
     #             "method": request.method,

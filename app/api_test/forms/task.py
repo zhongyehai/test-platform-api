@@ -1,119 +1,128 @@
-# -*- coding: utf-8 -*-
-from wtforms import StringField, IntegerField
-from wtforms.validators import ValidationError, Length, DataRequired
+from typing import Optional, Union
+from pydantic import Field, field_validator, ValidationInfo
 from crontab import CronTab
 
-from app.baseForm import BaseForm
-from app.api_test.models.task import ApiTask as Task
-from app.api_test.models.project import ApiProject as Project
+from ...base_form import BaseForm, PaginationForm
+from ..model_factory import ApiTask as Task
+from ...enums import ReceiveTypeEnum, SendReportTypeEnum, TriggerTypeEnum, DataStatusEnum
+
+
+class GetTaskListForm(PaginationForm):
+    """ 获取任务列表 """
+    project_id: int = Field(..., title="服务id")
+
+    def get_query_filter(self, *args, **kwargs):
+        """ 查询条件 """
+        return [Task.project_id == self.project_id]
+
+
+class GetTaskForm(BaseForm):
+    """ 获取任务 """
+    id: int = Field(..., title="任务id")
+
+    @field_validator("id")
+    def validate_id(cls, value):
+        """ 校验id存在 """
+        task = cls.validate_data_is_exist("任务不存在", Task, id=value)
+        setattr(cls, "task", task)
+        return value
+
+
+class DeleteTaskForm(GetTaskForm):
+    """ 删除任务 """
+
+    @field_validator("id")
+    def validate_id(cls, value):
+        """ 校验id存在 """
+        task = cls.validate_data_is_exist("任务不存在", Task, id=value)
+        cls.validate_is_true(task.is_disable(), "请先禁用任务")
+        setattr(cls, "task", task)
+        return value
 
 
 class AddTaskForm(BaseForm):
     """ 添加定时任务的校验 """
-    name_length = Task.name.property.columns[0].type.length
-    project_id = IntegerField(validators=[DataRequired("请选择服务")])
-    suite_ids = StringField()
-    case_ids = StringField()
-    env_list = StringField(validators=[DataRequired("请选择要运行的环境")])
-    name = StringField(validators=[
-        DataRequired("任务名不能为空"),
-        Length(1, name_length, f"步骤长度不可超过{name_length}位")
-    ])
-    is_send = StringField(validators=[DataRequired("请选择是否发送报告")])
-    receive_type = StringField()
-    webhook_list = StringField()
-    email_server = StringField()
-    email_to = StringField()
-    email_from = StringField()
-    email_pwd = StringField()
-    cron = StringField()
-    num = StringField()
-    conf = StringField()
-    call_back = StringField()
-    is_async = IntegerField()
+    project_id: int = Field(..., title="服务id")
+    suite_ids: Optional[list] = Field(title="用例集id")
+    case_ids: Optional[list] = Field(title="用例id")
+    env_list: list = Field(..., title="运行环境")
+    status: Optional[int] = Field(DataStatusEnum.DISABLE.value, title='任务状态')
+    receive_type: ReceiveTypeEnum = Field(
+        ReceiveTypeEnum.DING_DING, title="接收测试报告类型", description="ding_ding、we_chat、email")
+    webhook_list: list = Field(title="接收消息机器人地址")
+    email_server: Optional[str] = Field(title="发件邮箱服务器")
+    email_to: list = Field(title="收件人邮箱")
+    email_from: Optional[str] = Field(title="发件人邮箱")
+    email_pwd: Optional[str] = Field(title="发件人邮箱密码")
+    is_send: SendReportTypeEnum = Field(
+        SendReportTypeEnum.ON_FAIL.value, title="是否发送测试报告", description="not_send/always/on_fail")
+    cron: str = Field(..., title="cron表达式")
+    name: str = Field(..., title="任务名")
+    skip_holiday: bool = Field(True, title="是否跳过节假日、调休日")
+    conf: Optional[dict] = Field({}, title="运行配置", description="webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
+    is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
+    call_back: Optional[Union[list, dict]] = Field(title="回调给流水线")
 
-    def validate_is_send(self, field):
+    @field_validator("is_send")
+    def validate_is_send(cls, value, info: ValidationInfo):
         """ 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
-        if field.data in ["2", "3"]:
-            if self.receive_type.data in ("ding_ding", "we_chat"):
-                self.validate_data_is_true('选择了要通过机器人发送报告，则webhook地址必填', self.webhook_list.data)
-            elif self.receive_type.data == "email":
-                self.validate_email(
-                    self.email_server.data, self.email_from.data, self.email_pwd.data, self.email_to.data
+        if value in [SendReportTypeEnum.ALWAYS.value, SendReportTypeEnum.ON_FAIL.value]:
+            receive_type = info.data["receive_type"]
+            if receive_type in (ReceiveTypeEnum.DING_DING.value, ReceiveTypeEnum.WE_CHAT.value):
+                cls.validate_is_true('选择了要通过机器人发送报告，则webhook地址必填', info.data["webhook_list"])
+            elif receive_type == ReceiveTypeEnum.EMAIL.value:
+                cls.validate_email(
+                    info.data.get("email_server"), info.data.get("email_from"),
+                    info.data.get("email_pwd"), info.data.get("email_to")
                 )
+        return value
 
-    def validate_cron(self, field):
+    @field_validator("cron")
+    def validate_cron(cls, value):
         """ 校验cron格式 """
         try:
-            if len(field.data.strip().split(" ")) == 6:
-                field.data += " *"
-            CronTab(field.data)
+            if len(value.strip().split(" ")) == 6:
+                value += " *"
+            CronTab(value)
         except Exception as error:
-            raise ValidationError(f"时间配置【{field.data}】错误，需为cron格式, 请检查")
-        if field.data.startswith("*"):  # 每秒钟
-            raise ValidationError(f"设置的执行频率过高，请重新设置")
+            raise ValueError(f"时间配置【{value}】错误，需为cron格式, 请检查")
+        if value.startswith("*"):  # 每秒钟
+            raise ValueError(f"设置的执行频率过高，请重新设置")
+        return value
 
-    def validate_name(self, field):
+    @field_validator("name")
+    def validate_name(cls, value, info: ValidationInfo):
         """ 校验任务名不重复 """
-        self.validate_data_is_not_exist(
-            f"当前服务中，任务名【{field.data}】已存在",
-            Task,
-            project_id=self.project_id.data,
-            name=field.data
-        )
+        cls.validate_data_is_not_exist(
+            f"当前服务中，任务名【{value}】已存在", Task, project_id=info.data["project_id"], name=value)
+        return value
 
 
-class HasTaskIdForm(BaseForm):
-    """ 校验任务id已存在 """
-    id = IntegerField(validators=[DataRequired("任务id必传")])
-
-    def validate_id(self, field):
-        """ 校验id存在 """
-        task = self.validate_data_is_exist(f"任务id【{field.data}】不存在", Task, id=field.data)
-        setattr(self, "task", task)
-
-
-class RunTaskForm(HasTaskIdForm):
-    """ 运行任务 """
-    env_list = StringField()
-    is_async = IntegerField()
-    trigger_type = StringField()  # pipeline 代表是流水线触发，跑完过后会发送测试报告
-    extend = StringField()  # 运维传过来的扩展字段，接收的什么就返回什么
-
-
-class EditTaskForm(AddTaskForm, HasTaskIdForm):
+class EditTaskForm(AddTaskForm, GetTaskForm):
     """ 编辑任务 """
 
-    def validate_id(self, field):
+    @field_validator("id")
+    def validate_id(cls, value):
         """ 校验id存在 """
-        task = self.validate_data_is_exist(f"任务id【{field.data}】不存在", Task, id=field.data)
-        self.validate_data_is_true(f"任务【{task.name}】的状态不为禁用中，请先禁用再修改", task.is_disable())
-        setattr(self, "task", task)
+        task = cls.validate_data_is_exist(f"任务id【{value}】不存在", Task, id=value)
+        cls.validate_is_true(task.is_disable(), "任务的状态不为禁用中，请先禁用再修改")
+        setattr(cls, "task", task)
+        return value
 
-    def validate_name(self, field):
+    @field_validator("name")
+    def validate_name(cls, value, info: ValidationInfo):
         """ 校验任务名不重复 """
-        self.validate_data_is_not_repeat(
-            f"当前服务中，任务名【{field.data}】已存在",
-            Task,
-            self.id.data,
-            project_id=self.project_id.data,
-            name=field.data
-        )
+        cls.validate_data_is_not_repeat(
+            f"当前服务中，任务名【{value}】已存在",
+            Task, info.data["id"], project_id=info.data["project_id"], name=value)
+        return value
 
 
-class GetTaskListForm(BaseForm):
-    """ 获取任务列表 """
-    projectId = IntegerField(validators=[DataRequired("服务id必传")])
-    pageNum = IntegerField()
-    pageSize = IntegerField()
-
-
-class DeleteTaskIdForm(HasTaskIdForm):
-    """ 删除任务 """
-
-    def validate_id(self, field):
-        """ 校验id存在 """
-        task = self.validate_data_is_exist(f"任务id【{field.data}】不存在", Task, id=field.data)
-        self.validate_data_is_true(f"请先禁用任务【{task.name}】", task.is_disable())
-        self.validate_data_is_true(f"不能删除别人的数据【{task.name}】", Project.is_can_delete(task.project_id, task))
-        setattr(self, "task", task)
+class RunTaskForm(GetTaskForm):
+    """ 运行任务 """
+    env_list: Optional[list] = Field(title="运行环境")
+    is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
+    trigger_type: Optional[TriggerTypeEnum] = Field(
+        TriggerTypeEnum.PAGE, title="触发类型", description="pipeline/page/cron")  # pipeline 跑完过后会发送测试报告
+    extend: Optional[Union[list, dict, str]] = Field(
+        None, title="扩展字段", description="运维传过来的扩展字段，接收的什么就返回什么")

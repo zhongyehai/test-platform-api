@@ -1,46 +1,61 @@
-# -*- coding: utf-8 -*-
-from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired
+from typing import Optional
+from pydantic import Field, field_validator
 
-from app.baseForm import BaseForm
-from app.assist.models.hits import Hits
+from ...base_form import BaseForm, PaginationForm
+from ..model_factory import Hits
 
 
-class GetHitListForm(BaseForm):
+class GetHitListForm(PaginationForm):
     """ 获取自动化测试命中问题列表 """
-    date = StringField()
-    hit_type = StringField()
-    test_type = StringField()
-    hit_detail = StringField()
-    report_id = IntegerField()
-    pageNum = IntegerField()
-    pageSize = IntegerField()
+    date: Optional[str] = Field(None, title='记录时间')
+    hit_type: Optional[str] = Field(None, title='问题类型')
+    test_type: Optional[str] = Field(None, title='测试类型')
+    hit_detail: Optional[str] = Field(None, title='问题内容')
+    report_id: Optional[int] = Field(None, title='报告id')
+
+    def get_query_filter(self, *args, **kwargs):
+        """ 查询条件 """
+        filter_list = []
+        if self.date:
+            filter_list.append(Hits.date == self.date)
+        if self.hit_type:
+            filter_list.append(Hits.hit_type == self.hit_type)
+        if self.test_type:
+            filter_list.append(Hits.test_type == self.test_type)
+        if self.report_id:
+            filter_list.append(Hits.report_id == self.report_id)
+        if self.hit_detail:
+            filter_list.append(Hits.hit_detail.like(f'%{self.hit_detail}%'))
+        return filter_list
 
 
-class HasHitForm(BaseForm):
+class GetHitForm(BaseForm):
     """ 获取自定义自动化测试命中问题 """
-    id = IntegerField(validators=[DataRequired("请输选择自动化测试命中问题")])
+    id: int = Field(..., title="数据id")
 
-    def validate_id(self, field):
+    @field_validator("id")
+    def validate_id(cls, value):
         """ 校验自定义自动化测试命中问题需存在 """
-        hit = self.validate_data_is_exist(f'id为 【{field.data}】 的命中不存在', Hits, id=field.data)
-        setattr(self, "hit", hit)
+        hit = cls.validate_data_is_exist('数据不存在', Hits, id=value)
+        setattr(cls, "hit", hit)
+        return value
 
 
 class CreatHitForm(BaseForm):
     """ 创建自定义自动化测试命中问题 """
-    date = StringField(validators=[DataRequired("问题触发日期必传")])
-    hit_type = StringField(validators=[DataRequired("请选择问题类型")])
-    test_type = StringField(validators=[DataRequired("请输入测试类型")])
-    hit_detail = StringField(validators=[DataRequired("请输入问题内容")])
-    project_id = IntegerField(validators=[DataRequired("请输入服务id")])
-    env = StringField(validators=[DataRequired("请选则环境")])
-    report_id = IntegerField(validators=[DataRequired("请输入测试报告id")])
-    desc = StringField()
+    date: str = Field(..., title='问题触发日期')
+    hit_type: str = Field(..., title='问题类型')
+    test_type: str = Field(..., title='测试类型')
+    hit_detail: str = Field(..., title='问题内容')
+    env: str = Field(..., title='环境')
+    project_id: int = Field(..., title='服务id')
+    report_id: int = Field(..., title='测试报告id')
+    desc: Optional[str] = Field(title='描述')
 
-    def validate_date(self, filed):
-        self.date.data = filed.data[0:10]
+    @field_validator("date")
+    def validate_date(cls, value):
+        return value[0:10]
 
 
-class EditHitForm(HasHitForm, CreatHitForm):
+class EditHitForm(GetHitForm, CreatHitForm):
     """ 修改自定义自动化测试命中问题 """

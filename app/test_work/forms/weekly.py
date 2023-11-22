@@ -1,178 +1,142 @@
-# -*- coding: utf-8 -*-
-from flask import g
-from wtforms import StringField, IntegerField
-from wtforms.validators import ValidationError, DataRequired
+from typing import Optional, Union
+from pydantic import Field, field_validator, ValidationInfo
+from sqlalchemy import or_
 
-from app.baseForm import BaseForm
-from ..models.weekly import WeeklyModel, WeeklyConfigModel
+from ...base_form import BaseForm, PaginationForm
+from ..model_factory import WeeklyModel, WeeklyConfigModel
 
 
-class GetWeeklyConfigListForm(BaseForm):
+class GetWeeklyConfigListForm(PaginationForm):
     """ 获取产品、项目列表 """
-    pageNum = IntegerField()
-    pageSize = IntegerField()
-    name = StringField()
-    parent = StringField()
+    name: Optional[str] = Field(None, title="名字")
+    parent: Optional[str] = Field(None, title="父级")
 
-    def validate_parent(self, field):
-        self.parent.data = "null" if not field.data else field.data
+    def get_query_filter(self, *args, **kwargs):
+        """ 查询条件 """
+        filter_list = []
+        if self.name:
+            filter_list.append(WeeklyConfigModel.name.like(f'{self.name}'))
+        if self.parent:
+            filter_list.append(WeeklyConfigModel.parent == self.parent)
+
+        return filter_list
 
 
 class GetWeeklyConfigForm(BaseForm):
     """ 获取产品、项目 """
-    id = IntegerField(validators=[DataRequired("产品或项目id必传")])
+    id: int = Field(..., title="bug数据id")
 
-    def validate_id(self, field):
-        conf = self.validate_data_is_exist(f"id为 {field.data} 的产品或项目不存在", WeeklyConfigModel, id=field.data)
-        setattr(self, "conf", conf)
+    @field_validator("id")
+    def validate_id(cls, value):
+        conf = cls.validate_data_is_exist("数据不存在", WeeklyConfigModel, id=value)
+        setattr(cls, "conf", conf)
+        return value
 
 
 class DeleteWeeklyConfigForm(GetWeeklyConfigForm):
     """ 删除产品、项目 """
-    id = IntegerField(validators=[DataRequired("配置类型id必传")])
 
-    def validate_id(self, field):
-        conf = self.validate_data_is_exist(f"id为 {field.data} 的配置不存在", WeeklyConfigModel, id=field.data)
-        if not conf.parent:  # 产品
-            self.validate_data_is_not_exist("当前产品下还有项目，请先删除项目", WeeklyConfigModel, parent=field.data)  # 判断产品下无项目
-            self.validate_data_is_not_exist("当前产品下还有周报，请先删除周报", WeeklyModel, product_id=field.data)  # 判断产品下无周报
-        else:  # 项目
-            self.validate_data_is_not_exist("当前项目下还有周报，请先删除周报", WeeklyModel, project_id=field.data)  # 判断项目下无周报
-        setattr(self, "conf", conf)
+    @field_validator("id")
+    def validate_id(cls, value):
+        data_query = WeeklyConfigModel.db.session.query(WeeklyConfigModel.create_user).filter(or_(
+            WeeklyConfigModel.parent == value, WeeklyModel.product_id == value, WeeklyModel.project_id == value
+        )).first()
+        cls.validate_is_false(data_query, '当前产品下还有项目 或 当前产品下还有周报 或 当前项目下还有周报')
+        return value
 
 
 class AddWeeklyConfigForm(BaseForm):
     """ 添加产品、项目 """
-    name = StringField(validators=[DataRequired("请输入名称")])
-    parent = StringField()
-    desc = StringField()
-
-    def validate_name(self, field):
-        """ 校验名字不重复 """
-        if self.parent.data:  # 有父级，为项目
-            self.validate_data_is_not_exist(
-                f"当前节点下已存在名为【{field.data}】的项目",
-                WeeklyConfigModel,
-                name=field.data,
-                parent=self.parent.data
-            )
-        else:  # 没有父级，为产品
-            self.validate_data_is_not_exist(
-                f"已存在名为【{field.data}】的产品",
-                WeeklyConfigModel,
-                name=field.data,
-                parent=None
-            )
+    name: int = Field(..., title="名称")
+    parent: Optional[int] = Field(title="父级")
+    desc: Optional[str] = Field(title="描述")
 
 
 class ChangeWeeklyConfigForm(GetWeeklyConfigForm, AddWeeklyConfigForm):
     """ 修改产品、项目 """
 
-    def validate_name(self, field):
-        """ 校验名字不重复 """
-        if self.parent.data:  # 产品
-            self.validate_data_is_not_repeat(
-                f"已存在名为【{field.data}】的产品",
-                WeeklyConfigModel,
-                self.conf.id,
-                name=field.data,
-                parent=None
-            )
-        else:  # 项目
-            self.validate_data_is_not_repeat(
-                f"当前产品下已存在名为【{field.data}】的项目",
-                WeeklyConfigModel,
-                self.conf.id,
-                name=field.data,
-                parent=self.parent.data
-            )
 
-
-class GetWeeklyListForm(BaseForm):
+class GetWeeklyListForm(PaginationForm):
     """ 获取周报列表 """
-    pageNum = IntegerField()
-    pageSize = IntegerField()
-    product_id = StringField()
-    project_id = StringField()
-    version = StringField()
-    task_item = StringField()
-    start_time = StringField()
-    end_time = StringField()
-    create_user = StringField()
-    download_type = StringField()
+    product_id: Optional[int] = Field(None, title="产品id")
+    project_id: Optional[int] = Field(None, title="项目id")
+    create_user: Optional[int] = Field(None, title="创建人")
+    version: Optional[str] = Field(None, title="版本")
+    task_item: Optional[str] = Field(None, title="任务明细")
+    start_time: Optional[str] = Field(None, title="开始时间")
+    end_time: Optional[str] = Field(None, title="结束时间")
+
+    def get_query_filter(self, *args, **kwargs):
+        """ 查询条件 """
+        filter_list = []
+        if self.product_id:
+            filter_list.append(WeeklyModel.product_id == self.product_id)
+        if self.project_id:
+            filter_list.append(WeeklyModel.project_id == self.project_id)
+        if self.version:
+            filter_list.append(WeeklyModel.version == self.version)
+        if self.task_item:
+            filter_list.append(WeeklyModel.task_item.like(f'{self.version}'))
+        if self.start_time:
+            filter_list.append(WeeklyModel.start_time >= self.start_time)
+        if self.end_time:
+            filter_list.append(WeeklyModel.end_time < self.end_time)
+        if self.create_user:
+            filter_list.append(WeeklyModel.create_user == self.create_user)
+        return filter_list
 
 
 class GetWeeklyForm(BaseForm):
     """ 获取周报 """
-    id = IntegerField(validators=[DataRequired("周报id必传")])
+    id: int = Field(..., title="周报id")
 
-    def validate_id(self, field):
-        weekly = self.validate_data_is_exist(f"id为 {field.data} 的周报不存在", WeeklyModel, id=field.data)
-        setattr(self, "weekly", weekly)
+    @field_validator("id")
+    def validate_id(cls, value):
+        weekly = cls.validate_data_is_exist("数据不存在", WeeklyModel, id=value)
+        setattr(cls, "weekly", weekly)
+        return value
 
 
 class DeleteWeeklyForm(GetWeeklyForm):
     """ 删除周报 """
 
 
+class DownloadWeeklyForm(GetWeeklyForm):
+    download_type: Optional[Union[str, None]] = Field(title="下载时间段类型")
+
+
 class AddWeeklyForm(BaseForm):
     """ 添加周报 """
-    product_id = StringField()
-    project_id = StringField()
-    version = StringField(validators=[DataRequired("请输入版本号")])
-    task_item = StringField(validators=[DataRequired("请输入任务明细")])
-    desc = StringField()
-    start_time = StringField()
-    end_time = StringField()
+    product_id: Optional[int] = Field(title="产品id")
+    project_id: Optional[int] = Field(title="项目id")
+    version: str = Field(..., title="版本号")
+    task_item: str = Field(..., title="任务明细")
+    desc: Optional[str] = Field(title="备注")
+    start_time: Optional[str] = Field(title="开始时间")
+    end_time: Optional[str] = Field(title="结束时间")
 
-    def validate_product_id(self, field):
+    @field_validator("project_id")
+    def validate_project_id(cls, value, info: ValidationInfo):
         """ 校验产品id或者项目id必须存在 """
-        if field.data:
-            self.validate_data_is_exist(f"id为【{field.data}】的产品不存在", WeeklyConfigModel, id=field.data)
-        elif self.project_id.data:
-            self.validate_data_is_exist(f"id为【{field.data}】的项目不存在", WeeklyConfigModel, id=self.project_id.data)
-        else:
-            raise ValidationError("请选择产品或者项目")
+        cls.validate_is_true(value or info.data["product_id"], '请选择产品或者项目')
+        return value
 
-    def validate_task_item(self, field):
+    @field_validator("task_item")
+    def validate_task_item(cls, value):
         """ 校验任务明细必须有值：[{"item": "xxx", "progress": "50%"}] """
         task_item_container = []
-        for index, data in enumerate(field.data):
+        for index, data in enumerate(value):
             key, value = data.get("key", ""), data.get("value", "")
             if key and value:
                 task_item_container.append(index)
             elif key and not value:
-                raise ValidationError(f"任务明细第【{index + 1}】项，测试进度未填写")
+                raise ValueError(f"任务明细第【{index + 1}】项，测试进度未填写")
             elif value and not key:
-                raise ValidationError(f"任务明细第【{index + 1}】项，测试任务未填写")
+                raise ValueError(f"任务明细第【{index + 1}】项，测试任务未填写")
         if not task_item_container:
-            raise ValidationError("请完善测试任务明细")
-
-    def validate_start_time(self, field):
-        """ 同一个产品，同一个项目，同一个版本号，同一个人，同一周只能有一条数据 """
-        self.validate_data_is_not_exist(
-            "你已经填写过当前时间段在当前项目的周报",
-            WeeklyModel,
-            product_id=self.product_id.data,
-            project_id=self.project_id.data,
-            version=self.version.data.strip(),
-            start_time=field.data,
-            create_user=g.user_id
-        )
+            raise ValueError("请完善测试任务明细")
+        return value
 
 
 class ChangeWeeklyForm(GetWeeklyForm, AddWeeklyForm):
     """ 修改周报 """
-
-    def validate_start_time(self, field):
-        """ 同一个产品，同一个项目，同一个版本号，同一个人，同一周只能有一条数据 """
-        self.validate_data_is_not_repeat(
-            "你已经填写过当前时间段在当前项目的周报",
-            WeeklyModel,
-            self.weekly.id,
-            product_id=self.product_id.data,
-            project_id=self.project_id.data,
-            version=self.version.data.strip(),
-            start_time=field.data,
-            create_user=g.user_id
-        )

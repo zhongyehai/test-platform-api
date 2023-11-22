@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ..baseView import Blueprint
+from ..base_view import Blueprint
 
 api_test = Blueprint("apiTest", __name__)
 

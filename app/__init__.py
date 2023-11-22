@@ -1,17 +1,32 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
 from flask import Flask
 
 from utils.view import restful
-from utils.log import logger
-from config import ProductionConfig
-from app.baseModel import db
+from utils.logs.log import logger
+from config import _SystemConfig
+from app.base_model import db
 from app.hooks.after_request import register_after_hook
 from app.hooks.before_request import register_before_hook
 from app.hooks.error_handler import register_errorhandler_hook
 
+from flask.json import JSONEncoder
+
+
+class CustomJSONEncoder(JSONEncoder):
+    """处理返回时间，直接使用 jsonify 会把时间处理成 GMT 时间"""
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+
+        return super().default(obj)
+
+
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(ProductionConfig)
+    app.json_encoder = CustomJSONEncoder
+    app.config.from_object(_SystemConfig)
     app.logger = logger
     app.db = db
     app.restful = restful  # 方便视图返回restful风格，不用每个视图都导包
@@ -28,8 +43,8 @@ def create_app():
 
     # 注册蓝图
     from app.api_test.blueprint import api_test
-    from app.web_ui_test.blueprint import ui_test
-    from app.app_ui_test.blueprint import app_test
+    from app.ui_test.blueprint import ui_test
+    from app.app_test.blueprint import app_test
     from app.assist.blueprint import assist
     from app.test_work.blueprint import test_work
     from app.config.blueprint import config_blueprint
@@ -47,7 +62,7 @@ def create_app():
     app.register_blueprint(system_manage, url_prefix="/api/system")
 
     # 把标识为要进行身份验证的接口，注册到对象APP上
-    from .baseView import url_required_map
+    from .base_view import url_required_map
     app.url_required_map = url_required_map
 
     return app

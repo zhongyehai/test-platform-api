@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseCaseSuite
+from app.base_model import BaseCaseSuite
 
 
 class ApiCaseSuite(BaseCaseSuite):

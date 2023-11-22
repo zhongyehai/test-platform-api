@@ -1,5 +1,9 @@
 # 基于python-flask生态开发的rest风格的测试平台后端
 
+### 截止2023-11-22，有历史数据的用户，执行以下两个步骤
+	1、执行init_sql.py里面的sql语句初始化数据库
+	2、执行数据库迁移那3条命令
+
 ### 线上预览：http://139.196.100.202/#/login  账号：admin、密码：123456，请不要修改密码
 
 ### 前端传送门：https://github.com/zhongyehai/test-platform-front
@@ -11,7 +15,7 @@
 ### 1.安装依赖包：sudo pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 ### 2.创建MySQL数据库
-
+    MySQL版本：8+
     数据库名自己取，编码选择utf8mb4，对应config.yaml下db配置为当前数据库信息即可
     查看最大连接数 show variables like 'max_connections';
     设置最大连接数 set global max_connections=16384;

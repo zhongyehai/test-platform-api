@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from datetime import datetime
+
 from werkzeug.security import check_password_hash, generate_password_hash
+import jwt
+from flask import current_app as app
 
-from flask import current_app as app, g
-
-from app.baseModel import BaseModel, db
+from app.base_model import BaseModel, db
 
 
 class Permission(BaseModel):
@@ -12,7 +13,7 @@ class Permission(BaseModel):
     __tablename__ = "system_permission"
     __table_args__ = {"comment": "权限表"}
 
-    name = db.Column(db.String(30), comment="权限名称")
+    name = db.Column(db.String(30), unique=True, comment="权限名称")
     desc = db.Column(db.String(256), comment="权限备注")
     num = db.Column(db.Integer(), nullable=True, comment="序号")
     source_addr = db.Column(db.String(256), comment="权限路径")
@@ -46,23 +47,6 @@ class Permission(BaseModel):
         source_list = cls.query.filter(cls.id.in_(permission_id_list), cls.source_type == source_type).all()
         return [source.source_addr for source in source_list]
 
-    @classmethod
-    def make_pagination(cls, form):
-        """ 解析分页条件 """
-        filters = []
-        if form.name.data:
-            filters.append(cls.name.like(f"%{form.name.data}%"))
-        if form.source_addr.data:
-            filters.append(cls.source_addr.like(f"%{form.name.data}%"))
-        if form.source_type.data:
-            filters.append(cls.source_type == form.source_type.data)
-        return cls.pagination(
-            page_num=form.pageNum.data,
-            page_size=form.pageSize.data,
-            filters=filters,
-            order_by=cls.num.asc()
-        )
-
 
 class Role(BaseModel):
     """ 角色表 """
@@ -70,7 +54,7 @@ class Role(BaseModel):
     __table_args__ = {"comment": "角色表"}
 
     name = db.Column(db.String(30), unique=True, comment="角色名称")
-    extend_role = db.Column(db.String(256), default='[]', comment="继承其他角色的权限")
+    extend_role = db.Column(db.JSON, default=[], comment="继承其他角色的权限")
     desc = db.Column(db.String(256), comment="权限备注")
 
     @classmethod
@@ -78,7 +62,7 @@ class Role(BaseModel):
         """ 递归获取角色拥有的角色（可能存在继承关系） """
         role = cls.get_first(id=role_id)
         id_list.append(role.id)
-        extend_role_id_list = cls.loads(role.extend_role)
+        extend_role_id_list = role.extend_role
         if extend_role_id_list:
             for role_id in extend_role_id_list:
                 cls.get_all_role_id(role_id, id_list)
@@ -87,7 +71,7 @@ class Role(BaseModel):
     def insert_role_permissions(self, permission_id_list):
         """ 插入角色权限映射 """
         for permission_id in permission_id_list:
-            RolePermissions().create({"role_id": self.id, "permission_id": permission_id})
+            RolePermissions.model_create({"role_id": self.id, "permission_id": permission_id})
 
     @classmethod
     def get_user_role_list(cls, user_id):
@@ -105,10 +89,8 @@ class Role(BaseModel):
     def get_extend_role(cls, role_id, id_list=[]):
         """ 获取继承的角色的id """
         id_list.append(role_id)
-        query_res = Role.query.with_entities(Role.extend_role).filter(Role.id == role_id).first()
-        extend_role = cls.loads(query_res[0])
-
-        for role_id in extend_role:
+        extend_role_list = Role.query.with_entities(Role.extend_role).filter(Role.id == role_id).first()  # ([],)
+        for role_id in extend_role_list[0]:
             cls.get_extend_role(role_id, id_list)
         return id_list
 
@@ -121,28 +103,6 @@ class Role(BaseModel):
         """ 更新角色权限映射 """
         self.delete_role_permissions()
         self.insert_role_permissions(permission_id_list)
-
-    @classmethod
-    def make_pagination(cls, form):
-        """ 解析分页条件 """
-        filters = []
-        # 如果不是管理员，则不返回管理员角色
-        if User.is_not_admin():
-            # 管理员权限
-            admin_permission = [p.id for p in Permission.query.filter(Permission.source_addr == "admin").all()]
-            # 没有管理员权限的角色
-            not_admin_roles = Role.query.filter().join(
-                RolePermissions, Role.id == RolePermissions.role_id).filter(
-                RolePermissions.permission_id.notin_(admin_permission)
-            ).all()
-            filters.append(cls.id.in_([role.id for role in not_admin_roles]))
-        if form.name.data:
-            filters.append(cls.name.like(f"%{form.name.data}%"))
-        return cls.pagination(
-            page_num=form.pageNum.data,
-            page_size=form.pageSize.data,
-            filters=filters,
-            order_by=cls.created_time.desc())
 
 
 class RolePermissions(BaseModel):
@@ -159,11 +119,12 @@ class User(BaseModel):
     __tablename__ = "system_user"
     __table_args__ = {"comment": "用户表"}
 
+    sso_user_id = db.Column(db.String(50), index=True, comment="该用户在oss数据库的账号")
     account = db.Column(db.String(50), unique=True, index=True, comment="账号")
     password_hash = db.Column(db.String(255), comment="密码")
     name = db.Column(db.String(12), comment="姓名")
     status = db.Column(db.Integer, default=1, comment="状态，1为启用，0为冻结")
-    business_list = db.Column(db.String(255), comment="用户所在的业务线")
+    business_list = db.Column(db.JSON, default=[], comment="用户拥有的业务线")
 
     @property
     def password(self):
@@ -178,18 +139,17 @@ class User(BaseModel):
         """ 校验密码 """
         return check_password_hash(self.password_hash, password)
 
-    def generate_reset_token(self, api_permissions=[], expiration=None):
+    def make_token(self, api_permissions: list = []):
         """ 生成token，默认有效期为系统配置的时长 """
-        return Serializer(
-            app.config["SECRET_KEY"],
-            expiration or app.config["TOKEN_TIME_OUT"]
-        ).dumps({
+        user_info = {
             "id": self.id,
             "name": self.name,
             "role_list": self.roles,
             "api_permissions": api_permissions,
-            "business_list": self.loads(self.business_list),
-        }).decode("utf-8")
+            "business_list": self.business_list,
+            "exp": datetime.now().timestamp() + app.config["TOKEN_TIME_OUT"]
+        }
+        return jwt.encode(user_info, app.config["SECRET_KEY"])
 
     @property
     def roles(self):
@@ -220,7 +180,7 @@ class User(BaseModel):
     def insert_user_roles(self, role_id_list):
         """ 插入用户角色映射 """
         for role_id in role_id_list:
-            UserRoles().create({"user_id": self.id, "role_id": role_id})
+            UserRoles.model_create({"user_id": self.id, "role_id": role_id})
 
     def delete_user_roles(self):
         """ 根据用户删除角色映射 """
@@ -240,34 +200,6 @@ class User(BaseModel):
     # if user_id:
     #     return cls.get_first(id=user_id).role_id == role_id
     # return cls.role == role_id
-
-    @classmethod
-    def make_pagination(cls, form):
-        """ 解析分页条件 """
-        filters = []
-        if User.is_not_admin():
-            user_id_list = []
-            for business_id in g.business_list:
-                # 业务线可能包含指定业务线id的用户
-                user_list = User.query.filter(User.business_list.like(f"%{business_id}%")).all()
-                for user in user_list:
-                    if business_id in cls.loads(user.business_list):  # 精确包含指定业务线id的用户
-                        user_id_list.append(user.id)
-            filters.append(User.id.in_(list(set(user_id_list))))
-
-        if form.name.data:
-            filters.append(User.name.like(f"%{form.name.data}%"))
-        if form.account.data:
-            filters.append(User.account.like(f"%{form.account.data}%"))
-        if form.status.data:
-            filters.append(User.status == form.status.data)
-        if form.role_id.data:
-            filters.append(User.role_id == form.role_id.data)
-        return cls.pagination(
-            page_num=form.pageNum.data,
-            page_size=form.pageSize.data,
-            filters=filters,
-            order_by=cls.created_time.desc())
 
     def to_dict(self, *args, **kwargs):
         return super(User, self).to_dict(pop_list=["password_hash"], filter_list=kwargs.get("filter_list", []))

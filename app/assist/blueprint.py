@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..baseView import Blueprint
+from ..base_view import Blueprint
 
 assist = Blueprint("Assist", __name__)
 
-from .views import dataPool, errorRecord, file, script, swagger, hits, callBack  # , yapi
+from .views import data_pool, error_record, file, script, swagger, hits, call_back

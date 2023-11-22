@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseReport, BaseReportCase, BaseReportStep
+from app.base_model import BaseReport, BaseReportCase, BaseReportStep, db
 
 
 class ApiReport(BaseReport):

@@ -3,15 +3,13 @@ import json
 import os.path
 
 import requests
-from flask import request, current_app as app
+from flask import current_app as app
 
-from app.assist.blueprint import assist
-from app.assist.models.swagger import SwaggerPullLog
-from app.api_test.models.project import ApiProject
-from app.api_test.models.module import ApiModule
-from app.api_test.models.api import ApiMsg
-from utils.util.fileUtil import SWAGGER_FILE_ADDRESS, FileUtil
-from app.baseModel import db
+from ..blueprint import assist
+from ..forms.swagger import SwaggerPullForm, GetSwaggerPullListForm, GetSwaggerPullForm
+from ..model_factory import SwaggerPullLog
+from ...api_test.model_factory import ApiProject, ApiModule, ApiMsg
+from utils.util.file_util import SWAGGER_FILE_ADDRESS, FileUtil
 
 
 def get_swagger_data(swagger_addr):
@@ -30,7 +28,7 @@ def get_parsed_module(module_dict, project_id, controller_name, controller_tags,
     module = ApiModule.get_first(project_id=project_id, controller=controller_name)
     if module:
         if 'controller_name' in options:  # 用户选择了要跟新模块名字
-            module.update({
+            module.model_update({
                 "controller": controller_name,
                 "name": controller_tags.get(controller_name, controller_name)
             })
@@ -39,7 +37,7 @@ def get_parsed_module(module_dict, project_id, controller_name, controller_tags,
         return module
 
     # 未拉取过，则先解析并保存，再返回
-    module = ApiModule().create({
+    module = ApiModule.model_create({
         "project_id": project_id,
         "controller": controller_name,
         "name": controller_tags.get(controller_name, controller_name),  # 有tag就用tag，没有就用controller名字
@@ -63,13 +61,13 @@ def get_request_data_type(content_type):
 def assert_is_update(api_msg, options):
     """ 判断参数是否需要更新 """
     header_update, params_update, data_json_update, data_form_update = False, False, False, False
-    if "headers" in options and (api_msg.headers is None or json.loads(api_msg.headers)[0]["key"] is None):
+    if "headers" in options and (api_msg.headers is None or api_msg.headers[0]["key"] is None):
         header_update = True
-    if "query" in options and (api_msg.params is None or json.loads(api_msg.params)[0]["key"] is None):
+    if "query" in options and (api_msg.params is None or api_msg.params[0]["key"] is None):
         params_update = True
-    if "json" in options and (api_msg.data_json is None or not json.loads(api_msg.data_json)):
+    if "json" in options and (api_msg.data_json is None or not api_msg.data_json):
         data_json_update = True
-    if "form" in options and (api_msg.data_form is None or json.loads(api_msg.data_form)[0]["key"] is None):
+    if "form" in options and (api_msg.data_form is None or api_msg.data_form[0]["key"] is None):
         data_form_update = True
     return header_update, params_update, data_json_update, data_form_update
 
@@ -77,7 +75,7 @@ def assert_is_update(api_msg, options):
 def update_obj(obj, field, data, is_update):
     """ 判断是否需要更新 """
     if is_update:
-        setattr(obj, field, json.dumps(data, ensure_ascii=False, indent=4))
+        setattr(obj, field, data)
 
 
 def parse_swagger2_args(api_msg, api_detail, swagger_data, options):
@@ -335,9 +333,10 @@ def parse_openapi3_args(db_api, swagger_api, data_models, options):
 @assist.login_post("/swagger/pull")
 def assist_pull_by_swagger():
     """ 根据指定服务的swagger拉取所有数据 """
+    form = SwaggerPullForm()
     # options: ['controller_name', 'api_name', 'headers', 'query', 'json', 'form', 'response']
-    options, project, module_dict = request.json.get("options"), ApiProject.get_first(id=request.json.get("id")), {}
-    pull_log = SwaggerPullLog().create({"project_id": project.id, "pull_args": json.dumps(options)})
+    options, project, module_dict = form.options, ApiProject.get_first(id=form.project_id), {}
+    pull_log = SwaggerPullLog.model_create_and_get({"project_id": project.id, "pull_args": form.options})
     swagger_data = {}
     try:
         swagger_data = get_swagger_data(project.swagger)  # swagger数据
@@ -357,7 +356,7 @@ def assist_pull_by_swagger():
     # 解析已有的controller描述
     controller_tags = {tag["name"]: tag.get("description", tag["name"]) for tag in swagger_data.get("tags", [])}
 
-    with db.auto_commit():
+    with ApiMsg.db.auto_commit():
 
         add_list = []
         for api_addr, api_data in swagger_data["paths"].items():
@@ -369,13 +368,10 @@ def assist_pull_by_swagger():
                 # 处理接口
                 app.logger.info(f"解析接口地址：{api_addr}")
                 app.logger.info(f"解析接口数据：{swagger_api}")
+                api_status = 1 if swagger_api.get("deprecated") is False else 0
                 api_template = {
-                    "deprecated": swagger_api.get("deprecated", 0),
-                    "project_id": project.id,
-                    "module_id": module.id,
-                    "method": api_method.upper(),
-                    "addr": api_addr,
-                    "data_type": "json"
+                    "project_id": project.id, "module_id": module.id, "status": api_status,
+                    "method": api_method.upper(), "addr": api_addr, "body_type": "json"
                 }
 
                 # 根据接口地址 获取/实例化 接口对象
@@ -401,7 +397,7 @@ def assist_pull_by_swagger():
                     parse_openapi3_args(db_api, swagger_api, data_models, options)  # 处理参数
 
                 # 处理请求参数类型
-                api_template["data_type"] = get_request_data_type(content_type)
+                api_template["body_type"] = get_request_data_type(content_type)
 
                 # 新的接口则赋值
                 for key, value in api_template.items():
@@ -416,7 +412,7 @@ def assist_pull_by_swagger():
                     if 'api_name' in options:  # 用户选择了要更新接口名字
                         db_api.name = swagger_api.get("summary", "接口未命名")
 
-        db.session.add_all(add_list)
+        ApiMsg.db.session.add_all(add_list)
 
         # 同步完成后，保存原始数据
         swagger_file = os.path.join(SWAGGER_FILE_ADDRESS, f"{project.id}.json")
@@ -428,8 +424,12 @@ def assist_pull_by_swagger():
 
 @assist.login_get("/swagger/pull/list")
 def assist_get_swagger_pull_list():
-    project_id = request.args.get("project_id")
-    if not project_id:
-        app.restful.fail("服务id必传")
-    log_list = SwaggerPullLog.query.filter_by(project_id=project_id).order_by(SwaggerPullLog.id.desc()).all()
-    return app.restful.success("获取成功", data=[log.to_dict() for log in log_list])
+    form = GetSwaggerPullListForm()
+    get_filed = [SwaggerPullLog.id, SwaggerPullLog.status, SwaggerPullLog.create_time, SwaggerPullLog.create_user]
+    return app.restful.get_success(SwaggerPullLog.make_pagination(form, get_filed=get_filed))
+
+
+@assist.login_get("/swagger/pull")
+def assist_get_swagger_pull_data():
+    form = GetSwaggerPullForm()
+    return app.restful.get_success(form.pull_log.to_dict())

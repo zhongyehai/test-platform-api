@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
-from app.baseModel import BaseModel, db
+from app.base_model import BaseModel, db
 
 
 class WeeklyConfigModel(BaseModel):
@@ -9,7 +9,7 @@ class WeeklyConfigModel(BaseModel):
     __tablename__ = "test_work_weekly_config"
     __table_args__ = {"comment": "周报配置表"}
 
-    name = db.Column(db.Text(), comment="名字")
+    name = db.Column(db.String(255), nullable=True, comment="名字")
     parent = db.Column(db.Integer(), nullable=True, default=None, comment="上一级的id，有上一级则为项目，否则为产品")
     desc = db.Column(db.Text(), comment="备注")
 
@@ -74,22 +74,6 @@ class WeeklyConfigModel(BaseModel):
         }
         container["total"] += 1
 
-    @classmethod
-    def make_pagination(cls, form):
-        """ 解析分页条件 """
-        filters = []
-        if form.name.data:
-            filters.append(WeeklyConfigModel.name == form.name.data)
-        if form.parent.data and form.parent.data != "all":
-            data = None if form.parent.data == "null" else form.parent.data
-            filters.append(WeeklyConfigModel.parent == data)
-        return cls.pagination(
-            page_num=form.pageNum.data,
-            page_size=form.pageSize.data,
-            filters=filters,
-            order_by=cls.created_time.desc()
-        )
-
 
 class WeeklyModel(BaseModel):
     """ 周报明细表 """
@@ -99,7 +83,7 @@ class WeeklyModel(BaseModel):
     product_id = db.Column(db.String(5), index=True, comment="产品id")
     project_id = db.Column(db.String(5), index=True, comment="项目id")
     version = db.Column(db.String(255), comment="版本号")
-    task_item = db.Column(db.Text(), comment="任务明细和进度")
+    task_item = db.Column(db.JSON, default=[], comment="任务明细和进度")
     start_time = db.Column(db.DateTime, default=datetime.now, comment="开始时间")
     end_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, comment="结束时间")
     desc = db.Column(db.Text(), comment="备注")
@@ -134,6 +118,5 @@ class WeeklyModel(BaseModel):
             page_num=form.pageNum.data,
             page_size=form.pageSize.data,
             filters=filters,
-            order_by=cls.created_time.desc()
+            order_by=cls.create_time.desc()
         )
-

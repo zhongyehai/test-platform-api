@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseModel, db
+from app.base_model import BaseModel, db
+
+
+class ApschedulerJobs(BaseModel):
+    """ apscheduler任务表，防止执行数据库迁移的时候，把定时任务删除了 """
+    __tablename__ = "apscheduler_jobs"
+    __table_args__ = {"comment": "定时任务执行计划表"}
+
+    id = db.Column(db.String(64), primary_key=True, nullable=False)
+    next_run_time = db.Column(db.String(128), comment="任务下一次运行时间")
+    job_state = db.Column(db.LargeBinary(length=(2 ** 32) - 1), comment="任务详情")
 
 
 class JobRunLog(BaseModel):
@@ -12,22 +22,10 @@ class JobRunLog(BaseModel):
     business_id = db.Column(db.Integer(), default=None, comment="业务线id")
     detail = db.Column(db.Text, default=None, comment="执行结果数据")
 
-    @classmethod
-    def make_pagination(cls, attr):
-        """ 解析分页条件 """
-        filters = []
-        if attr.get("func_name"):
-            filters.append(cls.func_name == attr.get("func_name"))
-        return cls.pagination(
-            page_num=attr.get("pageNum", 1),
-            page_size=attr.get("pageSize", 20),
-            filters=filters,
-            order_by=cls.created_time.desc())
-
     def run_fail(self, detail=None):
         """ 执行失败 """
-        self.update({"status": 0, "detail": self.dumps(detail)})
+        self.model_update({"status": 0, "detail": self.dumps(detail)})
 
     def run_success(self, detail):
         """ 执行成功 """
-        self.update({"status": 2, "detail": self.dumps(detail)})
+        self.model_update({"status": 2, "detail": self.dumps(detail)})

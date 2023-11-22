@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-
+import jwt
 from flask import current_app as app, request, g, abort
 
 from app.enums import AuthType
@@ -9,7 +8,7 @@ from app.enums import AuthType
 def parse_token(token):
     """ 校验token是否过期，或者是否合法 """
     try:
-        data = Serializer(app.config["SECRET_KEY"]).loads(token.encode("utf-8"))
+        data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
         # 把用户数据存到g对象，方便后面使用
         g.user_id, g.user_name = data["id"], data["name"]
         g.api_permissions, g.business_list = data["api_permissions"], data["business_list"]

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..baseView import Blueprint
+from ..base_view import Blueprint
 
 tool = Blueprint("tools", __name__)
 
-from .views import examination, makeUser, mockData
+from .views import examination, make_user, mock_data

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ..baseView import Blueprint
+from ..base_view import Blueprint
 
 home = Blueprint("home", __name__)
 
-from .views import apiTest
+from .views import api_test

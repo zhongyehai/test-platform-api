@@ -5,13 +5,13 @@ import os.path
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 
-from utils.util.jsonUtil import JsonUtil
-from app.baseModel import db
-from app.system.models.user import User, Permission, Role, RolePermissions, UserRoles
-from app.config.models.config import Config, ConfigType
-from app.config.models.runEnv import RunEnv
-from app.config.models.business import BusinessLine
-from app.assist.models.script import Script
+from utils.util.json_util import JsonUtil
+from app.base_model import db
+from app.system.model_factory import User, Permission, Role, RolePermissions, UserRoles
+from app.config.model_factory import Config, ConfigType
+from app.config.model_factory import RunEnv
+from app.config.model_factory import BusinessLine
+from app.assist.model_factory import Script
 from main import app
 
 manager = Manager(app)
@@ -35,20 +35,6 @@ def print_item_delimiter(content):
 def print_detail_delimiter(content):
     print(f'            {"=" * 8} {content} {"=" * 8}')
 
-
-make_user_info_mapping = {
-    "name": "姓名",
-    "ssn": "身份证号",
-    "phone_number": "手机号",
-    "credit_card_number": "银行卡",
-    "address": "地址",
-    "company": "公司名",
-    "credit_code": "统一社会信用代码",
-    "company_email": "公司邮箱",
-    "job": "工作",
-    "ipv4": "ipv4地址",
-    "ipv6": "ipv6地址"
-}
 
 kym_keyword = [
     {
@@ -139,158 +125,6 @@ kym_keyword = [
     }
 ]
 
-make_user_language_mapping = {
-    'zh_CN': '简体中文',
-    'en_US': '英语-美国',
-    'ja_JP': '日语-日本',
-    'hi_IN': '印地语-印度',
-    'ko_KR': '朝鲜语-韩国',
-    'es_ES': '西班牙语-西班牙',
-    'pt_PT': '葡萄牙语-葡萄牙',
-    'es_MX': '西班牙语-墨西哥',
-    # 'ar_EG': '阿拉伯语-埃及',
-    # 'ar_PS': '阿拉伯语-巴勒斯坦',
-    # 'ar_SA': '阿拉伯语-沙特阿拉伯',
-    # 'bg_BG': '保加利亚语-保加利亚',
-    # 'cs_CZ': '捷克语-捷克',
-    # 'de_DE': '德语-德国',
-    # 'dk_DK': '丹麦语-丹麦',
-    # 'el_GR': '希腊语-希腊',
-    # 'en_AU': '英语-澳大利亚',
-    # 'en_CA': '英语-加拿大',
-    # 'en_GB': '英语-英国',
-    # 'et_EE': '爱沙尼亚语-爱沙尼亚',
-    # 'fa_IR': '波斯语-伊朗',
-    # 'fi_FI': '芬兰语-芬兰',
-    # 'fr_FR': '法语-法国',
-    # 'hr_HR': '克罗地亚语-克罗地亚',
-    # 'hu_HU': '匈牙利语-匈牙利',
-    # 'hy_AM': '亚美尼亚语-亚美尼亚',
-    # 'it_IT': '意大利语-意大利',
-    # 'ka_GE': '格鲁吉亚语-格鲁吉亚',
-    # 'lt_LT': '立陶宛语-立陶宛',
-    # 'lv_LV': '拉脱维亚语-拉脱维亚',
-    # 'ne_NP': '尼泊尔语-尼泊尔',
-    # 'nl_NL': '德语-荷兰',
-    # 'no_NO': '挪威语-挪威',
-    # 'pl_PL': '波兰语-波兰',
-    # 'pt_BR': '葡萄牙语-巴西',
-    # 'ru_RU': '俄语-俄国',
-    # 'sl_SI': '斯诺文尼亚语-斯诺文尼亚',
-    # 'sv_SE': '瑞典语-瑞典',
-    # 'tr_TR': '土耳其语-土耳其',
-    # 'uk_UA': '乌克兰语-乌克兰',
-    # 'zh_TW': '繁体中文'
-}
-
-# 模拟键盘输入的code
-app_key_code = {
-    "7": "按键'0'",
-    "8": "按键'1'",
-    "9": "按键'2'",
-    "10": "按键'3'",
-    "11": "按键'4'",
-    "12": "按键'5'",
-    "13": "按键'6'",
-    "14": "按键'7'",
-    "15": "按键'8'",
-    "16": "按键'9'",
-    "29": "按键'A'",
-    "30": "按键'B'",
-    "31": "按键'C'",
-    "32": "按键'D'",
-    "33": "按键'E'",
-    "34": "按键'F'",
-    "35": "按键'G'",
-    "36": "按键'H'",
-    "37": "按键'I'",
-    "38": "按键'J'",
-    "39": "按键'K'",
-    "40": "按键'L'",
-    "41": "按键'M'",
-    "42": "按键'N'",
-    "43": "按键'O'",
-    "44": "按键'P'",
-    "45": "按键'Q'",
-    "46": "按键'R'",
-    "47": "按键'S'",
-    "48": "按键'T'",
-    "49": "按键'U'",
-    "50": "按键'V'",
-    "51": "按键'W'",
-    "52": "按键'X'",
-    "53": "按键'Y'",
-    "54": "按键'Z'",
-    "4": "返回键",
-    "5": "拨号键",
-    "6": "挂机键",
-    "82": "菜单键",
-    "3": "home键",
-    "27": "拍照键"
-}
-
-# 默认分页信息
-pagination_size = {
-    "page_num": 1,
-    "page_size": 20,
-}
-
-# python数据类型
-data_type_mapping = [
-    {"label": "普通字符串", "value": "str"},
-    {"label": "json字符串", "value": "json"},
-    {"label": "整数", "value": "int"},
-    {"label": "小数", "value": "float"},
-    {"label": "列表", "value": "list"},
-    {"label": "字典", "value": "dict"},
-    {"label": "布尔值True", "value": "true"},
-    {"label": "布尔值False", "value": "false"},
-    {"label": "自定义函数", "value": "func"},
-    {"label": "自定义变量", "value": "variable"}
-]
-
-# ui自动化支持的浏览器
-browser_name = {
-    "chrome": "chrome",
-    "gecko": "火狐"
-}
-
-# 运行测试的类型
-run_type = {
-    "api": "接口",
-    "case": "用例",
-    "suite": "用例集",
-    "task": "任务",
-}
-
-# 测试类型
-test_type = [
-    {"key": "api", "label": "接口测试"},
-    {"key": "appUi", "label": "app测试"},
-    {"key": "webUi", "label": "ui测试"}
-]
-
-# 运行app自动化的服务器设备系统映射
-server_os_mapping = ["Windows", "Mac", "Linux"]
-
-# 运行app自动化的手机设备系统映射
-phone_os_mapping = ["Android", "iOS"]
-
-# 创建项目/服务时，默认要同时创建的用例集列表
-api_suite_list = [
-    {"key": "base", "value": "基础用例集"},
-    {"key": "quote", "value": "引用用例集"},
-    {"key": "api", "value": "单接口用例集"},
-    {"key": "process", "value": "流程用例集"},
-    {"key": "assist", "value": "造数据用例集"}
-]
-ui_suite_list = [
-    {"key": "base", "value": "基础用例集"},
-    {"key": "quote", "value": "引用用例集"},
-    {"key": "process", "value": "流程用例集"},
-    {"key": "assist", "value": "造数据用例集"}
-]
-
 device_extends = {
     "contact_count": "联系人个数",
     "contact_person_count": "通讯录条数",
@@ -298,11 +132,19 @@ device_extends = {
     "app_installed_record_count": "APP安装数量"
 }
 
+# 2024 年的节假日，每年需手动更新
+holiday_list = [
+    "01-01",
+    "02-10", "02-11", "02-12", "02-13", "02-14", "02-15", "02-16", "02-17",
+    "04-04", "04-05", "04-06",
+    "05-01", "05-02", "05-03", "05-04", "05-05",
+    "06-08", "06-09", "06-10",
+    "09-15", "09-16", "09-17",
+    "10-01", "10-02", "10-03", "10-04", "10-05", "10-06", "10-07"
+]
+
 # 回调流水线消息内容
 call_back_msg_addr = ""
-
-# 保存脚本时，不校验格式的函数名字
-name_list = ["contextmanager"]
 
 with open('rules.json', 'r', encoding='utf8') as rules:
     permission_dict = json.load(rules)
@@ -319,7 +161,7 @@ def init_permission():
                 if Permission.get_first(source_addr=rule["source_addr"], source_type=source_type) is None:
                     rule["source_type"] = source_type
                     rule["source_class"] = "menu" if rule["source_addr"] != "admin" else "admin"
-                    Permission().create(rule)
+                    Permission.model_create(rule)
                     print_type_delimiter(f'权限【{rule["name"]}】创建成功')
     print_type_delimiter("权限创建完成")
 
@@ -331,21 +173,21 @@ def init_role():
 
     print_type_delimiter("开始创建【后端管理员】角色")
     if Role.get_first(name="管理员-后端") is None:
-        admin_role = Role().create({"name": "管理员-后端", "desc": "后端管理员, 有权限访问任何接口"})
+        admin_role = Role.model_create_and_get({"name": "管理员-后端", "desc": "后端管理员, 有权限访问任何接口"})
         admin_permission = Permission.get_first(source_addr='admin', source_type='api')
-        RolePermissions().create({"role_id": admin_role.id, "permission_id": admin_permission.id})
+        RolePermissions.model_create({"role_id": admin_role.id, "permission_id": admin_permission.id})
     print_type_delimiter("【后端管理员】创建完成")
 
     print_type_delimiter("开始创建【前端管理员】角色")
     if Role.get_first(name="管理员-前端") is None:
-        admin_role = Role().create({"name": "管理员-前端", "desc": "前端管理员, 有权限访问任何页面、按钮"})
+        admin_role = Role.model_create_and_get({"name": "管理员-前端", "desc": "前端管理员, 有权限访问任何页面、按钮"})
         admin_permission = Permission.get_first(source_addr='admin', source_type='front')
-        RolePermissions().create({"role_id": admin_role.id, "permission_id": admin_permission.id})
+        RolePermissions.model_create({"role_id": admin_role.id, "permission_id": admin_permission.id})
     print_type_delimiter("【前端管理员】创建完成")
 
     print_type_delimiter("开始创建测试人员角色")
     if Role.get_first(name="测试人员") is None:
-        test_role = Role().create({"name": "测试人员", "desc": "能访问项目的基本信息，不能访问配置管理"})
+        test_role = Role.model_create_and_get({"name": "测试人员", "desc": "能访问项目的基本信息，不能访问配置管理"})
         for source_type, permission_rules in permission_dict.items():
             if source_type == "front":
                 for rule_type, source_addr_list in permission_rules.items():
@@ -353,13 +195,13 @@ def init_role():
                         addr = source["source_addr"]
                         if addr.startswith(('/system', '/system', '/help', 'admin')) is False:
                             permission = Permission.get_first(source_addr=addr)
-                            RolePermissions().create({"role_id": test_role.id, "permission_id": permission.id})
+                            RolePermissions.model_create({"role_id": test_role.id, "permission_id": permission.id})
     print_type_delimiter("测试人员角色创建完成")
 
     print_type_delimiter("开始创建业务线负责人角色")
     if Role.get_first(name="业务线负责人") is None:
         test_role = Role.get_first(name="测试人员")
-        manager_role = Role().create({
+        manager_role = Role.model_create_and_get({
             "name": "业务线负责人",
             "desc": "有权限访问项目的任何页面、按钮和配置管理",
             "extend_role": [test_role.id]
@@ -373,7 +215,7 @@ def init_role():
                         if addr in ['/system', '/api/system/role/list'] or addr.startswith(
                                 ('/config', '/system/user', '/api/system/user')):
                             permission = Permission.get_first(source_addr=addr)
-                            RolePermissions().create({"role_id": manager_role.id, "permission_id": permission.id})
+                            RolePermissions.model_create({"role_id": manager_role.id, "permission_id": permission.id})
 
     print_type_delimiter("业务线负责人角色创建完成")
 
@@ -389,8 +231,9 @@ def init_user():
     business_dict = {"name": "公共业务线", "code": "common", "desc": "公共业务线，所有人都可见、可操作", "num": 0}
     business = BusinessLine.get_first(code=business_dict["code"])
     if business is None:
-        business_dict["env_list"] = [run_env.id for run_env in RunEnv.get_all()]
-        business = BusinessLine().create(business_dict)
+        all_env_id_list = [run_env[0] for run_env in RunEnv.db.session.query(RunEnv.id).filter().all()]
+        business_dict["env_list"] = all_env_id_list
+        business = BusinessLine.model_create_and_get(business_dict)
         print_item_delimiter(f'业务线【{business.name}】创建成功')
     print_type_delimiter("业务线创建完成")
 
@@ -403,12 +246,12 @@ def init_user():
     ]
     for user_info in user_list:
         if User.get_first(account=user_info["account"]) is None:
-            user_info["status"] = 1
+            user_role_list = user_info.pop("role")
             user_info["business_list"] = [business.id]
-            user = User().create(user_info)
-            for role_name in user_info["role"]:
+            user = User.model_create_and_get(user_info)
+            for role_name in user_role_list:
                 role = Role.get_first(name=role_name)
-                UserRoles().create({"user_id": user.id, "role_id": role.id})
+                UserRoles.model_create({"user_id": user.id, "role_id": role.id})
             print_item_delimiter(f'用户【{user_info["name"]}】创建成功')
 
     print_type_delimiter("用户创建完成")
@@ -427,7 +270,7 @@ def init_config_type():
     ]
     for data in config_type_list:
         if ConfigType.get_first(name=data["name"]) is None:
-            ConfigType().create(data)
+            ConfigType.model_create(data)
             print_item_delimiter(f'配置类型【{data["name"]}】创建成功')
     print_type_delimiter("配置类型创建完成")
 
@@ -446,24 +289,13 @@ def init_config():
         ],
 
         "系统配置": [
-            {"name": "platform_name", "value": "极测平台", "desc": "测试平台名字"},
-            {"name": "run_type", "value": JsonUtil.dumps(run_type), "desc": "运行测试的类型"},
-            {"name": "data_type_mapping", "value": JsonUtil.dumps(data_type_mapping), "desc": "python数据类型映射"},
-            {"name": "yapi_host", "value": "", "desc": "yapi域名"},
-            {"name": "yapi_account", "value": "", "desc": "yapi账号"},
-            {"name": "yapi_password", "value": "", "desc": "yapi密码"},
-            {"name": "ignore_keyword_for_group", "value": "[]", "desc": "不需要从yapi同步的分组关键字"},
-            {"name": "ignore_keyword_for_project", "value": "[]", "desc": "不需要从yapi同步的服务关键字"},
             {"name": "kym", "value": JsonUtil.dumps(kym_keyword), "desc": "KYM分析项"},
             {"name": "sync_mock_data", "value": JsonUtil.dumps({}), "desc": "同步回调数据源"},
             {"name": "async_mock_data", "value": JsonUtil.dumps({}), "desc": "异步回调数据源"},
-            {"name": "holiday_list", "value": '["01-01", "04-05", "05-01", "10-01"]', "desc": "节假日/调休日期，需每年手动更新"},
-            {"name": "default_diff_message_send_addr", "value": "", "desc": "yapi接口监控报告默认发送钉钉机器人地址"},
+            {"name": "holiday_list", "value": JsonUtil.dumps(holiday_list), "desc": "节假日/调休日期，需每年手动更新"},
             {"name": "run_time_out", "value": "600", "desc": "前端运行测试时，等待的超时时间，秒"},
             {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名"},
-            {"name": "pagination_size", "value": JsonUtil.dumps(pagination_size), "desc": "默认分页信息"},
             {"name": "callback_webhook", "value": "", "desc": "接口收到回调请求后即时通讯通知的地址"},
-            {"name": "test_type", "value": JsonUtil.dumps(test_type), "desc": "测试类型"},
             {"name": "call_back_msg_addr", "value": call_back_msg_addr, "desc": "发送回调流水线消息内容地址"},
             {"name": "save_func_permissions", "value": "0", "desc": "保存脚本权限，0所有人都可以，1管理员才可以"},
             {
@@ -473,54 +305,36 @@ def init_config():
             },
             {
                 "name": "func_error_addr",
-                "value": "/#/assist/errorRecord",
+                "value": "/assist/errorRecord",
                 "desc": "展示自定义函数错误记录的前端地址（用于即时通讯通知）"
-            },
-            {
-                "name": "make_user_info_mapping",
-                "value": JsonUtil.dumps(make_user_info_mapping),
-                "desc": "生成用户信息的可选项，映射faker的模块（不了解faker模块勿改）"
-            },
-            {
-                "name": "make_user_language_mapping",
-                "value": JsonUtil.dumps(make_user_language_mapping),
-                "desc": "生成用户信息的可选语言，映射faker的模块（不了解faker模块勿改）"
-            },
+            }
         ],
 
         "接口自动化": [
-            {"name": "http_methods", "value": "GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS",
-             "desc": "http请求方式，以英文的 ',' 隔开"},
             {"name": "run_time_error_message_send_addr", "value": "", "desc": "运行测试用例时，有错误信息实时通知地址"},
             {"name": "request_time_out", "value": 60, "desc": "运行测试步骤时，request超时时间"},
-            {"name": "api_suite_list", "value": JsonUtil.dumps(api_suite_list), "desc": "接口自动化用例集类型"},
             {
                 "name": "api_report_addr",
-                "value": "/#/apiTest/reportShow?id=",
+                "value": "/apiTest/reportShow?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
             },
             {
                 "name": "diff_api_addr",
-                "value": "/#/assist/diffRecordShow?id=",
+                "value": "/assist/diffRecordShow?id=",
                 "desc": "展示yapi监控报告页面的前端地址（用于即时通讯通知）"
             }
         ],
 
         "webUi自动化": [
             {"name": "wait_time_out", "value": 10, "desc": "等待元素出现时间"},
-            {"name": "browser_name", "value": JsonUtil.dumps(browser_name), "desc": "支持的浏览器"},
-            {"name": "ui_suite_list", "value": JsonUtil.dumps(ui_suite_list), "desc": "UI自动化用例集类型"},
             {
                 "name": "web_ui_report_addr",
-                "value": "/#/webUiTest/reportShow?id=",
+                "value": "/webUiTest/reportShow?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
             }
         ],
 
         "appUi自动化": [
-            {"name": "server_os_mapping", "value": JsonUtil.dumps(server_os_mapping), "desc": "appium服务器系统类型"},
-            {"name": "phone_os_mapping", "value": JsonUtil.dumps(phone_os_mapping), "desc": "运行app自动化的手机系统"},
-            {"name": "app_key_code", "value": JsonUtil.dumps(app_key_code), "desc": "模拟手机键盘输入code"},
             {"name": "device_extends", "value": JsonUtil.dumps(device_extends),
              "desc": "创建设备时，默认的设备详细数据"},
             {
@@ -530,7 +344,7 @@ def init_config():
             },
             {
                 "name": "app_ui_report_addr",
-                "value": "/#/appUiTest/reportShow?id=",
+                "value": "/appUiTest/reportShow?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
             }
         ]
@@ -539,7 +353,7 @@ def init_config():
         for conf in conf_list:
             if Config.get_first(name=conf["name"]) is None:
                 conf["type"] = type_dict[conf_type]
-                Config().create(conf)
+                Config.model_create(conf)
                 print_item_delimiter(f'配置【{conf["name"]}】创建成功')
     print_type_delimiter("配置创建完成")
 
@@ -558,7 +372,7 @@ def init_script():
             with open(os.path.join("static", f'{data["name"]}.py'), "r", encoding="utf-8") as fp:
                 func_data = fp.read()
             data["script_data"] = func_data
-            Script().create(data)
+            Script.model_create(data)
             print_item_delimiter(f'函数文件【{data["name"]}】创建成功')
     print_type_delimiter("函数文件模板创建完成")
 
@@ -577,7 +391,7 @@ def init_run_env():
         for index, env in enumerate(env_dict):
             if RunEnv.get_first(code=env["code"]) is None:
                 env["num"] = index
-                RunEnv().create(env)
+                RunEnv.model_create(env)
                 print_item_delimiter(f'运行环境【{env["name"]}】创建成功')
     print_type_delimiter("运行环境创建完成")
 
@@ -586,13 +400,13 @@ def init_run_env():
 def init():
     """ 初始化 权限、角色、管理员 """
     print_start_delimiter("开始初始化数据")
+    init_run_env()
     init_permission()
     init_role()
     init_user()
     init_config_type()
     init_config()
     init_script()
-    init_run_env()
     print_start_delimiter("数据初始化完毕")
 
 

@@ -1,78 +1,77 @@
 # -*- coding: utf-8 -*-
-from flask import current_app as app, request, g
+from flask import current_app as app
 
-from app.api_test.models.report import ApiReport as Report
-from app.api_test.models.case import ApiCase as Case
-from app.api_test.models.suite import ApiCaseSuite as CaseSuite
-from app.busines import TaskBusiness, RunCaseBusiness
-from app.system.models.user import User
-from utils.client.runApiTest import RunCase
-from app.api_test.blueprint import api_test
-from app.api_test.models.task import ApiTask as Task
-from app.api_test.forms.task import RunTaskForm, AddTaskForm, EditTaskForm, HasTaskIdForm, DeleteTaskIdForm, \
+from ..blueprint import api_test
+from ...base_form import ChangeSortForm
+from ...busines import RunCaseBusiness
+from ..model_factory import ApiReport as Report, ApiCase as Case, ApiCaseSuite as CaseSuite, ApiTask as Task
+from ..forms.task import RunTaskForm, AddTaskForm, EditTaskForm, GetTaskForm, DeleteTaskForm, \
     GetTaskListForm
+from utils.client.run_api_test import RunCase
 
 
 @api_test.login_get("/task/list")
 def api_get_task_list():
     """ 任务列表 """
-    form = GetTaskListForm().do_validate()
-    return app.restful.success(data=Task.make_pagination(form))
+    form = GetTaskListForm()
+    if form.detail:
+        get_filed = [Task.id, Task.name, Task.cron, Task.skip_holiday, Task.status, Task.project_id]
+    else:
+        get_filed = Task.get_simple_filed_list()
+    return app.restful.get_success(Task.make_pagination(form, get_filed=get_filed))
 
 
 @api_test.login_put("/task/sort")
 def api_change_task_sort():
     """ 更新定时任务的排序 """
-    Task.change_sort(request.json.get("List"), request.json.get("pageNum"), request.json.get("pageSize"))
-    return app.restful.success(msg="修改排序成功")
+    form = ChangeSortForm()
+    Task.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @api_test.login_post("/task/copy")
 def api_copy_task():
     """ 复制定时任务 """
-    form = HasTaskIdForm().do_validate()
-    new_task = TaskBusiness.copy(form, Task)
-    return app.restful.success(msg="复制成功", data=new_task.to_dict())
+    form = GetTaskForm()
+    form.task.copy()
+    return app.restful.copy_success()
 
 
 @api_test.login_get("/task")
 def api_get_task():
     """ 获取定时任务 """
-    form = HasTaskIdForm().do_validate()
-    return app.restful.success(data=form.task.to_dict())
+    return app.restful.success(data=GetTaskForm().task.to_dict())
 
 
 @api_test.login_post("/task")
 def api_add_task():
     """ 新增定时任务 """
-    form = AddTaskForm().do_validate()
-    form.num.data = Task.get_insert_num(project_id=form.project_id.data)
-    new_task = Task().create(form.data)
-    return app.restful.success(f"任务【{form.name.data}】新建成功", new_task.to_dict())
+    form = AddTaskForm()
+    Task.model_create(form.model_dump())
+    return app.restful.add_success()
 
 
 @api_test.login_put("/task")
 def api_change_task():
     """ 修改定时任务 """
-    form = EditTaskForm().do_validate()
-    form.num.data = Task.get_insert_num(project_id=form.project_id.data)
-    form.task.update(form.data)
-    return app.restful.success(f"任务【{form.name.data}】修改成功", form.task.to_dict())
+    form = EditTaskForm()
+    form.task.model_update(form.model_dump())
+    return app.restful.change_success()
 
 
 @api_test.login_delete("/task")
 def api_delete_task():
     """ 删除定时任务 """
-    form = DeleteTaskIdForm().do_validate()
+    form = DeleteTaskForm()
     form.task.delete()
-    return app.restful.success(f"任务【{form.task.name}】删除成功")
+    return app.restful.delete_success()
 
 
 @api_test.login_post("/task/status")
 def api_enable_task():
     """ 启用定时任务 """
-    form = HasTaskIdForm().do_validate()
-    res = TaskBusiness.enable(form, "api")
+    form = GetTaskForm()
+    res = form.task.enable_task()
     if res["status"] == 1:
         return app.restful.success(f"任务【{form.task.name}】启用成功", data=res["data"])
     else:
@@ -82,8 +81,8 @@ def api_enable_task():
 @api_test.login_delete("/task/status")
 def api_disable_task():
     """ 禁用定时任务 """
-    form = HasTaskIdForm().do_validate()
-    res = TaskBusiness.disable(form, "api")
+    form = GetTaskForm()
+    res = form.task.disable_task()
     if res["status"] == 1:
         return app.restful.success(f"任务【{form.task.name}】禁用成功", data=res["data"])
     else:
@@ -93,33 +92,28 @@ def api_disable_task():
 @api_test.post("/task/run")
 def api_run_task():
     """ 运行定时任务 """
-    form = RunTaskForm().do_validate()
-    case_id = CaseSuite.get_case_id(
-        Case, form.task.project_id, form.task.loads(form.task.suite_ids), form.task.loads(form.task.case_ids)
-    )
+    form = RunTaskForm()
+    case_id_list = CaseSuite.get_case_id(Case, form.task.project_id, form.task.suite_ids, form.task.case_ids)
     batch_id = Report.get_batch_id()
-    env_list = form.env_list.data or form.loads(form.task.env_list)
+    env_list = form.env_list or form.task.env_list
     for env_code in env_list:
         report_id = RunCaseBusiness.run(
-            batch_id=batch_id,
-            env_code=env_code,
-            trigger_type=form.trigger_type.data,
-            is_async=form.is_async.data,
             project_id=form.task.project_id,
+            batch_id=batch_id,
             report_name=form.task.name,
-            task_type="task",
             report_model=Report,
-            trigger_id=form.id.data,
-            case_id=case_id,
+            env_code=env_code,
+            trigger_type=form.trigger_type,
+            is_async=form.is_async,
+            task_type="task",
+            trigger_id=form.id,
+            case_id_list=case_id_list,
             run_type="api",
-            run_func=RunCase,
-            task=form.task.to_dict(),
-            extend_data=form.extend.data,
-            create_user=g.user_id or User.get_first(account="common").id
+            runner=RunCase,
+            task_dict=form.task.to_dict(),
+            extend_data=form.extend
         )
-    return app.restful.success(
-        msg="触发执行成功，请等待执行完毕",
-        data={
-            "batch_id": batch_id,
-            "report_id": report_id if len(env_list) == 1 else None
-        })
+    return app.restful.trigger_success({
+        "batch_id": batch_id,
+        "report_id": report_id if len(env_list) == 1 else None
+    })

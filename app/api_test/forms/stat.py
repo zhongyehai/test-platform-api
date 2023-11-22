@@ -1,26 +1,25 @@
 # -*- coding: utf-8 -*-
-from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired
+from typing import Optional, Union
+from pydantic import Field
 
-from app.baseForm import BaseForm
-from app.api_test.models.project import ApiProject as Project
-from app.api_test.models.report import ApiReport as Report
+from ...base_form import PaginationForm
+from ..model_factory import ApiProject as Project, ApiReport as Report
 
 
-class AnalyseForm(BaseForm):
-    business_id = IntegerField(validators=[DataRequired("请选择业务线")])
-    trigger_type = StringField()
-    start_time = StringField()
-    end_time = StringField()
+class AnalyseForm(PaginationForm):
+    business_id: int = Field(..., title="业务线id")
+    trigger_type: Optional[str] = Field(None, title="触发类型")
+    start_time: Optional[str] = Field(None, title="开始时间")
+    end_time: Optional[str] = Field(None, title="结束时间")
 
-    def get_filters(self):
+    def get_query_filter(self):
         filters = []
         query_set = Project.query.with_entities(
-            Project.id).filter(Project.business_id == self.business_id.data).all()  # [(1,)]
+            Project.id).filter(Project.business_id == self.business_id).all()  # [(1,)]
         filters.append(Report.project_id.in_([project_query[0] for project_query in query_set]))
 
-        if self.trigger_type.data:
-            filters.append(Report.trigger_type == self.trigger_type.data)
-        if self.start_time.data:
-            filters.append(Report.created_time.between(self.start_time.data, self.end_time.data))
+        if self.trigger_type:
+            filters.append(Report.trigger_type == self.trigger_type)
+        if self.start_time:
+            filters.append(Report.create_time.between(self.start_time, self.end_time))
         return filters

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 
-from app.baseModel import BaseModel, db
+from app.base_model import BaseModel, db
 
 
 class Hits(BaseModel):
@@ -17,22 +17,3 @@ class Hits(BaseModel):
     env = db.Column(db.String(128), index=True, comment="运行环境")
     report_id = db.Column(db.Integer(), index=True, comment="测试报告id")
     desc = db.Column(db.Text(), comment="备注")
-
-    @classmethod
-    def make_pagination(cls, form):
-        """ 解析分页条件 """
-        filters = []
-        if form.date.data:
-            filters.append(cls.date == form.date.data)
-        if form.report_id.data:
-            filters.append(cls.report_id == form.report_id.data)
-        if form.hit_type.data:
-            filters.append(cls.hit_type == form.hit_type.data)
-        if form.test_type.data:
-            filters.append(cls.test_type == form.test_type.data)
-        return cls.pagination(
-            page_num=form.pageNum.data,
-            page_size=form.pageSize.data,
-            filters=filters,
-            order_by=cls.id.desc()
-        )

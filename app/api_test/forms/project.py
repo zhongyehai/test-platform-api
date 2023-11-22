@@ -1,182 +1,183 @@
 # -*- coding: utf-8 -*-
+from typing import Optional, Union, List
+
 import validators
 from flask import g
-from wtforms import StringField, IntegerField
-from wtforms.validators import ValidationError, Length, DataRequired
+from sqlalchemy import or_
+from pydantic import ValidationError, field_validator, ValidationInfo
 
-from app.baseForm import BaseForm
-from app.api_test.models.project import ApiProject as Project, ApiProjectEnv as ProjectEnv
-from app.api_test.models.module import ApiModule as Module
-from app.system.models.user import User
-from app.assist.models.script import Script
+from ...base_form import BaseForm, Field, PaginationForm, ValidateModel, HeaderModel
+from ..model_factory import ApiProject as Project, ApiProjectEnv as ProjectEnv, ApiModule as Module, \
+    ApiCaseSuite as CaseSuite, ApiTask as Task
+from ...system.models.user import User
+from ...assist.models.script import Script
+
+
+class GetProjectListForm(PaginationForm):
+    """ 查找服务form """
+    name: Optional[str] = Field(None, title="服务名")
+    manager: Optional[Union[int, str]] = Field(None, title="负责人")
+    business_id: Optional[int] = Field(None, title="所属业务线")
+    create_user: Optional[Union[int, str]] = Field(None, title="创建者")
+
+    def get_query_filter(self, *args, **kwargs):
+        """ 查询条件 """
+        filter_list = []
+        if self.business_id:  # 传了业务线id，就获取对应的业务线的服务
+            filter_list.append(Project.business_id == self.business_id)
+        else:
+            if User.is_not_admin():  # 非管理员
+                filter_list.append(Project.business_id.in_(g.business_list))
+        if self.name:
+            filter_list.append(Project.name.like(f'%{self.name}%'))
+        if self.manager:
+            filter_list.append(Project.manager == self.manager)
+        if self.business_id:
+            filter_list.append(Project.business_id == self.business_id)
+        if self.create_user:
+            filter_list.append(Project.create_user == self.create_user)
+        return filter_list
+
+
+class GetProjectForm(BaseForm):
+    """ 获取具体服务信息 """
+    id: int = Field(..., title='服务id')
+
+    @field_validator("id")
+    def validate_id(cls, value):
+        project = cls.validate_data_is_exist("服务不存在", Project, id=value)
+        setattr(cls, "project", project)
+        return value
+
+
+class DeleteProjectForm(GetProjectForm):
+    """ 删除服务 """
+
+    @field_validator("id")
+    def validate_id(cls, value):
+        cls.validate_is_true("不能删除别人负责的服务", Project.is_can_delete(value))
+        # 服务下有模块、用例集、任务，都不想允许删除
+        query_data = Project.db.session.query(Project.id).filter(or_(
+            Module.project_id == value, CaseSuite.project_id == value, Task.project_id == value)).first()
+        cls.validate_is_false(query_data, '服务下有模块、用例集、任务时，不允许删除')
+        return value
 
 
 class AddProjectForm(BaseForm):
     """ 添加服务参数校验 """
-    name_length = Project.name.property.columns[0].type.length
-    name = StringField(validators=[
-        DataRequired("服务名称不能为空"),
-        Length(1, name_length, message=f"服务名长度不可超过{name_length}位")
-    ])
-    manager = StringField(validators=[DataRequired("请选择负责人")])
-    business_id = StringField(validators=[DataRequired("请选择业务线")])
-    num = StringField()
-    swagger = StringField()
-    script_list = StringField()
+    name: str = Field(..., title="服务名称")
+    manager: int = Field(..., title="负责人")
+    business_id: int = Field(..., title="业务线")
+    swagger: Optional[Union[str, None]] = Field(None, title="swagger地址")
+    script_list: Optional[list[int]] = Field([], title="脚本文件")
 
-    def validate_name(self, field):
-        """ 校验服务名不重复 """
-        self.validate_data_is_not_exist(f"服务名【{field.data}】已存在", Project, name=field.data)
-
-    def validate_manager(self, field):
-        """ 校验服务负责人是否存在 """
-        self.validate_data_is_exist(f"id为【{field.data}】的用户不存在", User, id=field.data)
-
-    def validate_swagger(self, field):
+    @field_validator("swagger")
+    def validate_swagger(cls, value):
         """ 校验swagger地址是否正确 """
-        if field.data:
-            self.validate_data_is_true(
-                f"swagger地址不正确，请输入正确地址",
-                validators.url(field.data) is True
-            )
-            self.validate_data_is_true(
-                f"swagger地址不正确，请输入获取swagger数据的地址，不要输入swagger-ui地址",
-                "swagger-ui.htm" not in field.data
-            )
+        if value:
+            cls.validate_is_true("swagger地址不正确，请输入正确地址", validators.url(value) is True)
+            cls.validate_is_true("请输入获取swagger数据的地址，不要输入swagger-ui地址", "swagger-ui.htm" not in value)
+        return value
 
 
-class FindProjectForm(BaseForm):
-    """ 查找服务form """
-    name = StringField()
-    manager = StringField()
-    business_id = IntegerField()
-    create_user = StringField()
-    pageNum = IntegerField()
-    pageSize = IntegerField()
-
-    def validate_business_id(self, filed):
-        if self.is_not_admin():
-            if filed.data and (filed.data not in g.business_list):
-                raise ValidationError("当前用户没有权限")
-
-
-class GetProjectByIdForm(BaseForm):
-    """ 获取具体服务信息 """
-    id = IntegerField(validators=[DataRequired("服务id必传")])
-
-    def validate_id(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
-        setattr(self, "project", project)
-
-
-class DeleteProjectForm(GetProjectByIdForm):
-    """ 删除服务 """
-
-    def validate_id(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
-        self.validate_data_is_true("不能删除别人负责的服务", Project.is_can_delete(project.id, project))
-        self.validate_data_is_not_exist("请先去【页面管理】删除服务下的模块", Module, project_id=field.data)
-        setattr(self, "project", project)
-
-
-class EditProjectForm(GetProjectByIdForm, AddProjectForm):
+class EditProjectForm(GetProjectForm, AddProjectForm):
     """ 修改服务参数校验 """
 
-    def validate_name(self, field):
-        """ 校验服务名不重复 """
-        self.validate_data_is_not_repeat(
-            f"服务名【{field.data}】已存在",
-            Project,
-            self.id.data,
-            name=field.data
-        )
-        # old_project = ApiProject.get_first(name=field.data)
-        # if old_project and old_project.name == field.data and old_project.id != self.id.data:
-        #     raise ValidationError(f"服务名【{field.data}】已存在")
+
+class GetEnvForm(BaseForm):
+    """ 获取服务环境form """
+    project_id: int = Field(..., title="服务id")
+    env_id: int = Field(..., title="环境id")
+
+    @field_validator('project_id', 'env_id')
+    def validate_env_id(cls, value, info: ValidationInfo):
+        if info.field_name == 'env_id':
+            project_id = info.data["project_id"]
+            env_data = ProjectEnv.get_first(project_id=project_id, env_id=value)
+            if not env_data:  # 如果没有就插入一条记录， 并且自动同步当前服务已有的环境数据
+                project_other_env = ProjectEnv.get_first(project_id=project_id)
+                if project_other_env:
+                    insert_env_data = project_other_env.to_dict()
+                    insert_env_data["env_id"] = value
+                else:
+                    insert_env_data = {"env_id": value, "project_id": project_id}
+                ProjectEnv.model_create(insert_env_data)
+            setattr(cls, "env_data", env_data)
+        return value
 
 
-class AddEnv(BaseForm):
-    """ 添加环境 """
-    env_id = IntegerField(validators=[DataRequired("所属环境必传")])
-    project_id = IntegerField(validators=[DataRequired("服务id必传")])
-    host = StringField(validators=[DataRequired("域名必传")])
-    variables = StringField()
-    headers = StringField()
-    all_func_name = {}
-
-    def validate_project_id(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
-        self.all_func_name = Script.get_func_by_script_name(self.loads(project.script_list), self.env_id.data)
-        setattr(self, "project", project)
-
-    def validate_host(self, field):
-        if validators.url(field.data) is not True:
-            raise ValidationError(f"环境地址【{field.data}】不正确，请输入正确的格式")
-
-    def validate_variables(self, field):
-        """ 校验公共变量 """
-        # 校验格式
-        self.validate_variable_format(field.data)
-
-        # 校验存在使用自定义函数，但是没有引用函数文件的情况
-        self.validate_func(self.all_func_name, self.dumps(field.data))
-
-        # 校验存在使用自定义变量，但是没有声明的情况
-        self.validate_variable({
-            variable.get("key"): variable.get("value") for variable in field.data if variable.get("key")
-        }, self.dumps(field.data), "自定义变量")  # 公共变量
-
-    def validate_headers(self, field):
-        """ 校验头部信息是否有引用自定义函数 """
-        # 校验格式
-        self.validate_header_format(field.data)
-
-        # 校验存在使用自定义函数，但是没有引用函数文件的情况
-        self.validate_func(self.all_func_name, self.dumps(field.data))
-
-        # 校验存在使用自定义变量，但是没有声明的情况
-        self.validate_variable({
-            variable.get("key"): variable.get("value") for variable in self.variables.data if variable.get("key")
-        }, self.dumps(field.data), "头部信息")
-
-
-class EditEnv(AddEnv):
+class EditEnv(GetEnvForm):
     """ 修改环境 """
-    id = IntegerField(validators=[DataRequired("环境id必传")])
+    id: int = Field(..., title='环境数据id')
+    host: str = Field(..., title='域名')
+    variables: List[ValidateModel] = Field(title="变量")
+    headers: List[HeaderModel] = Field(title="头部信息")
 
-    def validate_id(self, field):
-        env_data = self.validate_data_is_exist(
-            "当前环境不存在",
-            ProjectEnv,
-            id=field.data
-        )
-        setattr(self, "env_data", env_data)
+    @field_validator('id')
+    def validate_id(cls, value):
+        project_env = cls.validate_data_is_exist("环境不存在", ProjectEnv, id=value)
+        setattr(cls, 'project_env', project_env)
+        return value
 
+    @field_validator('project_id')
+    def validate_project_id(cls, value, values):
+        project = cls.validate_data_is_exist("服务不存在", Project, id=value)
+        all_func_name = Script.get_func_by_script_id(project.script_list)
+        setattr(cls, 'all_func_name', all_func_name)
+        return value
 
-class FindEnvForm(BaseForm):
-    """ 查找服务环境form """
-    projectId = IntegerField(validators=[DataRequired("服务id必传")])
-    env_id = StringField()
+    @field_validator('host')
+    def validate_host(cls, value):
+        if validators.url(value) is not True:
+            raise ValidationError(f"环境地址【{value}】不正确，请输入正确的格式")
+        return value
 
-    def validate_projectId(self, field):
-        env_data = ProjectEnv.get_first(project_id=field.data, env_id=self.env_id.data)
-        if not env_data:  # 如果没有就插入一条记录， 并且自动同步当前服务已有的环境数据
-            project_other_env = ProjectEnv.get_first(project_id=field.data)
-            if project_other_env:
-                insert_env_data = project_other_env.to_dict()
-                insert_env_data["env_id"] = self.env_id.data
-            else:
-                insert_env_data = {"env_id": self.env_id.data, "project_id": field.data}
-            env_data = ProjectEnv().create(insert_env_data)
-        setattr(self, "env_data", env_data)
+    @field_validator('env_id')
+    def validate_env_id(cls, value):
+        return value
+
+    @field_validator('variables')
+    def validate_variables(cls, value):
+        """ 公共变量参数的校验
+        1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
+        2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
+        """
+        all_variables = {variable.key: variable.value for variable in value if variable.key}
+        variables = [variable.model_dump() for variable in value]
+        cls.validate_variable_format(variables)  # 校验格式
+        cls.validate_func(getattr(cls, 'all_func_name'), content=cls.dumps(variables))  # 校验引用的自定义函数
+        cls.validate_variable(all_variables, cls.dumps(variables), "自定义变量")  # 校验变量
+        setattr(cls, 'all_variables', all_variables)
+        return value
+
+    @field_validator('headers')
+    def validate_headers(cls, value):
+        """ 头部参数的校验
+        1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
+        2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
+        """
+        headers = [header.model_dump() for header in value]
+        cls.validate_header_format(headers)  # 校验格式
+        cls.validate_func(getattr(cls, 'all_func_name'), content=cls.dumps(headers))  # 校验引用的自定义函数
+        cls.validate_variable(getattr(cls, 'all_variables'), cls.dumps(headers), "头部信息")  # 校验引用的变量
+        return value
 
 
 class SynchronizationEnvForm(BaseForm):
     """ 同步环境form """
-    projectId = IntegerField(validators=[DataRequired("服务id必传")])
-    envFrom = StringField()
-    envTo = StringField()
+    project_id: int = Field(..., title="服务id")
+    env_from: int = Field(..., title="环境数据源")
+    env_to: list = Field(..., title="要同步到环境")
 
-    def validate_projectId(self, field):
-        project = self.validate_data_is_exist(f"id为【{field.data}】的服务不存在", Project, id=field.data)
-        setattr(self, "project", project)
+    @field_validator('project_id')
+    def validate_project_id(cls, value):
+        project = cls.validate_data_is_exist("服务不存在", Project, id=value)
+        setattr(cls, "project", project)
+        return value
+
+    @field_validator('env_from')
+    def validate_env_from(cls, value):
+        env_from_data = cls.validate_data_is_exist(
+            "环境不存在", ProjectEnv, project_id=getattr(cls, 'project').id, env_id=value)
+        setattr(cls, "env_from_data", env_from_data)
+        return value

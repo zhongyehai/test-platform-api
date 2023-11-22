@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from ..util.jsonUtil import JsonUtil
+from ..util.json_util import JsonUtil
 
 
 def restful_result(code, message, data, **kwargs):
@@ -13,9 +13,44 @@ def success(msg=None, data=None, **kwargs):
     return restful_result(code=200, message=msg or "处理成功", data=data, **kwargs)
 
 
+def login_success(data=None, **kwargs):
+    return success(msg="登录成功", data=data, **kwargs)
+
+
+def logout_success(data=None, **kwargs):
+    return success(msg="登出成功", data=data, **kwargs)
+
+
 def get_success(data=None, **kwargs):
-    """ 数据获取成功的响应 """
     return success(msg="获取成功", data=data, **kwargs)
+
+
+def add_success(data=None, **kwargs):
+    return success(msg="新增成功", data=data, **kwargs)
+
+
+def change_success(data=None, **kwargs):
+    return success(msg="修改成功", data=data, **kwargs)
+
+
+def delete_success(data=None, **kwargs):
+    return success(msg="删除成功", data=data, **kwargs)
+
+
+def synchronize_success(data=None, **kwargs):
+    return success(msg="同步成功", data=data, **kwargs)
+
+
+def upload_success(data=None, **kwargs):
+    return success(msg="上传成功", data=data, **kwargs)
+
+
+def trigger_success(data=None, **kwargs):
+    return success(msg="触发执行成功，请等待执行完毕", data=data, **kwargs)
+
+
+def copy_success(data=None, **kwargs):
+    return success(msg="复制成功", data=data, **kwargs)
 
 
 def fail(msg=None, data=None, **kwargs):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseTask, db
+from app.base_model import BaseTask, db
 
 
 class ApiTask(BaseTask):

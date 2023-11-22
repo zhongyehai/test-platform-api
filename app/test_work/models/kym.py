@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from app.baseModel import BaseModel, db
+from app.base_model import BaseModel, db
 
 
 class KYMModule(BaseModel):
@@ -8,4 +8,4 @@ class KYMModule(BaseModel):
     __table_args__ = {"comment": "KYM分析表"}
 
     project = db.Column(db.String(255), comment="服务名")
-    kym = db.Column(db.Text, default="{}", comment="kym分析")
+    kym = db.Column(db.JSON, default={}, comment="kym分析")
