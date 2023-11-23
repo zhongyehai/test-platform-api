@@ -89,6 +89,11 @@ class DebuggerScriptForm(GetScriptForm):
     expression: str = Field(..., title="调试表达式")
     env: str = Field(..., title="运行环境")
 
+    @field_validator("expression")
+    def validate_expression(cls, value):
+        """ 调试表达式 """
+        cls.validate_is_true(value, "调试表达式必填")
+        return value
 
 class CreatScriptForm(BaseForm):
     """ 创建自定义脚本文件 """
