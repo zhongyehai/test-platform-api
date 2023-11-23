@@ -115,7 +115,7 @@ class EditApiForm(AddApiForm, GetApiForm):
 
 class GetApiFromForm(BaseForm):
     """ 查询api归属 """
-    id: Optional[int] = Field(None, title="接口id")
+    id: Optional[str] = Field(None, title="接口id")
     addr: Optional[str] = Field(None, title="接口地址")
 
     @field_validator("id")

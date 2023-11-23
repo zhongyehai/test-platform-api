@@ -71,7 +71,7 @@ class RunCase(RunTestRunner):
             "name": step.name,
             "setup_hooks": step.up_func,
             "teardown_hooks": step.down_func,
-            "skip": not step.status,  # 无条件跳过当前测试
+            # "skip": not step.status,  # 无条件跳过当前测试
             "skip_if": step.skip_if,  # 如果条件为真，则跳过当前测试
             # "skip_unless": "",  # 除非条件为真，否则跳过当前测试
             "times": step.run_times,  # 运行次数

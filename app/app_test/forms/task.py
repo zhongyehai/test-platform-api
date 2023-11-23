@@ -132,7 +132,7 @@ class EditTaskForm(AddTaskForm, GetTaskForm):
 
 class RunTaskForm(GetTaskForm):
     """ 运行任务 """
-    env_list: Optional[list] = Field(title="运行环境")
+    env_list: Optional[list] = Field(None, title="运行环境")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     trigger_type: Optional[TriggerTypeEnum] = Field(
         TriggerTypeEnum.PAGE, title="触发类型", description="pipeline/page/cron")  # pipeline 跑完过后会发送测试报告

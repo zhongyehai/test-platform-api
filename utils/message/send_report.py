@@ -70,7 +70,7 @@ def send_report(**kwargs):
     """ 封装发送测试报告提供给多线程使用 """
     is_send, receive_type, content = kwargs.get("is_send"), kwargs.get("receive_type"), kwargs.get("content")
     if is_send == SendReportTypeEnum.ALWAYS.value or (
-            is_send == SendReportTypeEnum.ON_FAIL.value and content["success"] is False):
+            is_send == SendReportTypeEnum.ON_FAIL.value and content["result"] != "success"):
         if receive_type == ReceiveTypeEnum.EMAIL:
             send_inspection_by_email(content, kwargs)
         else:
@@ -91,7 +91,7 @@ def call_back_for_pipeline(task_id, call_back_info: list, extend: dict, status):
         call_back.get('json', {})["taskId"] = task_id
         call_back.get('json', {})["extend"] = extend
 
-        call_back_obj = CallBack.model_create({
+        call_back_obj = CallBack.model_create_and_get({
             "ip": None,
             "url": call_back.get("url", None),
             "method": call_back.get("method", None),

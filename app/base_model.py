@@ -139,7 +139,10 @@ class BaseModel(db.Model, JsonUtil):
             query_filter["report_id"] = data_dict["report_id"]
         if "report_case_id" in data_dict:
             query_filter["report_case_id"] = data_dict["report_case_id"]
-
+        if "url" in data_dict:
+            query_filter["url"] = data_dict["url"]
+        if "method" in data_dict:
+            query_filter["method"] = data_dict["method"]
         return cls.query.filter_by(**query_filter).order_by(cls.id.desc()).first()
 
     @classmethod
@@ -460,7 +463,7 @@ class BaseProject(ScriptListFiled):
 
     @classmethod
     def clear_env(cls, project_env_model):
-        project_id_list = cls.format_with_entities_query_list(cls.query.with_entities(cls.id).all())
+        project_id_list = cls.get_id_list()
         project_env_model.query.filter(project_env_model.project_id.notin_(project_id_list)).delete()
 
     @classmethod
@@ -765,7 +768,7 @@ class BaseCase(ScriptListFiled, VariablesFiled, SkipIfFiled):
     @classmethod
     def batch_delete_step(cls, step_model):
         """ 清理测试用例不存在的步骤 """
-        case_id_list = cls.format_with_entities_query_list(cls.query.with_entities(cls.id).all())
+        case_id_list = cls.get_id_list()
         step_model.query.filter(step_model.case_id.notin_(case_id_list)).delete()
 
     def copy_case(self, step_model):
@@ -1378,7 +1381,7 @@ class SaveRequestLog(BaseModel):
     ip = db.Column(db.String(256), nullable=True, comment="访问来源ip")
     url = db.Column(db.String(256), nullable=True, comment="请求地址")
     method = db.Column(db.String(10), nullable=True, comment="请求方法")
-    headers = db.Column(db.Text, nullable=True, comment="头部参数")
-    params = db.Column(db.String(256), nullable=True, comment="查询字符串参数")
-    data_form = db.Column(db.Text, nullable=True, comment="form_data参数")
-    data_json = db.Column(db.Text, nullable=True, comment="json参数")
+    headers = db.Column(db.JSON, nullable=True, comment="头部参数")
+    params = db.Column(db.JSON, nullable=True, comment="查询字符串参数")
+    data_form = db.Column(db.JSON, nullable=True, comment="form_data参数")
+    data_json = db.Column(db.JSON, nullable=True, comment="json参数")

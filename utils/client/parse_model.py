@@ -28,7 +28,7 @@ class FormatModel(JsonUtil):
         """
         return {
             v["key"]: self.build_data(v.get("data_type", "str"), v["value"])
-            for v in variables_list if v.get("key") and v.get("value") is not None
+            for v in variables_list if v.get("key") is not None and v.get("value") is not None
         }
 
     def parse_extracts(self, extracts_list, is_api=True):

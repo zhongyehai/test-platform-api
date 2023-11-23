@@ -191,16 +191,19 @@ class BaseForm(pydanticBaseModel, JsonUtil):
 
             # 校验格式
             # 要设置变量，则key、数据类型、备注必传
-            if key or data_type:
-                if msg_title == 'form-data':
-                    if not key or not data_type:
-                        raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
-                else:
-                    if not key or not data_type or not data.get("remark"):
-                        raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
+            # if key or data_type:
+            #     if msg_title == 'form-data':
+            #         if not key or not data_type:
+            #             raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
+            #     else:
+            #         if not key or not data_type or not data.get("remark"):
+            #             raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
 
             # 检验数据类型
             if key:
+                if not data_type or not value or not data.get("remark"):
+                        raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
+
                 if cls.validate_data_format(value, data_type) is False:
                     raise ValueError(f"{title}，{msg_title}值与数据类型不匹配")
 

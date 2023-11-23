@@ -260,7 +260,12 @@ ALTER TABLE web_ui_test_report_step
 
 ALTER TABLE apscheduler_jobs RENAME COLUMN created_time TO create_time;
 
-ALTER TABLE auto_test_call_back RENAME COLUMN created_time TO create_time;
+ALTER TABLE auto_test_call_back
+    RENAME COLUMN created_time TO create_time,
+    MODIFY COLUMN headers JSON comment '头部参数',
+    MODIFY COLUMN data_form JSON comment 'form_data参数',
+    MODIFY COLUMN data_json JSON comment 'json参数',
+    MODIFY COLUMN params JSON comment '查询字符串参数';
 
 ALTER TABLE auto_test_data_pool RENAME COLUMN created_time TO create_time;
 
