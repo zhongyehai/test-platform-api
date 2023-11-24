@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import gevent.monkey
 
-gevent.monkey.patch_all(select=False)  # gevent的猴子魔法 变成非阻塞
+gevent.monkey.patch_all()
 import multiprocessing
 
 from config import _main_server_port
