@@ -2,23 +2,13 @@
 import json
 import os.path
 
-from flask_script import Manager
-from flask_migrate import Migrate, MigrateCommand
-
 from utils.util.json_util import JsonUtil
-from app.base_model import db
-from app.system.model_factory import User, Permission, Role, RolePermissions, UserRoles
-from app.config.model_factory import Config, ConfigType
-from app.config.model_factory import RunEnv
-from app.config.model_factory import BusinessLine
-from app.assist.model_factory import Script
-from main import app
-
-manager = Manager(app)
-
-Migrate(app, db)
-manager.add_command("db", MigrateCommand)
-
+from apps.system.model_factory import User, Permission, Role, RolePermissions, UserRoles
+from apps.config.model_factory import Config, ConfigType
+from apps.config.model_factory import RunEnv
+from apps.config.model_factory import BusinessLine
+from apps.assist.model_factory import Script
+from apps import create_app
 
 def print_start_delimiter(content):
     print(f'{"*" * 20} {content} {"*" * 20}')
@@ -150,7 +140,6 @@ with open('rules.json', 'r', encoding='utf8') as rules:
     permission_dict = json.load(rules)
 
 
-@manager.command
 def init_permission():
     """ 初始化权限 """
     print_type_delimiter("开始创建权限")
@@ -166,7 +155,6 @@ def init_permission():
     print_type_delimiter("权限创建完成")
 
 
-@manager.command
 def init_role():
     """ 初始化角色和对应的权限 """
     print_type_delimiter("开始创建角色")
@@ -222,7 +210,6 @@ def init_role():
     print_type_delimiter("角色创建完成")
 
 
-@manager.command
 def init_user():
     """ 初始化用户和对应的角色 """
 
@@ -257,7 +244,6 @@ def init_user():
     print_type_delimiter("用户创建完成")
 
 
-@manager.command
 def init_config_type():
     """ 初始化配置类型 """
     print_type_delimiter("开始创建配置类型")
@@ -275,7 +261,6 @@ def init_config_type():
     print_type_delimiter("配置类型创建完成")
 
 
-@manager.command
 def init_config():
     """ 初始化配置 """
 
@@ -358,7 +343,6 @@ def init_config():
     print_type_delimiter("配置创建完成")
 
 
-@manager.command
 def init_script():
     """ 初始化脚本文件模板 """
     print_type_delimiter("开始创建函数文件模板")
@@ -377,7 +361,6 @@ def init_script():
     print_type_delimiter("函数文件模板创建完成")
 
 
-@manager.command
 def init_run_env():
     """ 初始化运行环境 """
     print_type_delimiter("开始创建运行环境")
@@ -396,29 +379,39 @@ def init_run_env():
     print_type_delimiter("运行环境创建完成")
 
 
-@manager.command
-def init():
+def init_data():
     """ 初始化 权限、角色、管理员 """
+
     print_start_delimiter("开始初始化数据")
-    init_run_env()
-    init_permission()
-    init_role()
-    init_user()
-    init_config_type()
-    init_config()
-    init_script()
+    with create_app().app_context():
+        init_run_env()
+        init_permission()
+        init_role()
+        init_user()
+        init_config_type()
+        init_config()
+        init_script()
     print_start_delimiter("数据初始化完毕")
 
 
 """
 初始化数据库
-python db_migration.py db init
-python db_migration.py db migrate
-python db_migration.py db upgrade
+1、指定app
+    在 Windows 命令提示符中：set FLASK_APP=main.py
+    在 Windows PowerShell 中：$env:FLASK_APP="main.py"
+    在 Linux 或 macOS 的终端中：export FLASK_APP=main.py
+2、执行数据库迁移
+    flask db init
+    flask db migrate
+    flask db upgrade
+如果上面3条命令报错，试试
+    python -m flask db init
+    python -m flask db migrate
+    python -m flask db upgrade
 
 初始化数据
-python db_migration.py init
+python db_migration.py
 """
 
 if __name__ == "__main__":
-    manager.run()
+    init_data()

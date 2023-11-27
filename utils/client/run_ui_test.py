@@ -2,10 +2,11 @@
 import copy
 import json
 
-from app.enums import DataStatusEnum
-from app.ui_test.model_factory import WebUiCaseSuite, WebUiStep, WebUiReportStep, WebUiReportCase
-from app.app_test.model_factory import AppUiCaseSuite, AppUiStep, AppUiReportStep, AppUiReportCase, AppUiRunPhone
-from app.assist.model_factory import Script
+from apps import create_app
+from apps.enums import DataStatusEnum
+from apps.ui_test.model_factory import WebUiCaseSuite, WebUiStep, WebUiReportStep, WebUiReportCase
+from apps.app_test.model_factory import AppUiCaseSuite, AppUiStep, AppUiReportStep, AppUiReportCase, AppUiRunPhone
+from apps.assist.model_factory import Script
 from utils.client.run_test_runner import RunTestRunner
 from utils.client.parse_model import StepModel, FormatModel
 from utils.client.test_runner.utils import build_url
@@ -51,13 +52,14 @@ class RunCase(RunTestRunner):
 
     def parse_and_run(self):
         """ 把解析放到异步线程里面 """
-        Script.create_script_file(self.env_code)  # 创建所有函数文件
-        if self.run_type != "webUi":
-            self.device_dict = {device.id: device.to_dict() for device in AppUiRunPhone.query.all()}
-        self.report = self.report_model.get_first(id=self.report_id)
-        self.parse_all_case()
-        self.report.parse_data_finish()
-        self.run_case()
+        with create_app().app_context():  # 手动入栈
+            Script.create_script_file(self.env_code)  # 创建所有函数文件
+            if self.run_type != "webUi":
+                self.device_dict = {device.id: device.to_dict() for device in AppUiRunPhone.query.all()}
+            self.report = self.report_model.get_first(id=self.report_id)
+            self.parse_all_case()
+            self.report.parse_data_finish()
+            self.run_case()
 
     def parse_step(self, project, element, step):
         """ 解析测试步骤

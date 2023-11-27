@@ -5,7 +5,7 @@ from datetime import datetime
 
 from jinja2 import Template
 
-from app.enums import ReceiveTypeEnum
+from apps.enums import ReceiveTypeEnum
 
 
 def inspection_ding_ding(content, task_kwargs):
@@ -81,7 +81,7 @@ def inspection_we_chat(content, task_kwargs):
 
 
 def get_inspection_msg(_type, content, kwargs):
-    return inspection_ding_ding(content, kwargs) if _type == ReceiveTypeEnum.DING_DING else inspection_we_chat(content, kwargs)
+    return inspection_ding_ding(content, kwargs) if _type == ReceiveTypeEnum.ding_ding else inspection_we_chat(content, kwargs)
 
 
 def render_html_report(content, task_kwargs):

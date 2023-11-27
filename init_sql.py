@@ -21,6 +21,9 @@ UPDATE api_test_task set email_to='[]' WHERE email_to in (null, '');
 UPDATE api_test_task set is_send='not_send' WHERE is_send='1';
 UPDATE api_test_task set is_send='always' WHERE is_send='2';
 UPDATE api_test_task set is_send='on_fail' WHERE is_send='3';
+UPDATE api_test_task SET receive_type = 'not_receive' WHERE receive_type in (null, '');
+UPDATE api_test_task SET webhook_list = '[]' WHERE webhook_list is null;
+UPDATE api_test_task SET call_back = '[]' WHERE call_back is null;
 UPDATE api_test_report set temp_variables='{}' WHERE temp_variables='null';
 UPDATE api_test_step set pop_header_filed='[]' WHERE pop_header_filed in (null, '', 'null');
 
@@ -33,6 +36,9 @@ UPDATE app_ui_test_task set is_send='not_send' WHERE is_send='1';
 UPDATE app_ui_test_task set is_send='always' WHERE is_send='2';
 UPDATE app_ui_test_task set is_send='on_fail' WHERE is_send='3';
 UPDATE app_ui_test_report set temp_variables='{}' WHERE temp_variables='null';
+UPDATE app_ui_test_task SET receive_type = 'not_receive' WHERE receive_type in (null, '');
+UPDATE app_ui_test_task SET webhook_list = '[]' WHERE webhook_list is null;
+UPDATE app_ui_test_task SET call_back = '[]' WHERE call_back is null;
 
 UPDATE web_ui_test_case_suite set suite_type='make_data' WHERE suite_type='assist';
 UPDATE web_ui_test_step set up_func='[]' WHERE up_func in (null, '');
@@ -41,6 +47,9 @@ UPDATE web_ui_test_task set email_to='[]' WHERE email_to in (null, '');
 UPDATE web_ui_test_task set is_send='not_send' WHERE is_send='1';
 UPDATE web_ui_test_task set is_send='always' WHERE is_send='2';
 UPDATE web_ui_test_task set is_send='on_fail' WHERE is_send='3';
+UPDATE web_ui_test_task SET receive_type = 'not_receive' WHERE receive_type in (null, '');
+UPDATE web_ui_test_task SET webhook_list = '[]' WHERE webhook_list is null;
+UPDATE web_ui_test_task SET call_back = '[]' WHERE call_back is null;
 UPDATE web_ui_test_step set quote_case=null where quote_case='';
 UPDATE web_ui_test_report set temp_variables='{}' WHERE temp_variables='null';
 

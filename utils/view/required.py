@@ -2,7 +2,7 @@
 import jwt
 from flask import current_app as app, request, g, abort
 
-from app.enums import AuthType
+from apps.enums import AuthType
 
 
 def parse_token(token):
@@ -20,7 +20,7 @@ def parse_token(token):
 
 def check_login_and_permissions():
     """ 身份验证 """
-    from app.system.models.user import User
+    from apps.system.models.user import User
 
     parse_token(request.headers.get("X-Token"))
 

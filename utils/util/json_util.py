@@ -1,9 +1,20 @@
 # -*- coding: utf-8 -*-
 import json
+from datetime import datetime
 
-from flask.json import JSONEncoder
+from json import JSONEncoder
 
 from utils.parse.parse import encode_object
+
+
+class CustomJSONEncoder(JSONEncoder):
+    """ 处理返回时间，直接使用 jsonify 会把时间处理成 GMT 时间"""
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+
+        return super().default(obj)
 
 
 class JsonUtil:
@@ -21,7 +32,7 @@ class JsonUtil:
         """ json.dumps """
         kwargs.setdefault("ensure_ascii", False)
         # kwargs.setdefault("indent", 4)
-        return json.dumps(obj, default=encode_object, cls=JSONEncoder, *args, **kwargs)
+        return json.dumps(obj, default=encode_object, cls=CustomJSONEncoder, *args, **kwargs)
 
     @classmethod
     def loads(cls, obj, *args, **kwargs):

@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 import ast
-import json
 import re
-import traceback
-from datetime import datetime
 
 from . import exceptions, utils
 from .compat import basestring, builtin_str, numeric_types
 from .validate_func import load_builtin_functions
-from app.assist.model_factory import FuncErrorRecord
-from utils.message.send_report import send_run_func_error_message
 from utils.variables.regexp import variable_regexp, function_regexp, function_regexp_compile
 
 

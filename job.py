@@ -6,11 +6,11 @@ from flask import request
 from flask.views import MethodView
 from flask_apscheduler import APScheduler
 
-from app.config.model_factory import Config
+from apps.config.model_factory import Config
 from config import _job_server_port, _main_server_host
 from utils.view import restful
 from utils.parse.parse_cron import parse_cron
-from app import create_app
+from apps import create_app
 
 job = create_app()
 

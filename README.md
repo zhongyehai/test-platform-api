@@ -1,6 +1,6 @@
-# 基于python-flask生态开发的rest风格的测试平台后端
+# 基于python-flask3.x + SQLAlchemy2.x生态开发的rest风格的测试平台后端
 
-### 截止2023-11-22，有历史数据的用户，执行以下两个步骤
+### 截止2023-11-27，有历史数据的用户，执行以下两个步骤
 	1、执行init_sql.py里面的sql语句初始化数据库
 	2、执行数据库迁移那3条命令
 
@@ -10,7 +10,7 @@
 
 ### 系统操作手册：[gitee](https://gitee.com/Xiang-Qian-Zou/api-test-api/blob/master/%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C.md) ，[github](https://github.com/zhongyehai/api-test-api/blob/main/%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8C.md)
 
-## Python版本：python => 3.9+
+## Python版本：python => 3.11+
 
 ### 1.安装依赖包：sudo pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
@@ -20,15 +20,22 @@
     查看最大连接数 show variables like 'max_connections';
     设置最大连接数 set global max_connections=16384;
 
-### 3.初始化数据库表结构（项目根目录下依次执行下面3条命令）：
-
-    sudo python db_migration.py db init
-    sudo python db_migration.py db migrate
-    sudo python db_migration.py db upgrade
+### 3.初始化数据库表结构（项目根目录下依次执行）：
+        3.1、指定app
+            在 Windows 命令提示符中：set FLASK_APP=main.py
+            在 Windows PowerShell 中：$env:FLASK_APP="main.py"
+            在 Linux 或 macOS 的终端中：export FLASK_APP=main.py
+        3.2、执行数据库迁移
+            flask db init
+            flask db migrate
+            flask db upgrade
+        如果上面3条命令报错，试试
+            python -m flask db init
+            python -m flask db migrate
+            python -m flask db upgrade
 
 ### 4.初始化权限、角色、管理员一起一些初始化配置（项目根目录下执行，账号：admin，密码：123456）
-
-    sudo python db_migration.py init
+    sudo python db_migration.py
 
 ### 5、若要进行UI自动化：
 

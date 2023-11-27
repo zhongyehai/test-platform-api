@@ -2,58 +2,14 @@
 
 """ 断言方法，函数注释不可改变，启动服务时会到这里来取名字做映射 """
 
-import datetime
 import json
-import os
-import random
 import re
-import string
-import time
 
 from pactverify.matchers import PactJsonVerify
-from requests_toolbelt import MultipartEncoder
 
 from .compat import basestring, builtin_str, integer_types
 
 
-# from .exceptions import ParamsError
-#
-#
-# def gen_random_string(str_len):
-#     """ 生成指定长度的随机字符串 """
-#     return ''.join(
-#         random.choice(string.ascii_letters + string.digits) for _ in range(str_len))
-#
-#
-# def get_timestamp(str_len=13):
-#     """ 获取0~16位的时间戳字符串 """
-#     if isinstance(str_len, integer_types) and 0 < str_len < 17:
-#         return builtin_str(time.time()).replace(".", "")[:str_len]
-#     raise ParamsError("时间戳字符串只能获取到0~16位")
-#
-#
-# def get_current_date(fmt="%Y-%m-%d"):
-#     """ 获取当前日期，默认格式为 %Y-%m-%d """
-#     return datetime.datetime.now().strftime(fmt)
-#
-#
-# def multipart_encoder(field_name, file_path, file_type=None, file_headers=None):
-#     if not os.path.isabs(file_path):
-#         file_path = os.path.join(os.getcwd(), file_path)
-#
-#     filename = os.path.basename(file_path)
-#     with open(file_path, 'rb') as f:
-#         fields = {
-#             field_name: (filename, f.read(), file_type)
-#         }
-#
-#     return MultipartEncoder(fields)
-#
-#
-# def multipart_content_type(multipart_encoder):
-#     return multipart_encoder.content_type
-#
-#
 def _01equals(check_value, expect_value):
     """ 相等 """
     assert check_value == expect_value, '断言不通过，断言方式为相等'

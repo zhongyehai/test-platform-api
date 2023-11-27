@@ -4,9 +4,9 @@ from threading import Thread
 
 import requests
 
-from app.config.model_factory import Config
-from app.assist.model_factory import CallBack
-from app.enums import SendReportTypeEnum, ReceiveTypeEnum
+from apps.config.model_factory import Config
+from apps.assist.model_factory import CallBack
+from apps.enums import SendReportTypeEnum, ReceiveTypeEnum
 from .send_email import SendEmail
 from .template import diff_api_msg, run_time_error_msg, call_back_webhook_msg, render_html_report, \
     get_inspection_msg, get_business_stage_count_msg
@@ -69,9 +69,9 @@ def send_inspection_by_email(content, kwargs):
 def send_report(**kwargs):
     """ 封装发送测试报告提供给多线程使用 """
     is_send, receive_type, content = kwargs.get("is_send"), kwargs.get("receive_type"), kwargs.get("content")
-    if is_send == SendReportTypeEnum.ALWAYS.value or (
-            is_send == SendReportTypeEnum.ON_FAIL.value and content["result"] != "success"):
-        if receive_type == ReceiveTypeEnum.EMAIL:
+    if is_send == SendReportTypeEnum.always.value or (
+            is_send == SendReportTypeEnum.on_fail.value and content["result"] != "success"):
+        if receive_type == ReceiveTypeEnum.email:
             send_inspection_by_email(content, kwargs)
         else:
             send_inspection_by_msg(receive_type, content, kwargs)

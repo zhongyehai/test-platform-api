@@ -4,22 +4,21 @@ import types
 import importlib
 from threading import Thread
 
-from app.api_test.model_factory import ApiCaseSuite, ApiMsg, ApiCase, ApiStep, ApiProject, ApiProjectEnv, ApiReport, \
+from apps.api_test.model_factory import ApiCaseSuite, ApiMsg, ApiCase, ApiStep, ApiProject, ApiProjectEnv, ApiReport, \
     ApiReportCase, ApiReportStep
-from app.ui_test.model_factory import WebUiProject, WebUiProjectEnv, WebUiElement, WebUiCaseSuite, WebUiCase, WebUiStep, \
+from apps.ui_test.model_factory import WebUiProject, WebUiProjectEnv, WebUiElement, WebUiCaseSuite, WebUiCase, WebUiStep, \
     WebUiReport, WebUiReportCase, WebUiReportStep
-from app.app_test.model_factory import AppUiProject, AppUiProjectEnv, AppUiElement, AppUiCaseSuite, AppUiCase, \
+from apps.app_test.model_factory import AppUiProject, AppUiProjectEnv, AppUiElement, AppUiCaseSuite, AppUiCase, \
     AppUiStep, AppUiReport, AppUiReportCase, AppUiReportStep
-from app.config.model_factory import RunEnv
-from app.assist.model_factory import Script
-from app.config.model_factory import Config
-from app.enums import TriggerTypeEnum
+from apps.config.model_factory import RunEnv
+from apps.assist.model_factory import Script
+from apps.config.model_factory import Config
+from apps.enums import TriggerTypeEnum
 from utils.client.test_runner.api import TestRunner
 from utils.client.test_runner.utils import build_url
 from utils.client.test_runner import built_in
 from utils.client.parse_model import ProjectModel, ApiModel, CaseModel, ElementModel
 from utils.logs.log import logger
-from utils.parse.parse import encode_object
 from utils.message.send_report import async_send_report, call_back_for_pipeline
 
 
@@ -297,7 +296,7 @@ class RunTestRunner:
         """ 发送测试报告 """
         if self.task_dict:
             # 如果是流水线触发的，则回调给流水线
-            if self.report.trigger_type == TriggerTypeEnum.PIPELINE:
+            if self.report.trigger_type == TriggerTypeEnum.pipeline:
                 call_back_for_pipeline(
                     self.task_dict["id"],
                     self.task_dict["call_back"] or [],

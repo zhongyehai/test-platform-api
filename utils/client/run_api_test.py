@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import copy
 
-from app.assist.model_factory import Script
-from app.enums import DataStatusEnum
-from app.api_test.model_factory import ApiCaseSuite as CaseSuite, ApiMsg as Api, ApiStep as Step, \
+from apps import create_app
+
+from apps.assist.model_factory import Script
+from apps.enums import DataStatusEnum
+from apps.api_test.model_factory import ApiCaseSuite as CaseSuite, ApiMsg as Api, ApiStep as Step, \
     ApiReportCase as ReportCase, ApiReportStep as reportStep
 from utils.logs.log import logger
 from utils.client.parse_model import StepModel, FormatModel
@@ -22,11 +24,12 @@ class RunApi(RunTestRunner):
 
     def parse_and_run(self):
         """ 把解析放到异步线程里面 """
-        self.report = self.report_model.get_first(id=self.report_id)
-        self.project = self.get_format_project(self.report.project_id)  # 解析当前服务信息
-        self.format_data_for_template()  # 解析api
-        self.report.parse_data_finish()
-        self.run_case()
+        with create_app().app_context():  # 手动入栈
+            self.report = self.report_model.get_first(id=self.report_id)
+            self.project = self.get_format_project(self.report.project_id)  # 解析当前服务信息
+            self.format_data_for_template()  # 解析api
+            self.report.parse_data_finish()
+            self.run_case()
 
     def format_data_for_template(self):
         """ 接口调试 """
@@ -87,11 +90,12 @@ class RunCase(RunTestRunner):
 
     def parse_and_run(self):
         """ 把解析放到异步线程里面 """
-        Script.create_script_file(self.env_code)  # 创建所有函数文件
-        self.report = self.report_model.get_first(id=self.report_id)
-        self.parse_all_case()
-        self.report.parse_data_finish()
-        self.run_case()
+        with create_app().app_context():  # 手动入栈
+            Script.create_script_file(self.env_code)  # 创建所有函数文件
+            self.report = self.report_model.get_first(id=self.report_id)
+            self.parse_all_case()
+            self.report.parse_data_finish()
+            self.run_case()
 
     def parse_step(self, current_project, project, current_case, case, api, step):
         """ 解析测试步骤
