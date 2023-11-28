@@ -89,6 +89,7 @@ class AddStepForm(BaseForm):
                     cls.loads(send_keys)
                 except Exception as error:
                     raise ValueError(f"【{send_keys}】不能转为json，请确认")
+        return value
 
     @field_validator("validates")
     def validate_validates(cls, value, info: ValidationInfo):

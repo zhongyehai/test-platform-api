@@ -29,16 +29,18 @@ class VariablesModel(DataFormModel):
 
 
 class ExtractModel(HeaderModel):
+    value: Optional[Union[str, int, None]] = None
     status: Union[int, None] = None
     data_source: Union[str, None] = None
+    extract_type: Union[str, None] = None
 
 
 class ValidateModel(HeaderModel):
-    status: Union[int, None] = None
-    validate_type: Union[str, None] = None
-    data_type: Union[str, None] = None
-    data_source: Union[str, None] = None
-    validate_method: Union[str, None] = None
+    status: Union[str, int, None] = None
+    validate_type: Union[str, int, None] = None
+    data_type: Union[str, int, None] = None
+    data_source: Union[str, int, None] = None
+    validate_method: Union[str, int, None] = None
 
 
 class SkipIfModel(HeaderModel):
