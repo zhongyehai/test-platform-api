@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import email
-import six
+from urllib import parse
 
 import urllib3.fields as f
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
@@ -256,8 +256,6 @@ def my_format_header_param(name, value):
             pass
         else:
             return result
-    if not six.PY3 and isinstance(value, six.text_type):  # Python 2:
-        value = value.encode("utf-8")
     value = email.utils.encode_rfc2231(value, "utf-8")
     value = "%s*=%s" % (name, value)
     return value
@@ -298,7 +296,7 @@ class _SystemConfig:
     DB_DATABASE = ""
 
     # 数据库链接
-    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}?autocommit=true"
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{parse.quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}?autocommit=true"
 
     # 关闭数据追踪，避免内存资源浪费
     SQLALCHEMY_TRACK_MODIFICATIONS = False
