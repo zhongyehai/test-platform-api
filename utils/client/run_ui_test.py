@@ -45,7 +45,7 @@ class RunCase(RunTestRunner):
             self.device_dict = {}
             self.report_img_folder = FileUtil.make_img_folder_by_report_id(report_id, 'app')
 
-        self.DataTemplate["is_async"] = is_async
+        self.run_data_template["is_async"] = is_async
         self.case_id_list = case_id_list  # 要执行的用例id_list
         self.appium_config = appium_config
         self.all_case_steps = []  # 所有测试步骤
@@ -308,11 +308,11 @@ class RunCase(RunTestRunner):
                 all_variables.update({"device_id": self.device_id})  # 强制增加一个变量为设备id，用于去数据库查数据
                 case_template["config"]["variables"].update(all_variables)
 
-                self.DataTemplate["case_list"].append(copy.deepcopy(case_template))
+                self.run_data_template["case_list"].append(copy.deepcopy(case_template))
 
                 # 完整的解析完一条用例后，去除对应的解析信息
                 self.all_case_steps = []
 
         # 去除服务级的公共变量，保证用步骤上解析后的公共变量
-        self.DataTemplate["project_mapping"]["variables"] = {}
+        self.run_data_template["project_mapping"]["variables"] = {}
         self.init_parsed_data()

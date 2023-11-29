@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
+import copy
 import json
 import types
 import importlib
 from threading import Thread
 
+from apps import create_app
 from apps.api_test.model_factory import ApiCaseSuite, ApiMsg, ApiCase, ApiStep, ApiProject, ApiProjectEnv, ApiReport, \
     ApiReportCase, ApiReportStep
-from apps.ui_test.model_factory import WebUiProject, WebUiProjectEnv, WebUiElement, WebUiCaseSuite, WebUiCase, WebUiStep, \
+from apps.ui_test.model_factory import WebUiProject, WebUiProjectEnv, WebUiElement, WebUiCaseSuite, WebUiCase, \
+    WebUiStep, \
     WebUiReport, WebUiReportCase, WebUiReportStep
 from apps.app_test.model_factory import AppUiProject, AppUiProjectEnv, AppUiElement, AppUiCaseSuite, AppUiCase, \
     AppUiStep, AppUiReport, AppUiReportCase, AppUiReportStep
@@ -38,6 +41,10 @@ class RunTestRunner:
         self.count_step = 0
         self.api_set = set()
         self.element_set = set()
+        self.parsed_project_dict = {}
+        self.parsed_case_dict = {}
+        self.parsed_api_dict = {}
+        self.parsed_element_dict = {}
         self.run_env = None
         self.report = None
 
@@ -80,7 +87,7 @@ class RunTestRunner:
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_app_ui_report_addr()}'
 
         # testRunner需要的数据格式
-        self.DataTemplate = {
+        self.run_data_template = {
             "is_async": 0,
             "run_type": self.run_type,
             "report_id": self.report_id,
@@ -168,7 +175,7 @@ class RunTestRunner:
         for func_file_id in func_list:
             func_file_name = Script.get_first(id=func_file_id).name
             func_file_data = importlib.reload(importlib.import_module(f'script_list.{self.env_code}_{func_file_name}'))
-            self.DataTemplate["project_mapping"]["functions"].update({
+            self.run_data_template["project_mapping"]["functions"].update({
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
 
@@ -239,34 +246,50 @@ class RunTestRunner:
 
     def run_case(self):
         """ 调 testRunner().run() 执行测试 """
-        logger.info(f'请求数据：\n{self.DataTemplate}')
+        logger.info(f'请求数据：\n{self.run_data_template}')
 
-        if self.DataTemplate.get("is_async", 0):
+        if self.run_data_template.get("is_async", 0):
             # 并行执行, 遍历case，以case为维度多线程执行，测试报告按顺序排列
-            run_case_dict = {}
+            run_case_res_dict = {}
             self.report.run_case_start()
-            for index, case in enumerate(self.DataTemplate["case_list"]):
-                run_case_dict[index] = False  # 用例运行标识，索引：是否运行完成
-                temp_case = self.DataTemplate
-                temp_case["case_list"] = [case]
-                self._async_run_case(temp_case, run_case_dict, index)
+            for index, case in enumerate(self.run_data_template["case_list"]):
+                run_case_res_dict[index] = False  # 用例运行标识，索引：是否运行完成
+                run_case_template = copy.deepcopy(self.run_data_template)
+                run_case_template["case_list"] = [case]
+                Thread(target=self.run_case_on_new_thread, args=[run_case_template, run_case_res_dict, index]).start()
         else:  # 串行执行
             self.sync_run_case()
 
-    def _run_case(self, case, run_case_dict, index):
-        runner = TestRunner()
-        runner.run(case)
-        self.update_run_case_status(run_case_dict, index, runner.summary)
+    def run_case_on_new_thread(self, run_case_template, run_case_res_dict, index):
+        """ 新线程运行用例 """
+        with create_app().app_context():  # 手动入栈
+            runner = TestRunner()
+            runner.run(run_case_template)
+            self.update_run_case_status(run_case_res_dict, index, runner.summary)
 
-    def _async_run_case(self, case, run_case_dict, index):
-        """ 多线程运行用例 """
-        Thread(target=self._run_case, args=[case, run_case_dict, index]).start()
+    def update_run_case_status(self, run_case_res_dict, run_index, summary):
+        """ 每条用例执行完了都更新对应的运行状态，如果更新后的结果是用例全都运行了，则生成测试报告"""
+        run_case_res_dict[run_index] = summary
+        if all(run_case_res_dict.values()):  # 全都执行完毕
+            self.report.run_case_finish()
+            all_summary = run_case_res_dict[0]
+            all_summary["stat"]["count"]["step"] = self.count_step
+            all_summary["stat"]["count"]["api"] = len(self.api_set)
+            all_summary["stat"]["count"]["element"] = len(self.element_set)
+            for index, res in enumerate(run_case_res_dict.values()):
+                if index != 0:
+                    self.build_summary(all_summary, res, ["test_case", "test_step"])  # 合并用例统计, 步骤统计
+                    all_summary["result"] = 'success' if all_summary["result"] == 'success' and res[
+                        "result"] == 'success' else 'fail'  # 测试报告状态
+                    all_summary["time"]["case_duration"] = summary["time"]["case_duration"]  # 总共耗时取运行最长的
+                    all_summary["time"]["step_duration"] = summary["time"]["step_duration"]  # 总共耗时取运行最长的
+            self.save_report_and_send_message(all_summary)
 
     def sync_run_case(self):
         """ 串行运行用例 """
         self.report.run_case_start()
         runner = TestRunner()
-        runner.run(self.DataTemplate)
+        runner.run(self.run_data_template)
         self.report.run_case_finish()
         logger.info(f'测试执行完成，开始保存测试报告和发送报告')
         summary = runner.summary
@@ -274,23 +297,6 @@ class RunTestRunner:
         summary["stat"]["count"]["api"] = len(self.api_set)
         summary["stat"]["count"]["element"] = len(self.element_set)
         self.save_report_and_send_message(summary)
-
-    def update_run_case_status(self, run_dict, run_index, summary):
-        """ 每条用例执行完了都更新对应的运行状态，如果更新后的结果是用例全都运行了，则生成测试报告"""
-        run_dict[run_index] = summary
-        if all(run_dict.values()):  # 全都执行完毕
-            self.report.run_case_finish()
-            all_summary = run_dict[0]
-            all_summary["stat"]["count"]["step"] = self.count_step
-            all_summary["stat"]["count"]["api"] = len(self.api_set)
-            all_summary["stat"]["count"]["element"] = len(self.element_set)
-            for index, res in enumerate(run_dict.values()):
-                if index != 0:
-                    self.build_summary(all_summary, res, ["case_list", "step_list"])  # 合并用例统计, 步骤统计
-                    all_summary["success"] = all([all_summary["success"], res["success"]])  # 测试报告状态
-                    all_summary["time"]["case_duration"] = summary["time"]["case_duration"]  # 总共耗时取运行最长的
-                    all_summary["time"]["step_duration"] = summary["time"]["step_duration"]  # 总共耗时取运行最长的
-            self.save_report_and_send_message(all_summary)
 
     def send_report_if_task(self, report_id, res):
         """ 发送测试报告 """
@@ -338,9 +344,8 @@ class RunTestRunner:
         }
 
     @staticmethod
-    def build_summary(source1, source2, fields):
+    def build_summary(source1, source2, field_list):
         """ 合并测试报告统计 """
-        for field in fields:
+        for field in field_list:
             for key in source1["stat"][field]:
-                if key != "project":
-                    source1["stat"][field][key] += source2["stat"][field][key]
+                source1["stat"][field][key] += source2["stat"][field][key]

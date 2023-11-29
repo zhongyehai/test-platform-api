@@ -72,7 +72,7 @@ class RunApi(RunTestRunner):
 
             # 更新公共变量
             test_case_template["config"]["variables"].update(self.project.variables)
-            self.DataTemplate["case_list"].append(copy.deepcopy(test_case_template))
+            self.run_data_template["case_list"].append(copy.deepcopy(test_case_template))
         self.init_parsed_data()
 
 
@@ -84,7 +84,7 @@ class RunCase(RunTestRunner):
         super().__init__(report_id=report_id, env_code=env_code, env_name=env_name, run_type="api", task_dict=task_dict,
                          extend=extend)
         self.temp_variables = temp_variables
-        self.DataTemplate["is_async"] = is_async
+        self.run_data_template["is_async"] = is_async
         self.case_id_list = case_id_list  # 要执行的用例id_list
         self.all_case_steps = []  # 所有测试步骤
 
@@ -188,9 +188,11 @@ class RunCase(RunTestRunner):
                 case_name = f'{current_case.name}_{index + 1}' if current_case.run_times > 1 else current_case.name
 
                 # 记录解析下后的用例
+                case_summary = ReportCase.get_summary_template()
+                case_summary["case_name"] = case_name
                 report_case = ReportCase.model_create_and_get({
                     "name": case_name, "case_id": current_case.id, "report_id": self.report_id,
-                    "case_data": current_case.get_attr(), "summary": ReportCase.get_summary_template()
+                    "case_data": current_case.get_attr(), "summary": case_summary
                 })
                 current_case.report_case_id = report_case.id
 
@@ -247,11 +249,11 @@ class RunCase(RunTestRunner):
                 all_variables.update(current_case.variables)
                 case_template["config"]["variables"].update(all_variables)  # = all_variables
 
-                self.DataTemplate["case_list"].append(copy.deepcopy(case_template))
+                self.run_data_template["case_list"].append(copy.deepcopy(case_template))
 
                 # 完整的解析完一条用例后，去除对应的解析信息
                 self.all_case_steps = []
 
         # 去除服务级的公共变量，保证用步骤上解析后的公共变量
-        self.DataTemplate["project_mapping"]["variables"] = {}
+        self.run_data_template["project_mapping"]["variables"] = {}
         self.init_parsed_data()
