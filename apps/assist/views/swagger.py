@@ -37,7 +37,7 @@ def get_parsed_module(module_dict, project_id, controller_name, controller_tags,
         return module
 
     # 未拉取过，则先解析并保存，再返回
-    module = ApiModule.model_create({
+    module = ApiModule.model_create_and_get({
         "project_id": project_id,
         "controller": controller_name,
         "name": controller_tags.get(controller_name, controller_name),  # 有tag就用tag，没有就用controller名字
@@ -325,9 +325,8 @@ def parse_openapi3_args(db_api, swagger_api, data_models, options):
         response_template = parse_openapi3_response(ref_model, data_models)
 
     # 更新api数据
-    db_api.headers, db_api.params = db_api.dumps(headers), db_api.dumps(query)
-    db_api.data_json, db_api.data_form = db_api.dumps(json_data), db_api.dumps(form_data)
-    db_api.response = db_api.dumps(response_template)
+    db_api.headers, db_api.params, db_api.data_json, db_api.data_form = headers, query, json_data, form_data
+    db_api.response = response_template
 
 
 @assist.login_post("/swagger/pull")
@@ -368,7 +367,7 @@ def assist_pull_by_swagger():
                 # 处理接口
                 app.logger.info(f"解析接口地址：{api_addr}")
                 app.logger.info(f"解析接口数据：{swagger_api}")
-                api_status = 1 if swagger_api.get("deprecated") is False else 0
+                api_status = 0 if swagger_api.get("deprecated") else 1
                 api_template = {
                     "project_id": project.id, "module_id": module.id, "status": api_status,
                     "method": api_method.upper(), "addr": api_addr, "body_type": "json"

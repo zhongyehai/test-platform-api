@@ -5,7 +5,7 @@ from . import exceptions, utils
 from .compat import OrderedDict, basestring
 from .parser import extract_functions, parse_function, get_mapping_variable
 from utils.client.test_runner.parser import extract_variables
-from .validator import is_extract_expression
+from .validator import is_extract_expression, is_const
 from ...variables.regexp import text_extractor_regexp_compile
 
 

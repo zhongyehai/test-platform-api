@@ -117,7 +117,7 @@ class EditApiForm(AddApiForm, GetApiForm):
 class GetApiFromForm(BaseForm):
     """ 查询api归属 """
     id: Optional[str] = Field(None, title="接口id")
-    addr: Optional[str] = Field(None, title="接口地址")
+    api_addr: Optional[str] = Field(None, title="接口地址")
 
     @field_validator("id")
     def validate_api_id(cls, value):
@@ -125,7 +125,7 @@ class GetApiFromForm(BaseForm):
         setattr(cls, 'api_id_list', [value])
         return value
 
-    @field_validator("addr")
+    @field_validator("api_addr")
     def validate_addr(cls, value, info: ValidationInfo):
         if not info.data["id"]:
             cls.validate_is_true(value, "请传入接口地址或接口id")

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from typing import Optional, Union, List
 
-import validators
+import requests
 from flask import g
 from sqlalchemy import or_
-from pydantic import ValidationError, field_validator, ValidationInfo
+from pydantic import field_validator, ValidationInfo
 
 from ...base_form import BaseForm, Field, PaginationForm, ValidateModel
 from ..model_factory import WebUiProject as Project, WebUiProjectEnv as ProjectEnv, WebUiModule as Module, \
@@ -56,10 +56,13 @@ class DeleteProjectForm(GetProjectForm):
     @field_validator("id")
     def validate_id(cls, value):
         cls.validate_is_true(Project.is_can_delete(value), "不能删除别人负责的项目")
-        # 服务下有模块、用例集、任务，都不想允许删除
-        query_data = Project.db.session.query(Project.id).filter(or_(
-            Module.project_id == value, CaseSuite.project_id == value, Task.project_id == value)).first()
-        cls.validate_is_false(query_data, '服务下有模块、用例集、任务时，不允许删除')
+        cls.validate_is_false(
+            Module.db.session.query(Module.id).filter(Module.project_id == value).first(), '服务下有模块,不允许删除')
+        cls.validate_is_false(
+            CaseSuite.db.session.query(CaseSuite.id).filter(CaseSuite.project_id == value).first(),
+            '服务下有用例集,不允许删除')
+        cls.validate_is_false(
+            Task.db.session.query(Task.id).filter(Task.project_id == value).first(), '服务下有任务，不允许删除')
         return value
 
 
@@ -118,8 +121,12 @@ class EditEnv(GetEnvForm):
 
     @field_validator('host')
     def validate_host(cls, value):
-        if validators.url(value) is not True:
-            raise ValidationError(f"环境地址【{value}】不正确，请输入正确的格式")
+        try:
+            res = requests.get(value, timeout=5)
+            if res.status_code >= 500:
+                raise
+        except:
+            raise ValueError(f"环境地址【{value}】不可访问，请确认")
         return value
 
     @field_validator('env_id')

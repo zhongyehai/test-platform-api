@@ -82,26 +82,24 @@ def api_get_api_to_step():
                 case_info = Case.db.session.query(
                     Case.name, Case.status, CaseSuite.id, CaseSuite.project_id
                 ).filter(Case.id == case_id, Case.suite_id == CaseSuite.id).first()
-                case_dict[case_id] = {
-                    "id": case_id,
-                    "name": case_info[0],
-                    "status": case_info[1],
-                    "suite_id": case_info[2],
-                    "project_id": case_info[3]
-                }
-            case = case_dict[case_id]
-            suite_id, project_id = case["suite_id"], case["project_id"]
+                if case_info:
+                    case_dict[case_id] = {
+                        "id": case_id, "name": case_info[0], "status": case_info[1], "suite_id": case_info[2],
+                        "project_id": case_info[3]
+                    }
+                    case = case_dict[case_id]
+                    suite_id, project_id = case["suite_id"], case["project_id"]
 
-            # 获取用例所在的用例集
-            suite_from_path = CaseSuite.get_from_path(suite_id)
+                    # 获取用例所在的用例集
+                    suite_from_path = CaseSuite.get_from_path(suite_id)
 
-            # 获取用例集所在的服务
-            if project_id not in project_dict:
-                project_info = Project.db.session.query(Project.name).filter(Project.id == project_id).first()
-                project_dict[project_id] = {"name": project_info[0] if project_info else None}  # 可能服务已经删除了
-            project = project_dict[project_id]
-            case["from"] = f'【{project["name"]}_{suite_from_path}_{case["name"]}_{step_name}】'
-            case_list.append(case)
+                    # 获取用例集所在的服务
+                    if project_id not in project_dict:
+                        project_info = Project.db.session.query(Project.name).filter(Project.id == project_id).first()
+                        project_dict[project_id] = {"name": project_info[0] if project_info else None}  # 可能服务已经删除了
+                    project = project_dict[project_id]
+                    case["from"] = f'【{project["name"]}_{suite_from_path}_{case["name"]}_{step_name}】'
+                    case_list.append(case)
 
     return app.restful.get_success(case_list)
 

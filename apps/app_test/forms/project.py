@@ -55,10 +55,13 @@ class DeleteProjectForm(GetProjectForm):
     @field_validator("id")
     def validate_id(cls, value):
         cls.validate_is_true("不能删除别人负责的APP", Project.is_can_delete(value))
-        # 服务下有模块、用例集、任务，都不想允许删除
-        query_data = Project.db.session.query(Project.id).filter(or_(
-            Module.project_id == value, CaseSuite.project_id == value, Task.project_id == value)).first()
-        cls.validate_is_false(query_data, '服务下有模块、用例集、任务时，不允许删除')
+        cls.validate_is_false(
+            Module.db.session.query(Module.id).filter(Module.project_id == value).first(), '服务下有模块,不允许删除')
+        cls.validate_is_false(
+            CaseSuite.db.session.query(CaseSuite.id).filter(CaseSuite.project_id == value).first(),
+            '服务下有用例集,不允许删除')
+        cls.validate_is_false(
+            Task.db.session.query(Task.id).filter(Task.project_id == value).first(), '服务下有任务，不允许删除')
         return value
 
 
