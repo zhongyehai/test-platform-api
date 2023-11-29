@@ -3,7 +3,7 @@ from flask import Flask
 
 from utils.util.json_util import CustomJSONEncoder
 from utils.view import restful
-from utils.logs.log import logger
+# from utils.logs.log import logger
 from config import _SystemConfig
 from apps.base_model import db
 from apps.hooks.after_request import register_after_hook
@@ -17,8 +17,8 @@ def create_app():
     app.config.from_object(_SystemConfig)
 
     # 挂载日志
-    app.logger.handlers = logger.handlers
-    app.logger.setLevel(logger.level)
+    # app.logger.handlers = logger.handlers
+    # app.logger.setLevel(logger.level)
 
     app.db = db
     app.restful = restful  # 方便视图返回restful风格，不用每个视图都导包

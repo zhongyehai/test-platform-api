@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from flask import request, g
 
+from utils.logs.log import logger
 from ..system.model_factory import User
-from apps.config.models.config import Config
-from apps.system.models.user_operation_log import UserOperationLog
 from utils.view.required import check_login_and_permissions
 
 
@@ -28,13 +27,14 @@ def register_before_hook(app):
         """ 登录校验和权限校验 """
         check_login_and_permissions()  # 校验登录状态和权限
 
-    # TODO 请求日志
-    # TODO 日志打印了2次
-    # @app.before_request
-    # def save_requests_by_log():
-    #     """ 打日志 """
-    #     if request.method != "HEAD":
-    #         request_data = request.args.to_dict() or request.form.to_dict() or request.json
-    #         app.logger.info(
-    #             f'【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.url}】: \n请求参数：{request_data}\n'
-    #         )
+    @app.before_request
+    def save_requests_by_log():
+        """ 打日志 """
+        if request.method != "HEAD":
+            try:
+                request_data = request.args.to_dict() or request.form.to_dict() or request.json
+            except:
+                request_data = {}
+            logger.info(
+                f'【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.url}】: \n请求参数：{request_data}\n'
+            )

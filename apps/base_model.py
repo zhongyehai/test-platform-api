@@ -738,7 +738,7 @@ class BaseCaseSuite(NumFiled):
             suite_id = [id_query[0] for id_query in suite_id_query]
 
         # 解析已选中的用例集，并继承已选中的用例列表，再根据用例id去重
-        case_id_query = case_model.db.session.query(case_model.id).query.filter(
+        case_id_query = case_model.db.session.query(case_model.id).filter(
             case_model.suite_id.in_(suite_id), case_model.status == CaseStatusEnum.DEBUG_PASS_AND_RUN.value
         ).order_by(case_model.num.asc()).all()
         case_id_list = [id_query[0] for id_query in case_id_query]

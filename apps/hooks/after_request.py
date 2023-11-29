@@ -4,8 +4,10 @@ import json
 
 from flask import request, g
 
+from utils.logs.log import logger
 
-def save_response_log(app, result):
+
+def save_response_log(result):
     """ 判断是否打日志
     HEAD请求不打日志
     run请求不打日志
@@ -14,7 +16,7 @@ def save_response_log(app, result):
     if request.method == "HEAD" or request.path.endswith("report/detail") or request.path.endswith("/report/step/img"):
         return
     else:
-        app.logger.info(
+        logger.info(
             f'【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.url}】, \n响应数据:{json.loads(result[0])}\n')
 
 
@@ -29,5 +31,5 @@ def register_after_hook(app):
         result = copy.copy(response_obj.response)
         if isinstance(result[0], bytes):
             result[0] = bytes.decode(result[0])
-        save_response_log(app, result)
+        save_response_log(result)
         return response_obj
