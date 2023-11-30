@@ -2,7 +2,7 @@ from typing import Optional, List
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ...enums import TriggerTypeEnum
 from ...system.models.user import User
 from ...assist.models.hits import Hits
@@ -50,7 +50,7 @@ class GetReportForm(BaseForm):
 
 class DeleteReportForm(BaseForm):
     """ 删除报告 """
-    id_list: List[int] = Field(..., title="报告id list")
+    id_list: List[int] = required_str_field(title="报告id list")
 
     @field_validator("id_list")
     def validate_id_list(cls, value):
@@ -100,7 +100,7 @@ class GetReportStepForm(BaseForm):
 
 class GetReportShowIdForm(BaseForm):
     """ 获取报告状态 """
-    batch_id: str = Field(..., title="执行批次id")
+    batch_id: str = required_str_field(title="执行批次id")
 
 
 class GetReportStatusForm(GetReportShowIdForm):

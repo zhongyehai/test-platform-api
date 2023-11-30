@@ -5,7 +5,7 @@ from flask import g
 from sqlalchemy import or_
 from pydantic import field_validator, ValidationInfo
 
-from ...base_form import BaseForm, Field, PaginationForm, ValidateModel
+from ...base_form import BaseForm, Field, PaginationForm, ValidateModel, required_str_field
 from ..model_factory import AppUiProject as Project, AppUiProjectEnv as ProjectEnv, AppUiModule as Module, \
     AppUiCaseSuite as CaseSuite, AppUiTask as Task
 from ...system.models.user import User
@@ -67,11 +67,11 @@ class DeleteProjectForm(GetProjectForm):
 
 class AddProjectForm(BaseForm):
     """ 添加app参数校验 """
-    name: str = Field(..., title="app名称")
+    name: str = required_str_field(title="app名称")
     manager: int = Field(..., title="负责人")
     business_id: int = Field(..., title="业务线")
-    app_package: str = Field(..., title="app包名")
-    app_activity: str = Field(..., title="appActivity")
+    app_package: str = required_str_field(title="app包名")
+    app_activity: str = required_str_field(title="appActivity")
     template_device: int = Field(..., title="元素定位时参照的设备id")
     script_list: Optional[list[int]] = Field([], title="脚本文件")
 
@@ -130,7 +130,7 @@ class SynchronizationEnvForm(BaseForm):
     """ 同步环境form """
     project_id: int = Field(..., title="服务id")
     env_from: int = Field(..., title="环境数据源")
-    env_to: list = Field(..., title="要同步到环境")
+    env_to: list = required_str_field(title="要同步到环境")
 
     @field_validator('project_id')
     def validate_project_id(cls, value):

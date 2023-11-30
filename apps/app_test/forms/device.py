@@ -3,7 +3,7 @@ from typing import Optional
 import validators
 from pydantic import field_validator
 
-from ...base_form import BaseForm, PaginationForm, Field
+from ...base_form import BaseForm, PaginationForm, Field, required_str_field
 from ..model_factory import AppUiRunServer as Server, AppUiRunPhone as Phone
 
 
@@ -42,10 +42,10 @@ class GetServerForm(BaseForm):
 
 class AddServerForm(BaseForm):
     """ 添加服务器的校验 """
-    name: str = Field(..., title="服务器名字")
-    os: str = Field(..., title="服务器系统类型")
-    ip: str = Field(..., title="服务器ip地址")
-    port: str = Field(..., title="服务器端口")
+    name: str = required_str_field(title="服务器名字")
+    os: str = required_str_field(title="服务器系统类型")
+    ip: str = required_str_field(title="服务器ip地址")
+    port: str = required_str_field(title="服务器端口")
 
     @field_validator("ip")
     def validate_ip(cls, value):
@@ -91,12 +91,12 @@ class GetPhoneForm(BaseForm):
 
 class AddPhoneForm(BaseForm):
     """ 添加手机的校验 """
-    name: str = Field(..., title="运行设备名字")
-    os: str = Field(..., title="运行设备系统类型")
-    os_version: str = Field(..., title="运行设备系统版本")
-    device_id: str = Field(..., title="运行设备设备id")
-    screen: str = Field(..., title="运行设备系统分辨率")
-    extends: dict = Field(..., title="运行设备扩展信息")
+    name: str = required_str_field(title="运行设备名字")
+    os: str = required_str_field(title="运行设备系统类型")
+    os_version: str = required_str_field(title="运行设备系统版本")
+    device_id: str = required_str_field(title="运行设备设备id")
+    screen: str = required_str_field(title="运行设备系统分辨率")
+    extends: dict = required_str_field(title="运行设备扩展信息")
 
     @field_validator("screen")
     def validate_screen(cls, value):

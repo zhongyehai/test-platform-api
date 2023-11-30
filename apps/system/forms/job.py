@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import ApschedulerJobs, JobRunLog
 
 
@@ -30,7 +30,7 @@ class GetJobLogForm(BaseForm):
 
 class GetJobForm(BaseForm):
     """ 获取job信息 """
-    task_code: str = Field(..., title="job code")
+    task_code: str = required_str_field(title="job code")
 
     @field_validator("task_code")
     def validate_task_code(cls, value):
@@ -41,7 +41,7 @@ class GetJobForm(BaseForm):
 
 class EnableJobForm(BaseForm):
     """ 新增job信息 """
-    func_name: str = Field(..., title="job方法")
+    func_name: str = required_str_field(title="job方法")
 
 
 class DisableJobForm(EnableJobForm):

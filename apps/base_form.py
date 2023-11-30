@@ -11,6 +11,12 @@ from utils.util.json_util import JsonUtil
 from utils.client.test_runner.parser import extract_variables, parse_function, extract_functions
 
 
+def required_str_field(*args, **kwargs):
+    """ 必传字段, 且长度大于1，防止传null、空字符串 """
+    kwargs["min_length"] = 1
+    return Field(..., **kwargs)
+
+
 class ParamModel(pydanticBaseModel):
     key: Union[str, None] = None
     value: Union[str, None] = None
@@ -53,14 +59,14 @@ class SkipIfModel(HeaderModel):
 
 
 class AddCaseDataForm(pydanticBaseModel):
-    name: str = Field(..., title="名字")
-    desc: str = Field(..., title="描述")
+    name: str = required_str_field(title="名字")
+    desc: str = required_str_field(title="描述")
 
 
 class AddElementDataForm(pydanticBaseModel):
-    name: str = Field(..., title="名字")
-    by: str = Field(..., title="定位方式")
-    element: str = Field(..., title="定位表达式")
+    name: str = required_str_field(title="名字")
+    by: str = required_str_field(title="定位方式")
+    element: str = required_str_field(title="定位表达式")
     template_device: Optional[int] = Field(None, title="定位元素时参照的手机")
 
 
@@ -78,9 +84,9 @@ class AddEnvAccountDataForm(pydanticBaseModel):
 
 
 # class AddUiElementDataForm(pydanticBaseModel):
-#     name: str = Field(..., title="名字")
-#     by: str = Field(..., title="定位方式")
-#     element: str = Field(..., title="定位表达式")
+#     name: str = required_str_field(title="名字")
+#     by: str = required_str_field(title="定位方式")
+#     element: str = required_str_field(title="定位表达式")
 
 
 class BaseForm(pydanticBaseModel, JsonUtil):
@@ -204,7 +210,7 @@ class BaseForm(pydanticBaseModel, JsonUtil):
             # 检验数据类型
             if key:
                 if not data_type or not value or not data.get("remark"):
-                        raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
+                    raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
 
                 if cls.validate_data_format(value, data_type) is False:
                     raise ValueError(f"{title}，{msg_title}值与数据类型不匹配")
@@ -341,7 +347,7 @@ class BaseForm(pydanticBaseModel, JsonUtil):
 
 class ChangeSortForm(BaseForm):
     """ 权限排序校验 """
-    id_list: list = Field(..., title="要排序的id列表")
+    id_list: list = required_str_field(title="要排序的id列表")
     page_num: int = Field(1, title="页数")
     page_size: int = Field(99999, title="页码")
 

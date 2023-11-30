@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import Field, field_validator, ValidationInfo
 from selenium.webdriver.common.keys import Keys
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Config
 import config
 
@@ -64,8 +64,8 @@ class GetConfigValueForm(BaseForm):
 class GetSkipIfConfigForm(BaseForm):
     """ 获取跳过类型配置 """
 
-    test_type: str = Field(..., title="测试类型")
-    type: str = Field(..., title="跳过类型")
+    test_type: str = required_str_field(title="测试类型")
+    type: str = required_str_field(title="跳过类型")
 
     @field_validator("type")
     def validate_type(cls, value, info: ValidationInfo):
@@ -81,7 +81,7 @@ class GetSkipIfConfigForm(BaseForm):
 class GetFindElementByForm(BaseForm):
     """ 获取定位方式数据源 """
 
-    test_type: str = Field(..., title="测试类型")
+    test_type: str = required_str_field(title="测试类型")
 
     @field_validator("test_type")
     def validate_type(cls, value):
@@ -113,8 +113,8 @@ class DeleteConfigForm(GetConfigForm):
 
 class PostConfigForm(BaseForm):
     """ 新增配置表单校验 """
-    name: str = Field(..., title="配置名")
-    value: str = Field(..., title="配置值")
+    name: str = required_str_field(title="配置名")
+    value: str = required_str_field(title="配置值")
     type: int = Field(..., title="配置类型 id")
     desc: Optional[str] = Field(title="备注")
 

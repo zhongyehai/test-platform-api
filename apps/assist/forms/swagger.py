@@ -1,7 +1,7 @@
 from pydantic import Field, field_validator
 
 from ..model_factory import SwaggerPullLog
-from apps.base_form import BaseForm, PaginationForm
+from apps.base_form import BaseForm, PaginationForm, required_str_field
 
 
 class GetSwaggerPullListForm(PaginationForm):
@@ -28,4 +28,4 @@ class GetSwaggerPullForm(BaseForm):
 class SwaggerPullForm(BaseForm):
     """ 从swagger拉取数据 """
     project_id: int = Field(..., title='服务id')
-    options: list = Field(..., title='拉取项')
+    options: list = required_str_field(title='拉取项')

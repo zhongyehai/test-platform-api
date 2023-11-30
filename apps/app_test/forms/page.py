@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import field_validator
 from pydantic_core.core_schema import ValidationInfo
 
-from ...base_form import BaseForm, PaginationForm, AddCaseDataForm, Field
+from ...base_form import BaseForm, PaginationForm, AddCaseDataForm, Field, required_str_field
 from ..model_factory import AppUiPage as Page, AppUiElement as Element
 
 
@@ -45,7 +45,7 @@ class AddPageForm(BaseForm):
     """ 添加页面信息的校验 """
     project_id: int = Field(..., title="项目id")
     module_id: int = Field(..., title="模块id")
-    page_list: List[AddCaseDataForm] = Field(..., title="页面list")
+    page_list: List[AddCaseDataForm] = required_str_field(title="页面list")
 
     @field_validator("page_list")
     def validate_page_list(cls, value, info: ValidationInfo):
@@ -67,7 +67,7 @@ class AddPageForm(BaseForm):
 class EditPageForm(GetPageForm):
     """ 修改页面信息 """
     module_id: int = Field(..., title="模块id")
-    name: str = Field(..., title="页面名")
+    name: str = required_str_field(title="页面名")
     desc: Optional[str] = Field(None, title="描述")
 
     @field_validator("name")

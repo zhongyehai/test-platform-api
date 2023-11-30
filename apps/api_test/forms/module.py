@@ -5,7 +5,7 @@ from pydantic import field_validator
 from pydantic_core.core_schema import ValidationInfo
 from sqlalchemy import or_
 
-from ...base_form import BaseForm, PaginationForm, Field
+from ...base_form import BaseForm, PaginationForm, Field, required_str_field
 from ..model_factory import ApiProject as Project, ApiModule as Module, ApiMsg as Api
 
 
@@ -50,7 +50,7 @@ class DeleteModuleForm(GetModuleForm):
 class AddModuleForm(GetModuleTreeForm):
     """ 添加模块的校验 """
     parent: Optional[int] = Field(title="父级id")
-    name: str = Field(..., title="模块名")
+    name: str = required_str_field(title="模块名")
 
     @field_validator('name')
     def validate_name(cls, value, info: ValidationInfo):

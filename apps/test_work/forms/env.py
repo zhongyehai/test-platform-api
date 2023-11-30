@@ -2,7 +2,7 @@ from typing import Optional, List
 
 from pydantic import Field, field_validator, ValidationInfo
 
-from ...base_form import BaseForm, PaginationForm, AddEnvDataForm, AddEnvAccountDataForm
+from ...base_form import BaseForm, PaginationForm, AddEnvDataForm, AddEnvAccountDataForm, required_str_field
 from ..models.env import Env
 
 
@@ -42,8 +42,8 @@ class DeleteEnvForm(GetEnvForm):
 
 class AddEnvForm(BaseForm):
     """ 添加数据 """
-    business: Optional[int] = Field(..., title="业务线")
-    data_list: List[AddEnvDataForm] = Field(..., title="资源数据")
+    business: Optional[int] = required_str_field(title="业务线")
+    data_list: List[AddEnvDataForm] = required_str_field(title="资源数据")
 
     @field_validator("data_list")
     def validate_data_list(cls, value, info: ValidationInfo):
@@ -64,8 +64,8 @@ class AddEnvForm(BaseForm):
 class ChangeEnvForm(GetEnvForm):
     """ 修改数据 """
     business: Optional[int] = Field(title="业务线")
-    name: str = Field(..., title="资源名字")
-    value: str = Field(..., title="资源对应的值")
+    name: str = required_str_field(title="资源名字")
+    value: str = required_str_field(title="资源对应的值")
     desc: Optional[str] = Field(title="描述")
 
 
@@ -73,7 +73,7 @@ class GetAccountListForm(PaginationForm):
     """ 获取数据列表 """
     business: Optional[list] = Field(None, title="业务线")
     name: Optional[str] = Field(None, title="环境名")
-    parent: Optional[int] = Field(..., title="所属资源id")
+    parent: Optional[int] = required_str_field(title="所属资源id")
     value: Optional[str] = Field(None, title="数据值")
 
     def get_query_filter(self, *args, **kwargs):
@@ -107,7 +107,7 @@ class DeleteAccountForm(GetEnvForm):
 class AddAccountForm(BaseForm):
     """ 添加数据 """
     parent: Optional[int] = Field(None, title="数据父级id")
-    data_list: List[AddEnvAccountDataForm] = Field(..., title="资源数据")
+    data_list: List[AddEnvAccountDataForm] = required_str_field(title="资源数据")
 
     @field_validator("data_list")
     def validate_data_list(cls, value, info: ValidationInfo):
@@ -127,7 +127,7 @@ class AddAccountForm(BaseForm):
 
 class ChangeAccountForm(GetEnvForm):
     """ 修改数据 """
-    name: str = Field(..., title="资源名字")
-    value: str = Field(..., title="资源对应的值")
+    name: str = required_str_field(title="资源名字")
+    value: str = required_str_field(title="资源对应的值")
     password: Optional[str] = Field(None, title="密码")
     desc: Optional[str] = Field(None, title="描述")

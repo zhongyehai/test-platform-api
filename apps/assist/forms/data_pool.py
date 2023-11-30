@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import DataPool, AutoTestUser
 
 
@@ -59,14 +59,14 @@ class DeleteDataPoolForm(GetDataPoolForm):
 
 class PostDataPoolForm(BaseForm):
     """ 新增数据池数据 """
-    env: str = Field(..., title="环境")
+    env: str = required_str_field(title="环境")
     desc: Optional[str] = Field(None, title="描述文字")
     mobile: Optional[str] = Field(None, title="手机号")
     password: Optional[str] = Field(None, title="密码")
-    business_order_no: str = Field(..., title="流水号")
+    business_order_no: str = required_str_field(title="流水号")
     amount: Optional[str] = Field(None, title="金额")
-    business_status: str = Field(..., title="业务状态")
-    use_status: str = Field(..., title="使用状态")
+    business_status: str = required_str_field(title="业务状态")
+    use_status: str = required_str_field(title="使用状态")
 
 
 class PutDataPoolForm(GetDataPoolForm, PostDataPoolForm):

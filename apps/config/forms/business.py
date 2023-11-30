@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator, ValidationInfo
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import BusinessLine
 from ...enums import ReceiveTypeEnum, BusinessLineBindEnvTypeEnum
 from ...system.model_factory import User
@@ -53,14 +53,14 @@ class DeleteBusinessForm(GetBusinessForm):
 
 class PostBusinessForm(BaseForm):
     """ 新增业务线表单校验 """
-    code: str = Field(..., title="业务线code")
-    name: str = Field(..., title="业务线名")
+    code: str = required_str_field(title="业务线code")
+    name: str = required_str_field(title="业务线名")
     receive_type: ReceiveTypeEnum = Field(
         ..., title="接收通知类型", description="not_receive:不接收、we_chat:企业微信、ding_ding:钉钉")
-    webhook_list: list = Field(..., title="接收通统计知的渠道")
+    webhook_list: list = required_str_field(title="接收通统计知的渠道")
     bind_env: BusinessLineBindEnvTypeEnum = Field(
         ..., title="绑定环境机制", description="auto：新增环境时自动绑定，human：新增环境后手动绑定")
-    env_list: list = Field(..., title="业务线要用的环境")
+    env_list: list = required_str_field(title="业务线要用的环境")
     desc: Optional[str] = Field(title="备注")
 
     @field_validator("receive_type")
@@ -80,6 +80,6 @@ class PutBusinessForm(GetBusinessForm, PostBusinessForm):
 
 class BusinessToUserForm(BaseForm):
     """ 批量管理业务线与用户的关系 绑定/解除绑定 """
-    business_list: list = Field(..., title="业务线")
-    user_list: list = Field(..., title="用户")
-    command: str = Field(..., title="操作类型")  # add、delete
+    business_list: list = required_str_field(title="业务线")
+    user_list: list = required_str_field(title="用户")
+    command: str = required_str_field(title="操作类型")  # add、delete

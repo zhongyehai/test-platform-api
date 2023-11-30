@@ -4,7 +4,7 @@ from typing import Optional, List
 from pydantic import field_validator
 from pydantic_core.core_schema import ValidationInfo
 
-from ...base_form import BaseForm, PaginationForm, Field, AddElementDataForm
+from ...base_form import BaseForm, PaginationForm, Field, AddElementDataForm, required_str_field
 from ..model_factory import WebUiElement as Element, WebUiPage as Page, WebUiModule as Module, WebUiProject as Project, \
     WebUiStep as Step, WebUiCase as Case
 
@@ -44,7 +44,7 @@ class AddElementForm(BaseForm):
     project_id: int = Field(..., title="APP id")
     module_id: int = Field(..., title="模块id")
     page_id: int = Field(..., title="页面id")
-    element_list: List[AddElementDataForm] = Field(..., title="元素list")
+    element_list: List[AddElementDataForm] = required_str_field(title="元素list")
 
     @field_validator("element_list")
     def validate_element_list(cls, value, info: ValidationInfo):
@@ -83,11 +83,11 @@ class EditElementForm(BaseForm):
     """ 修改元素信息 """
     id: int = Field(..., title="元素id")
     page_id: int = Field(..., title="页面id")
-    name: str = Field(..., title="元素名")
-    element: str = Field(..., title="定位元素表达式")
+    name: str = required_str_field(title="元素名")
+    element: str = required_str_field(title="定位元素表达式")
     desc: Optional[str] = Field(title="备注")
     wait_time_out: Optional[int] = Field(title="等待超时时间")
-    by: str = Field(..., title="定位方式")
+    by: str = required_str_field(title="定位方式")
 
     @field_validator("name")
     def validate_name(cls, value, info: ValidationInfo):
@@ -124,5 +124,5 @@ class EditElementForm(BaseForm):
 class ChangeElementByIdForm(BaseForm):
     """ 根据id更新元素 """
     id: int = Field(..., title="元素id")
-    by: str = Field(..., title="定位方式")
-    element: str = Field(..., title="定位元素表达式")
+    by: str = required_str_field(title="定位方式")
+    element: str = required_str_field(title="定位元素表达式")

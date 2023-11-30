@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Role, User, UserRoles, Permission, RolePermissions
 
 
@@ -55,7 +55,7 @@ class DeleteRoleForm(GetRoleForm):
 class CreateRoleForm(BaseForm):
     """ 创建角色的验证 """
 
-    name: str = Field(..., title="角色名")
+    name: str = required_str_field(title="角色名")
     desc: Optional[str] = Field(None, title="备注")
     extend_role: list = Field([], title="继承角色")
     api_permission: list = Field([], title="后端权限")

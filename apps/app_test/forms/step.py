@@ -2,7 +2,7 @@ from typing import Optional, Union, List
 
 from pydantic import Field, field_validator, ValidationInfo
 
-from ...base_form import BaseForm, PaginationForm, ExtractModel, ValidateModel, SkipIfModel
+from ...base_form import BaseForm, PaginationForm, ExtractModel, ValidateModel, SkipIfModel, required_str_field
 from ..model_factory import AppUiStep as Step
 from ...enums import DataStatusEnum
 
@@ -30,12 +30,12 @@ class GetStepForm(BaseForm):
 
 class DeleteStepForm(BaseForm):
     """ 批量删除步骤 """
-    id_list: list = Field(..., title="步骤id list")
+    id_list: list = required_str_field(title="步骤id list")
 
 
 class ChangeStepStatusForm(DeleteStepForm):
     """ 批量修改步骤状态 """
-    status: DataStatusEnum = Field(..., title="步骤状态")
+    status: DataStatusEnum = required_str_field(title="步骤状态")
 
 
 class CopyStepForm(GetStepForm):
@@ -47,19 +47,19 @@ class AddStepForm(BaseForm):
     """ 添加步骤校验 """
     case_id: int = Field(..., title="步骤所属的用例id")
     quote_case: Optional[int] = Field(title="引用用例id（步骤为引用用例时必传）")
-    name: str = Field(..., title="步骤名称")
+    name: str = required_str_field(title="步骤名称")
     up_func: Optional[list] = Field(default=[], title="前置条件")
     down_func: Optional[list] = Field(default=[], title="后置条件")
-    skip_if: List[SkipIfModel] = Field(..., title="跳过条件")
+    skip_if: List[SkipIfModel] = required_str_field(title="跳过条件")
     run_times: int = Field(1, title="执行次数")
-    extracts: List[ExtractModel] = Field(..., title="数据提取")
+    extracts: List[ExtractModel] = required_str_field(title="数据提取")
     skip_on_fail: int = Field(1, title="当用例有失败的步骤时，是否跳过此步骤")
-    validates: List[ValidateModel] = Field(..., title="断言")
+    validates: List[ValidateModel] = required_str_field(title="断言")
     data_driver: Union[list, dict] = Field([], title="数据驱动")
 
     element_id: Optional[int] = Field(None, title="步骤对应的元素id")
     send_keys: str = Field(None, title="输入内容")
-    execute_type: str = Field(..., title="执行动作")
+    execute_type: str = required_str_field(title="执行动作")
     wait_time_out: int = Field(5, title="等待元素超时时间")
 
     @field_validator("quote_case")

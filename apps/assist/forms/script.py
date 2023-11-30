@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import Field, field_validator, ValidationInfo
 from sqlalchemy import or_
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Script
 from ...config.model_factory import Config
 from ...api_test.model_factory import ApiProject, ApiCase
@@ -86,8 +86,8 @@ class DeleteScriptForm(GetScriptForm):
 
 class DebuggerScriptForm(GetScriptForm):
     """ 调试函数 """
-    expression: str = Field(..., title="调试表达式")
-    env: str = Field(..., title="运行环境")
+    expression: str = required_str_field(title="调试表达式")
+    env: str = required_str_field(title="运行环境")
 
     @field_validator("expression")
     def validate_expression(cls, value):
@@ -97,10 +97,10 @@ class DebuggerScriptForm(GetScriptForm):
 
 class CreatScriptForm(BaseForm):
     """ 创建自定义脚本文件 """
-    name: str = Field(..., title="脚本文件名")
-    script_type: str = Field(..., title="脚本类型")
+    name: str = required_str_field(title="脚本文件名")
+    script_type: str = required_str_field(title="脚本类型")
     desc: Optional[str] = Field(title="脚本描述")
-    script_data: str = Field(..., title="脚本内容")
+    script_data: str = required_str_field(title="脚本内容")
 
     @field_validator("name", mode='before')
     def validate_name(cls, value):

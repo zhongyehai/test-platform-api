@@ -3,7 +3,7 @@ from typing import Optional, List
 from flask import g
 from pydantic import Field, field_validator, ValidationInfo
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import BugTrack
 from ...system.models.user import User
 
@@ -59,7 +59,7 @@ class DeleteBugForm(GetBugForm):
 
 class ChangeBugStatusForm(GetBugForm):
     """ 修改bug状态 """
-    status: str = Field(..., title="bug状态")
+    status: str = required_str_field(title="bug状态")
 
 
 class ChangeBugReplayForm(GetBugForm):
@@ -70,16 +70,16 @@ class ChangeBugReplayForm(GetBugForm):
 class AddBugForm(BaseForm):
     """ 添加bug """
     business_id: int = Field(..., title="业务线")
-    iteration: str = Field(..., title="迭代")
-    name: str = Field(..., title="bug描述")
-    detail: str = Field(..., title="bug详情")
-    bug_from: Optional[str] = Field(..., title="来源")
-    trigger_time: Optional[str] = Field(..., title="发现时间")
-    reason: Optional[str] = Field(..., title="原因")
-    solution: Optional[str] = Field(..., title="解决方案")
-    manager: Optional[int] = Field(..., title="跟进人")
+    iteration: str = required_str_field(title="迭代")
+    name: str = required_str_field(title="bug描述")
+    detail: str = required_str_field(title="bug详情")
+    bug_from: Optional[str] = required_str_field(title="来源")
+    trigger_time: Optional[str] = required_str_field(title="发现时间")
+    reason: Optional[str] = required_str_field(title="原因")
+    solution: Optional[str] = required_str_field(title="解决方案")
+    manager: Optional[int] = required_str_field(title="跟进人")
     replay: int = Field(..., title="是否复盘")
-    conclusion: Optional[str] = Field(..., title="复盘结论")
+    conclusion: Optional[str] = required_str_field(title="复盘结论")
 
     @field_validator("conclusion")
     def validate_conclusion(cls, value, info: ValidationInfo):

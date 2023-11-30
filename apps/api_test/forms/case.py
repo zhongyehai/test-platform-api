@@ -2,7 +2,8 @@ from typing import Optional, List
 
 from pydantic import field_validator, ValidationInfo
 
-from ...base_form import BaseForm, Field, PaginationForm, AddCaseDataForm, VariablesModel, SkipIfModel, HeaderModel
+from ...base_form import BaseForm, Field, PaginationForm, AddCaseDataForm, VariablesModel, SkipIfModel, HeaderModel, \
+    required_str_field
 from ..model_factory import ApiProject as Project, ApiProjectEnv as ProjectEnv, ApiCaseSuite as CaseSuite, \
     ApiStep as Step, ApiCase as Case
 from ...assist.models.script import Script
@@ -35,7 +36,7 @@ class GetAssistCaseForm(BaseForm):
 
 class GetCaseNameForm(BaseForm):
     """ 获取用例的名字 """
-    case_list: List[int] = Field(..., title="用例id list")
+    case_list: List[int] = required_str_field(title="用例id list")
 
 
 class GetCaseForm(BaseForm):
@@ -51,7 +52,7 @@ class GetCaseForm(BaseForm):
 
 class DeleteCaseForm(BaseForm):
     """ 删除用例 """
-    id_list: List = Field(..., title="用例id list")
+    id_list: List = required_str_field(title="用例id list")
 
     @field_validator("id_list")
     def validate_id_list(cls, value):
@@ -64,7 +65,7 @@ class DeleteCaseForm(BaseForm):
 
 class ChangeCaseStatusForm(BaseForm):
     """ 批量修改用例状态 """
-    id_list: List[int] = Field(..., title="用例id list")
+    id_list: List[int] = required_str_field(title="用例id list")
     status: CaseStatusEnum = Field(
         ..., title="用例调试状态",
         description="0未调试-不执行，1调试通过-要执行，2调试通过-不执行，3调试不通过-不执行，默认未调试-不执行")
@@ -104,7 +105,7 @@ class PullCaseStepForm(BaseForm):
 class AddCaseForm(BaseForm):
     """ 添加用例的校验 """
     suite_id: int = Field(..., title="用例集id")
-    case_list: List[AddCaseDataForm] = Field(..., title="用例")
+    case_list: List[AddCaseDataForm] = required_str_field(title="用例")
 
     @field_validator('case_list')
     def validate_case_list(cls, vlue, info: ValidationInfo):
@@ -125,12 +126,12 @@ class AddCaseForm(BaseForm):
 class EditCaseForm(GetCaseForm):
     """ 修改用例 """
     suite_id: int = Field(..., title="用例集id")
-    name: str = Field(..., title="用例名称")
-    desc: str = Field(..., title="用例描述")
+    name: str = required_str_field(title="用例名称")
+    desc: str = required_str_field(title="用例描述")
     script_list: List[int] = Field(default=[], title="引用脚本id")
-    skip_if: List[SkipIfModel] = Field(..., title="跳过条件")
-    variables: List[VariablesModel] = Field(..., title="变量")
-    headers: List[HeaderModel] = Field(..., title="头部信息")
+    skip_if: List[SkipIfModel] = required_str_field(title="跳过条件")
+    variables: List[VariablesModel] = required_str_field(title="变量")
+    headers: List[HeaderModel] = required_str_field(title="头部信息")
     run_times: int = Field(1, title="运行次数")
 
     @field_validator('suite_id')
@@ -189,8 +190,8 @@ class EditCaseForm(GetCaseForm):
 
 class RunCaseForm(BaseForm):
     """ 运行用例 """
-    case_id_list: List[int] = Field(..., title="用例id list")
-    env_list: List[str] = Field(..., title="运行环境code")
+    case_id_list: List[int] = required_str_field(title="用例id list")
+    env_list: List[str] = required_str_field(title="运行环境code")
     temp_variables: Optional[dict] = Field(title="临时指定参数")
     is_async: int = Field(default=0, title="执行模式", description="0：用例维度串行执行，1：用例维度并行执行")
 

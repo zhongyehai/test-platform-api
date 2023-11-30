@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import ConfigType
 
 
@@ -38,7 +38,7 @@ class DeleteConfigTypeForm(GetConfigTypeForm):
 
 class PostConfigTypeForm(BaseForm):
     """ 新增配置类型表单校验 """
-    name: str = Field(..., title="配置类型名")
+    name: str = required_str_field(title="配置类型名")
     desc: Optional[str] = Field(title="备注")
 
 

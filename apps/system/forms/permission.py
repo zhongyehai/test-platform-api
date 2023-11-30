@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Permission, RolePermissions
 
 
@@ -47,9 +47,9 @@ class DeletePermissionForm(GetPermissionForm):
 
 class CreatePermissionForm(BaseForm):
     """ 创建权限的验证 """
-    name: str = Field(..., title="权限名")
+    name: str = required_str_field(title="权限名")
     desc: Optional[str] = Field(title="备注")
-    source_addr: str = Field(..., title="权限地址")
+    source_addr: str = required_str_field(title="权限地址")
     source_type: str = Field("front", title="权限类型")
     source_class: str = Field("menu", title="权限分类")
 

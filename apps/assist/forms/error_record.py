@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from apps.base_form import BaseForm, PaginationForm
+from apps.base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import FuncErrorRecord
 
 

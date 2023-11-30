@@ -1,11 +1,9 @@
-from pydantic import Field
-
-from ...base_form import BaseForm
+from ...base_form import BaseForm, required_str_field
 
 
 class KymProjectForm(BaseForm):
-    project: str = Field(..., title="服务名")
+    project: str = required_str_field(title="服务名")
 
 
 class ChangeKymForm(KymProjectForm):
-    kym: dict = Field(..., title="kym内容")
+    kym: dict = required_str_field(title="kym内容")

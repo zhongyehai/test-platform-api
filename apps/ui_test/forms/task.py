@@ -3,7 +3,7 @@ from typing import Optional, Union
 from pydantic import Field, field_validator, ValidationInfo
 from crontab import CronTab
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import WebUiTask as Task
 from ...enums import ReceiveTypeEnum, SendReportTypeEnum, TriggerTypeEnum, DataStatusEnum
 
@@ -46,7 +46,7 @@ class AddTaskForm(BaseForm):
     project_id: int = Field(..., title="服务id")
     suite_ids: Optional[list] = Field(title="用例集id")
     case_ids: Optional[list] = Field(title="用例id")
-    env_list: list = Field(..., title="运行环境")
+    env_list: list = required_str_field(title="运行环境")
     status: Optional[int] = Field(DataStatusEnum.DISABLE.value, title='任务状态')
     receive_type: ReceiveTypeEnum = Field(
         ReceiveTypeEnum.ding_ding, title="接收测试报告类型", description="ding_ding、we_chat、email")
@@ -57,8 +57,8 @@ class AddTaskForm(BaseForm):
     email_pwd: Optional[str] = Field(title="发件人邮箱密码")
     is_send: SendReportTypeEnum = Field(
         SendReportTypeEnum.on_fail.value, title="是否发送测试报告", description="not_send/always/on_fail")
-    cron: str = Field(..., title="cron表达式")
-    name: str = Field(..., title="任务名")
+    cron: str = required_str_field(title="cron表达式")
+    name: str = required_str_field(title="任务名")
     skip_holiday: bool = Field(True, title="是否跳过节假日、调休日")
     conf: Optional[dict] = Field({}, title="运行配置", description="webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")

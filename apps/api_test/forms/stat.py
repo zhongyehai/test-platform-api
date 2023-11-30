@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from ...base_form import PaginationForm
+from ...base_form import PaginationForm, required_str_field
 from ..model_factory import ApiProject as Project, ApiReport as Report
 
 

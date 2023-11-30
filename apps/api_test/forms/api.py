@@ -5,7 +5,7 @@ from pydantic import field_validator
 from pydantic_core.core_schema import ValidationInfo
 
 from ...base_form import BaseForm, PaginationForm, Field, HeaderModel, ParamModel, DataFormModel, ExtractModel, \
-    ValidateModel
+    ValidateModel, required_str_field
 from ..model_factory import ApiCase as Case, ApiStep as Step, ApiMsg as Api
 from ...enums import ApiMethodEnum, ApiBodyTypeEnum, DataStatusEnum
 
@@ -47,13 +47,13 @@ class DeleteApiForm(GetApiForm):
 
 class AddApiForm(BaseForm):
     """ 添加接口信息的校验 """
-    addr: str = Field(..., title="接口地址")
+    addr: str = required_str_field(title="接口地址")
     extracts: List[ExtractModel] = Field(title="提取信息")
     validates: List[ValidateModel] = Field(title="断言信息")
     data_form: List[DataFormModel] = Field(title="data-form参数")
     project_id: int = Field(..., title="服务id")
     module_id: int = Field(..., title="模块id")
-    name: str = Field(..., title="接口名")
+    name: str = required_str_field(title="接口名")
     desc: Optional[str] = Field(title="备注")
     up_func: Optional[list] = Field([], title="前置条件")
     down_func: Optional[list] = Field([], title="后置条件")
@@ -135,11 +135,11 @@ class GetApiFromForm(BaseForm):
 
 
 class ChangeLevel(GetApiForm):
-    level: str = Field(..., title="接口等级", description="P0、P1、P2")
+    level: str = required_str_field(title="接口等级", description="P0、P1、P2")
 
 
 class ChangeStatus(GetApiForm):
-    status: DataStatusEnum = Field(..., title="接口状态", description="此接口状态，enable/disable")
+    status: DataStatusEnum = required_str_field(title="接口状态", description="此接口状态，enable/disable")
 
     @field_validator('id')
     def validate_id(cls, value):
@@ -148,8 +148,8 @@ class ChangeStatus(GetApiForm):
 
 class RunApiMsgForm(BaseForm):
     """ 运行接口 """
-    api_list: List[int] = Field(..., title="要运行的接口id")
-    env_list: List[str] = Field(..., title="运行环境code")
+    api_list: List[int] = required_str_field(title="要运行的接口id")
+    env_list: List[str] = required_str_field(title="运行环境code")
 
     @field_validator("api_list")
     def validate_api_list(cls, value):

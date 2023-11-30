@@ -7,7 +7,7 @@ from flask import g
 from sqlalchemy import or_
 from pydantic import field_validator, ValidationInfo
 
-from ...base_form import BaseForm, Field, PaginationForm, ValidateModel, HeaderModel
+from ...base_form import BaseForm, Field, PaginationForm, ValidateModel, HeaderModel, required_str_field
 from ..model_factory import ApiProject as Project, ApiProjectEnv as ProjectEnv, ApiModule as Module, \
     ApiCaseSuite as CaseSuite, ApiTask as Task
 from ...system.models.user import User
@@ -69,7 +69,7 @@ class DeleteProjectForm(GetProjectForm):
 
 class AddProjectForm(BaseForm):
     """ 添加服务参数校验 """
-    name: str = Field(..., title="服务名称")
+    name: str = required_str_field(title="服务名称")
     manager: int = Field(..., title="负责人")
     business_id: int = Field(..., title="业务线")
     swagger: Optional[Union[str, None]] = Field(None, title="swagger地址")
@@ -113,7 +113,7 @@ class GetEnvForm(BaseForm):
 class EditEnv(GetEnvForm):
     """ 修改环境 """
     id: int = Field(..., title='环境数据id')
-    host: str = Field(..., title='域名')
+    host: str = required_str_field(title='域名')
     variables: List[ValidateModel] = Field(title="变量")
     headers: List[HeaderModel] = Field(title="头部信息")
 
@@ -175,7 +175,7 @@ class SynchronizationEnvForm(BaseForm):
     """ 同步环境form """
     project_id: int = Field(..., title="服务id")
     env_from: int = Field(..., title="环境数据源")
-    env_to: list = Field(..., title="要同步到环境")
+    env_to: list = required_str_field(title="要同步到环境")
 
     @field_validator('project_id')
     def validate_project_id(cls, value):

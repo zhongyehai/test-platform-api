@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from apps.base_form import BaseForm, PaginationForm
+from apps.base_form import BaseForm, PaginationForm, required_str_field
 
 
 class GetFileListForm(PaginationForm):
@@ -12,5 +12,5 @@ class GetFileListForm(PaginationForm):
 
 class CheckFileIsExistsForm(BaseForm):
     """ 校验文件是否存在 """
-    file_name: str = Field(..., title='文件名')
-    file_type: str = Field(..., title='文件类型')
+    file_name: str = required_str_field(title='文件名')
+    file_type: str = required_str_field(title='文件类型')

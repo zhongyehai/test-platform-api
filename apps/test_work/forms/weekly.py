@@ -3,7 +3,7 @@ from typing import Optional, Union
 from pydantic import Field, field_validator, ValidationInfo
 from sqlalchemy import or_
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import WeeklyModel, WeeklyConfigModel
 
 
@@ -110,8 +110,8 @@ class AddWeeklyForm(BaseForm):
     """ 添加周报 """
     product_id: Optional[int] = Field(title="产品id")
     project_id: Optional[int] = Field(title="项目id")
-    version: str = Field(..., title="版本号")
-    task_item: str = Field(..., title="任务明细")
+    version: str = required_str_field(title="版本号")
+    task_item: str = required_str_field(title="任务明细")
     desc: Optional[str] = Field(title="备注")
     start_time: Optional[str] = Field(title="开始时间")
     end_time: Optional[str] = Field(title="结束时间")

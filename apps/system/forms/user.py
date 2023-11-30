@@ -4,7 +4,7 @@ from typing import Optional
 from flask import request, g
 from pydantic import Field, field_validator, ValidationInfo
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import User
 from ...enums import DataStatusEnum
 
@@ -74,9 +74,9 @@ class ChangeStatusUserForm(GetUserForm):
 
 class ChangePasswordForm(BaseForm):
     """ 修改密码的校验 """
-    old_password: str = Field(..., title="旧密码")
-    new_password: str = Field(..., title="新密码")
-    sure_password: str = Field(..., title="确认密码")
+    old_password: str = required_str_field(title="旧密码")
+    new_password: str = required_str_field(title="新密码")
+    sure_password: str = required_str_field(title="确认密码")
 
     @field_validator("new_password")
     def validate_new_password(cls, value, info: ValidationInfo):
@@ -94,8 +94,8 @@ class ChangePasswordForm(BaseForm):
 
 class LoginForm(BaseForm):
     """ 登录校验 """
-    account: str = Field(..., title="账号")
-    password: str = Field(..., title="密码")
+    account: str = required_str_field(title="账号")
+    password: str = required_str_field(title="密码")
 
     @field_validator("account")
     def validate_account(cls, value):
@@ -107,13 +107,14 @@ class LoginForm(BaseForm):
 
     @field_validator("password")
     def validate_password(cls, value):
-        cls.validate_is_true(getattr(cls, "user").verify_password(value), "账号或密码错误")
+        if hasattr(cls, "user"):
+            cls.validate_is_true(getattr(cls, "user").verify_password(value), "账号或密码错误")
         return value
 
 
 class CreateUserForm(BaseForm):
     """ 创建用户的验证 """
-    user_list: list = Field(..., title="用户列表")
+    user_list: list = required_str_field(title="用户列表")
 
     @field_validator("user_list")
     def validate_user_list(cls, value):
@@ -144,8 +145,8 @@ class CreateUserForm(BaseForm):
 
 class EditUserForm(GetUserForm):
     """ 编辑用户的校验 """
-    name: str = Field(..., title="用户名")
-    account: str = Field(..., title="账号")
-    business_list: list = Field(..., title="业务线")
-    role_list: list = Field(..., title="角色")
+    name: str = required_str_field(title="用户名")
+    account: str = required_str_field(title="账号")
+    business_list: list = required_str_field(title="业务线")
+    role_list: list = required_str_field(title="角色")
     # password: Optional[str] = Field(None, title="用户密码，如果有，则可直接修改密码")

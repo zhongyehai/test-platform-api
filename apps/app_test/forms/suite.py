@@ -5,7 +5,7 @@ from pydantic import field_validator
 from pydantic_core.core_schema import ValidationInfo
 from sqlalchemy import or_
 
-from ...base_form import BaseForm, PaginationForm, Field
+from ...base_form import BaseForm, PaginationForm, Field, required_str_field
 from ..model_factory import AppUiCase as Case, AppUiCaseSuite as CaseSuite, AppUiRunPhone as Phone, \
     AppUiRunServer as Server
 from ...enums import UiCaseSuiteTypeEnum
@@ -56,7 +56,7 @@ class AddCaseSuiteForm(BaseForm):
         ..., title="用例集类型",
         description="base: 基础用例集，api: 单接口用例集，process: 流程用例集，make_data: 造数据用例集")
     parent: Optional[int] = Field(title="父用例集id")
-    name: str = Field(..., title="用例集名称")
+    name: str = required_str_field(title="用例集名称")
 
     @field_validator("name")
     def validate_name(cls, value, info: ValidationInfo):

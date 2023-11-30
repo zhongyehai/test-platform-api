@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import Field, field_validator
 
 from ..model_factory import RunEnv, BusinessLine
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 
 
 class GetRunEnvListForm(PaginationForm):
@@ -49,9 +49,9 @@ class DeleteRunEnvForm(GetRunEnvForm):
 
 class PostRunEnvForm(BaseForm):
     """ 新增环境表单校验 """
-    name: str = Field(..., title="环境名")
-    code: str = Field(..., title="环境code")
-    group: str = Field(..., title="环境分组")
+    name: str = required_str_field(title="环境名")
+    code: str = required_str_field(title="环境code")
+    group: str = required_str_field(title="环境分组")
     desc: Optional[str] = Field(None, title="备注")
 
 
@@ -61,13 +61,13 @@ class PutRunEnvForm(GetRunEnvForm, PostRunEnvForm):
 
 class GetEnvGroupForm(BaseForm):
     """ 获取环境分组 """
-    env_list: list = Field(..., title="环境")
-    business_list: list = Field(..., title="业务线")
-    command: str = Field(..., title="操作类型")  # add、delete
+    env_list: list = required_str_field(title="环境")
+    business_list: list = required_str_field(title="业务线")
+    command: str = required_str_field(title="操作类型")  # add、delete
 
 
 class EnvToBusinessForm(BaseForm):
     """ 批量管理环境与业务线的关系 绑定/解除绑定 """
-    env_list: list = Field(..., title="环境")
-    business_list: list = Field(..., title="业务线")
-    command: str = Field(..., title="操作类型")  # add、delete
+    env_list: list = required_str_field(title="环境")
+    business_list: list = required_str_field(title="业务线")
+    command: str = required_str_field(title="操作类型")  # add、delete

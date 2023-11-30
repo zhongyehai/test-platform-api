@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm
+from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Hits
 
 
@@ -44,11 +44,11 @@ class GetHitForm(BaseForm):
 
 class CreatHitForm(BaseForm):
     """ 创建自定义自动化测试命中问题 """
-    date: str = Field(..., title='问题触发日期')
-    hit_type: str = Field(..., title='问题类型')
-    test_type: str = Field(..., title='测试类型')
-    hit_detail: str = Field(..., title='问题内容')
-    env: str = Field(..., title='环境')
+    date: str = required_str_field(title='问题触发日期')
+    hit_type: str = required_str_field(title='问题类型')
+    test_type: str = required_str_field(title='测试类型')
+    hit_detail: str = required_str_field(title='问题内容')
+    env: str = required_str_field(title='环境')
     project_id: int = Field(..., title='服务id')
     report_id: int = Field(..., title='测试报告id')
     desc: Optional[str] = Field(title='描述')
