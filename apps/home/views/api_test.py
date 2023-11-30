@@ -96,6 +96,7 @@ def home_get_api_test_api():
             else_='Other'))
     ).filter().group_by(Api.method).all()  # [(60, 0.0), (232, 0.0), (11, 0.0), (25, 0.0), (4, 0.0), (4, 0.0), (6, 0.0)]
     method_count = [res[0] for res in method_query]  # [60, 232, 11, 25, 4, 4, 6]
+    method_count.extend([0, 0, 0, 0])
 
     # 是否使用维度
     use_query = Api.db.session.query(
@@ -103,7 +104,8 @@ def home_get_api_test_api():
         func.sum(case((Api.use_count == DataStatusEnum.DISABLE.value, 1), else_=0)),  # 未使用
         func.sum(case((Api.use_count != DataStatusEnum.DISABLE.value, 1), else_=0))  # 已使用
     ).one()
-    use_count = [int(count) for count in use_query]
+    use_count = [int(count) if count is not None else 0 for count in use_query]
+    use_count.extend([0, 0, 0, 0])
 
     time_data = get_data_by_time(Api)
     return app.restful.get_success({
@@ -130,12 +132,13 @@ def home_get_api_test_api():
 @home.login_get("/apiTest/case")
 def home_get_api_test_case():
     """ 统计用例数 """
-    use_query = Case.db.session.query(
+    case_query = Case.db.session.query(
         func.count(Case.id),  # 总数
         func.sum(case((Case.status == DataStatusEnum.DISABLE.value, 1), else_=0)),
         func.sum(case((Case.status != DataStatusEnum.DISABLE.value, 1), else_=0))
     ).one()
-    use_count = [int(count) for count in use_query]
+    case_count = [int(count) if count is not None else 0 for count in case_query]
+
     time_data = get_data_by_time(Case)
     return app.restful.get_success({
         "title": "用例",
@@ -144,7 +147,7 @@ def home_get_api_test_case():
             "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"
         ],
         "data": [
-            *use_count,
+            *case_count,
             time_data["last_day_add"],
             time_data["to_day_add"],
             time_data["current_week_add"],
@@ -157,12 +160,13 @@ def home_get_api_test_case():
 @home.login_get("/apiTest/step")
 def home_get_api_test_step():
     """ 统计步骤数 """
-    use_query = Step.db.session.query(
+    step_query = Step.db.session.query(
         func.count(Step.id),  # 总数
         func.sum(case((Step.status == DataStatusEnum.DISABLE.value, 1), else_=0)),
         func.sum(case((Step.status != DataStatusEnum.DISABLE.value, 1), else_=0))
     ).one()
-    use_count = [int(count) for count in use_query]
+    step_count = [int(count) if count is not None else 0 for count in step_query]
+
     time_data = get_data_by_time(Step)
 
     return app.restful.get_success({
@@ -172,7 +176,7 @@ def home_get_api_test_step():
             "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"
         ],
         "data": [
-            *use_count,
+            *step_count,
             time_data["last_day_add"],
             time_data["to_day_add"],
             time_data["current_week_add"],
@@ -185,12 +189,13 @@ def home_get_api_test_step():
 @home.login_get("/apiTest/task")
 def home_get_api_test_task():
     """ 统计定时任务数 """
-    use_query = Task.db.session.query(
+    task_query = Task.db.session.query(
         func.count(Task.id),  # 总数
         func.sum(case((Task.status == DataStatusEnum.DISABLE.value, 1), else_=0)),
         func.sum(case((Task.status != DataStatusEnum.DISABLE.value, 1), else_=0))
     ).one()
-    use_count = [int(count) for count in use_query]
+    task_count = [int(count) if count is not None else 0 for count in task_query]
+
     time_data = get_data_by_time(Task)
     return app.restful.get_success({
         "title": "定时任务",
@@ -199,7 +204,7 @@ def home_get_api_test_task():
             "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"
         ],
         "data": [
-            *use_count,
+            *task_count,
             time_data["last_day_add"],
             time_data["to_day_add"],
             time_data["current_week_add"],
@@ -212,12 +217,12 @@ def home_get_api_test_task():
 @home.login_get("/apiTest/report")
 def home_get_api_test_report():
     """ 统计测试报告数 """
-    use_query = Report.db.session.query(
+    report_query = Report.db.session.query(
         func.count(Report.id),  # 总数
         func.sum(case((Report.is_passed == DataStatusEnum.ENABLE.value, 1), else_=0)),
         func.sum(case((Report.is_passed != DataStatusEnum.ENABLE.value, 1), else_=0))
     ).one()
-    use_count = [int(count) for count in use_query]
+    report_count = [int(count) if count is not None else 0 for count in report_query]
 
     run_type_query = Report.db.session.query(
         func.count(),
@@ -240,7 +245,7 @@ def home_get_api_test_report():
             "昨日新增", "今日新增", "本周新增", "上周新增", "30日内新增"
         ],
         "data": [
-            *use_count, *run_type_count,
+            *report_count, *run_type_count,
             time_data["last_day_add"],
             time_data["to_day_add"],
             time_data["current_week_add"],
