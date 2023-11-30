@@ -97,20 +97,19 @@ def register_errorhandler_hook(app):
             _app.logger.exception(f'系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
             # 写数据库
-            error_record = SystemErrorRecord.model_create({
+            error_record = SystemErrorRecord.model_create_and_get({
                 "url": request.path,
                 "method": request.method,
                 "headers": dict(request.headers),
                 "params": request.args or {},
                 "data_form": request.form or {},
-                "data_json": request.json or {},
+                "data_json": request.json if request.content_type and "json" in request.content_type else {},
                 "detail": error
             })
 
             # 发送即时通讯通知
-            if platform.platform().startswith('Linux'):
-                send_system_error(title=f'{config.secret_key}报错通知，数据id：{error_record.id}', content=error)
-        except:
-            pass
+            send_system_error(title=f'{_app.config["SECRET_KEY"]}报错通知，数据id：{error_record.id}', content=error)
+        except Exception as error:
+            _app.logger.exception(f'系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
         return _app.restful.error(f'服务器异常: {e}')
