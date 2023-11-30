@@ -67,6 +67,20 @@ class AddApiForm(BaseForm):
     data_text: Optional[str] = Field(title="文本参数")
     time_out: Optional[int] = Field(title="请求超时时间")
 
+    @field_validator('headers')
+    def validate_headers(cls, value):
+        """ 头部信息校验 """
+        headers = [header.model_dump() for header in value]
+        cls.validate_header_format(headers, content_title='头部信息')
+        return headers
+
+    @field_validator('params')
+    def validate_params(cls, value):
+        """ params信息校验 """
+        params = [params.model_dump() for params in value]
+        cls.validate_header_format(params, content_title='url参数')
+        return params
+
     @field_validator('addr')
     def validate_addr(cls, value):
         """ 接口地址校验 """

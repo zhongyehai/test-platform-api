@@ -184,12 +184,12 @@ class BaseForm(pydanticBaseModel, JsonUtil):
                 raise ValueError(f"{message}引用的变量【{variable}】不存在")
 
     @classmethod
-    def validate_header_format(cls, content: list):
+    def validate_header_format(cls, content: list, content_title='头部信息'):
         """ 头部信息，格式校验 """
         for index, data in enumerate(content):
-            title, key, value = f"头部信息设置，第【{index + 1}】行", data.get("key"), data.get("value")
+            title, key, value = f"{content_title}设置，第【{index + 1}】行", data.get("key"), data.get("value")
             if not ((key and value) or (not key and not value)):
-                raise ValueError(f"{title}，要设置头部信息，则key和value都需设置")
+                raise ValueError(f"{title}，要设置参数，则key和value都需设置")
 
     @classmethod
     def validate_variable_format(cls, content: list, msg_title='自定义变量'):
@@ -197,16 +197,6 @@ class BaseForm(pydanticBaseModel, JsonUtil):
         for index, data in enumerate(content):
             title = f"{msg_title}设置，第【{index + 1}】行"
             key, value, data_type = data.get("key"), data.get("value"), data.get("data_type")
-
-            # 校验格式
-            # 要设置变量，则key、数据类型、备注必传
-            # if key or data_type:
-            #     if msg_title == 'form-data':
-            #         if not key or not data_type:
-            #             raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
-            #     else:
-            #         if not key or not data_type or not data.get("remark"):
-            #             raise ValueError(f"{title}，要设置{msg_title}，则【key、数据类型、备注】都需设置")
 
             # 检验数据类型
             if key:

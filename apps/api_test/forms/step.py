@@ -71,6 +71,20 @@ class AddStepForm(BaseForm):
     pop_header_filed: list = Field([], title="头部参数中去除指定字段")
     time_out: int = Field(60, title="请求超时时间")
 
+    @field_validator('headers')
+    def validate_headers(cls, value):
+        """ 头部信息校验 """
+        headers = [header.model_dump() for header in value]
+        cls.validate_header_format(headers, content_title='头部信息')
+        return headers
+
+    @field_validator('params')
+    def validate_params(cls, value):
+        """ params信息校验 """
+        params = [params.model_dump() for params in value]
+        cls.validate_header_format(params, content_title='url参数')
+        return params
+
     @field_validator("quote_case")
     def validate_quote_case(cls, value, info: ValidationInfo):
         """ 不能自己引用自己 """
