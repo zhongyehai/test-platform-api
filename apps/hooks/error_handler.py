@@ -3,14 +3,11 @@ import platform
 import re
 import traceback
 
-import pymysql
 from flask import current_app as _app, request, g
 from pydantic import ValidationError
-from pymysql import err as pymysql_err
 
 from apps.system.models.error_record import SystemErrorRecord
 from utils.message.send_report import send_system_error
-import config
 
 
 def register_errorhandler_hook(app):

@@ -139,7 +139,7 @@ class ChangeLevel(GetApiForm):
 
 
 class ChangeStatus(GetApiForm):
-    status: DataStatusEnum = required_str_field(title="接口状态", description="此接口状态，enable/disable")
+    status: DataStatusEnum = Field(..., title="接口状态", description="此接口状态，enable/disable")
 
     @field_validator('id')
     def validate_id(cls, value):

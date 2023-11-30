@@ -36,7 +36,7 @@ class DeleteStepForm(BaseForm):
 
 class ChangeStepStatusForm(DeleteStepForm):
     """ 批量修改步骤状态 """
-    status: DataStatusEnum = required_str_field(title="步骤状态")
+    status: DataStatusEnum = Field(..., title="步骤状态")
 
 
 class CopyStepForm(GetStepForm):

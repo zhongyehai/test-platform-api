@@ -101,7 +101,8 @@ class BaseForm(pydanticBaseModel, JsonUtil):
     @classmethod
     def get_filed_title(cls, filed):
         """ 获取字段的title """
-        return cls.model_fields[filed].title
+        filed_obj = cls.model_fields.get(filed)  # 嵌套的模型，可能拿不到具体字段
+        return filed_obj.title if filed_obj else filed
 
     @classmethod
     def validate_data_is_exist(cls, msg: str, db_model, **kwargs):
