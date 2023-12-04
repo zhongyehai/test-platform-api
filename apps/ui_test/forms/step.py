@@ -66,7 +66,7 @@ class AddStepForm(BaseForm):
     def validate_quote_case(cls, value, info: ValidationInfo):
         """ 不能自己引用自己 """
         if value:
-            cls.validate_is_true("不能自己引用自己", value != info.data["case_id"])
+            cls.validate_is_true(value != info.data["case_id"], "不能自己引用自己")
         return value
 
     @field_validator("extracts")

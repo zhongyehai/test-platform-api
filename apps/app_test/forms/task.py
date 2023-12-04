@@ -74,7 +74,7 @@ class AddTaskForm(BaseForm):
         if value in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
             receive_type = info.data["receive_type"]
             if receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
-                cls.validate_is_true('选择了要通过机器人发送报告，则webhook地址必填', info.data["webhook_list"])
+                cls.validate_is_true(info.data["webhook_list"], '选择了要通过机器人发送报告，则webhook地址必填')
             elif receive_type == ReceiveTypeEnum.email.value:
                 cls.validate_email(
                     info.data.get("email_server"), info.data.get("email_from"),
@@ -157,7 +157,7 @@ class RunTaskForm(GetTaskForm):
     def validate_phone_id(cls, value):
         """ 校验手机id存在 """
         data = value or cls.task.conf["phone_id"]
-        cls.validate_is_true('请设置运行手机', data)
+        cls.validate_is_true(data, '请设置运行手机')
         phone = cls.validate_data_is_exist("手机不存在", Phone, id=data)
         setattr(cls, "phone", phone)
         return value

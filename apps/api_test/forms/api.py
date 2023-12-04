@@ -84,7 +84,7 @@ class AddApiForm(BaseForm):
     @field_validator('addr')
     def validate_addr(cls, value):
         """ 接口地址校验 """
-        cls.validate_is_true("接口地址不能为空", value.split("?")[0])
+        cls.validate_is_true(value.split("?")[0], "接口地址不能为空")
         return value
 
     @field_validator('extracts')

@@ -41,7 +41,7 @@ def send_system_error(title, content):
     msg = {
         "msgtype": "text",
         "text": {
-            "content": f"""{title}:\n{content}"""
+            "content": f"{title}:\n\n{content}"
         }
     }
     send_msg(_default_web_hook, msg)

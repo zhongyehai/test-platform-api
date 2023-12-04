@@ -111,10 +111,10 @@ class AddCaseForm(BaseForm):
         """ 用例名不重复 """
         suite_id, case_list, name_list = info.data["suite_id"], [], []
         for index, case in enumerate(vlue):
-            cls.validate_is_true(f'第【{index + 1}】行，用例名必传', case.name)
+            cls.validate_is_true(case.name, f'第【{index + 1}】行，用例名必传')
             if case.name in name_list:
                 raise ValueError(f'第【{index + 1}】行，与第【{name_list.index(case.name) + 1}】行，用例名重复')
-            cls.validate_is_true(f'第【{index + 1}】行，用例描述必传', case.desc)
+            cls.validate_is_true(case.desc, f'第【{index + 1}】行，用例描述必传')
             cls.validate_data_is_not_exist(
                 f'第【{index + 1}】行，用例名【{case.name}】已存在', Case, name=case.name, suite_id=suite_id)
             name_list.append(case.name)

@@ -56,7 +56,7 @@ class DeleteProjectForm(GetProjectForm):
 
     @field_validator("id")
     def validate_id(cls, value):
-        cls.validate_is_true("不能删除别人负责的服务", Project.is_can_delete(value))
+        cls.validate_is_true(Project.is_can_delete(value), "不能删除别人负责的服务")
         cls.validate_is_false(
             Module.db.session.query(Module.id).filter(Module.project_id == value).first(), '服务下有模块,不允许删除')
         cls.validate_is_false(
@@ -79,8 +79,8 @@ class AddProjectForm(BaseForm):
     def validate_swagger(cls, value):
         """ 校验swagger地址是否正确 """
         if value:
-            cls.validate_is_true("swagger地址不正确，请输入正确地址", validators.url(value) is True)
-            cls.validate_is_true("请输入获取swagger数据的地址，不要输入swagger-ui地址", "swagger-ui.htm" not in value)
+            cls.validate_is_true(validators.url(value) is True, "swagger地址不正确，请输入正确地址")
+            cls.validate_is_true("swagger-ui.htm" not in value, "请输入获取swagger数据的地址，不要输入swagger-ui地址")
         return value
 
 

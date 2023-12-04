@@ -52,7 +52,7 @@ class AddPageForm(BaseForm):
         """ 校验同一模块下页面名不重复 """
         page_list, name_list = [], []
         for index, page in enumerate(value):
-            cls.validate_is_true(f'第【{index + 1}】行，页面名必传', page.name)
+            cls.validate_is_true(page.name, f'第【{index + 1}】行，页面名必传')
             if page.name in name_list:
                 raise ValueError(f'第【{index + 1}】行，与第【{name_list.index(page.name) + 1}】行，页面名重复')
             cls.validate_data_is_not_exist(

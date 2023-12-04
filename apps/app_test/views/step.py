@@ -8,19 +8,19 @@ from ..forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
     DeleteStepForm, CopyStepForm
 from config import ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list
 
-@app_test.login_get("/step/executeMapping")
+@app_test.get("/step/executeMapping")
 def app_get_step_execute_mapping():
     """ 获取执行动作类型列表 """
     return app.restful.get_success(ui_action_mapping_list)
 
 
-@app_test.login_get("/step/extractMapping")
+@app_test.get("/step/extractMapping")
 def app_get_step_extract_mapping():
     """ 数据提取方法列表 """
     return app.restful.get_success(ui_extract_mapping_list)
 
 
-@app_test.login_get("/step/assertMapping")
+@app_test.get("/step/assertMapping")
 def app_get_step_assert_mapping():
     """ 断言方法列表 """
     return app.restful.get_success(ui_assert_mapping_list)

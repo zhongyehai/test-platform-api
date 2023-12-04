@@ -36,7 +36,9 @@ def request_run_task_api(task_id, task_type, skip_holiday=1):
     job.logger.info(f'{"*" * 20} 开始触发执行定时任务 {"*" * 20}')
     if skip_holiday:
         today = datetime.datetime.now().strftime("%m-%d")
-        if today in Config.get_first(name="holiday_list").value:
+        with create_app().app_context():
+            holiday_list = Config.get_first(name="holiday_list").value
+        if today in holiday_list:
             job.logger.info(f'skip_holiday跳过执行')
             return
 

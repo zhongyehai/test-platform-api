@@ -107,7 +107,7 @@ class EditElementForm(BaseForm):
         # 如果是坐标定位，校验坐标值
         elif value in ("coordinate", "bounds"):
             if value == "bounds":
-                cls.validate_is_true(f'请选择元素定位时参照的设备', info.data["template_device"])
+                cls.validate_is_true(info.data["template_device"], f'请选择元素定位时参照的设备')
             try:
                 if isinstance(eval(info.data["element"]), (tuple, list)) is False:
                     raise ValueError("元素表达式错误，请参照示例填写")

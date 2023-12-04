@@ -70,7 +70,7 @@ class AddTaskForm(BaseForm):
         if value in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
             receive_type = info.data["receive_type"]
             if receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
-                cls.validate_is_true('选择了要通过机器人发送报告，则webhook地址必填', info.data["webhook_list"])
+                cls.validate_is_true(info.data["webhook_list"], '选择了要通过机器人发送报告，则webhook地址必填')
             elif receive_type == ReceiveTypeEnum.email.value:
                 cls.validate_email(
                     info.data.get("email_server"), info.data.get("email_from"),

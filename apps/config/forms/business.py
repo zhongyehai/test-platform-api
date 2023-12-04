@@ -66,7 +66,7 @@ class PostBusinessForm(BaseForm):
     @field_validator("receive_type")
     def validate_receive_type(cls, value, info: ValidationInfo):
         if value != ReceiveTypeEnum.not_receive:
-            cls.validate_is_true(f"要接收段统计通知，则通知地址必填", info.data.get("webhook_list"))
+            cls.validate_is_true(info.data.get("webhook_list"), f"要接收段统计通知，则通知地址必填")
         return value.value
 
     @field_validator("bind_env")

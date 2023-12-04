@@ -53,7 +53,7 @@ class AddPageForm(BaseForm):
         page_list, name_list = [], []
         for index, page in enumerate(value):
             page_name = page.name
-            cls.validate_is_true(f'第【{index + 1}】行，页面名必传', page_name)
+            cls.validate_is_true(page_name, f'第【{index + 1}】行，页面名必传')
             if page_name in name_list:
                 raise ValueError(f'第【{index + 1}】行，与第【{name_list.index(page_name) + 1}】行，页面名重复')
             cls.validate_data_is_not_exist(
