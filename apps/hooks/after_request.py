@@ -10,10 +10,9 @@ from utils.logs.log import logger
 def save_response_log(result):
     """ 判断是否打日志
     HEAD请求不打日志
-    run请求不打日志
-    获取报告详情不打日志
+    获取报告步骤截图不打日志
     """
-    if request.method == "HEAD" or request.path.endswith("report/detail") or request.path.endswith("/report/step/img"):
+    if request.method == "HEAD" or request.path.endswith("/step-img"):
         return
     else:
         logger.info(

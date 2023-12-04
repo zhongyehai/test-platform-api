@@ -20,6 +20,7 @@ from ...app_test.model_factory import AppUiReport, AppUiReportCase, AppUiReportS
     AppUiProjectEnv, AppUiProject
 from utils.message.send_report import send_business_stage_count
 from config import _job_server_host
+from ... import create_app
 
 
 class JobFuncs:
@@ -34,9 +35,10 @@ class JobFuncs:
             "cron": "0 0 2 * * ?"
         }
         """
-        ApiReport.batch_delete_report_detail_data(ApiReportCase, ApiReportStep)
-        WebUiReport.batch_delete_report_detail_data(WebUiReportCase, WebUiReportStep)
-        AppUiReport.batch_delete_report_detail_data(AppUiReportCase, AppUiReportStep)
+        with create_app().app_context():
+            ApiReport.batch_delete_report_detail_data(ApiReportCase, ApiReportStep)
+            WebUiReport.batch_delete_report_detail_data(WebUiReportCase, WebUiReportStep)
+            AppUiReport.batch_delete_report_detail_data(AppUiReportCase, AppUiReportStep)
 
     @classmethod
     def cron_clear_step(cls):
@@ -47,9 +49,10 @@ class JobFuncs:
             "cron": "0 10 2 * * ?"
         }
         """
-        ApiCase.batch_delete_step(ApiStep)
-        WebUiCase.batch_delete_step(WebUiStep)
-        AppUiCase.batch_delete_step(AppUiStep)
+        with create_app().app_context():
+            ApiCase.batch_delete_step(ApiStep)
+            WebUiCase.batch_delete_step(WebUiStep)
+            AppUiCase.batch_delete_step(AppUiStep)
 
     @classmethod
     def cron_api_use_count(cls):
@@ -60,10 +63,11 @@ class JobFuncs:
             "cron": "0 15 2 * * ?"
         }
         """
-        api_id_list = ApiMsg.get_id_list()
-        for api_id in api_id_list:
-            use_count = ApiStep.query.filter_by(api_id=api_id).count()
-            ApiMsg.query.filter_by(id=api_id).update({"use_count": use_count})
+        with create_app().app_context():
+            api_id_list = ApiMsg.get_id_list()
+            for api_id in api_id_list:
+                use_count = ApiStep.query.filter_by(api_id=api_id).count()
+                ApiMsg.query.filter_by(id=api_id).update({"use_count": use_count})
 
     @classmethod
     def cron_clear_project_env(cls):
@@ -74,9 +78,10 @@ class JobFuncs:
             "cron": "0 20 2 * * ?"
         }
         """
-        ApiProject.clear_env(ApiProjectEnv)
-        WebUiProject.clear_env(WebUiProjectEnv)
-        AppUiProject.clear_env(AppUiProjectEnv)
+        with create_app().app_context():
+            ApiProject.clear_env(ApiProjectEnv)
+            WebUiProject.clear_env(WebUiProjectEnv)
+            AppUiProject.clear_env(AppUiProjectEnv)
 
     @classmethod
     def cron_count_of_week(cls):
@@ -87,8 +92,8 @@ class JobFuncs:
             "cron": "0 0 18 ? * FRI"
         }
         """
-
-        cls.run_task_report_count("cron_count_of_week", "week")
+        with create_app().app_context():
+            cls.run_task_report_count("cron_count_of_week", "week")
 
     @classmethod
     def cron_count_of_month(cls):
@@ -99,7 +104,8 @@ class JobFuncs:
             "cron": "0 1 18 last * *"
         }
         """
-        cls.run_task_report_count("cron_count_of_month", "month")
+        with create_app().app_context():
+            cls.run_task_report_count("cron_count_of_month", "month")
 
     @staticmethod
     def run_task_report_count(run_func, count_time="month"):
@@ -110,70 +116,71 @@ class JobFuncs:
         elif count_time == "month":
             count_day = 'DATE_FORMAT(create_time, "%Y%m") = DATE_FORMAT(CURDATE(), "%Y%m")'
 
-        business_list = BusinessLine.query.filter(BusinessLine.receive_type != "0").all()
+        with create_app().app_context():
+            business_list = BusinessLine.query.filter(BusinessLine.receive_type != "0").all()
 
-        for business in business_list:
-            run_log = JobRunLog.model_create({"business_id": business.id, "func_name": run_func})
-            business_template = {
-                "countTime": count_time,
-                "total": 0,
-                "pass": 0,
-                "fail": 0,
-                "passRate": 0,
-                "record": [],
-                "hitRecord": {}
-            }
+            for business in business_list:
+                run_log = JobRunLog.model_create({"business_id": business.id, "func_name": run_func})
+                business_template = {
+                    "countTime": count_time,
+                    "total": 0,
+                    "pass": 0,
+                    "fail": 0,
+                    "passRate": 0,
+                    "record": [],
+                    "hitRecord": {}
+                }
 
-            project_list = ApiProject.get_all(business_id=business.id)
-            for project in project_list:
+                project_list = ApiProject.get_all(business_id=business.id)
+                for project in project_list:
 
-                project_template = copy.deepcopy(business_template)
-                project_template.pop("countTime")
+                    project_template = copy.deepcopy(business_template)
+                    project_template.pop("countTime")
 
-                data_report = ApiReport.db.execute_query_sql(f"""SELECT
-                       project_id,
-                       sum( CASE is_passed WHEN 1 THEN 1 ELSE 0 END ) AS pass,
-                       sum( CASE is_passed WHEN 0 THEN 1 ELSE 0 END ) AS fail 
-                   FROM
-                       api_test_report WHERE `trigger_type` in ("cron", "pipeline") 
-                       AND project_id in ({project.id})
-                       AND `process` = '3' 
-                       AND `status` = '2' 
-                       AND {count_day}""", False)
+                    data_report = ApiReport.db.execute_query_sql(f"""SELECT
+                           project_id,
+                           sum( CASE is_passed WHEN 1 THEN 1 ELSE 0 END ) AS pass,
+                           sum( CASE is_passed WHEN 0 THEN 1 ELSE 0 END ) AS fail 
+                       FROM
+                           api_test_report WHERE `trigger_type` in ("cron", "pipeline") 
+                           AND project_id in ({project.id})
+                           AND `process` = '3' 
+                           AND `status` = '2' 
+                           AND {count_day}""", False)
 
-                data_hit = ApiReport.db.execute_query_sql(
-                    f"""SELECT project_id,hit_type,count(hit_type)  FROM auto_test_hits 
-                           WHERE project_id in ({project.id}) AND {count_day} GROUP BY hit_type """, False)
+                    data_hit = ApiReport.db.execute_query_sql(
+                        f"""SELECT project_id,hit_type,count(hit_type)  FROM auto_test_hits 
+                               WHERE project_id in ({project.id}) AND {count_day} GROUP BY hit_type """, False)
 
-                pass_count = int(data_report[0][1]) if data_report[0][1] else 0
-                fail_count = int(data_report[0][2]) if data_report[0][1] else 0
-                total = pass_count + fail_count
-                if total != 0:
-                    project_template["name"] = project.name
-                    project_template["total"] = total
-                    project_template["pass"] = pass_count
-                    project_template["fail"] = fail_count
-                    project_template["passRate"] = round(pass_count / total, 3) if total > 0 else 0
-                    project_template["hitRecord"] = {hit[1]: hit[2] for hit in data_hit}
-                    project_template["record"] = []
-                    business_template["record"].append(project_template)
+                    pass_count = int(data_report[0][1]) if data_report[0][1] else 0
+                    fail_count = int(data_report[0][2]) if data_report[0][1] else 0
+                    total = pass_count + fail_count
+                    if total != 0:
+                        project_template["name"] = project.name
+                        project_template["total"] = total
+                        project_template["pass"] = pass_count
+                        project_template["fail"] = fail_count
+                        project_template["passRate"] = round(pass_count / total, 3) if total > 0 else 0
+                        project_template["hitRecord"] = {hit[1]: hit[2] for hit in data_hit}
+                        project_template["record"] = []
+                        business_template["record"].append(project_template)
 
-            # 聚合业务线的数据
-            business_template["webhookList"] = json.loads(business.webhook_list)
-            business_template["receiveType"] = business.receive_type
-            for project_count in business_template["record"]:
-                business_template["total"] += project_count["total"]
-                business_template["pass"] += project_count["pass"]
-                business_template["fail"] += project_count["fail"]
-                business_template["passRate"] += project_count["passRate"]
-                for key, value in project_count["hitRecord"].items():
-                    hit_record_key = business_template["hitRecord"].get(key)
-                    business_template["hitRecord"][key] = hit_record_key + value if hit_record_key else value
+                # 聚合业务线的数据
+                business_template["webhookList"] = json.loads(business.webhook_list)
+                business_template["receiveType"] = business.receive_type
+                for project_count in business_template["record"]:
+                    business_template["total"] += project_count["total"]
+                    business_template["pass"] += project_count["pass"]
+                    business_template["fail"] += project_count["fail"]
+                    business_template["passRate"] += project_count["passRate"]
+                    for key, value in project_count["hitRecord"].items():
+                        hit_record_key = business_template["hitRecord"].get(key)
+                        business_template["hitRecord"][key] = hit_record_key + value if hit_record_key else value
 
-            if business_template["total"] > 0:
-                business_template["passRate"] = business_template["passRate"] / len(business_template["record"])
-                send_business_stage_count(business_template)
-            run_log.run_success(business_template)
+                if business_template["total"] > 0:
+                    business_template["passRate"] = business_template["passRate"] / len(business_template["record"])
+                    send_business_stage_count(business_template)
+                run_log.run_success(business_template)
 
 
 @system_manage.admin_get("/job/list")

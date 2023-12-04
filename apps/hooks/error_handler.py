@@ -66,15 +66,15 @@ def register_errorhandler_hook(app):
             return _app.restful.fail(f'{filed_title} 枚举错误：{msg}')
 
         elif "max_length" in error_type:  # 数据长度超长
-            return _app.restful.fail(f'{filed_title} 长度超长，最多{error["ctx"]["limit_value"]}位')
+            return _app.restful.fail(f'{filed_title} 长度超长，最多{error["ctx"]["min_length"]}位')
 
-        # elif "min_length" in error_type:  # 数据长度不够
-        #     return _app.restful.fail(f'{filed_title} 长度不够，最少{error["ctx"]["limit_value"]}位')
+        elif msg == "List should have at least 1 item after validation, not 0":  # 空列表
+            return _app.restful.fail(f'最少选择{error["ctx"]["min_length"]}个{filed_title}')
 
         elif "string_too_short" in error_type:  # 数据长度不够
             return _app.restful.fail(f'{filed_title} 长度不够，最少{error["ctx"]["min_length"]}位')
+
         return _app.restful.fail(f'系统错误：{error}')
-        # TODO 其他校验类型
 
     @app.errorhandler(Exception)
     def error_handler_500(e):
