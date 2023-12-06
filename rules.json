@@ -154,6 +154,10 @@
       {
         "name": "工具-生成用户信息菜单",
         "source_addr": "/tools/makeUserInfo"
+      },
+      {
+        "name": "工具-消息队列",
+        "source_addr": "/tools/queue"
       }
     ],
     "配置管理菜单": [

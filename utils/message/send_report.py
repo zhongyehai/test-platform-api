@@ -9,7 +9,7 @@ from apps.assist.model_factory import CallBack
 from apps.enums import SendReportTypeEnum, ReceiveTypeEnum
 from .send_email import SendEmail
 from .template import diff_api_msg, run_time_error_msg, call_back_webhook_msg, render_html_report, \
-    get_inspection_msg, get_business_stage_count_msg
+    get_business_stage_count_msg, inspection_ding_ding, inspection_we_chat
 from ..logs.log import logger
 from config import _default_web_hook
 
@@ -47,34 +47,35 @@ def send_system_error(title, content):
     send_msg(_default_web_hook, msg)
 
 
-def send_inspection_by_msg(receive_type, content, kwargs):
+def send_inspection_by_msg(receive_type, content_list, kwargs):
     """ 发送巡检消息 """
-    msg = get_inspection_msg(receive_type, content, kwargs)
+    msg = inspection_ding_ding(content_list, kwargs) \
+        if receive_type == ReceiveTypeEnum.ding_ding else inspection_we_chat(content_list, kwargs)
     for webhook in kwargs["webhook_list"]:
         if webhook:
             send_msg(webhook, msg)
 
 
-def send_inspection_by_email(content, kwargs):
+def send_inspection_by_email(content_list, kwargs):
     """ 通过邮件发送测试报告 """
     SendEmail(
         kwargs.get("email_server"),
         kwargs.get("email_from").strip(),
         kwargs.get("email_pwd"),
         [email.strip() for email in kwargs.get("email_to") if email],
-        render_html_report(content, kwargs)
+        render_html_report(content_list, kwargs)
     ).send_email()
 
 
 def send_report(**kwargs):
     """ 封装发送测试报告提供给多线程使用 """
-    is_send, receive_type, content = kwargs.get("is_send"), kwargs.get("receive_type"), kwargs.get("content")
-    if is_send == SendReportTypeEnum.always.value or (
-            is_send == SendReportTypeEnum.on_fail.value and content["result"] != "success"):
+    is_send, receive_type, content_list = kwargs.get("is_send"), kwargs.get("receive_type"), kwargs.get("content_list")
+    result = [content_data["report_summary"]["result"] for content_data in content_list]
+    if is_send == SendReportTypeEnum.always.value or (is_send == SendReportTypeEnum.on_fail.value and "fail" in result):
         if receive_type == ReceiveTypeEnum.email:
-            send_inspection_by_email(content, kwargs)
+            send_inspection_by_email(content_list, kwargs)
         else:
-            send_inspection_by_msg(receive_type, content, kwargs)
+            send_inspection_by_msg(receive_type, content_list, kwargs)
 
 
 def async_send_report(**kwargs):

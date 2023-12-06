@@ -916,7 +916,9 @@ class BaseTask(StatusFiled, NumFiled):
     task_type: Mapped[str] = mapped_column(String(255), default="cron", comment="定时类型")
     cron: Mapped[str] = mapped_column(String(255), nullable=True, comment="cron表达式")
     is_send: Mapped[SendReportTypeEnum] = mapped_column(
-        default=SendReportTypeEnum.not_send, comment="是否发送报告，1.不发送、2.始终发送、3.仅用例不通过时发送")
+        default=SendReportTypeEnum.not_send, comment="是否发送通知，1.不发送、2.始终发送、3.仅用例不通过时发送")
+    merge_notify: Mapped[int] = mapped_column(
+        Integer(), default=0, nullable=True, comment="多个环境时，是否合并通知（只通知一次），默认不合并，0不合并、1合并")
     receive_type: Mapped[ReceiveTypeEnum] = mapped_column(
         default=ReceiveTypeEnum.ding_ding, nullable=True, comment="接收测试报告类型: ding_ding、we_chat、email")
     webhook_list: Mapped[list] = mapped_column(JSON, default=[], comment="机器人地址")
@@ -1247,7 +1249,8 @@ class BaseReportStep(BaseModel):
     case_id: Mapped[int] = mapped_column(Integer(), nullable=True, default=None, comment="步骤所在的用例id")
     step_id: Mapped[int] = mapped_column(Integer(), nullable=True, index=True, default=None, comment="步骤id")
     element_id: Mapped[int] = mapped_column(Integer(), comment="步骤对应的元素/接口id")
-    report_case_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=True, default=None, comment="用例数据id")
+    report_case_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=True, default=None,
+                                                comment="用例数据id")
     report_id: Mapped[int] = mapped_column(Integer(), index=True, comment="测试报告id")
     process: Mapped[str] = mapped_column(
         String(128), default='waite',

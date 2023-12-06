@@ -86,7 +86,10 @@ def register_errorhandler_hook(app):
                 if "Duplicate" in error_msg:  # 数据重复
                     filed_value = re.findall("'(.+?)'", error_msg)[0]
                     return _app.restful.fail(f'{filed_value} 已存在')
-            # TODO 更多数据库异常捕获
+                elif "Data too long" in error_msg:  # 数据超长
+                    return _app.restful.fail(error_msg)
+                return _app.restful.fail(error_msg)
+
         except:
             pass
         error = traceback.format_exc()

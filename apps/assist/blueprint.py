@@ -3,4 +3,4 @@ from ..base_view import Blueprint
 
 assist = Blueprint("Assist", __name__)
 
-from .views import data_pool, error_record, file, script, swagger, hits, call_back
+from .views import data_pool, error_record, file, script, swagger, hits, call_back, queue

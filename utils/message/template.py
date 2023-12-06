@@ -8,7 +8,7 @@ from jinja2 import Template
 from apps.enums import ReceiveTypeEnum
 
 
-def inspection_ding_ding(content, task_kwargs):
+def inspection_ding_ding_copy(content, task_kwargs):
     """ 巡检-钉钉报告模板 """
     # todo 消息加@
     """
@@ -49,7 +49,50 @@ def inspection_ding_ding(content, task_kwargs):
     }
 
 
-def inspection_we_chat(content, task_kwargs):
+def inspection_ding_ding(content_list, task_kwargs):
+    """ 巡检-钉钉报告模板
+     @content_list: [{"report_id": 1, "report_summary": {}}]
+     """
+    # todo 消息加@
+    """
+    {
+         "msgtype": "markdown",
+         "markdown": {
+             "title":"杭州天气",
+             "text": "#### 杭州天气 @150XXXXXXXX \n> 9度，西北风1级，空气良89，相对温度73%\n> ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png)\n> ###### 10点20分发布 [天气](https://www.dingalk.com) \n"
+         },
+          "at": {
+              "atMobiles": ["150XXXXXXXX"],
+              "atUserIds": ["user123"],
+              "isAtAll": false
+          }
+     }
+    """
+    notify_template = {
+        "msgtype": "markdown",
+        "markdown": {
+            "title": "巡检通知",
+            "text": f'### 巡检通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
+                    f'### 任务名: {task_kwargs["name"]} \n\n\n'
+        }
+    }
+    for content_data in content_list:
+        report_id, content = content_data["report_id"], content_data["report_summary"]
+        case_stat, step_stat = content["stat"]["test_case"], content["stat"]["test_step"]
+        pass_rate = round(case_stat["success"] / case_stat["total"] * 100, 3) if case_stat["total"] else 100
+        notify_template["markdown"]["text"] += (
+            f'#### 运行环境:<font color=#409EFF> {content["env"]["name"]} </font>\n> '
+            f'#### 执行用例:<font color=#409EFF> {case_stat["total"]} </font>条 \n> '
+            f'#### 成功:<font color=#00FF00> {case_stat["success"]} </font>条 \n> '
+            f'#### 失败:<font color=#FF0000> {case_stat["fail"]} </font>条 \n> '
+            f'#### 通过率:<font color=#409EFF> {pass_rate}% </font> \n> '
+            f'#### 此次共运行<font color=#19D4AE> {step_stat["total"]} </font>个步骤，'
+            f'涉及<font color=#19D4AE> {content["stat"]["count"]["api"]} </font>个接口 \n> '
+            f'#### 详情请登录[测试平台]({task_kwargs["report_addr"] + str(report_id)})查看\n\n\n')
+    return notify_template
+
+
+def inspection_we_chat(content_list, task_kwargs):
     """ 巡检-企业微信报告模板 """
     """
     {
@@ -61,58 +104,81 @@ def inspection_we_chat(content, task_kwargs):
         }
     }
     """
-    case_stat, step_stat = content["stat"]["test_case"], content["stat"]["test_step"]
-    pass_rate = round(case_stat["success"] / case_stat["total"] * 100, 3) if case_stat["total"] else 100
-    return {
+    notify_template = {
         "msgtype": "markdown",
         "markdown": {
             "content": f'>巡检通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
-                       f'>任务名: {task_kwargs["name"]} \n'
-                       f'>运行环境: {content["env"]["name"]} \n'
-                       f'>执行用例:<font color="comment"> {case_stat["total"]} </font>条\n'
-                       f'>成功:<font color="info"> {case_stat["success"]} </font>条\n'
-                       f'>失败:<font color="warning"> {case_stat["fail"]} </font>条\n'
-                       f'>通过率:<font color="warning"> {pass_rate}% </font>\n'
-                       f'>此次共运行<font color=#info> {step_stat["total"]} </font>个步骤，'
-                       f'涉及<font color=#info> {content["stat"]["count"]["api"]} </font>个接口 \n> '
-                       f'详情请登录[测试平台]({task_kwargs["report_addr"] + str(task_kwargs["report_id"])})查看'
+                       f'>任务名: {task_kwargs["name"]} \n\n\n'
         }
     }
+    for content_data in content_list:
+        report_id, content = content_data["report_id"], content_data["report_summary"]
+        case_stat, step_stat = content["stat"]["test_case"], content["stat"]["test_step"]
+        pass_rate = round(case_stat["success"] / case_stat["total"] * 100, 3) if case_stat["total"] else 100
+        notify_template["markdown"]["content"] += (
+            f'>运行环境: {content["env"]["name"]} \n'
+            f'>执行用例:<font color="comment"> {case_stat["total"]} </font>条\n'
+            f'>成功:<font color="info"> {case_stat["success"]} </font>条\n'
+            f'>失败:<font color="warning"> {case_stat["fail"]} </font>条\n'
+            f'>通过率:<font color="warning"> {pass_rate}% </font>\n'
+            f'>此次共运行<font color=#info> {step_stat["total"]} </font>个步骤，'
+            f'涉及<font color=#info> {content["stat"]["count"]["api"]} </font>个接口 \n> '
+            f'详情请登录[测试平台]({task_kwargs["report_addr"] + str(report_id)})查看 \n\n\n'
+        )
+    return notify_template
 
 
-def get_inspection_msg(_type, content, kwargs):
-    return inspection_ding_ding(content, kwargs) if _type == ReceiveTypeEnum.ding_ding else inspection_we_chat(content, kwargs)
-
-
-def render_html_report(content, task_kwargs):
+def render_html_report(content_list, task_kwargs):
     """ 巡检-邮件模板 """
-    case_stat, step_stat = content["stat"]["test_case"], content["stat"]["test_step"]
-    pass_rate = round(case_stat["success"] / case_stat["total"] * 100, 3) if case_stat["total"] else 100
-    msg = f"""
+    notify_template = f"""
     <div>
         <h2>巡检通知：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</h2>
-        <div><span>任务名: <span style="color: #60C0DDFF">{task_kwargs["name"]}</span></span></div>
-        <div><span>运行环境: <span style="color: #60C0DDFF">{content["env"]["name"]}</span></span></div>
-        <div><span>执行用例: <span style="color: #60C0DDFF">{case_stat["total"]}</span> 条</span></div>
-        <div><span>成功: <span style="color: #9BCA63FF">{case_stat["success"]}</span> 条</span></div>
-        <div><span>失败: <span style="color: #FA6E86FF">{case_stat["fail"]}</span> 条</span></div>
-        <div><span>通过率: <span style="color: #60C0DDFF">{pass_rate}</span>%</span></div>
-        <div>
+        <h3>
             <span>
-                此次共运行: 
-                <span style="color: #60C0DDFF"> {step_stat["total"]} </span>
-                个步骤, 涉及 
-                <span style="color: #60C0DDFF"> {content["stat"]["count"]["api"]} </span> 
-                个接口 
+                任务名: 
+                <span style="color: #60C0DDFF">
+                    {task_kwargs["name"]}
+                </span>
             </span>
-        </div>
-        <div>
-            <span>详情请登录【<a style="color: #60C0DDFF" href="{task_kwargs["report_addr"] + str(task_kwargs["report_id"])}">测试平台</a>】查看</span>
-        </div>
-    </div>
+        </h3>
+        <br/>
     """
-
-    return {"status": content["result"], "msg": msg}
+    all_res = []
+    for content_data in content_list:
+        report_id, content = content_data["report_id"], content_data["report_summary"]
+        all_res.append(content["result"])
+        case_stat, step_stat = content["stat"]["test_case"], content["stat"]["test_step"]
+        pass_rate = round(case_stat["success"] / case_stat["total"] * 100, 3) if case_stat["total"] else 100
+        notify_template += (
+            f"""
+            <div><span>运行环境: <span style="color: #60C0DDFF">{content["env"]["name"]}</span></span></div>
+            <div><span>执行用例: <span style="color: #60C0DDFF">{case_stat["total"]}</span> 条</span></div>
+            <div><span>成功: <span style="color: #9BCA63FF">{case_stat["success"]}</span> 条</span></div>
+            <div><span>失败: <span style="color: #FA6E86FF">{case_stat["fail"]}</span> 条</span></div>
+            <div><span>通过率: <span style="color: #60C0DDFF">{pass_rate}</span>%</span></div>
+            <div>
+                <span>
+                    此次共运行: 
+                    <span style="color: #60C0DDFF"> 
+                        {step_stat["total"]} 
+                    </span>
+                    个步骤, 涉及 
+                    <span style="color: #60C0DDFF"> 
+                        {content["stat"]["count"]["api"]} 
+                    </span> 
+                    个接口 
+                </span>
+            </div>
+            <div>
+                <span>
+                    详情请登录【<a style="color: #60C0DDFF" href="{task_kwargs["report_addr"] + str(report_id)}">测试平台</a>】查看
+                </span>
+            </div>        
+            <br/>
+            """
+        )
+    notify_template += "</div>"
+    return {"status": "fail" if "fail" in all_res else "success", "msg": notify_template}
 
 
 def diff_api_msg(content, host, diff_api_addr, report_id):

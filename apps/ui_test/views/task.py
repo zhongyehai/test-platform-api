@@ -15,7 +15,7 @@ def ui_get_task_list():
     """ 任务列表 """
     form = GetTaskListForm()
     if form.detail:
-        get_filed = [Task.id, Task.name, Task.cron, Task.skip_holiday, Task.status, Task.project_id]
+        get_filed = [Task.id, Task.name, Task.cron, Task.skip_holiday, Task.status, Task.project_id, Task.merge_notify]
     else:
         get_filed = Task.get_simple_filed_list()
     return app.restful.get_success(Task.make_pagination(form, get_filed=get_filed))

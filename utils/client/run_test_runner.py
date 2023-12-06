@@ -235,14 +235,20 @@ class RunTestRunner:
 
         # 有可能是多环境一次性批量运行，根据batch_id查是否全部运行完毕
         if self.report_model.select_is_all_done_by_batch_id(self.report.batch_id):  # 查询此batch_id下的报告是否全部生成
-            # 有失败的，则获取失败的报告
-            not_passed_report = self.report_model.db.session.query(
-                self.report_model.id, self.report_model.summary
-            ).filter_by(batch_id=self.report.batch_id, is_passed=0).first()
-            if not_passed_report:
-                self.send_report_if_task(not_passed_report[0], not_passed_report[1])  # 发送报告
-            else:
-                self.send_report_if_task(self.report.id, result)  # 发送报告
+            if self.task_dict.get("merge_notify") != 1:  # 不合并通知
+                # 有失败的，则获取失败的报告
+                not_passed = self.report_model.db.session.query(
+                    self.report_model.id, self.report_model.summary
+                ).filter_by(batch_id=self.report.batch_id, is_passed=0).first()
+                if not_passed:
+                    self.send_report_if_task([{"report_id": not_passed[0], "report_summary": not_passed[1]}])
+                else:
+                    self.send_report_if_task([{"report_id": self.report.id, "report_summary": result}])
+            else:  # 合并通知
+                # 获取当前批次下的所有测试报告，summary
+                query_res = self.report_model.db.session.query(
+                    self.report_model.id, self.report_model.summary).filter_by(batch_id=self.report.batch_id).all()
+                self.send_report_if_task([{"report_id": query[0], "report_summary": query[1]} for query in query_res])
 
     def run_case(self):
         """ 调 testRunner().run() 执行测试 """
@@ -298,21 +304,22 @@ class RunTestRunner:
         summary["stat"]["count"]["element"] = len(self.element_set)
         self.save_report_and_send_message(summary)
 
-    def send_report_if_task(self, report_id, res):
+    def send_report_if_task(self, notify_list):
         """ 发送测试报告 """
         if self.task_dict:
             # 如果是流水线触发的，则回调给流水线
             if self.report.trigger_type == TriggerTypeEnum.pipeline:
+                all_res = [notify["result"] for notify in notify_list]
                 call_back_for_pipeline(
                     self.task_dict["id"],
                     self.task_dict["call_back"] or [],
                     self.extend,
-                    res["result"]
+                    "fail" if "fail" in all_res else "success"
                 )
 
             # 发送测试报告
             logger.info(f'开始发送测试报告')
-            async_send_report(content=res, **self.task_dict, report_id=report_id, report_addr=self.front_report_addr)
+            async_send_report(content_list=notify_list, **self.task_dict, report_addr=self.front_report_addr)
 
     @staticmethod
     def parse_api(project, api):

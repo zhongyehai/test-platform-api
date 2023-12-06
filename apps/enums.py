@@ -16,6 +16,12 @@ class AuthType(str, BaseEnum):
     not_auth = "not_auth"
 
 
+class QueueTypeEnum(str, BaseEnum):
+    """ 消息队列类型 """
+    rocket_mq = "rocket_mq"
+    redis = "redis"
+
+
 class DataStatusEnum(int, BaseEnum):
     """ 数据状态，启用/禁用 """
     ENABLE = 1

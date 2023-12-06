@@ -62,7 +62,7 @@ class AddApiForm(BaseForm):
     params: List[ParamModel] = Field(title="url参数")
     body_type: ApiBodyTypeEnum = Field(
         ApiBodyTypeEnum.json.value, title="请求体数据类型", description="json/form/text/urlencoded")
-    data_json: Union[list, dict] = Field(title="json参数")
+    data_json: Union[list, dict] = Field({}, title="json参数")
     data_urlencoded: dict = Field(title="urlencoded参数")
     data_text: Optional[str] = Field(title="文本参数")
     time_out: Optional[int] = Field(title="请求超时时间")
