@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from sqlalchemy import String, Integer
+from sqlalchemy import String, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from apps.base_model import NumFiled
@@ -20,3 +20,11 @@ class Queue(NumFiled):
     # 具体队列
     link_id: Mapped[int] = mapped_column(Integer(), nullable=True, comment="所属消息队列链接id")
     queue_name: Mapped[str] = mapped_column(String(128), nullable=True, default="", comment="消息队列名")
+
+
+class QueueMsgLog(NumFiled):
+    """ 消息发送记录 """
+    __tablename__ = "auto_test_queue_message_log"
+    __table_args__ = {"comment": "消息发送记录表"}
+    queue_id: Mapped[int] = mapped_column(Integer(), nullable=True, comment="消息队列id")
+    message: Mapped[str] = mapped_column(Text(), nullable=True, comment="消息内容")

@@ -2,10 +2,10 @@
 from flask import current_app as app
 
 from ..blueprint import assist
-from ..model_factory import Queue
+from ..model_factory import Queue, QueueMsgLog
 from ...base_form import ChangeSortForm
 from ..forms.queue import GetQueueForm, DeleteQueueForm, GetQueueLinkListForm, GetQueueListForm, CreatQueueLinkForm, \
-    EditQueueLinkForm, CreatQueueForm, EditQueueForm, SendMessageForm
+    EditQueueLinkForm, CreatQueueForm, EditQueueForm, SendMessageForm, GetQueueMsgLogForm
 from utils.message.send_rocket_mq import send_rocket_mq
 from ...enums import QueueTypeEnum
 
@@ -64,6 +64,7 @@ def assist_send_message_to_queue():
     form = SendMessageForm()
     if form.queue_link["queue_type"] == QueueTypeEnum.rocket_mq:
         send_rocket_mq(form.queue_link, form.message)
+    QueueMsgLog.model_create({"queue_id": form.id, "message": form.message})
     return app.restful.success('消息发送完成')
 
 
@@ -96,3 +97,13 @@ def assist_copy_link():
     form = GetQueueForm()
     form.queue.copy()
     return app.restful.copy_success()
+
+
+@assist.login_get("/queue-log/list")
+def assist_get_queue_log_list():
+    """ 消息发送记录 """
+    form = GetQueueMsgLogForm()
+    get_filed = [
+        QueueMsgLog.id, QueueMsgLog.queue_id, QueueMsgLog.message, QueueMsgLog.create_user, QueueMsgLog.create_time
+    ]
+    return app.restful.get_success(QueueMsgLog.make_pagination(form, get_filed=get_filed))

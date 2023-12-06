@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import Field, field_validator, ValidationInfo
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
-from ..model_factory import Queue
+from ..model_factory import Queue, QueueMsgLog
 from ...enums import QueueTypeEnum
 
 
@@ -89,3 +89,13 @@ class CreatQueueForm(BaseForm):
 
 class EditQueueForm(GetQueueForm, CreatQueueForm):
     """ 修改消息队列 """
+
+
+class GetQueueMsgLogForm(PaginationForm):
+    """ 获取消息队列的消息记录列表 """
+    queue_id: int = Field(..., title="队列id")
+
+    def get_query_filter(self, *args, **kwargs):
+        """ 查询条件 """
+        filter_list = [QueueMsgLog.queue_id == self.queue_id]
+        return filter_list
