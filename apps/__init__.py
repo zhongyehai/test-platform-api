@@ -42,12 +42,12 @@ def create_app():
     from apps.tools.blueprint import tool
     from apps.home.blueprint import home
     from apps.system.blueprint import system_manage
-    app.register_blueprint(api_test, url_prefix="/api/apiTest")
-    app.register_blueprint(ui_test, url_prefix="/api/webUiTest")
-    app.register_blueprint(app_test, url_prefix="/api/appUiTest")
+    app.register_blueprint(api_test, url_prefix="/api/api-test")
+    app.register_blueprint(ui_test, url_prefix="/api/ui-est")
+    app.register_blueprint(app_test, url_prefix="/api/app-test")
     app.register_blueprint(assist, url_prefix="/api/assist")
     app.register_blueprint(config_blueprint, url_prefix="/api/config")
-    app.register_blueprint(test_work, url_prefix="/api/testWork")
+    app.register_blueprint(test_work, url_prefix="/api/test-work")
     app.register_blueprint(tool, url_prefix="/api/tools")
     app.register_blueprint(home, url_prefix="/api/home")
     app.register_blueprint(system_manage, url_prefix="/api/system")

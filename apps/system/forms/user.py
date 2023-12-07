@@ -78,9 +78,9 @@ class ChangePasswordForm(BaseForm):
     new_password: str = required_str_field(title="新密码")
     sure_password: str = required_str_field(title="确认密码")
 
-    @field_validator("new_password")
-    def validate_new_password(cls, value, info: ValidationInfo):
-        cls.validate_is_true(info.data["old_password"] == value, "新密码与确认密码不一致")
+    @field_validator("sure_password")
+    def validate_sure_password(cls, value, info: ValidationInfo):
+        cls.validate_is_true(info.data["new_password"] == value, "新密码与确认密码不一致")
         return value
 
     @field_validator("old_password")

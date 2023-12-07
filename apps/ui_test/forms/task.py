@@ -57,7 +57,8 @@ class AddTaskForm(BaseForm):
     email_pwd: Optional[str] = Field(title="发件人邮箱密码")
     is_send: SendReportTypeEnum = Field(
         SendReportTypeEnum.on_fail.value, title="是否发送测试报告", description="not_send/always/on_fail")
-    merge_notify: int = Field(0, title="多个环境时，是否合并通知（只通知一次）", description="默认不合并，0不合并、1合并")
+    merge_notify: Optional[int] = Field(
+        0, title="多个环境时，是否合并通知（只通知一次）", description="默认不合并，0不合并、1合并")
     cron: str = required_str_field(title="cron表达式")
     name: str = required_str_field(title="任务名")
     skip_holiday: bool = Field(True, title="是否跳过节假日、调休日")

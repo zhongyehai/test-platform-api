@@ -60,7 +60,7 @@ class JobFuncs:
         {
             "name": "统计接口使用情况",
             "id": "cron_api_use_count",
-            "cron": "0 15 2 * * ?"
+            "cron": "0 15 2,13 * * ?"
         }
         """
         with create_app().app_context():

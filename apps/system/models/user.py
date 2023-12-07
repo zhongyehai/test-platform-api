@@ -15,7 +15,7 @@ class Permission(NumFiled):
     __tablename__ = "system_permission"
     __table_args__ = {"comment": "权限表"}
 
-    name: Mapped[str] = mapped_column(String(30), unique=True, comment="权限名称")
+    name: Mapped[str] = mapped_column(String(64), unique=True, comment="权限名称")
     desc: Mapped[str] = mapped_column(String(256), nullable=True, comment="权限备注")
     source_addr: Mapped[str] = mapped_column(String(256), comment="权限路径")
     source_type: Mapped[str] = mapped_column(String(256), default="api", comment="权限类型， front前端, api后端")
