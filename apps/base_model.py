@@ -939,7 +939,7 @@ class BaseTask(StatusFiled, NumFiled):
     def enable_task(self):
         try:
             task_class_name = self.__class__.__name__
-            task_type = "api" if "Api" in task_class_name else "appUi" if "App" in task_class_name else "webUi"
+            task_type = "api" if "Api" in task_class_name else "app" if "App" in task_class_name else "ui"
             task = self.to_dict()
             task.pop("create_time")
             task.pop("update_time")
@@ -959,7 +959,7 @@ class BaseTask(StatusFiled, NumFiled):
     def disable_task(self):
         try:
             task_class_name = self.__class__.__name__
-            task_type = "api" if "Api" in task_class_name else "appUi" if "App" in task_class_name else "webUi"
+            task_type = "api" if "Api" in task_class_name else "app" if "App" in task_class_name else "ui"
             res = requests.delete(
                 url=_job_server_host,
                 headers=request.headers,

@@ -45,7 +45,7 @@ def request_run_task_api(task_id, task_type, skip_holiday=1):
     if isinstance(task_id, str) and task_id.startswith('cron'):  # 系统定时任务
         api_addr = '/system/job/run'
     else:  # 自动化测试定时任务
-        api_addr = f'/{task_type}Test/task/run'
+        api_addr = f'/{task_type}-test/task/run'
 
     re = requests.post(
         url=f'{_main_server_host}/api{api_addr}',

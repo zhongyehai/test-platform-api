@@ -43,7 +43,7 @@ def create_app():
     from apps.home.blueprint import home
     from apps.system.blueprint import system_manage
     app.register_blueprint(api_test, url_prefix="/api/api-test")
-    app.register_blueprint(ui_test, url_prefix="/api/ui-est")
+    app.register_blueprint(ui_test, url_prefix="/api/ui-test")
     app.register_blueprint(app_test, url_prefix="/api/app-test")
     app.register_blueprint(assist, url_prefix="/api/assist")
     app.register_blueprint(config_blueprint, url_prefix="/api/config")
