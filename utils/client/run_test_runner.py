@@ -309,7 +309,7 @@ class RunTestRunner:
         if self.task_dict:
             # 如果是流水线触发的，则回调给流水线
             if self.report.trigger_type == TriggerTypeEnum.pipeline:
-                all_res = [notify["result"] for notify in notify_list]
+                all_res = [notify["report_summary"]["result"] for notify in notify_list]
                 call_back_for_pipeline(
                     self.task_dict["id"],
                     self.task_dict["call_back"] or [],
