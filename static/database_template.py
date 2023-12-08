@@ -45,31 +45,36 @@ class TestMysql:
         """
         @param sql: 执行的sql模板（非查询类sql使用）
         """
+        print(f'TestMysql.execute.sql: {sql}')
         with self.connect_db() as db:
             db.execute(sql)
 
-    def fetchone(self, mysql):
+    def fetchone(self, sql):
         """ 查询一条数据 """
         data = None
         with self.connect_db() as db:
-            db.execute(mysql)
+            print(f'TestMysql.fetchone.sql: {sql}')
+            db.execute(sql)
             data = db.fetchone()
+            print(f'TestMysql.fetchone.res: {data}')
         return data
 
-    def fetchall(self, mysql):
+    def fetchall(self, sql):
         """ 查询所有数据 """
         data = None
         with self.connect_db() as db:
-            db.execute(mysql)
+            print(f'TestMysql.fetchall.sql: {sql}')
+            db.execute(sql)
             data = db.fetchall()
+            print(f'TestMysql.fetchall.res: {data}')
         return data
 
 
 database_template = TestMysql()  # 实例化对象，避免操作多个数据库时冲突，实例变量名为脚本名字
 
 
-def database_template_insert_or_update_user(mobile, password, token, user_id='', company_name='', company_id='',
-                                            role=None):
+def database_template_insert_or_update_user(
+        mobile, password, token, user_id='', company_name='', company_id='', role=None):
     """ 插入或更新token """
     if database_template_get_info_by_mobile(mobile):  # 如果有就更新
         database_template_update_token(mobile, token, user_id, company_name, company_id)
@@ -93,7 +98,7 @@ def database_template_update_token(mobile, token, user_id, company_name, company
 
 def database_template_insert_user(mobile, password, token, role=None, company_id=None, company_name=None, user_id=None):
     """ 插入用户信息 """
-    m_sql = f"INSERT INTO `auto_test_user` (`created_time`, `update_time`, `create_user`, `update_user`, `mobile`, `password`, `u_token`, `role`, `company_id`, `company_name`, `user_id`, `comment`, `env`) VALUES (NULL, NULL, NULL, NULL, '{mobile}', '{password}', '{token}', '{role}', '{company_id}', '{company_name}', '{user_id}', NULL, '{env}');"
+    m_sql = f"INSERT INTO `auto_test_user` (`create_time`, `update_time`, `create_user`, `update_user`, `mobile`, `password`, `u_token`, `role`, `company_id`, `company_name`, `user_id`, `comment`, `env`) VALUES (NULL, NULL, NULL, NULL, '{mobile}', '{password}', '{token}', '{role}', '{company_id}', '{company_name}', '{user_id}', NULL, '{env}');"
     print(m_sql)
     database_template.execute(m_sql)
 

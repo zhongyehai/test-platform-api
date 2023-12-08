@@ -210,7 +210,7 @@ def system_manage_get_job_func_list():
     return app.restful.get_success(data_list)
 
 
-@system_manage.admin_post("/job/run")
+@system_manage.login_post("/job/run")
 def system_manage_run_job():
     """ 执行任务 """
     form = RunJobForm()
