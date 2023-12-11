@@ -58,14 +58,14 @@ def fail(msg=None, data=None, **kwargs):
     return restful_result(code=400, message=msg or "处理失败", data=data, **kwargs)
 
 
-def not_login(msg=None, data=None, **kwargs):
+def not_login(data=None, **kwargs):
     """ 未登录的响应 """
-    return restful_result(code=401, message=msg or "请重新登录", data=data, **kwargs)
+    return restful_result(code=401, message="请重新登录", data=data, **kwargs)
 
 
-def forbidden(msg=None, data=None, **kwargs):
+def forbidden(data=None, **kwargs):
     """ 权限不足的响应 """
-    return restful_result(code=403, message=msg or "权限不足", data=data, **kwargs)
+    return restful_result(code=403, message="权限不足", data=data, **kwargs)
 
 
 def url_not_find(msg=None, data=None, **kwargs):

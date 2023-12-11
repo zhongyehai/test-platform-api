@@ -22,12 +22,12 @@ def register_errorhandler_hook(app):
     def forbidden_401(e):
         """ 捕获401的未登录异常 """
         return _app.restful.not_login(
-            _app.config["OSS"].front_redirect_addr if _app.config["AUTH_TYPE"] == "OSS" else None)
+            _app.config["SSO"].front_redirect_addr if _app.config["AUTH_TYPE"] == "SSO" else None)
 
     @app.errorhandler(403)
     def forbidden_403(e):
         """ 捕获403的权限不足异常 """
-        return _app.restful.forbidden(msg="没有权限")
+        return _app.restful.forbidden()
 
     @app.errorhandler(404)
     def page_not_found(e):

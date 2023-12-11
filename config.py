@@ -265,15 +265,15 @@ def my_format_header_param(name, value):
 f.format_header_param = my_format_header_param
 
 
-class _Oss:
+class _Sso:
     """ 身份验证如果是走SSO，则以下配置项必须正确 """
-    oss_host = "http://www.xxx.com"
-    oss_authorize_endpoint = "/oauth2/authorize"
-    oss_token_endpoint = "/oauth2/token"
+    sso_host = "http://www.xxx.com"
+    sso_authorize_endpoint = "/oauth2/authorize"
+    sso_token_endpoint = "/oauth2/token"
     client_id = "xxx"
     client_secret = "xxx"
     redirect_uri = "http://www.xxx.com/sso/login"  # 测试平台SSO登录的前端地址
-    front_redirect_addr = (f"{oss_host}{oss_authorize_endpoint}?"
+    front_redirect_addr = (f"{sso_host}{sso_authorize_endpoint}?"
                            f"response_type=code&"
                            f"client_id={client_id}&"
                            f"scope=openid profile&"
@@ -284,7 +284,7 @@ class _Oss:
 
 class _SystemConfig:
     AUTH_TYPE = 'test_platform'  # 身份验证机制 OSS, test_platform
-    OSS = _Oss
+    SSO = _Sso
     TOKEN_TIME_OUT = 36000
     SECRET_KEY = "localhost"
 
