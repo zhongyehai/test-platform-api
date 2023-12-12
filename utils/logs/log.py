@@ -1,50 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-"""
-    封装python logging日志，命名为log_config.py
-    ~~~~~~~~~~~~~~~
-
-    - 修改日志保存路径，否则使用默认上一层目录的./logs/
-    - 使用：from common.log_config import logger     # common表示本文件放在的文件夹
-        logger.info("打印info日志")
-        logger.error("打印error日志")
-
-
-    注意：
-    - flask 有自带的log，使用本文件后会覆盖flask自带的
-
-    - 无法自动删除日志 & 日志没有分隔记录
-      使用TimedRotatingFileHandler创建时间循环日志，suffix需写成对应格式，如下
-      参数中的when="D", or MIDNIGHT 天，file_handler.suffix = "%Y-%m-%d.log"
-      参数中的when="S" 秒，file_handler.suffix = "%Y-%m-%d_%H-%M-%S.log"
-
-    - 多进程写入同一日志文件冲突问题
-      >> PermissionError: [WinError 32] 另一个程序正在使用此文件，进程无法访问。
-
-      >> 类似：2.使用多进程初始化同一日志模块，会导致日志备份报错，因为两个进程同时打开了日志文件，在重命名时会出现
-                 WindowsError: [Error 32]错误，该错误是由于文件已被打开，
-        按照官方文档的介绍，logging 是线程安全的，也就是说，在一个进程内的多个线程同时往同一个文件写日志是安全的。但是（对，
-        这里有个但是）多个进程往同一个文件写日志不是安全的,为了解决这个问题，可使用 ConcurrentLogHandler，
-        ConcurrentLogHandler 可以在多进程环境下安全的将日志写入到同一个文件，并且可以在日志文件达到特定大小时，分割日志文件。
-      >> 在默认的 logging 模块中，有个 TimedRotatingFileHandler 类，可以按时间分割日志文件，
-        可惜 ConcurrentLogHandler 不支持这种按时间分割日志文件的方式。(用单例模式无法解决!)
-
-      >> 解决方法：1、继承TimedRotatingFileHandler重载，修改里面的东西
-      >> 解决方法：2、直接使用开源的代码来用，本文使用的是concurrent_log  ！！！
-                     安装：pip install concurrent_log
-                     url: https://github.com/huanghyw/concurrent_log
-                     使用from concurrent_log import ConcurrentTimedRotatingFileHandler
-                     直接在用TimedRotatingFileHandler替换为ConcurrentTimedRotatingFileHandler即可，其他代码不需要任何改动
-
-                    - 下面的代码中的
-                    - class ConcurrentLogFileLock(PortaLock):
-                    - class ConcurrentTimedRotatingFileHandler(TimedRotatingFileHandler):
-                    - 是来自ConcurrentTimedRotatingFileHandler
-
-      >> 解决方法：3、建议使用sentry 来记录日志
-"""
-
 import os
 import re
 import time

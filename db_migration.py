@@ -274,12 +274,13 @@ def init_config():
         ],
 
         "系统配置": [
+            {"name": "change_admin_password", "value": "0", "desc": "是否允许修改管理员密码，1为可修改"},
             {"name": "kym", "value": JsonUtil.dumps(kym_keyword), "desc": "KYM分析项"},
             {"name": "sync_mock_data", "value": JsonUtil.dumps({}), "desc": "同步回调数据源"},
             {"name": "async_mock_data", "value": JsonUtil.dumps({}), "desc": "异步回调数据源"},
             {"name": "holiday_list", "value": JsonUtil.dumps(holiday_list), "desc": "节假日/调休日期，需每年手动更新"},
             {"name": "run_time_out", "value": "600", "desc": "前端运行测试时，等待的超时时间，秒"},
-            {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名"},
+            {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名，部署后需手动修改为真实域名"},
             {"name": "callback_webhook", "value": "", "desc": "接口收到回调请求后即时通讯通知的地址"},
             {"name": "call_back_msg_addr", "value": call_back_msg_addr, "desc": "发送回调流水线消息内容地址"},
             {"name": "save_func_permissions", "value": "0", "desc": "保存脚本权限，0所有人都可以，1管理员才可以"},
