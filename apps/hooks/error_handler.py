@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import platform
 import re
 import traceback
 
@@ -33,8 +32,15 @@ def register_errorhandler_hook(app):
     def page_not_found(e):
         """ 捕获404的所有异常 """
         if request.method != "HEAD":
-            _app.logger.exception(f'404错误url: {request.path}')
+            _app.logger.exception(f'404错误: {request.path}')
         return _app.restful.url_not_find(msg=f'接口 {request.path} 不存在')
+
+    @app.errorhandler(405)
+    def method_error(e):
+        """ 捕获405异常 """
+        if request.method != "HEAD":
+            _app.logger.exception(f'405错误: {request.method} {request.path}')
+        return _app.restful.method_error()
 
     @app.errorhandler(ValidationError)
     def pydantic_validation_error(exc):

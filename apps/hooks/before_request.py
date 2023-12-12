@@ -28,7 +28,7 @@ def register_before_hook(app):
         check_login_and_permissions()  # 校验登录状态和权限
 
     @app.before_request
-    def save_requests_by_log():
+    def save_request_log():
         """ 打日志 """
         if request.method != "HEAD":
             try:

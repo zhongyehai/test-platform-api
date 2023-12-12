@@ -111,7 +111,7 @@ class AddStepForm(BaseForm):
     @field_validator("data_form")
     def validate_data_form(cls, value, info: ValidationInfo):
         data_form_value = [data_form.model_dump() for data_form in value]
-        if not info.data["quote_case"]:
+        if not info.data["quote_case"] and info.data["body_type"] == ApiBodyTypeEnum.form.value:
             cls.validate_variable_format(data_form_value, msg_title='form-data')
         return data_form_value
 

@@ -28,7 +28,7 @@ def tool_get_make_user():
                     temp_data.append(data)
                     i += 1
         all_data.append(temp_data)
-    return app.restful.success("获取成功", data=[dict(zip(options, data)) for data in zip(*all_data)])
+    return app.restful.get_success([dict(zip(options, data)) for data in zip(*all_data)])
 
 
 @tool.post("/makeUser/contact/download")

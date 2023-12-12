@@ -158,6 +158,10 @@
       {
         "name": "工具-消息队列",
         "source_addr": "/tools/queue"
+      },
+      {
+        "name": "工具-解析token",
+        "source_addr": "/tools/token"
       }
     ],
     "配置管理菜单": [

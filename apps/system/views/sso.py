@@ -10,6 +10,8 @@ from ..blueprint import system_manage
 from ..model_factory import User, Role, UserRoles
 from ...config.model_factory import BusinessLine
 from utils.logs.log import logger
+from utils.parse.parse_token import parse_token
+
 
 def base64_url_decode(inp):
     padding = '=' * (4 - (len(inp) % 4))
@@ -62,8 +64,8 @@ def system_manage_get_token():
     sso_token = get_sso_token(request.json.get("code"))
 
     # 解析token
-    user_info = parse_sso_id_token(sso_token["id_token"])
-    sso_user_id, sso_user_name = user_info["user_id"], user_info["user_name"]
+    payload = parse_token(sso_token["id_token"])["payload"]
+    sso_user_id, sso_user_name = payload["sub"], payload["user_name"]
 
     user = User.query.filter_by(sso_user_id=sso_user_id, name=sso_user_name).first()
     if not user:  # 数据库中没有这个用户，需插入一条数据，再生成token

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import Optional, List, Union
 
-from pydantic import field_validator
-from pydantic_core.core_schema import ValidationInfo
+from pydantic import field_validator, ValidationInfo
+# from pydantic_core.core_schema import ValidationInfo
 
 from ...base_form import BaseForm, PaginationForm, Field, HeaderModel, ParamModel, DataFormModel, ExtractModel, \
     ValidateModel, required_str_field
@@ -50,7 +50,6 @@ class AddApiForm(BaseForm):
     addr: str = required_str_field(title="接口地址")
     extracts: List[ExtractModel] = Field(title="提取信息")
     validates: List[ValidateModel] = Field(title="断言信息")
-    data_form: List[DataFormModel] = Field(title="data-form参数")
     project_id: int = Field(..., title="服务id")
     module_id: int = Field(..., title="模块id")
     name: str = required_str_field(title="接口名")
@@ -62,6 +61,7 @@ class AddApiForm(BaseForm):
     params: List[ParamModel] = Field(title="url参数")
     body_type: ApiBodyTypeEnum = Field(
         ApiBodyTypeEnum.json.value, title="请求体数据类型", description="json/form/text/urlencoded")
+    data_form: List[DataFormModel] = Field(title="data-form参数")
     data_json: Union[list, dict] = Field({}, title="json参数")
     data_urlencoded: dict = Field(title="urlencoded参数")
     data_text: Optional[str] = Field(title="文本参数")
@@ -70,16 +70,14 @@ class AddApiForm(BaseForm):
     @field_validator('headers')
     def validate_headers(cls, value):
         """ 头部信息校验 """
-        headers = [header.model_dump() for header in value]
-        cls.validate_header_format(headers, content_title='头部信息')
-        return headers
+        cls.validate_header_format([header.model_dump() for header in value], content_title='头部信息')
+        return value
 
     @field_validator('params')
     def validate_params(cls, value):
         """ params信息校验 """
-        params = [params.model_dump() for params in value]
-        cls.validate_header_format(params, content_title='url参数')
-        return params
+        cls.validate_header_format([params.model_dump() for params in value], content_title='url参数')
+        return value
 
     @field_validator('addr')
     def validate_addr(cls, value):
@@ -100,9 +98,11 @@ class AddApiForm(BaseForm):
         return value
 
     @field_validator('data_form')
-    def validate_data_form(cls, value):
-        cls.validate_variable_format([data_form.model_dump() for data_form in value], msg_title='form-data')
-        return value
+    def validate_data_form(cls, value, info: ValidationInfo):
+        data_form_value = [data_form.model_dump() for data_form in value]
+        if info.data["body_type"] == ApiBodyTypeEnum.form.value:
+            cls.validate_variable_format(data_form_value, msg_title='form-data')
+        return data_form_value
 
     @field_validator('module_id', 'name')
     def validate_name(cls, value, info: ValidationInfo):

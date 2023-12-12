@@ -73,6 +73,11 @@ def url_not_find(msg=None, data=None, **kwargs):
     return restful_result(code=404, message=msg or "url不存在", data=data, **kwargs)
 
 
+def method_error(msg=None, data=None, **kwargs):
+    """ 请求方法错误 """
+    return restful_result(code=405, message=msg or "请求方法错误", data=data, **kwargs)
+
+
 def error(msg=None, data=None, **kwargs):
     """ 系统发送错误的响应 """
     return restful_result(code=500, message=msg or "系统出错了，请联系开发人员查看", data=data, **kwargs)
