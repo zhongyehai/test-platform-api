@@ -131,7 +131,7 @@ data_type_mapping = [
 # ui自动化支持的浏览器
 browser_name = {
     "chrome": "chrome",
-    "gecko": "火狐"
+    # "gecko": "火狐"
 }
 
 # 运行app自动化的服务器设备系统映射

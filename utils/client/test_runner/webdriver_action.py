@@ -686,14 +686,14 @@ class GetWebDriver(Actions):
         """ 火狐浏览器 """
         firefox_options = firefoxOptions()
 
-        # 置成0代表下载到浏览器默认下载路径，设置成2则可以保存到指定的目录
-        firefox_options.set_preference('browser.download.folderList', 2)
-        # 指定存放目录
-        firefox_options.set_preference('browser.download.dir', 'd:\\')
-        # 是否显示开始：True为显示开始，False为不显示开始
-        firefox_options.set_preference('browser.download.manager.showWhenStarting', False)
-        # 对所给文件类型不再弹出框进行询问
-        firefox_options.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/octet-stream')
+        # # 置成0代表下载到浏览器默认下载路径，设置成2则可以保存到指定的目录
+        # firefox_options.set_preference('browser.download.folderList', 2)
+        # # 指定存放目录
+        # firefox_options.set_preference('browser.download.dir', 'd:\\')
+        # # 是否显示开始：True为显示开始，False为不显示开始
+        # firefox_options.set_preference('browser.download.manager.showWhenStarting', False)
+        # # 对所给文件类型不再弹出框进行询问
+        # firefox_options.set_preference('browser.helperApps.neverAsk.saveToDisk', 'application/octet-stream')
 
         firefox_options.add_argument('--headless')
         firefox_options.add_argument('--no-sandbox')

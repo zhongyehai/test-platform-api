@@ -46,6 +46,7 @@
         5.2.2、把下载的驱动放到项目外的 browser_drivers 路径下，项目启动时若没有则会自动创建，若项目未启动过，则需手动创建
 
     5.3.给驱动加权限：chmod +x chromedriver
+    5.4.目前仅支持chrome浏览器，如果需要支持更多浏览器，参照 \utils\client\test_runner\webdriver_action.GetWebDriver 自己扩展
 
 ### 6.生产环境下的一些配置:
 
