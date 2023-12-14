@@ -4,7 +4,6 @@ from typing import Optional, Union, List
 import requests
 import validators
 from flask import g
-from sqlalchemy import or_
 from pydantic import field_validator, ValidationInfo
 
 from ...base_form import BaseForm, Field, PaginationForm, ValidateModel, HeaderModel, required_str_field

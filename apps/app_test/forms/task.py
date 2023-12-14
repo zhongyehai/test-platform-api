@@ -61,7 +61,7 @@ class AddTaskForm(BaseForm):
         0, title="多个环境时，是否合并通知（只通知一次）", description="默认不合并，0不合并、1合并")
     cron: str = required_str_field(title="cron表达式")
     name: str = required_str_field(title="任务名")
-    skip_holiday: bool = Field(True, title="是否跳过节假日、调休日")
+    skip_holiday: int = Field(1, title="是否跳过节假日、调休日")
     conf: Optional[dict] = Field({}, title="运行配置", description="webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     call_back: Optional[Union[list, dict]] = Field(title="回调给流水线")
