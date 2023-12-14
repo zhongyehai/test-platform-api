@@ -57,7 +57,7 @@ class PostBusinessForm(BaseForm):
     name: str = required_str_field(title="业务线名")
     receive_type: ReceiveTypeEnum = Field(
         ..., title="接收通知类型", description="not_receive:不接收、we_chat:企业微信、ding_ding:钉钉")
-    webhook_list: list = required_str_field(title="接收通统计知的渠道")
+    webhook_list: Optional[list] = Field([], title="接收通统计知的渠道")
     bind_env: BusinessLineBindEnvTypeEnum = Field(
         ..., title="绑定环境机制", description="auto：新增环境时自动绑定，human：新增环境后手动绑定")
     env_list: list = required_str_field(title="业务线要用的环境")
