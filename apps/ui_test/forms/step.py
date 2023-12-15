@@ -59,7 +59,7 @@ class AddStepForm(BaseForm):
 
     element_id: Optional[int] = Field(None, title="步骤对应的元素id")
     send_keys: str = Field(None, title="输入内容")
-    execute_type: str = required_str_field(title="执行动作")
+    execute_type: Optional[str] = Field('', title="执行动作")
     wait_time_out: int = Field(5, title="等待元素超时时间")
 
     @field_validator("quote_case")
