@@ -32,7 +32,7 @@ def get_data_by_time(model):
     }
 
 
-@home.login_get("/apiTest/title")
+@home.login_get("/api-test/title")
 def home_get_api_test_title():
     """ 获取卡片统计 """
     return app.restful.get_success({
@@ -47,7 +47,7 @@ def home_get_api_test_title():
     })
 
 
-@home.login_get("/apiTest/project")
+@home.login_get("/api-test/project")
 def home_get_api_test_project():
     """ 统计服务数 """
     time_data = get_data_by_time(Project)
@@ -65,7 +65,7 @@ def home_get_api_test_project():
     })
 
 
-@home.login_get("/apiTest/module")
+@home.login_get("/api-test/module")
 def home_get_api_test_module():
     """ 统计模块数 """
     time_data = get_data_by_time(Module)
@@ -82,7 +82,7 @@ def home_get_api_test_module():
     })
 
 
-@home.login_get("/apiTest/api")
+@home.login_get("/api-test/api")
 def home_get_api_test_api():
     """ 统计接口数 """
     # 请求方法维度
@@ -129,7 +129,7 @@ def home_get_api_test_api():
     })
 
 
-@home.login_get("/apiTest/case")
+@home.login_get("/api-test/case")
 def home_get_api_test_case():
     """ 统计用例数 """
     case_query = Case.db.session.query(
@@ -157,7 +157,7 @@ def home_get_api_test_case():
     })
 
 
-@home.login_get("/apiTest/step")
+@home.login_get("/api-test/step")
 def home_get_api_test_step():
     """ 统计步骤数 """
     step_query = Step.db.session.query(
@@ -186,7 +186,7 @@ def home_get_api_test_step():
     })
 
 
-@home.login_get("/apiTest/task")
+@home.login_get("/api-test/task")
 def home_get_api_test_task():
     """ 统计定时任务数 """
     task_query = Task.db.session.query(
@@ -214,7 +214,7 @@ def home_get_api_test_task():
     })
 
 
-@home.login_get("/apiTest/report")
+@home.login_get("/api-test/report")
 def home_get_api_test_report():
     """ 统计测试报告数 """
     report_query = Report.db.session.query(
@@ -255,7 +255,7 @@ def home_get_api_test_report():
     })
 
 
-@home.login_get("/apiTest/hit")
+@home.login_get("/api-test/hit")
 def home_get_api_test_hit():
     """ 统计命中数 """
     hit_type_data = Hits.db.execute_query_sql(
