@@ -23,7 +23,7 @@ class JobRunLog(BaseModel):
     func_name: Mapped[str] = mapped_column(String(255), comment="执行方法")
     status: Mapped[int] = mapped_column(Integer(), default=1, comment="执行状态：0失败、1执行中、2执行成功")
     business_id: Mapped[int] = mapped_column(Integer(), default=None, comment="业务线id")
-    detail: Mapped[str] = mapped_column(Text, default=None, comment="执行结果数据")
+    detail: Mapped[str] = mapped_column(Text, default=None, nullable=True, comment="执行结果数据")
 
     def run_fail(self, detail=None):
         """ 执行失败 """
