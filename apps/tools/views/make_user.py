@@ -10,7 +10,7 @@ from utils.make_data import make_user_tools
 from utils.util.file_util import FileUtil, TEMP_FILE_ADDRESS
 
 
-@tool.get("/makeUser")
+@tool.get("/make-user")
 def tool_get_make_user():
     """ 生成用户信息 """
     all_data, args = [], request.args.to_dict()
@@ -31,7 +31,7 @@ def tool_get_make_user():
     return app.restful.get_success([dict(zip(options, data)) for data in zip(*all_data)])
 
 
-@tool.post("/makeUser/contact/download")
+@tool.post("/make-user/contact/download")
 def tool_download_make_user_as_contact():
     """ 导出为通讯录文件 """
     """

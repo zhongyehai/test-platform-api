@@ -287,6 +287,7 @@ class _SystemConfig:
     SSO = _Sso
     TOKEN_TIME_OUT = 36000
     SECRET_KEY = "localhost"
+    URL_NOT_FIND_MSG = None  # 统一自定义404消息，若没有对应使用场景设为None即可
 
     # 数据库信息
     DB_HOST = "localhost"

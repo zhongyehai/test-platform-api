@@ -20,17 +20,6 @@ scheduler.init_app(job)
 scheduler.start()
 
 
-def login_and_get_headers():
-    response = requests.post(
-        url=f'{_main_server_host}/api/system/user/login',
-        json={
-            "account": "common",
-            "password": "common"
-        }
-    )
-    return {"X-Token": response.json()['data']['token']}
-
-
 def request_run_task_api(task_id, task_type, skip_holiday=1):
     """ 调执行任务接口 """
     job.logger.info(f'{"*" * 20} 开始触发执行定时任务 {"*" * 20}')
@@ -49,7 +38,6 @@ def request_run_task_api(task_id, task_type, skip_holiday=1):
 
     re = requests.post(
         url=f'{_main_server_host}/api{api_addr}',
-        headers=login_and_get_headers(),
         json={
             "id": task_id,
             "func_name": task_id,

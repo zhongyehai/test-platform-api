@@ -6,7 +6,7 @@ from ..model_factory import CallBack
 from ..forms.call_back import GetCallBackListForm, GetCallBackForm
 
 
-@assist.get("/callBack/list")
+@assist.get("/call-back/list")
 def assist_get_call_back_list():
     """ 回调列表 """
     form = GetCallBackListForm()
@@ -14,7 +14,7 @@ def assist_get_call_back_list():
     return app.restful.get_success(CallBack.make_pagination(form, get_filed=get_filed))
 
 
-@assist.get("/callBack")
+@assist.get("/call-back")
 def assist_get_call_back():
     """ 回调列表 """
     form = GetCallBackForm()

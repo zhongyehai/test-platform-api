@@ -33,7 +33,7 @@ def register_errorhandler_hook(app):
         """ 捕获404的所有异常 """
         if request.method != "HEAD":
             _app.logger.exception(f'404错误: {request.path}')
-        return _app.restful.url_not_find(msg=f'接口 {request.path} 不存在')
+        return _app.restful.url_not_find(_app.config["URL_NOT_FIND_MSG"] or f'接口 {request.path} 不存在')
 
     @app.errorhandler(405)
     def method_error(e):

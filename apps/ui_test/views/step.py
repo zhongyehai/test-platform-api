@@ -10,25 +10,25 @@ from ..forms.step import GetStepListForm, GetStepForm, AddStepForm, EditStepForm
 from config import ui_action_mapping_list, ui_assert_mapping_list, ui_extract_mapping_list
 
 
-@ui_test.get("/step/executeMapping")
+@ui_test.get("/step/execute-mapping")
 def ui_get_step_execute_mapping():
     """ 获取执行动作类型列表 """
     return app.restful.get_success(ui_action_mapping_list)
 
 
-@ui_test.get("/step/extractMapping")
+@ui_test.get("/step/extract-mapping")
 def ui_get_step_extract_mapping():
     """ 数据提取方法列表 """
     return app.restful.get_success(ui_extract_mapping_list)
 
 
-@ui_test.get("/step/assertMapping")
+@ui_test.get("/step/assert-mapping")
 def ui_get_step_assert_mapping():
     """ 断言方法列表 """
     return app.restful.get_success(ui_assert_mapping_list)
 
 
-@ui_test.get("/step/keyBoardCode")
+@ui_test.get("/step/key-board-code")
 def ui_get_step_key_board_code():
     """ 获取键盘映射 """
     data = {key: f'按键【{key}】' for key in dir(Keys) if key.startswith('_') is False}

@@ -190,7 +190,7 @@ def system_manage_get_job_list():
     return app.restful.app.restful.get_success([{"id": job[0], "next_run_time": job[1]} for job in job_query])
 
 
-@system_manage.admin_get("/job/func/list")
+@system_manage.admin_get("/job/func-list")
 def system_manage_get_job_func_list():
     """ 获取定时任务方法列表 """
     data_list = []
@@ -218,7 +218,7 @@ def system_manage_run_job():
     return app.restful.trigger_success()
 
 
-@system_manage.admin_get("/job/log/list")
+@system_manage.admin_get("/job/log-list")
 def system_manage_get_run_job_log_list():
     """ 执行任务记录列表 """
     form = GetJobRunLogList()

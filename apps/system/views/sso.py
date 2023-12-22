@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """ SSO方式 登录 """
-import base64
-import json
-
 from flask import current_app as app, request
 import requests
 
@@ -11,18 +8,6 @@ from ..model_factory import User, Role, UserRoles
 from ...config.model_factory import BusinessLine
 from utils.logs.log import logger
 from utils.parse.parse_token import parse_token
-
-
-def base64_url_decode(inp):
-    padding = '=' * (4 - (len(inp) % 4))
-    return base64.urlsafe_b64decode(inp + padding)
-
-
-def parse_sso_id_token(id_token):
-    """ 根据id_token解析用户信息 """
-    header, payload, signature = id_token.split('.')
-    token_header, token_payload = json.loads(base64_url_decode(header)), json.loads(base64_url_decode(payload))
-    return {"user_id": token_payload["sub"], "user_name": token_payload["user_name"]}
 
 
 def get_sso_server_info():

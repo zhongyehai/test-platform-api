@@ -415,6 +415,11 @@ class Actions:
             self.find_element(locator, wait_time_out=wait_time_out)
         )
 
+    def action_10_02_js_click(self, locator: tuple, text: str = '', wait_time_out=None, *args, **kwargs):
+        """ 【JS】点击元素 """
+        element = self.find_element(locator, wait_time_out=wait_time_out)
+        self.driver.execute_script("arguments[0].click();", element)
+
     def action_10_03_add_cookie_by_dict_is_input(self, locator: tuple, cookie, *args, **kwargs):
         """ 【JS】以字典形式添加cookie """
         for key, value in get_dict_data(cookie).items():
@@ -654,10 +659,9 @@ class GetWebDriver(Actions):
     def chrome(self):
         """ chrome浏览器 """
         chrome_options = chromeOptions()
-        chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')  # 关闭沙盒
-        # chrome_options.add_argument('--start-maximized')  # 浏览器启动后，窗口默认为最大化
-        chrome_options.add_argument('window-size=1920x1080')  # 浏览器启动后，调整窗口大小
+        chrome_options.add_argument('--window-size=1920x1080')  # 浏览器启动后，调整窗口大小
+        chrome_options.add_argument('--start-maximized')  # 浏览器启动后，窗口默认为最大化
         """
         --incognito ：进入隐身模式——保证浏览网页时，不留下任何痕迹。
         --user-data-dir=“绝对路径”：指定UserData路径，默认路径位于系统盘，通过该命令，可以重定向为其它分区
@@ -678,8 +682,8 @@ class GetWebDriver(Actions):
         --disable-popup-blocking ：关闭弹窗拦截
         --proxy-pac-url ： 指定使用PAC代理时，所需要的脚本url地址
         """
-        if platform.platform().startswith('Linux') is False:
-            chrome_options = None
+        if platform.platform().startswith('Linux'):
+            chrome_options.add_argument('--headless')
         return webdriver.Chrome(executable_path=self.browser_driver_path, chrome_options=chrome_options)
 
     def gecko(self):

@@ -188,8 +188,9 @@ class GetLogger:
         self.log_name = r"app.log"  # 日志名称
         self.logs_level = logs_level  # 日志级别
         # 日志的输出格式
+        # "%(asctime)s [%(process)d_%(thread)d] [%(filename)s] [%(funcName)s] [%(levelname)s] [%(lineno)d] %(message)s"
         self.log_formatter = logging.Formatter(
-            "%(asctime)s [%(process)d_%(thread)d] [%(filename)s] [%(funcName)s] [%(levelname)s] [%(lineno)d] %(message)s"
+            "%(asctime)s [%(filename)s] [%(funcName)s] [%(lineno)d] [%(levelname)s] %(message)s"
         )
 
     def get_logger(self):

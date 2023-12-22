@@ -17,7 +17,7 @@ def config_get_config_list():
     return app.restful.get_success(Config.make_pagination(form, get_filed=get_filed))
 
 
-@config_blueprint.get("/config/by/code")
+@config_blueprint.get("/config/by-code")
 def config_get_config_by_code():
     """ 根据配置名获取配置，不需要登录 """
     return app.restful.get_success(GetConfigValueForm().conf)

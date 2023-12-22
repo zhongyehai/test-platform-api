@@ -142,7 +142,7 @@ def tool_mock_by_script(script_name):
         return app.restful.fail(msg="脚本执行错误，请检查", result=error_data)
 
 
-@tool.route("/mock/autoTest", methods=['GET', 'POST', 'PUT', 'DELETE'])
+@tool.route("/mock/auto-test", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def tool_mock_auto_test():
     """自动化测试模拟数据源"""
     return get_auto_test_mock_data()
@@ -153,7 +153,7 @@ def tool_mock_sync():
     return get_sync_mock_data()
 
 
-@tool.route("/mock/callBack", methods=['GET', 'POST', 'PUT', 'DELETE'])
+@tool.route("/mock/call-back", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def tool_mock_call_back():
     """模拟回调"""
     return call_back()

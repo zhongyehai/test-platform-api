@@ -6,7 +6,7 @@ from ..forms.error_record import GetSystemErrorRecordListForm, GetSystemErrorRec
 from ..model_factory import SystemErrorRecord
 
 
-@system_manage.admin_get("/errorRecord/list")
+@system_manage.admin_get("/error-record/list")
 def system_manage_get_error_record_list():
     """ 获取系统报错记录的列表 """
     form = GetSystemErrorRecordListForm()
@@ -15,7 +15,7 @@ def system_manage_get_error_record_list():
     return app.restful.get_success(SystemErrorRecord.make_pagination(form, get_filed=get_filed))
 
 
-@system_manage.admin_get("/errorRecord")
+@system_manage.admin_get("/error-record")
 def system_manage_get_error_record():
     """ 获取系统报错记录 """
     form = GetSystemErrorRecordForm()

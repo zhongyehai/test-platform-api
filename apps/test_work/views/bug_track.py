@@ -7,7 +7,7 @@ from ..forms.bug_track import GetBugListForm, GetBugForm, DeleteBugForm, AddBugF
 from ..model_factory import BugTrack
 
 
-@test_work.login_post("/bugTrack/list")
+@test_work.login_post("/bug-track/list")
 def test_work_get_bug_track_list():
     """ 获取bug列表 """
     form = GetBugListForm()
@@ -16,7 +16,7 @@ def test_work_get_bug_track_list():
     return app.restful.get_success(BugTrack.make_pagination(form, get_filed=get_filed))
 
 
-@test_work.login_post("/bugTrack/iteration")
+@test_work.login_post("/bug-track/iteration")
 def test_work_get_bug_track_iteration():
     """ 获取迭代列表 """
     # [('2022-03-11',), ('2022-03-25',)]
@@ -24,7 +24,7 @@ def test_work_get_bug_track_iteration():
     return app.restful.get_success([query_res[0] for query_res in query_list])
 
 
-@test_work.login_put("/bugTrack/status")
+@test_work.login_put("/bug-track/status")
 def test_work_change_bug_track_status():
     """ 修改bug状态 """
     form = ChangeBugStatusForm()
@@ -32,7 +32,7 @@ def test_work_change_bug_track_status():
     return app.restful.change_success()
 
 
-@test_work.login_put("/bugTrack/replay")
+@test_work.login_put("/bug-track/replay")
 def test_work_change_bug_track_replay():
     """ 修改bug是否复盘 """
     form = ChangeBugReplayForm()
@@ -40,14 +40,14 @@ def test_work_change_bug_track_replay():
     return app.restful.change_success()
 
 
-@test_work.login_get("/bugTrack")
+@test_work.login_get("/bug-track")
 def test_work_get_bug_track():
     """ 获取bug """
     form = GetBugForm()
     return app.restful.get_success(form.bug.to_dict())
 
 
-@test_work.login_post("/bugTrack")
+@test_work.login_post("/bug-track")
 def test_work_add_bug_track():
     """ 新增bug """
     form = AddBugForm()
@@ -55,7 +55,7 @@ def test_work_add_bug_track():
     return app.restful.add_success()
 
 
-@test_work.login_put("/bugTrack")
+@test_work.login_put("/bug-track")
 def test_work_change_bug_track():
     """ 修改bug """
     form = ChangeBugForm()
@@ -63,7 +63,7 @@ def test_work_change_bug_track():
     return app.restful.change_success()
 
 
-@test_work.login_delete("/bugTrack")
+@test_work.login_delete("/bug-track")
 def test_work_delete_bug_track():
     """ 删除bug """
     form = DeleteBugForm()

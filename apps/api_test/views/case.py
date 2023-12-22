@@ -37,8 +37,8 @@ def api_change_case_sort():
     return app.restful.change_success()
 
 
-@api_test.login_get("/case/assert/list")
-def api_get_case_assert_list():
+@api_test.login_get("/case/make-data-list")
+def api_get_make_data_case_list():
     """ 根据服务id获取造数用例集下的用例list """
     form = GetAssistCaseForm()
     filed_list = ["id", "name", "desc", "status", "skip_if", "headers", "variables", "output", "suite_id"]

@@ -421,7 +421,7 @@ def assist_pull_by_swagger():
     return app.restful.success("数据拉取并更新完成")
 
 
-@assist.login_get("/swagger/pull/list")
+@assist.login_get("/swagger/pull-list")
 def assist_get_swagger_pull_list():
     form = GetSwaggerPullListForm()
     get_filed = [SwaggerPullLog.id, SwaggerPullLog.status, SwaggerPullLog.create_time, SwaggerPullLog.create_user]

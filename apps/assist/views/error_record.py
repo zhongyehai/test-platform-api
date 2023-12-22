@@ -6,7 +6,7 @@ from ..model_factory import FuncErrorRecord
 from ..forms.error_record import GetErrorListForm, GetErrorForm
 
 
-@assist.get("/errorRecord/list")
+@assist.get("/error-record/list")
 def assist_get_error_record_list():
     """ 错误列表 """
     form = GetErrorListForm()
@@ -14,7 +14,7 @@ def assist_get_error_record_list():
     return app.restful.get_success(FuncErrorRecord.make_pagination(form, get_filed=get_filed))
 
 
-@assist.get("/errorRecord")
+@assist.get("/error-record")
 def assist_get_error_record():
     """ 错误列表 """
     form = GetErrorForm()

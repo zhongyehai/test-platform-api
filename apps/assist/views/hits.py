@@ -6,7 +6,7 @@ from ..model_factory import Hits
 from ..forms.hits import GetHitListForm, GetHitForm, CreatHitForm, EditHitForm
 
 
-@assist.login_get("/hit/type/list")
+@assist.login_get("/hit/type-list")
 def assist_get_hit_type_list():
     """ 自动化测试命中问题类型列表 """
     hit_type_list = Hits.query.with_entities(Hits.hit_type).distinct().all()
