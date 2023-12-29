@@ -32,14 +32,14 @@ def register_errorhandler_hook(app):
     def page_not_found(e):
         """ 捕获404的所有异常 """
         if request.method != "HEAD":
-            _app.logger.exception(f'404错误: {request.path}')
+            _app.logger.exception(f'【{g.get("request_id")}】404错误: {request.path}')
         return _app.restful.url_not_find(_app.config["URL_NOT_FIND_MSG"] or f'接口 {request.path} 不存在')
 
     @app.errorhandler(405)
     def method_error(e):
         """ 捕获405异常 """
         if request.method != "HEAD":
-            _app.logger.exception(f'405错误: {request.method} {request.path}')
+            _app.logger.exception(f'【{g.get("request_id")}】405错误: {request.method} {request.path}')
         return _app.restful.method_error()
 
     @app.errorhandler(ValidationError)
@@ -100,7 +100,7 @@ def register_errorhandler_hook(app):
             pass
         error = traceback.format_exc()
         try:
-            _app.logger.exception(f'系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
+            _app.logger.exception(f'【{g.get("request_id")}】系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
             # 写数据库
             error_record = SystemErrorRecord.model_create_and_get({
@@ -116,6 +116,6 @@ def register_errorhandler_hook(app):
             # 发送即时通讯通知
             send_system_error(title=f'{_app.config["SECRET_KEY"]}报错通知，数据id：{error_record.id}', content=error)
         except Exception as error:
-            _app.logger.exception(f'系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
+            _app.logger.exception(f'【{g.get("request_id")}】系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
         return _app.restful.error(f'服务器异常: {e}')

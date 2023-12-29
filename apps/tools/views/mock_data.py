@@ -102,7 +102,9 @@ def call_back():
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
         "status": 200,
         "message": "请求成功",
-        "data": name})
+        "success": True,
+        "data": name
+    })
 
 
 def mock_api():
@@ -112,6 +114,7 @@ def mock_api():
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())),
         "status": 200,
         "message": "请求成功",
+        "success": True,
         "data": json_data or form_data or params
     })
 

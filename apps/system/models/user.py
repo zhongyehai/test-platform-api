@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import random
 from datetime import datetime
 
 from sqlalchemy import String, Integer, JSON
@@ -140,6 +141,20 @@ class User(BaseModel):
     def verify_password(self, password):
         """ 校验密码 """
         return check_password_hash(self.password_hash, password)
+
+    def reset_password(self):
+        """ 重置密码 """
+        letter_list = [
+            'z', 'y', 'x', 'w', 'v', 'u', 't', 's', 'r', 'q', 'p', 'o', 'n', 'm', 'l', 'k',
+            'j', 'i', 'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'
+        ]
+        str_list_1 = random.sample(letter_list, 4)
+        str_list_2 = random.sample(['.', '/', '_', '*'], 2)
+        str_list_3 = random.sample(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 2)
+        str_list_4 = random.sample(letter_list, 4)
+        new_password = ''.join([*str_list_1, *str_list_2, *str_list_3, *str_list_4])
+        self.model_update({"password": new_password})
+        return new_password
 
     def make_token(self, api_permissions: list = []):
         """ 生成token，默认有效期为系统配置的时长 """

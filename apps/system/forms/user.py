@@ -149,4 +149,3 @@ class EditUserForm(GetUserForm):
     account: str = required_str_field(title="账号")
     business_list: list = required_str_field(title="业务线")
     role_list: list = required_str_field(title="角色")
-    # password: Optional[str] = Field(None, title="用户密码，如果有，则可直接修改密码")

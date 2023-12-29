@@ -51,6 +51,14 @@ def system_manage_change_password():
     return app.restful.change_success()
 
 
+@system_manage.admin_put("/user/reset-password")
+def system_manage_reset_password():
+    """ 重置密码 """
+    form = GetUserForm()
+    new_password = form.user.reset_password()
+    return app.restful.success(f'重置成功，新密码为：{new_password}')
+
+
 @system_manage.permission_put("/user/status")
 def system_manage_change_status():
     """ 改变用户状态 """
@@ -81,8 +89,6 @@ def system_manage_add_user():
 def system_manage_change_user():
     """ 修改用户 """
     form = EditUserForm()
-    # if form.password is None:
-    #     delattr(form, "password")
     form.user.model_update(form.model_dump())
     form.user.update_user_roles(form.role_list)
     return app.restful.change_success()
