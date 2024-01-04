@@ -130,19 +130,22 @@ def tool_mock_by_script(script_name):
     try:
         script_file_name = f"mock_{script.name}"
         import_path = f'script_list.{script_file_name}'
+        try:
+            request_data = request.args.to_dict() or request.form.to_dict() or request.json
+        except:
+            request_data = {}
         FileUtil.save_mock_script_data(
             script_file_name,
             script.script_data,
             path=request.path,
             headers=dict(request.headers),
             query=request.args.to_dict(),
-            body=request.json or request.form.to_dict()
+            body=request_data
         )
         script_obj = importlib.reload(importlib.import_module(import_path))
         return script_obj.result
     except Exception as e:
-        error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
-        return app.restful.fail(msg="脚本执行错误，请检查", result=error_data)
+        return app.restful.fail(msg="脚本执行错误，请检查", result=traceback.format_exc())
 
 
 @tool.route("/mock/auto-test", methods=['GET', 'POST', 'PUT', 'DELETE'])
