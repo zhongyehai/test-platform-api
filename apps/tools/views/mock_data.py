@@ -131,7 +131,7 @@ def tool_mock_by_script(script_name):
         script_file_name = f"mock_{script.name}"
         import_path = f'script_list.{script_file_name}'
         try:
-            request_data = request.args.to_dict() or request.form.to_dict() or request.json
+            request_data = request.form.to_dict() or request.json
         except:
             request_data = {}
         FileUtil.save_mock_script_data(
