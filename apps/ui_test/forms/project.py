@@ -123,7 +123,7 @@ class EditEnv(GetEnvForm):
     def validate_host(cls, value):
         try:
             res = requests.get(value, timeout=5)
-            if res.status_code >= 500:
+            if res.status_code > 500:
                 raise
         except:
             raise ValueError(f"环境地址【{value}】不可访问，请确认")

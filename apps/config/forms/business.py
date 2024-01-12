@@ -26,7 +26,7 @@ class GetBusinessListForm(PaginationForm):
         if self.code:
             filter_list.append(BusinessLine.code.like(f'%{self.code}%'))
         if self.create_user:
-            filter_list.append([BusinessLine.create_user == self.create_user])
+            filter_list.append(BusinessLine.create_user == self.create_user)
         return filter_list
 
 

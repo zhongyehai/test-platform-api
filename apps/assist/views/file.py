@@ -34,7 +34,7 @@ def make_pagination(data_list, pag_size, page_num):
 def assist_get_file_list():
     """ 文件列表 """
     form = GetFileListForm()
-    addr = folders.get(form.file_type, "case")
+    addr = folders.get(form.file_type, folders.get("case"))
     file_list = os.listdir(addr)
     filter_list = make_pagination(file_list, form.page_size, form.page_num)  # 分页
     parsed_file_list = []
