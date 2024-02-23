@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import requests
 import validators
-from pydantic import BaseModel as pydanticBaseModel, Field
+from pydantic import BaseModel as pydanticBaseModel, Field, field_validator
 from flask import request, g
 
 from utils.util.json_util import JsonUtil
@@ -15,6 +15,12 @@ def required_str_field(*args, **kwargs):
     """ 必传字段, 且长度大于1，防止传null、空字符串 """
     kwargs["min_length"] = 1
     return Field(..., **kwargs)
+
+
+class ApiListModel(pydanticBaseModel):
+    name: str = Field(..., title="接口名字")
+    method: str = Field(..., title="请求方法")
+    addr: str = Field(..., title="接口地址")
 
 
 class ParamModel(pydanticBaseModel):
@@ -51,6 +57,7 @@ class ValidateModel(HeaderModel):
 
 
 class SkipIfModel(HeaderModel):
+    status: Optional[Union[str, int, None]] = None
     expect: Union[str, None] = None
     data_type: Union[str, None] = None
     skip_type: Union[str, None] = None
@@ -68,6 +75,7 @@ class AddElementDataForm(pydanticBaseModel):
     name: str = required_str_field(title="名字")
     by: str = required_str_field(title="定位方式")
     element: str = required_str_field(title="定位表达式")
+    wait_time_out: Optional[int] = Field(5, title="元素等待超时时间")
     template_device: Optional[int] = Field(None, title="定位元素时参照的手机")
 
 
@@ -84,6 +92,34 @@ class AddEnvAccountDataForm(pydanticBaseModel):
     desc: Optional[str] = Field(None, title="描述")
 
 
+class AddAppiumServerDataForm(pydanticBaseModel):
+    name: str = required_str_field(title="服务器名字")
+    os: str = required_str_field(title="服务器系统类型")
+    ip: str = required_str_field(title="服务器ip地址")
+    port: str = required_str_field(title="服务器端口")
+
+    # @field_validator("ip")
+    # def validate_ip(cls, value):
+    #     """ 校验ip格式 """
+    #     cls.validate_is_true(value.lower().startswith(('http', 'https')) is False, '服务器ip地址请去除协议标识')
+    #     cls.validate_is_true(validators.ipv4(value) or validators.ipv6(value), "服务器ip地址错误")
+    #     return value
+
+
+class AddPhoneDataForm(pydanticBaseModel):
+    name: str = required_str_field(title="运行设备名字")
+    os: str = required_str_field(title="运行设备系统类型")
+    os_version: str = required_str_field(title="运行设备系统版本")
+    device_id: str = required_str_field(title="运行设备设备id")
+    screen: str = required_str_field(title="运行设备系统分辨率")
+    extends: dict = required_str_field(title="运行设备扩展信息")
+
+    # @field_validator("screen")
+    # def validate_screen(cls, value):
+    #     cls.validate_is_true(len(value.lower().split('x')) == 2, "分辨率格式错误")
+    #     return value
+
+
 # class AddUiElementDataForm(pydanticBaseModel):
 #     name: str = required_str_field(title="名字")
 #     by: str = required_str_field(title="定位方式")
@@ -93,11 +129,24 @@ class AddEnvAccountDataForm(pydanticBaseModel):
 class BaseForm(pydanticBaseModel, JsonUtil):
     """ 基类数据模型 """
 
+    def __setattr__(self, key, value):
+        self.__dict__[key] = value
+
+    def __getattr__(self, item):
+        return self.__dict__[item]
+
     def __init__(self):
         """ 实例化的时候获取所有参数一起传给BaseForm，pydantic会在实例化的时候自动进行数据校验 """
         g.current_from = self  # 初始胡的时候把form放g上，方便在处理异常的时候获取字段title，提示用户
         request_data = request.get_json(silent=True) or request.form.to_dict() or request.args.to_dict()
         super(BaseForm, self).__init__(**request_data)
+
+        self.depends_validate()  # 自动执行有依赖关系的数据验证
+
+    def depends_validate(self):
+        """ 有依赖关系的数据验证，
+        由于pydantic的验证顺序不可控，而业务上是存在字段先后和依赖关系的，所以统一重写此方法，在此方法内进行对应的验证
+        """
 
     @classmethod
     def get_filed_title(cls, filed):
@@ -353,3 +402,8 @@ class PaginationForm(BaseForm):
     def get_query_filter(self, *args, **kwargs):
         """ 解析分页条件，此方法需重载 """
         return []
+
+
+class ChangeCaseParentForm(BaseForm):
+    id_list: list = required_str_field(title="用例id列表")
+    suite_id: int = Field(..., title="用例集id")

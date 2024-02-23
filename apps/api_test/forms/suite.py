@@ -2,7 +2,6 @@
 from typing import Optional
 
 from pydantic import field_validator
-from pydantic_core.core_schema import ValidationInfo
 from sqlalchemy import or_
 
 from ...base_form import BaseForm, PaginationForm, Field, required_str_field
@@ -13,14 +12,14 @@ from ...enums import ApiCaseSuiteTypeEnum
 class GetCaseSuiteListForm(PaginationForm):
     """ 获取用例集list """
     name: Optional[str] = Field(None, title="用例集名")
-    suite_type: Optional[list] = Field(None, title="用例集类型")
+    suite_type: Optional[str] = Field(None, title="用例集类型")
     project_id: int = Field(..., title="服务id")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = [CaseSuite.project_id == self.project_id]
         if self.suite_type:
-            filter_list.append(CaseSuite.suite_type.in_(self.suite_type))
+            filter_list.append(CaseSuite.suite_type.in_(self.suite_type.split(',')))
         if self.name:
             filter_list.append(CaseSuite.name.like(f'%{self.name}%'))
         return filter_list
@@ -57,32 +56,15 @@ class AddCaseSuiteForm(BaseForm):
     parent: Optional[int] = Field(title="父用例集id")
     name: str = required_str_field(title="用例集名称")
 
-    @field_validator("name")
-    def validate_name(cls, value, info: ValidationInfo):
-        project_id, parent = info.data["project_id"], info.data["parent"]
-        cls.validate_data_is_not_exist(
-            f"当前层级下，用例集名字【{value}】已存在", CaseSuite, project_id=project_id, name=value, parent=parent)
-        return value
-
 
 class EditCaseSuiteForm(AddCaseSuiteForm, GetCaseSuiteForm):
     """ 编辑用例集 """
 
-    @field_validator('id', 'name')
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 模块名不重复 """
-        if info.field_name == 'id':
-            suite = cls.validate_data_is_exist("用例集不存在", CaseSuite, id=value)
-            setattr(cls, 'suite', suite)
-        elif info.field_name == 'name':
-            cls.validate_data_is_not_repeat(
-                f"当前用例集下已存在名为【{value}】的用例集",
-                CaseSuite, info.data["id"], project_id=info.data["project_id"], name=value, parent=info.data["parent"]
-            )
-            setattr(
-                cls, 'is_update_suite_type',
-                True if info.data["parent"] is None and info.data["suite_type"] != cls.suite.suite_type else False)
-        return value
+    def depends_validate(self):
+        setattr(
+            self, 'is_update_suite_type',
+            True if self.parent is None and self.suite_type != getattr(self, 'suite').suite_type else False
+        )
 
 
 class RunCaseSuiteForm(GetCaseSuiteForm):

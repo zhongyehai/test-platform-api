@@ -42,8 +42,9 @@ def register_errorhandler_hook(app):
             _app.logger.exception(f'【{g.get("request_id")}】405错误: {request.method} {request.path}')
         return _app.restful.method_error()
 
+
     @app.errorhandler(ValidationError)
-    def pydantic_validation_error(exc):
+    def pydantic_cls_validation_error(exc):
         """ pydantic数据校验不通过
         {
             'input': {
@@ -81,6 +82,13 @@ def register_errorhandler_hook(app):
             return _app.restful.fail(f'{filed_title} 长度不够，最少{error["ctx"]["min_length"]}位')
 
         return _app.restful.fail(f'系统错误：{error}')
+
+    @app.errorhandler(ValueError)
+    def pydantic_self_validation_error(exc):
+        """ pydantic实例依赖数据校验不通过
+            ValueError('头部信息设置，第【1】行，要设置参数，则key和value都需设置')
+        """
+        return _app.restful.fail(exc.args[0])
 
     @app.errorhandler(Exception)
     def error_handler_500(e):

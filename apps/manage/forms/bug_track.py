@@ -1,7 +1,7 @@
-from typing import Optional, List
+from typing import Optional
 
 from flask import g
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import BugTrack
@@ -10,20 +10,20 @@ from ...system.models.user import User
 
 class GetBugListForm(PaginationForm):
     """ 获取bug列表 """
-    business_list: Optional[List[int]] = Field(None, title="业务线")
+    business_list: Optional[str] = Field(None, title="业务线")
     name: Optional[str] = Field(None, title="bug名字关键字")
-    detail: Optional[str] = Field(title="bug详情关键字")
-    status: Optional[list] = Field([], title="bug状态")
+    detail: Optional[str] = Field(None, title="bug详情关键字")
+    status: Optional[str] = Field([], title="bug状态")
     replay: Optional[str] = Field(None, title="bug是否复盘")
     conclusion: Optional[str] = Field(None, title="复盘结论")
-    iteration: Optional[list] = Field([], title="迭代")
+    iteration: Optional[str] = Field([], title="迭代")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = []
 
         if self.business_list:
-            filter_list.append(BugTrack.business_id.in_(self.business_list))
+            filter_list.append(BugTrack.business_id.in_(self.business_list.split(',')))
         else:
             if User.is_not_admin():  # 非管理员则校验业务线权限
                 filter_list.append(BugTrack.business_id.in_(g.business_list))
@@ -32,13 +32,13 @@ class GetBugListForm(PaginationForm):
         if self.detail:
             filter_list.append(BugTrack.detail.like(f'%{self.detail}%'))
         if self.status:
-            filter_list.append(BugTrack.status.in_(self.status))
+            filter_list.append(BugTrack.status.in_(self.status.split(',')))
         if self.replay:
             filter_list.append(BugTrack.replay == self.replay)
         if self.conclusion:
             filter_list.append(BugTrack.conclusion.like(f'%{self.conclusion}%'))
         if self.iteration:
-            filter_list.append(BugTrack.iteration.in_(self.iteration))
+            filter_list.append(BugTrack.iteration.in_(self.iteration.split(',')))
         return filter_list
 
 
@@ -73,19 +73,17 @@ class AddBugForm(BaseForm):
     iteration: str = required_str_field(title="迭代")
     name: str = required_str_field(title="bug描述")
     detail: str = required_str_field(title="bug详情")
-    bug_from: Optional[str] = required_str_field(title="来源")
+    bug_from: Optional[str] = required_str_field(title="缺陷来源")
     trigger_time: Optional[str] = required_str_field(title="发现时间")
-    reason: Optional[str] = required_str_field(title="原因")
-    solution: Optional[str] = required_str_field(title="解决方案")
-    manager: Optional[int] = required_str_field(title="跟进人")
+    reason: Optional[str] = Field(title="原因")
+    solution: Optional[str] = Field(title="解决方案")
+    manager: int = Field(..., title="跟进人")
     replay: int = Field(..., title="是否复盘")
-    conclusion: Optional[str] = required_str_field(title="复盘结论")
+    conclusion: Optional[str] = Field(..., title="复盘结论")
 
-    @field_validator("conclusion")
-    def validate_conclusion(cls, value, info: ValidationInfo):
-        if info.data["replay"] == 1:
-            cls.validate_is_true(value, '已复盘，则复盘结论必填')
-        return value
+    def depends_validate(self):
+        if self.replay == 1:
+            self.validate_is_true(self.conclusion, '已复盘，则复盘结论必填')
 
 
 class ChangeBugForm(GetBugForm, AddBugForm):

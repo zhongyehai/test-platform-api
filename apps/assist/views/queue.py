@@ -6,7 +6,7 @@ from ..model_factory import Queue, QueueMsgLog
 from ...base_form import ChangeSortForm
 from ..forms.queue import GetQueueForm, DeleteQueueForm, GetQueueLinkListForm, GetQueueListForm, CreatQueueLinkForm, \
     EditQueueLinkForm, CreatQueueForm, EditQueueForm, SendMessageForm, GetQueueMsgLogForm
-from utils.message.send_rocket_mq import send_rocket_mq
+from utils.message.send_mq import send_rabbit_mq, send_rocket_mq
 from ...enums import QueueTypeEnum
 
 
@@ -62,7 +62,9 @@ def assist_change_queue():
 def assist_send_message_to_queue():
     """ 发送消息队列 """
     form = SendMessageForm()
-    if form.queue_link["queue_type"] == QueueTypeEnum.rocket_mq:
+    if form.queue_link["queue_type"] == QueueTypeEnum.rabbit_mq:
+        send_rabbit_mq(form.queue_link, form.message)
+    elif form.queue_link["queue_type"] == QueueTypeEnum.rabbit_mq:
         send_rocket_mq(form.queue_link, form.message)
     QueueMsgLog.model_create({"queue_id": form.id, "message": form.message})
     return app.restful.success('消息发送完成')

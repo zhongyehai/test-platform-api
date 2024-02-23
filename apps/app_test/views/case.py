@@ -3,7 +3,7 @@ from flask import current_app as app
 
 from ..blueprint import app_test
 from ...api_test.forms.case import GetCaseNameForm
-from ...base_form import ChangeSortForm
+from ...base_form import ChangeSortForm, ChangeCaseParentForm
 from ...busines import RunCaseBusiness
 from ..model_factory import AppUiProject as Project, AppUiCase as Case, AppUiStep as Step, AppUiReport as Report, \
     AppUiCaseSuite as CaseSuite
@@ -18,7 +18,7 @@ def app_get_case_list():
     form = GetCaseListForm()
     if form.detail:
         get_filed = [Case.id, Case.name, Case.desc, Case.status, Case.skip_if, Case.variables, Case.output,
-                     Case.suite_id]
+                     Case.suite_id, Case.run_times]
     else:
         get_filed = Case.get_simple_filed_list()
     pagination_data = Case.make_pagination(form, get_filed=get_filed)
@@ -64,6 +64,14 @@ def app_change_case_status():
     """ 修改用例状态（是否执行） """
     form = ChangeCaseStatusForm()
     Case.query.filter(Case.id.in_(form.id_list)).update({'status': form.status.value})
+    return app.restful.change_success()
+
+
+@app_test.login_put("/case/parent")
+def app_change_case_parent():
+    """ 修改用例归属 """
+    form = ChangeCaseParentForm()
+    Case.query.filter(Case.id.in_(form.id_list)).update({'suite_id': form.suite_id})
     return app.restful.change_success()
 
 

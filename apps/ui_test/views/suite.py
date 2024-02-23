@@ -28,7 +28,7 @@ def ui_case_suite_upload():
     return app.restful.fail("文件格式错误")
 
 
-@ui_test.login_post("/suite/list")
+@ui_test.login_get("/suite/list")
 def ui_get_case_suite_list():
     """ 用例集list """
     form = GetCaseSuiteListForm()
@@ -86,7 +86,7 @@ def ui_run_case_suite():
             report_name=form.suite.name,
             task_type="suite",
             case_id_list=case_id_list,
-            run_type="webUi",
+            run_type="ui",
             runner=RunCase
         )
     return app.restful.trigger_success({

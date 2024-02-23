@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 from selenium.webdriver.common.keys import Keys
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
@@ -32,33 +32,26 @@ class GetConfigListForm(PaginationForm):
 
 class GetConfigValueForm(BaseForm):
     """ 获取配置 """
-
     id: Optional[int] = Field(None, title="配置id")
     code: Optional[str] = Field(None, title="配置名")
 
-    @field_validator("id")
-    def validate_id(cls, value):
-        if value:
-            conf = cls.validate_data_is_exist("配置不存在", Config, id=value)
-            setattr(cls, 'conf', conf.value)
-        return value
-
-    @field_validator("code")
-    def validate_code(cls, value, info: ValidationInfo):
-        if not info.data["id"]:
-            cls.validate_is_true(value, '配置id或配置code必传')
-            if value.startswith('_') is False and hasattr(config, value):  # config.py中的配置
-                conf = getattr(config, value)
-            elif value == "ui_key_board_code":
+    def depends_validate(self):
+        self.validate_is_true(self.id or self.code, '配置id或配置code必传')
+        if self.id:
+            conf = self.validate_data_is_exist("配置不存在", Config, id=self.id)
+            setattr(self, 'conf', conf.value)
+        else:
+            if self.code.startswith('_') is False and hasattr(config, self.code):  # config.py中的配置
+                conf = getattr(config, self.code)
+            elif self.code == "ui_key_board_code":
                 conf = {key: f'按键【{key}】' for key in dir(Keys) if key.startswith('_') is False}
             else:
-                conf_data = cls.validate_data_is_exist("配置不存在", Config, name=value)
+                conf_data = self.validate_data_is_exist("配置不存在", Config, name=self.code)
                 try:
                     conf = json.loads(conf_data.value)
                 except:
                     conf = conf_data.value
-            setattr(cls, 'conf', conf)
-        return value
+            setattr(self, 'conf', conf)
 
 
 class GetSkipIfConfigForm(BaseForm):
@@ -67,15 +60,13 @@ class GetSkipIfConfigForm(BaseForm):
     test_type: str = required_str_field(title="测试类型")
     type: str = required_str_field(title="跳过类型")
 
-    @field_validator("type")
-    def validate_type(cls, value, info: ValidationInfo):
+    def depends_validate(self):
         data = [{"label": "运行环境", "value": "run_env"}]
-        if info.data["test_type"] == "appUi":
+        if self.test_type == "app":
             data += [{"label": "运行服务器", "value": "run_server"}, {"label": "运行设备", "value": "run_device"}]
-        if value == "step":
+        if self.type == "step":
             data += [{"label": "自定义变量", "value": "variable"}, {"label": "自定义函数", "value": "func"}]
-        setattr(cls, 'data', data)
-        return value
+        setattr(self, 'data', data)
 
 
 class GetFindElementByForm(BaseForm):
@@ -85,7 +76,7 @@ class GetFindElementByForm(BaseForm):
 
     @field_validator("test_type")
     def validate_type(cls, value):
-        if value == "appUi":
+        if value == "app":
             data = config.find_element_option + [
                 {"label": "根据元素范围坐标定位", "value": "bounds"},
                 {"label": "accessibility_id", "value": "accessibility id"}

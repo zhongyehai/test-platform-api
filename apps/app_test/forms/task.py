@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 from crontab import CronTab
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
@@ -32,13 +32,10 @@ class GetTaskForm(BaseForm):
 class DeleteTaskForm(GetTaskForm):
     """ 删除任务 """
 
-    @field_validator("id")
-    def validate_id(cls, value):
-        """ 校验id存在 """
-        task = cls.validate_data_is_exist("任务不存在", Task, id=value)
-        cls.validate_is_true(task.is_disable(), "请先禁用任务")
-        setattr(cls, "task", task)
-        return value
+    def depends_validate(self):
+        """ 删除任务时，同步删除内存中的任务"""
+        old_task = getattr(self, 'task')
+        setattr(self.task, 'delete_to_memory', old_task.status == 1)
 
 
 class AddTaskForm(BaseForm):
@@ -51,10 +48,10 @@ class AddTaskForm(BaseForm):
     receive_type: ReceiveTypeEnum = Field(
         ReceiveTypeEnum.ding_ding, title="接收测试报告类型", description="ding_ding、we_chat、email")
     webhook_list: list = Field(title="接收消息机器人地址")
-    email_server: Optional[str] = Field(title="发件邮箱服务器")
-    email_to: list = Field(title="收件人邮箱")
-    email_from: Optional[str] = Field(title="发件人邮箱")
-    email_pwd: Optional[str] = Field(title="发件人邮箱密码")
+    email_server: Optional[str] = Field(None, title="发件邮箱服务器")
+    email_to: Optional[list] = Field([], title="收件人邮箱")
+    email_from: Optional[str] = Field(None, title="发件人邮箱")
+    email_pwd: Optional[str] = Field(None, title="发件人邮箱密码")
     is_send: SendReportTypeEnum = Field(
         SendReportTypeEnum.on_fail.value, title="是否发送测试报告", description="not_send/always/on_fail")
     merge_notify: Optional[int] = Field(
@@ -65,24 +62,6 @@ class AddTaskForm(BaseForm):
     conf: Optional[dict] = Field({}, title="运行配置", description="webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     call_back: Optional[Union[list, dict]] = Field(title="回调给流水线")
-
-    @field_validator("receive_type")
-    def validate_receive_type(cls, value):
-        return value.value
-
-    @field_validator("is_send")
-    def validate_is_send(cls, value, info: ValidationInfo):
-        """ 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
-        if value in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
-            receive_type = info.data["receive_type"]
-            if receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
-                cls.validate_is_true(info.data["webhook_list"], '选择了要通过机器人发送报告，则webhook地址必填')
-            elif receive_type == ReceiveTypeEnum.email.value:
-                cls.validate_email(
-                    info.data.get("email_server"), info.data.get("email_from"),
-                    info.data.get("email_pwd"), info.data.get("email_to")
-                )
-        return value.value
 
     @field_validator("cron")
     def validate_cron(cls, value):
@@ -98,39 +77,29 @@ class AddTaskForm(BaseForm):
         return value
 
     @field_validator("conf")
-    def validate_conf(cls, value, info: ValidationInfo):
+    def validate_conf(cls, value):
         """ 校验任务运行配置 """
         cls.validate_is_true(value.get("server_id"), '请选择运行服务器')
         cls.validate_is_true(value.get("phone_id"), '请选择运行手机')
         value["no_reset"] = value.get("no_reset") if value.get("no_reset") is not None else True
         return value
 
-    @field_validator("name")
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 校验任务名不重复 """
-        cls.validate_data_is_not_exist(
-            f"当前项目中，任务名【{value}】已存在", Task, project_id=info.data["project_id"], name=value)
-        return value
+    def depends_validate(self):
+        """ 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
+        if self.is_send in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
+            if self.receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
+                self.validate_is_true(self.webhook_list, '选择了要通过机器人发送报告，则webhook地址必填')
+            elif self.receive_type == ReceiveTypeEnum.email.value:
+                self.validate_email(self.email_server, self.email_from, self.email_pwd, self.email_to)
 
 
 class EditTaskForm(AddTaskForm, GetTaskForm):
     """ 编辑任务 """
 
-    @field_validator("id")
-    def validate_id(cls, value):
-        """ 校验id存在 """
-        task = cls.validate_data_is_exist(f"任务id【{value}】不存在", Task, id=value)
-        cls.validate_is_true(task.is_disable(), "任务的状态不为禁用中，请先禁用再修改")
-        setattr(cls, "task", task)
-        return value
-
-    @field_validator("name")
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 校验任务名不重复 """
-        cls.validate_data_is_not_repeat(
-            f"当前服务中，任务名【{value}】已存在",
-            Task, info.data["id"], project_id=info.data["project_id"], name=value)
-        return value
+    def depends_validate(self):
+        """ 启用中 且 cron表达式有更改的，需要更新内存中的任务"""
+        old_task = getattr(self, 'task')
+        setattr(self.task, 'update_to_memory', old_task.status == 1 and self.cron != old_task.cron)
 
 
 class RunTaskForm(GetTaskForm):
@@ -145,21 +114,26 @@ class RunTaskForm(GetTaskForm):
     phone_id: Optional[int] = Field(None, title="执行手机")
     no_reset: Optional[bool] = Field(None, title="是否不重置手机")
 
-    @field_validator("server_id")
-    def validate_server_id(cls, value):
-        """ 校验服务id存在 """
-        data = value or cls.task.conf["server_id"]
-        cls.validate_is_true(data, '请设置运行服务器')
-        server = cls.validate_data_is_exist("服务器不存在", Server, id=data)
-        cls.validate_appium_server_is_running(server.ip, server.port)
-        setattr(cls, "server", server)
-        return value
+    def depends_validate(self):
+        self.validate_server_id()
+        self.validate_phone_id()
+        self.validate_no_reset()
 
-    @field_validator("phone_id")
-    def validate_phone_id(cls, value):
+    def validate_server_id(self):
+        """ 校验服务id存在 """
+        data = self.server_id or getattr(self, 'task').conf["server_id"]
+        self.validate_is_true(data, '请设置运行服务器')
+        server = self.validate_data_is_exist("服务器不存在", Server, id=data)
+        self.validate_appium_server_is_running(server.ip, server.port)
+        setattr(self, "server", server)
+
+    def validate_phone_id(self):
         """ 校验手机id存在 """
-        data = value or cls.task.conf["phone_id"]
-        cls.validate_is_true(data, '请设置运行手机')
-        phone = cls.validate_data_is_exist("手机不存在", Phone, id=data)
-        setattr(cls, "phone", phone)
-        return value
+        data = self.phone_id or getattr(self, 'task').conf["phone_id"]
+        self.validate_is_true(data, '请设置运行手机')
+        phone = self.validate_data_is_exist("手机不存在", Phone, id=data)
+        setattr(self, "phone", phone)
+
+    def validate_no_reset(self):
+        """ 设置否重置手机，如果没传就用任务选定的配置 """
+        self.no_reset = self.no_reset if self.no_reset is not None else getattr(self, 'task').conf["no_reset"]

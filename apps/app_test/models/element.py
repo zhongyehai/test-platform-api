@@ -12,4 +12,4 @@ class AppUiElement(BaseElement):
     __table_args__ = {"comment": "APP测试元素表"}
 
     template_device: Mapped[int] = mapped_column(
-        Integer(), comment="元素定位时参照的设备，定位方式为bounds时根据此设备参照分辨率")
+        Integer(), nullable=False, comment="元素定位时参照的设备，定位方式为bounds时根据此设备参照分辨率")

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import send_from_directory, current_app as app
 
-from ..blueprint import test_work
+from ..blueprint import manage
 from ..model_factory import WeeklyConfigModel, WeeklyModel
 from ..forms.weekly import GetWeeklyConfigListForm, GetWeeklyConfigForm, AddWeeklyConfigForm, ChangeWeeklyConfigForm, \
     DeleteWeeklyConfigForm, GetWeeklyListForm, GetWeeklyForm, AddWeeklyForm, ChangeWeeklyForm, DeleteWeeklyForm
@@ -10,53 +10,53 @@ from utils.util.file_util import TEMP_FILE_ADDRESS
 from utils.make_data.make_weekly import make_weekly_excel, make_current_weekly_excel
 
 
-@test_work.login_get("/weekly/config/list")
-def test_work_get_weekly_config_list():
+@manage.login_get("/weekly/config/list")
+def manage_get_weekly_config_list():
     """ 获取产品、项目列表 """
     form = GetWeeklyConfigListForm()
     return app.restful.get_success(WeeklyConfigModel.make_pagination(form))
 
 
-@test_work.login_get("/weekly/config")
-def test_work_get_weekly_config():
+@manage.login_get("/weekly/config")
+def manage_get_weekly_config():
     """ 获取产品、项目信息 """
     form = GetWeeklyConfigForm()
     return app.restful.get_success(form.conf.to_dict())
 
 
-@test_work.login_post("/weekly/config")
-def test_work_add_weekly_config():
+@manage.login_post("/weekly/config")
+def manage_add_weekly_config():
     """ 新增产品、项目 """
     form = AddWeeklyConfigForm()
     WeeklyConfigModel.model_create(form.model_dump())
     return app.restful.add_success()
 
 
-@test_work.login_put("/weekly/config")
-def test_work_change_weekly_config():
+@manage.login_put("/weekly/config")
+def manage_change_weekly_config():
     """ 修改产品、项目 """
     form = ChangeWeeklyConfigForm()
     form.conf.model_update(form.model_dump())
     return app.restful.change_success()
 
 
-@test_work.login_delete("/weekly/config")
-def test_work_delete_weekly_config():
+@manage.login_delete("/weekly/config")
+def manage_delete_weekly_config():
     """ 删除产品、项目 """
     form = DeleteWeeklyConfigForm()
     form.conf.delete()
     return app.restful.delete_success()
 
 
-@test_work.login_get("/weekly/list")
-def test_work_get_weekly_list():
+@manage.login_get("/weekly/list")
+def manage_get_weekly_list():
     """ 获取周报列表 """
     form = GetWeeklyListForm()
     return app.restful.get_success(WeeklyModel.make_pagination(form))
 
 
-@test_work.login_get("/weekly/download")
-def test_work_download_weekly():
+@manage.login_get("/weekly/download")
+def manage_download_weekly():
     """ 导出周报 """
     form = GetWeeklyListForm()
     # 获取产品、项目数据
@@ -72,31 +72,31 @@ def test_work_download_weekly():
     return send_from_directory(TEMP_FILE_ADDRESS, file_name, as_attachment=True)
 
 
-@test_work.login_get("/weekly")
-def test_work_get_weekly():
+@manage.login_get("/weekly")
+def manage_get_weekly():
     """ 获取周报信息 """
     form = GetWeeklyForm()
     return app.restful.get_success(form.weekly.to_dict())
 
 
-@test_work.login_post("/weekly")
-def test_work_post_weekly():
+@manage.login_post("/weekly")
+def manage_post_weekly():
     """ 新增周报 """
     form = AddWeeklyForm()
     WeeklyModel.model_create(form.data)
     return app.restful.add_success()
 
 
-@test_work.login_put("/weekly")
-def test_work_put_weekly():
+@manage.login_put("/weekly")
+def manage_put_weekly():
     """ 修改周报 """
     form = ChangeWeeklyForm()
     form.weekly.model_update(form.model_dump())
     return app.restful.change_success()
 
 
-@test_work.login_delete("/weekly")
-def test_work_delete_weekly():
+@manage.login_delete("/weekly")
+def manage_delete_weekly():
     """ 删除周报 """
     form = DeleteWeeklyForm()
     form.weekly.delete()

@@ -2,7 +2,7 @@
 from flask import current_app as app
 from sqlalchemy import func, case
 
-from ..blueprint import home
+from ..blueprint import api_test
 from ...api_test.model_factory import ApiProject as Project, ApiModule as Module, ApiMsg as Api, ApiCase as Case, \
     ApiTask as Task, ApiReport as Report, ApiStep as Step
 from ...assist.models.hits import Hits
@@ -32,23 +32,19 @@ def get_data_by_time(model):
     }
 
 
-@home.login_get("/api-test/title")
-def home_get_api_test_title():
+@api_test.login_get("/dashboard-card")
+def get_api_test_card():
     """ 获取卡片统计 """
-    return app.restful.get_success({
-        "project": {"title": "服务数", "total": Project.query.filter().count()},
-        "module": {"title": "模块数", "total": Module.query.filter().count()},
-        "api": {"title": "接口数", "total": Api.query.filter().count()},
-        "hit": {"title": "记录问题数", "total": Hits.query.filter().count()},
-        "case": {"title": "用例数", "total": Case.query.filter().count()},
-        "step": {"title": "测试步骤数", "total": Step.query.filter().count()},
-        "task": {"title": "定时任务数", "total": Task.query.filter().count()},
-        "report": {"title": "测试报告数", "total": Report.query.filter().count()}
-    })
+    return app.restful.get_success([
+        {"name": "api", "title": "接口数", "total": Api.query.filter().count()},
+        {"name": "case", "title": "用例数", "total": Case.query.filter().count()},
+        {"name": "step", "title": "测试步骤数", "total": Step.query.filter().count()},
+        {"name": "report", "title": "测试报告数", "total": Report.query.filter().count()}
+    ])
 
 
-@home.login_get("/api-test/project")
-def home_get_api_test_project():
+@api_test.login_get("/dashboard-project")
+def get_api_test_project():
     """ 统计服务数 """
     time_data = get_data_by_time(Project)
     return app.restful.get_success({
@@ -65,8 +61,8 @@ def home_get_api_test_project():
     })
 
 
-@home.login_get("/api-test/module")
-def home_get_api_test_module():
+@api_test.login_get("/dashboard-module")
+def get_api_test_module():
     """ 统计模块数 """
     time_data = get_data_by_time(Module)
     return app.restful.get_success({
@@ -82,8 +78,8 @@ def home_get_api_test_module():
     })
 
 
-@home.login_get("/api-test/api")
-def home_get_api_test_api():
+@api_test.login_get("/dashboard-api")
+def get_api_test_api():
     """ 统计接口数 """
     # 请求方法维度
     method_query = Api.db.session.query(
@@ -129,8 +125,8 @@ def home_get_api_test_api():
     })
 
 
-@home.login_get("/api-test/case")
-def home_get_api_test_case():
+@api_test.login_get("/dashboard-case")
+def get_api_test_case():
     """ 统计用例数 """
     case_query = Case.db.session.query(
         func.count(Case.id),  # 总数
@@ -157,8 +153,8 @@ def home_get_api_test_case():
     })
 
 
-@home.login_get("/api-test/step")
-def home_get_api_test_step():
+@api_test.login_get("/dashboard-step")
+def get_api_test_step():
     """ 统计步骤数 """
     step_query = Step.db.session.query(
         func.count(Step.id),  # 总数
@@ -186,8 +182,8 @@ def home_get_api_test_step():
     })
 
 
-@home.login_get("/api-test/task")
-def home_get_api_test_task():
+@api_test.login_get("/dashboard-task")
+def get_api_test_task():
     """ 统计定时任务数 """
     task_query = Task.db.session.query(
         func.count(Task.id),  # 总数
@@ -214,8 +210,8 @@ def home_get_api_test_task():
     })
 
 
-@home.login_get("/api-test/report")
-def home_get_api_test_report():
+@api_test.login_get("/dashboard-report")
+def get_api_test_report():
     """ 统计测试报告数 """
     report_query = Report.db.session.query(
         func.count(Report.id),  # 总数
@@ -255,8 +251,8 @@ def home_get_api_test_report():
     })
 
 
-@home.login_get("/api-test/hit")
-def home_get_api_test_hit():
+@api_test.login_get("/dashboard-hit")
+def get_api_test_hit():
     """ 统计命中数 """
     hit_type_data = Hits.db.execute_query_sql(
         f"""select hit_type, count(*) num from `{Hits.__tablename__}` group by hit_type""")

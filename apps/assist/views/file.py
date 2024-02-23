@@ -70,7 +70,7 @@ def assist_download_file():
 @assist.login_post("/file/upload")
 def assist_upload_file():
     """ 文件上传 """
-    file, addr = request.files["file"], folders.get(request.form.get("fileType", "case"))
+    file, addr = request.files["file"], folders.get(request.form.get("file_type", "case"))
     file.save(os.path.join(addr, file.filename))
     return app.restful.upload_success(file.filename)
 
@@ -79,13 +79,13 @@ def assist_upload_file():
 def assist_get_file():
     """ 获取文件 """
     args = request.args.to_dict()
-    return send_from_directory(args.get("fileType", "case"), args.get("name"), as_attachment=True)
+    return send_from_directory(args.get("file_type", "case"), args.get("name"), as_attachment=True)
 
 
 @assist.login_post("/file")
 def assist_add_file():
     """ 上传文件 """
-    file_name_list, addr = [], folders.get(request.form.get("fileType", "case"))
+    file_name_list, addr = [], folders.get(request.form.get("file_type", "case"))
     for file_io in request.files.getlist("files"):
         file_io.save(os.path.join(addr, file_io.filename))
         file_name_list.append(file_io.filename)

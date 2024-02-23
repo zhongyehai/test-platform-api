@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 from flask import current_app as app
 
+from utils.client.parse_model import StepModel
 from ..blueprint import api_test
-from ..model_factory import ApiReport as Report, ApiReportStep as ReportStep, ApiReportCase as ReportCase
+from ..model_factory import ApiReport as Report, ApiReportStep as ReportStep, ApiReportCase as ReportCase, \
+    ApiMsg, ApiCaseSuite as CaseSuite, ApiCase as Case, ApiStep as Step
 from ..forms.report import GetReportForm, GetReportListForm, DeleteReportForm, GetReportCaseForm, \
     GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStatusForm, GetReportShowIdForm
+from ...enums import ApiCaseSuiteTypeEnum
 
 
-@api_test.login_post("/report/list")
+@api_test.login_get("/report/list")
 def api_get_report_list():
     """ 报告列表 """
     form = GetReportListForm()
@@ -33,6 +36,18 @@ def api_get_report_show_id():
     """ 根据运行id获取当次要打开的报告 """
     form = GetReportShowIdForm()
     return app.restful.get_success(Report.select_show_report_id(form.batch_id))
+
+
+@api_test.post("/report/as-case")
+def api_save_report_as_case():
+    """ 保存报告中的接口为用例（仅报告运行类型为接口使用） """
+    form = GetReportStepForm()
+    report_step = form.report_step
+    api = ApiMsg.get_first(id=report_step.element_id)
+    case_suite = CaseSuite.get_first(project_id=api.project_id, suite_type=ApiCaseSuiteTypeEnum.base.api)
+    case = Case.model_create_and_get({"name": report_step.name, "desc": report_step.name, "suite_id": case_suite.id})
+    Step.model_create({"name": report_step.name, "case_id": case.id, "api_id": api.id, **api.to_dict()})
+    return app.restful.add_success()
 
 
 @api_test.get("/report")

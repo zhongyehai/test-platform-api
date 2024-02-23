@@ -3,7 +3,7 @@ import importlib
 import traceback
 from typing import Optional
 
-from pydantic import Field, field_validator, ValidationInfo, model_validator
+from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Script
@@ -105,85 +105,46 @@ class CreatScriptForm(BaseForm):
     desc: Optional[str] = Field(title="脚本描述")
     script_data: str = required_str_field(title="脚本内容")
 
-    @field_validator("script_data")
-    def validate_script_data(cls, value, info: ValidationInfo):
-        """ 校验自定义脚本文件内容合法 """
-        script_name, script_type = info.data.get("name"), info.data.get("script_type")
-        cls.validate_is_true(script_name, '脚本名必传')
-        cls.validate_is_true(re.match('^[a-zA-Z_]+$', script_name), "脚本文名错误，支持大小写字母和下划线")
+    @field_validator("name")
+    def validate_name(cls, value):
+        cls.validate_is_true(re.match('^[a-zA-Z_]+$', value), "脚本文名错误，支持大小写字母和下划线")
 
-        default_env = 'debug'
-        # 校验当前用户是否有权限保存脚本文件内容
+    def depends_validate(self):
+        self.validate_has_permissions()
+        self.validate_script_type()
+        self.validate_script_data()
+
+    @classmethod
+    def validate_has_permissions(cls):
+        """ 校验当前用户是否有权限保存脚本文件内容 """
         if Config.get_save_func_permissions() == '1':
             if User.is_not_admin():
                 raise ValueError(
                     {"msg": "当前用户暂无权限保存脚本文件内容", "result": "当前用户暂无权限保存脚本文件内容"})
 
-        if script_type != 'mock':
+    def validate_script_type(self):
+        if self.script_type != 'mock':
             # 防止要改函数时不知道函数属于哪个脚本的情况，强校验函数名必须以脚本名开头
             # importlib.import_module有缓存，所有用正则提取
-            functions_name_list = re.findall('\ndef (.+?):', value)
+            functions_name_list = re.findall('\ndef (.+?):', self.script_data)
 
             for func_name in functions_name_list:
-                if func_name.startswith(script_name) is False:
+                if func_name.startswith(self.name) is False:
                     raise ValueError(f'函数【{func_name}】命名格式错误，请以【脚本名_函数名】命名')
 
-        # 把自定义函数脚本内容写入到python脚本中,
-        Script.create_script_file(default_env)  # 重新发版时会把文件全部删除，所以全部创建
-        FileUtil.save_script_data(f'{default_env}_{script_name}', value, env=default_env)
+    def validate_script_data(self):
+        """ 校验自定义脚本文件内容合法 """
+        default_env = 'debug'
+
+        Script.create_script_file(default_env)  # 把自定义函数脚本内容写入到python脚本中, 重新发版时会把文件全部删除，所以全部创建
+        FileUtil.save_script_data(f'{default_env}_{self.name}', self.script_data, env=default_env)
 
         # 动态导入脚本，语法有错误则不保存
         try:
-            script_obj = importlib.reload(importlib.import_module(f'script_list.{default_env}_{script_name}'))
+            script_obj = importlib.reload(importlib.import_module(f'script_list.{default_env}_{self.name}'))
         except Exception as e:
             raise ValueError(
                 {"msg": "语法错误，请检查", "result": "\n".join("{}".format(traceback.format_exc()).split("↵"))})
-        return value
-
-    # @field_validator("name")
-    # def validate_name(cls, value):
-    #     """ 校验Python脚本文件名 """
-    #     cls.validate_is_true(re.match('^[a-zA-Z_]+$', value), "脚本文名错误，支持大小写字母和下划线")
-    #     return value
-    #
-    # @field_validator("name", "script_data")  # pydantic 字段顺序校验不可控，写到一起
-    # def validate_script_data(cls, value, info: ValidationInfo):
-    #     """ 校验自定义脚本文件内容合法 """
-    #     default_env = 'debug'
-    #     if info.data.get("name") and info.data.get("script_data"):
-    #         if info.field_name == 'name':
-    #             cls.validate_is_true(re.match('^[a-zA-Z_]+$', value), "脚本文名错误，支持大小写字母和下划线")
-    #
-    #         script_name = info.data["name"]
-    #         # 校验当前用户是否有权限保存脚本文件内容
-    #         if Config.get_save_func_permissions() == '1':
-    #             if User.is_not_admin():
-    #                 raise ValueError(
-    #                     {"msg": "当前用户暂无权限保存脚本文件内容", "result": "当前用户暂无权限保存脚本文件内容"})
-    #
-    #         if info.data["script_type"] != 'mock':
-    #             # 防止要改函数时不知道函数属于哪个脚本的情况，强校验函数名必须以脚本名开头
-    #             # importlib.import_module有缓存，所有用正则提取
-    #             functions_name_list = re.findall('\ndef (.+?):', value)
-    #
-    #             for func_name in functions_name_list:
-    #                 if func_name.startswith(script_name) is False:
-    #                     raise ValueError(f'函数【{func_name}】命名格式错误，请以【脚本名_函数名】命名')
-    #
-    #         # 把自定义函数脚本内容写入到python脚本中,
-    #         Script.create_script_file(default_env)  # 重新发版时会把文件全部删除，所以全部创建
-    #         FileUtil.save_script_data(f'{default_env}_{script_name}', value, env=default_env)
-    #
-    #         # 动态导入脚本，语法有错误则不保存
-    #         try:
-    #             script_obj = importlib.reload(importlib.import_module(f'script_list.{default_env}_{info.data["name"]}'))
-    #         except Exception as e:
-    #             raise ValueError(
-    #                 {"msg": "语法错误，请检查", "result": "\n".join("{}".format(traceback.format_exc()).split("↵"))})
-    #         return value
-    #     if info.field_name == 'name':
-    #         cls.validate_is_true(re.match('^[a-zA-Z_]+$', value), "脚本文名错误，支持大小写字母和下划线")
-    #     return value
 
 
 class EditScriptForm(GetScriptForm, CreatScriptForm):

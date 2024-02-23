@@ -77,7 +77,7 @@ class Runner:
         if self.client_session is None:
             if self.run_type == "api":
                 self.client_session = HttpSession(self.base_url)
-            elif self.run_type == "webUi":
+            elif self.run_type == "ui":
                 self.client_session = WebDriverSession()
                 self.driver = GetWebDriver(browser_driver_path=self.browser_driver_path, browser_name=self.browser_name)
             else:

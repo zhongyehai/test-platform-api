@@ -6,7 +6,7 @@ from ..model_factory import FuncErrorRecord
 from ..forms.error_record import GetErrorListForm, GetErrorForm
 
 
-@assist.get("/error-record/list")
+@assist.get("/error-record-list")
 def assist_get_error_record_list():
     """ 错误列表 """
     form = GetErrorListForm()

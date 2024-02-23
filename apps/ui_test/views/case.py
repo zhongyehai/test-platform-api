@@ -2,7 +2,7 @@
 from flask import current_app as app
 
 from ..blueprint import ui_test
-from ...base_form import ChangeSortForm
+from ...base_form import ChangeSortForm, ChangeCaseParentForm
 from ...busines import RunCaseBusiness
 from ..model_factory import WebUiProject as Project, WebUiCase as Case, WebUiStep as Step, WebUiReport as Report, \
     WebUiCaseSuite as CaseSuite
@@ -17,7 +17,7 @@ def ui_get_case_list():
     form = GetCaseListForm()
     if form.detail:
         get_filed = [Case.id, Case.name, Case.desc, Case.status, Case.skip_if, Case.variables, Case.output,
-                     Case.suite_id]
+                     Case.suite_id, Case.run_times]
     else:
         get_filed = Case.get_simple_filed_list()
     pagination_data = Case.make_pagination(form, get_filed=get_filed)
@@ -63,6 +63,14 @@ def ui_change_case_status():
     """ 修改用例状态（是否执行） """
     form = ChangeCaseStatusForm()
     Case.query.filter(Case.id.in_(form.id_list)).update({'status': form.status.value})
+    return app.restful.change_success()
+
+
+@ui_test.login_put("/case/parent")
+def ui_change_case_parent():
+    """ 修改用例归属 """
+    form = ChangeCaseParentForm()
+    Case.query.filter(Case.id.in_(form.id_list)).update({'suite_id': form.suite_id})
     return app.restful.change_success()
 
 
@@ -142,7 +150,7 @@ def ui_run_case():
             is_async=form.is_async,
             temp_variables=form.temp_variables,
             task_type="case",
-            run_type="webUi",
+            run_type="ui",
             case_id_list=form.case_id_list,
             runner=RunCase
         )

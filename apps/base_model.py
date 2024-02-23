@@ -115,11 +115,15 @@ class BaseModel(db.Model, JsonUtil):
     @classmethod
     def model_create(cls, data_dict: dict):
         """ 创建数据 """
-        cls.format_create_data(data_dict)
-        if "num" in cls.get_table_column_name_list():  # 如果有num字段，自动获取最大的num，并赋值
+        column_name_list = cls.get_table_column_name_list()
+        if "num" in column_name_list:  # 如果有num字段，自动获取最大的num，并赋值
             data_dict["num"] = cls.get_insert_num()
+
+        cls.format_create_data(data_dict)
+        insert_dict = {key: value for key, value in data_dict.items() if key in column_name_list}
+
         with db.auto_commit():
-            db.session.add(cls(**data_dict))
+            db.session.add(cls(**insert_dict))
 
     @classmethod
     def model_create_and_get(cls, data_dict: dict):
@@ -146,6 +150,8 @@ class BaseModel(db.Model, JsonUtil):
             query_filter["url"] = data_dict["url"]
         if "method" in data_dict:
             query_filter["method"] = data_dict["method"]
+        if "project" in data_dict:
+            query_filter["project"] = data_dict["project"]
         return cls.query.filter_by(**query_filter).order_by(cls.id.desc()).first()
 
     @classmethod
@@ -367,8 +373,8 @@ class VariablesFiled(BaseModel):
 
 class HeadersFiled(BaseModel):
     __abstract__ = True
-    headers: Mapped[list] = mapped_column(JSON, default=[{"key": None, "remark": None, "value": None}],
-                                          comment="头部信息")
+    headers: Mapped[list] = mapped_column(
+        JSON, default=[{"key": None, "remark": None, "value": None}], comment="头部信息")
 
 
 class ParamsFiled(BaseModel):
@@ -379,8 +385,7 @@ class ParamsFiled(BaseModel):
 class BodyTypeFiled(BaseModel):
     __abstract__ = True
     body_type: Mapped[ApiBodyTypeEnum] = mapped_column(
-        default=ApiBodyTypeEnum.json.value,
-        comment="请求体数据类型，json/form/text/urlencoded")
+        default=ApiBodyTypeEnum.json.value, comment="请求体数据类型，json/form/text/urlencoded")
 
 
 class DataFormFiled(BaseModel):
@@ -404,36 +409,39 @@ class ExtractsFiled(BaseModel):
     extracts: Mapped[list] = mapped_column(
         JSON,
         comment="提取信息",
-        default=[{"key": None, "data_source": None, "value": None, "remark": None, "update_to_header": None}])
+        default=[{
+            "status": 0, "key": None, "data_source": None, "value": None, "remark": None, "update_to_header": None
+        }])
 
 
 class ValidatesFiled(BaseModel):
     __abstract__ = True
-    validates: Mapped[list] = mapped_column(JSON, comment="断言信息",
-                                            default=[{
-                                                "key": None,
-                                                "value": None,
-                                                "remark": None,
-                                                "data_type": None,
-                                                "data_source": None,
-                                                "validate_method": None,
-                                                "validate_type": "data"
-                                            }]
-                                            )
+    validates: Mapped[list] = mapped_column(
+        JSON, comment="断言信息",
+        default=[{
+            "status": 0,
+            "key": None,
+            "value": None,
+            "remark": None,
+            "data_type": None,
+            "data_source": None,
+            "validate_method": None,
+            "validate_type": "data"
+        }])
 
 
 class SkipIfFiled(BaseModel):
     __abstract__ = True
-    skip_if: Mapped[list] = mapped_column(JSON, comment="是否跳过的判断条件",
-                                          default=[{
-                                              "expect": None,
-                                              "data_type": None,
-                                              "skip_type": None,
-                                              "comparator": None,
-                                              "data_source": None,
-                                              "check_value": None,
-                                          }]
-                                          )
+    skip_if: Mapped[list] = mapped_column(
+        JSON, comment="是否跳过的判断条件",
+        default=[{
+            "expect": None,
+            "data_type": None,
+            "skip_type": None,
+            "comparator": None,
+            "data_source": None,
+            "check_value": None,
+        }])
 
 
 class UpFuncFiled(BaseModel):
@@ -452,7 +460,7 @@ class BaseProject(ScriptListFiled, NumFiled):
 
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, comment="服务名称")
     manager: Mapped[int] = mapped_column(Integer(), nullable=False, comment="服务/项目/app管理员")
-    business_id: Mapped[int] = mapped_column(Integer(), index=True, comment="所属业务线")
+    business_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="所属业务线")
 
     @classmethod
     def add_project(cls, form, project_env_model, run_env_model, suite_model):
@@ -479,8 +487,8 @@ class BaseProjectEnv(VariablesFiled):
     __abstract__ = True
 
     host: Mapped[str] = mapped_column(String(255), default=_main_server_host, comment="服务地址")
-    env_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=True, comment="对应环境id")
-    project_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=True, comment="所属的服务id")
+    env_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=False, comment="对应环境id")
+    project_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=False, comment="所属的服务id")
 
     @classmethod
     def create_env(cls, project_env_model=None, run_env_model=None, project_id=None, env_list=None):
@@ -559,9 +567,9 @@ class BaseModule(NumFiled):
     """ 模块基类表 """
     __abstract__ = True
 
-    name: Mapped[str] = mapped_column(String(255), nullable=True, comment="模块名")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="模块名")
     parent: Mapped[int] = mapped_column(Integer(), nullable=True, default=None, comment="上一级模块id")
-    project_id: Mapped[int] = mapped_column(Integer(), index=True, comment="所属的服务id")
+    project_id: Mapped[int] = mapped_column(Integer(), index=False, comment="所属的服务id")
 
     @classmethod
     def add_module(cls, form_dict):
@@ -574,21 +582,21 @@ class BaseApi(StatusFiled, NumFiled):
     """ 页面表 """
     __abstract__ = True
 
-    name: Mapped[str] = mapped_column(String(255), nullable=True, comment="名称")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="名称")
     desc: Mapped[str] = mapped_column(Text(), default="", nullable=True, comment="描述")
-    project_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=True, comment="所属的服务id")
-    module_id: Mapped[int] = mapped_column(Integer(), index=True, comment="所属的模块id")
+    project_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=False, comment="所属的服务id")
+    module_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=False, comment="所属的模块id")
 
 
 class BaseElement(BaseApi):
     """ 页面元素表 """
     __abstract__ = True
 
-    by: Mapped[str] = mapped_column(String(255), nullable=True, comment="定位方式")
+    by: Mapped[str] = mapped_column(String(255), nullable=False, comment="定位方式")
     element: Mapped[str] = mapped_column(Text(), default="", nullable=True, comment="元素值")
-    wait_time_out: Mapped[int] = mapped_column(Integer(), default=3, nullable=True,
-                                               comment="等待元素出现的时间，默认3秒")
-    page_id: Mapped[int] = mapped_column(Integer(), comment="所属的页面id")
+    wait_time_out: Mapped[int] = mapped_column(
+        Integer(), default=3, nullable=True, comment="等待元素出现的时间，默认3秒")
+    page_id: Mapped[int] = mapped_column(Integer(), nullable=False, comment="所属的页面id")
 
     @classmethod
     def copy_element(cls, old_page_id, new_page_id):
@@ -604,12 +612,12 @@ class BaseCaseSuite(NumFiled):
     """ 用例集基类表 """
     __abstract__ = True
 
-    name: Mapped[str] = mapped_column(String(255), nullable=True, comment="用例集名称")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="用例集名称")
     suite_type: Mapped[ApiCaseSuiteTypeEnum] = mapped_column(
         default=ApiCaseSuiteTypeEnum.base.value,
         comment="用例集类型，base: 基础用例集，api: 单接口用例集，process: 流程用例集，make_data: 造数据用例集")
     parent: Mapped[int] = mapped_column(Integer(), nullable=True, default=None, comment="上一级用例集id")
-    project_id: Mapped[int] = mapped_column(Integer(), index=True, comment="所属的服务id")
+    project_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="所属的服务id")
 
     @classmethod
     def upload_case_suite(cls, project_id, file_obj, case_model):
@@ -752,14 +760,14 @@ class BaseCase(ScriptListFiled, VariablesFiled, SkipIfFiled, NumFiled):
 
     __abstract__ = True
 
-    name: Mapped[str] = mapped_column(String(255), nullable=True, comment="用例名称")
-    desc: Mapped[str] = mapped_column(Text(), comment="用例描述")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="用例名称")
+    desc: Mapped[str] = mapped_column(Text(), nullable=False, comment="用例描述")
     status: Mapped[int] = mapped_column(
         Integer(), default=CaseStatusEnum.NOT_DEBUG_AND_NOT_RUN.value,
         comment="用例调试状态，0未调试-不执行，1调试通过-要执行，2调试通过-不执行，3调试不通过-不执行，默认未调试-不执行")
     run_times: Mapped[int] = mapped_column(Integer(), default=1, comment="执行次数，默认执行1次")
     output: Mapped[list] = mapped_column(JSON, default=[], comment="用例出参（步骤提取的数据）")
-    suite_id: Mapped[int] = mapped_column(Integer(), index=True, comment="所属的用例集id")
+    suite_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="所属的用例集id")
 
     @classmethod
     def batch_delete_step(cls, step_model):
@@ -845,13 +853,13 @@ class BaseStep(StatusFiled, SkipIfFiled, UpFuncFiled, DownFuncFiled, NumFiled):
     __abstract__ = True
 
     run_times: Mapped[int] = mapped_column(Integer(), default=1, comment="执行次数，默认执行1次")
-    name = db.Column(db.String(255), comment="步骤名称")
+    name = db.Column(db.String(255), nullable=False, comment="步骤名称")
     skip_on_fail: Mapped[int] = mapped_column(
         Integer(), default=1, nullable=True,
         comment="当用例有失败的步骤时，是否跳过此步骤，1跳过，0不跳过，默认跳过")
     data_driver: Mapped[list] = mapped_column(JSON, default=[], comment="数据驱动，若此字段有值，则走数据驱动的解析")
     quote_case: Mapped[int] = mapped_column(Integer(), nullable=True, default=None, comment="引用用例的id")
-    case_id: Mapped[int] = mapped_column(Integer(), index=True, comment="步骤所在的用例的id")
+    case_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="步骤所在的用例的id")
 
     @classmethod
     def copy_step(cls, step_id, case_id, case_model):
@@ -910,11 +918,11 @@ class BaseTask(StatusFiled, NumFiled):
     """ 定时任务基类表 """
     __abstract__ = True
 
-    name: Mapped[str] = mapped_column(String(255), comment="任务名称")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="任务名称")
     env_list: Mapped[list] = mapped_column(JSON, default=[], comment="运行环境")
     case_ids: Mapped[list] = mapped_column(JSON, default=[], comment="用例id")
     task_type: Mapped[str] = mapped_column(String(255), default="cron", comment="定时类型")
-    cron: Mapped[str] = mapped_column(String(255), nullable=True, comment="cron表达式")
+    cron: Mapped[str] = mapped_column(String(255), nullable=False, comment="cron表达式")
     is_send: Mapped[SendReportTypeEnum] = mapped_column(
         default=SendReportTypeEnum.not_send, comment="是否发送通知，1.不发送、2.始终发送、3.仅用例不通过时发送")
     merge_notify: Mapped[int] = mapped_column(
@@ -922,19 +930,19 @@ class BaseTask(StatusFiled, NumFiled):
     receive_type: Mapped[ReceiveTypeEnum] = mapped_column(
         default=ReceiveTypeEnum.ding_ding, nullable=True, comment="接收测试报告类型: ding_ding、we_chat、email")
     webhook_list: Mapped[list] = mapped_column(JSON, default=[], comment="机器人地址")
-    email_server: Mapped[str] = mapped_column(String(255), comment="发件邮箱服务器")
-    email_from: Mapped[str] = mapped_column(String(255), comment="发件人邮箱")
-    email_pwd: Mapped[str] = mapped_column(String(255), comment="发件人邮箱密码")
+    email_server: Mapped[str] = mapped_column(String(255), nullable=True, comment="发件邮箱服务器")
+    email_from: Mapped[str] = mapped_column(String(255), nullable=True, comment="发件人邮箱")
+    email_pwd: Mapped[str] = mapped_column(String(255), nullable=True, comment="发件人邮箱密码")
     email_to: Mapped[list] = mapped_column(JSON, default=[], comment="收件人邮箱")
     skip_holiday: Mapped[int] = mapped_column(Integer(), default=1, nullable=True, comment="是否跳过节假日、调休日")
     is_async: Mapped[int] = mapped_column(Integer(), default=1, comment="任务的运行机制，0：串行，1：并行，默认0")
     suite_ids: Mapped[list] = mapped_column(JSON, default=[], comment="用例集id")
     call_back: Mapped[list] = mapped_column(JSON, default=[], comment="回调给流水线")
-    project_id: Mapped[int] = mapped_column(Integer(), index=True, comment="所属的服务id")
+    project_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="所属的服务id")
     conf: Mapped[dict] = mapped_column(
         JSON, nullable=True,
         default={"browser": "chrome", "server_id": "", "phone_id": "", "no_reset": ""},
-        comment="运行配置，webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
+        comment="运行配置，ui存浏览器，app存运行服务器、手机、是否重置APP")
 
     def enable_task(self):
         try:
@@ -973,12 +981,29 @@ class BaseTask(StatusFiled, NumFiled):
         except Exception as error:
             return {"status": 0, "data": error}
 
+    def update_task_to_memory(self):
+        """ 更新任务时，同步更新内存中的任务 """
+        if getattr(self, 'update_to_memory') is True:
+            try:
+                self.disable_task()
+                self.enable_task()
+            except Exception as error:
+                pass
+
+    def delete_task_to_memory(self):
+        """ 删除任务时，同步删除内存中的任务 """
+        if getattr(self, 'delete_to_memory') is True:
+            try:
+                self.disable_task()
+            except Exception as error:
+                pass
+
 
 class BaseReport(BaseModel):
     """ 测试报告基类表 """
     __abstract__ = True
 
-    name: Mapped[str] = mapped_column(String(128), nullable=True, comment="测试报告名称")
+    name: Mapped[str] = mapped_column(String(128), nullable=False, comment="测试报告名称")
     is_passed: Mapped[int] = mapped_column(Integer(), default=1, comment="是否全部通过，1全部通过，0有报错")
     run_type: Mapped[str] = mapped_column(
         String(255), default="task", nullable=True, comment="报告类型，task/suite/case/api")
@@ -991,7 +1016,7 @@ class BaseReport(BaseModel):
         default=TriggerTypeEnum.page, comment="触发类型，pipeline:流水线、page:页面、cron:定时任务")
     batch_id: Mapped[str] = mapped_column(String(128), index=True, comment="运行批次id，用于查询报告")
     trigger_id: Mapped[Union[int, list, str]] = mapped_column(JSON, comment="运行id，用于触发重跑")
-    project_id: Mapped[int] = mapped_column(Integer(), index=True, comment="所属的服务id")
+    project_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="所属的服务id")
     summary: Mapped[dict] = mapped_column(JSON, default={}, comment="报告的统计")
 
     @classmethod
@@ -1368,7 +1393,7 @@ class FuncErrorRecord(BaseModel):
     __tablename__ = "func_error_record"
     __table_args__ = {"comment": "自定义函数执行错误记录表"}
 
-    name: Mapped[str] = mapped_column(String(255), nullable=True, comment="错误title")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="错误title")
     detail: Mapped[str] = mapped_column(Text(), default="", comment="错误详情")
 
 

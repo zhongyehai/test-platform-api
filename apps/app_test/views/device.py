@@ -65,7 +65,7 @@ def app_get_server():
 def app_add_server():
     """ 新增服务 """
     form = AddServerForm()
-    Server.model_create(form.model_dump())
+    Server.model_batch_create([data.model_dump() for data in form.data_list])
     return app.restful.add_success()
 
 
@@ -123,7 +123,7 @@ def app_get_phone():
 def app_add_phone():
     """ 新增手机 """
     form = AddPhoneForm()
-    Phone.model_create(form.model_dump())
+    Phone.model_batch_create([data.model_dump() for data in form.data_list])
     return app.restful.add_success()
 
 

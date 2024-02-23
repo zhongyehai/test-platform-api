@@ -8,7 +8,7 @@ from ..model_factory import ApiProject as Project, ApiCase as Case, ApiStep as S
 from ..forms.case import AddCaseForm, EditCaseForm, GetCaseListForm, DeleteCaseForm, GetCaseForm, RunCaseForm, \
     CopyCaseStepForm, PullCaseStepForm, ChangeCaseStatusForm, GetAssistCaseForm, GetCaseNameForm
 from utils.client.run_api_test import RunCase
-from ...base_form import ChangeSortForm
+from ...base_form import ChangeSortForm, ChangeCaseParentForm
 from ...enums import ApiCaseSuiteTypeEnum
 
 
@@ -18,7 +18,7 @@ def api_get_case_list():
     form = GetCaseListForm()
     if form.detail:
         get_filed = [Case.id, Case.name, Case.desc, Case.status, Case.skip_if, Case.variables, Case.headers,
-                     Case.output, Case.suite_id]
+                     Case.output, Case.suite_id, Case.run_times]
     else:
         get_filed = Case.get_simple_filed_list()
     pagination_data = Case.make_pagination(form, get_filed=get_filed)
@@ -85,6 +85,14 @@ def api_change_case_status():
     """ 修改用例状态（是否执行） """
     form = ChangeCaseStatusForm()
     Case.query.filter(Case.id.in_(form.id_list)).update({'status': form.status.value})
+    return app.restful.change_success()
+
+
+@api_test.login_put("/case/parent")
+def api_change_case_parent():
+    """ 修改用例归属 """
+    form = ChangeCaseParentForm()
+    Case.query.filter(Case.id.in_(form.id_list)).update({'suite_id': form.suite_id})
     return app.restful.change_success()
 
 

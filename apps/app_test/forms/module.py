@@ -2,7 +2,6 @@
 from typing import Optional
 
 from pydantic import field_validator
-from pydantic_core.core_schema import ValidationInfo
 from sqlalchemy import or_
 
 from ...base_form import BaseForm, PaginationForm, Field, required_str_field
@@ -57,31 +56,6 @@ class AddModuleForm(GetModuleTreeForm):
     parent: Optional[int] = Field(title="父级id")
     name: str = required_str_field(title="模块名")
 
-    @field_validator('project_id', 'parent', 'name')
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 模块名不重复 """
-        if info.field_name == 'name':
-            project_id, parent = info.data["project_id"], info.data["parent"]
-            cls.validate_data_is_not_exist(
-                f"当前APP中已存在名为【{value}】的模块", Module, project_id=project_id, name=value, parent=parent
-            )
-        return value
-
 
 class EditModuleForm(AddModuleForm, GetModuleForm):
     """ 修改模块的校验 """
-
-    @field_validator('id', 'name')
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 模块名不重复 """
-        if info.field_name == 'id':
-            module = cls.validate_data_is_exist("模块不存在", Module, id=value)
-            setattr(cls, 'module', module)
-        elif info.field_name == 'name':
-            data_id, project_id, parent = info.data["id"], info.data["project_id"], info.data["parent"]
-            cls.validate_data_is_not_repeat(
-                f"当前APP中已存在名为【{value}】的模块",
-                Module, data_id, project_id=project_id, name=value, parent=parent
-            )
-            cls.module.name = value  # 重新赋值
-        return value

@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 from crontab import CronTab
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
@@ -32,13 +32,10 @@ class GetTaskForm(BaseForm):
 class DeleteTaskForm(GetTaskForm):
     """ 删除任务 """
 
-    @field_validator("id")
-    def validate_id(cls, value):
-        """ 校验id存在 """
-        task = cls.validate_data_is_exist("任务不存在", Task, id=value)
-        cls.validate_is_true(task.is_disable(), "请先禁用任务")
-        setattr(cls, "task", task)
-        return value
+    def depends_validate(self):
+        """ 删除任务时，同步删除内存中的任务"""
+        old_task = getattr(self, 'task')
+        setattr(self.task, 'delete_to_memory', old_task.status == 1)
 
 
 class AddTaskForm(BaseForm):
@@ -51,10 +48,10 @@ class AddTaskForm(BaseForm):
     receive_type: ReceiveTypeEnum = Field(
         ReceiveTypeEnum.ding_ding, title="接收测试报告类型", description="ding_ding、we_chat、email")
     webhook_list: list = Field(title="接收消息机器人地址")
-    email_server: Optional[str] = Field(title="发件邮箱服务器")
-    email_to: list = Field(title="收件人邮箱")
-    email_from: Optional[str] = Field(title="发件人邮箱")
-    email_pwd: Optional[str] = Field(title="发件人邮箱密码")
+    email_server: Optional[str] = Field(None, title="发件邮箱服务器")
+    email_to: Optional[list] = Field([], title="收件人邮箱")
+    email_from: Optional[str] = Field(None, title="发件人邮箱")
+    email_pwd: Optional[str] = Field(None, title="发件人邮箱密码")
     is_send: SendReportTypeEnum = Field(
         SendReportTypeEnum.on_fail.value, title="是否发送测试报告", description="not_send/always/on_fail")
     merge_notify: Optional[int] = Field(
@@ -65,20 +62,6 @@ class AddTaskForm(BaseForm):
     conf: Optional[dict] = Field({}, title="运行配置", description="webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     call_back: Optional[Union[list, dict]] = Field(title="回调给流水线")
-
-    @field_validator("is_send")
-    def validate_is_send(cls, value, info: ValidationInfo):
-        """ 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
-        if value in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
-            receive_type = info.data["receive_type"]
-            if receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
-                cls.validate_is_true(info.data["webhook_list"], '选择了要通过机器人发送报告，则webhook地址必填')
-            elif receive_type == ReceiveTypeEnum.email.value:
-                cls.validate_email(
-                    info.data.get("email_server"), info.data.get("email_from"),
-                    info.data.get("email_pwd"), info.data.get("email_to")
-                )
-        return value
 
     @field_validator("cron")
     def validate_cron(cls, value):
@@ -93,32 +76,22 @@ class AddTaskForm(BaseForm):
             raise ValueError(f"设置的执行频率过高，请重新设置")
         return value
 
-    @field_validator("name")
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 校验任务名不重复 """
-        cls.validate_data_is_not_exist(
-            f"当前服务中，任务名【{value}】已存在", Task, project_id=info.data["project_id"], name=value)
-        return value
+    def depends_validate(self):
+        """ 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
+        if self.is_send in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
+            if self.receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
+                self.validate_is_true(self.webhook_list, '选择了要通过机器人发送报告，则webhook地址必填')
+            elif self.receive_type == ReceiveTypeEnum.email.value:
+                self.validate_email(self.email_server, self.email_from, self.email_pwd, self.email_to)
 
 
 class EditTaskForm(AddTaskForm, GetTaskForm):
     """ 编辑任务 """
 
-    @field_validator("id")
-    def validate_id(cls, value):
-        """ 校验id存在 """
-        task = cls.validate_data_is_exist(f"任务id【{value}】不存在", Task, id=value)
-        cls.validate_is_true(task.is_disable(), "任务的状态不为禁用中，请先禁用再修改")
-        setattr(cls, "task", task)
-        return value
-
-    @field_validator("name")
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 校验任务名不重复 """
-        cls.validate_data_is_not_repeat(
-            f"当前服务中，任务名【{value}】已存在",
-            Task, info.data["id"], project_id=info.data["project_id"], name=value)
-        return value
+    def depends_validate(self):
+        """ 启用中 且 cron表达式有更改的，需要更新内存中的任务"""
+        old_task = getattr(self, 'task')
+        setattr(self.task, 'update_to_memory', old_task.status == 1 and self.cron != old_task.cron)
 
 
 class RunTaskForm(GetTaskForm):

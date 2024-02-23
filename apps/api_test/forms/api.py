@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 from typing import Optional, List, Union
 
-from pydantic import field_validator, ValidationInfo
-# from pydantic_core.core_schema import ValidationInfo
+from pydantic import field_validator
 
 from ...base_form import BaseForm, PaginationForm, Field, HeaderModel, ParamModel, DataFormModel, ExtractModel, \
-    ValidateModel, required_str_field
+    ValidateModel, required_str_field, ApiListModel
 from ..model_factory import ApiCase as Case, ApiStep as Step, ApiMsg as Api
 from ...enums import ApiMethodEnum, ApiBodyTypeEnum, DataStatusEnum
 
@@ -47,13 +46,26 @@ class DeleteApiForm(GetApiForm):
 
 class AddApiForm(BaseForm):
     """ 添加接口信息的校验 """
+    project_id: int = Field(..., title="服务id")
+    module_id: int = Field(..., title="模块id")
+    api_list: List[ApiListModel] = Field(..., title="接口列表")
+
+    def depends_validate(self):
+        api_data_list = [{
+            "project_id": self.project_id, "module_id": self.module_id, **api.model_dump()
+        } for api in self.api_list]
+        self.api_list = api_data_list
+
+
+class EditApiForm(GetApiForm):
+    """ 修改接口信息 """
     addr: str = required_str_field(title="接口地址")
     extracts: List[ExtractModel] = Field(title="提取信息")
     validates: List[ValidateModel] = Field(title="断言信息")
     project_id: int = Field(..., title="服务id")
     module_id: int = Field(..., title="模块id")
     name: str = required_str_field(title="接口名")
-    desc: Optional[str] = Field(title="备注")
+    desc: Optional[str] = Field(None, title="备注")
     up_func: Optional[list] = Field([], title="前置条件")
     down_func: Optional[list] = Field([], title="后置条件")
     method: ApiMethodEnum = Field(ApiMethodEnum.GET.value, title="请求方法")
@@ -97,35 +109,11 @@ class AddApiForm(BaseForm):
         cls.validate_base_validates([validate.model_dump() for validate in value])
         return value
 
-    @field_validator('data_form')
-    def validate_data_form(cls, value, info: ValidationInfo):
-        data_form_value = [data_form.model_dump() for data_form in value]
-        if info.data["body_type"] == ApiBodyTypeEnum.form.value:
-            cls.validate_variable_format(data_form_value, msg_title='form-data')
+    def depends_validate(self):
+        data_form_value = [data_form.model_dump() for data_form in self.data_form]
+        if self.body_type == ApiBodyTypeEnum.form.value:
+            self.validate_variable_format(data_form_value, msg_title='form-data')
         return data_form_value
-
-    @field_validator('module_id', 'name')
-    def validate_name(cls, value, info: ValidationInfo):
-        if info.field_name == 'name':
-            cls.validate_data_is_not_exist(
-                f"当前模块下，名为【{value}】的接口已存在", Api, name=value, module_id=info.data["module_id"])
-        return value
-
-
-class EditApiForm(AddApiForm, GetApiForm):
-    """ 修改接口信息 """
-
-    @field_validator('id', 'module_id', 'name')
-    def validate_name(cls, value, info: ValidationInfo):
-        if info.field_name == 'id':
-            api = cls.validate_data_is_exist("接口不存在", Api, id=value)
-            setattr(cls, 'api', api)
-        elif info.field_name == 'name':
-            cls.validate_data_is_not_repeat(
-                f"当前模块下，名为【{value}】的接口已存在",
-                Api, info.data["id"], name=value, module_id=info.data["module_id"]
-            )
-        return value
 
 
 class GetApiFromForm(BaseForm):
@@ -133,19 +121,14 @@ class GetApiFromForm(BaseForm):
     id: Optional[str] = Field(None, title="接口id")
     api_addr: Optional[str] = Field(None, title="接口地址")
 
-    @field_validator("id")
-    def validate_api_id(cls, value):
-        cls.validate_data_is_exist("接口不存在", Api, id=value)
-        setattr(cls, 'api_id_list', [value])
-        return value
-
-    @field_validator("api_addr")
-    def validate_addr(cls, value, info: ValidationInfo):
-        if not info.data["id"]:
-            cls.validate_is_true(value, "请传入接口地址或接口id")
-            api_id_list = Api.db.session.query(Api.id).filter(Api.addr.like(f"%{value}%")).all()
-            setattr(cls, 'api_id_list', [api_id[0] for api_id in api_id_list])
-        return value
+    def depends_validate(self):
+        if self.id:
+            self.validate_data_is_exist("接口不存在", Api, id=self.id)
+            setattr(self, 'api_id_list', [self.id])
+        else:
+            self.validate_is_true(self.api_addr, "请传入接口地址或接口id")
+            api_id_list = Api.db.session.query(Api.id).filter(Api.addr.like(f"%{self.api_addr}%")).all()
+            setattr(self, 'api_id_list', [api_id[0] for api_id in api_id_list])
 
 
 class ChangeLevel(GetApiForm):

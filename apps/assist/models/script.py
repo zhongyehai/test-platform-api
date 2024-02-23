@@ -16,7 +16,7 @@ class Script(NumFiled):
     __tablename__ = "python_script"
     __table_args__ = {"comment": "python脚本"}
 
-    name: Mapped[str] = mapped_column(String(128), nullable=True, index=True, unique=True, comment="脚本名称")
+    name: Mapped[str] = mapped_column(String(128), nullable=False, index=True, unique=True, comment="脚本名称")
     script_data: Mapped[str] = mapped_column(LONGTEXT, default="", comment="脚本代码")
     desc: Mapped[str] = mapped_column(Text(), comment="函数文件描述")
     script_type: Mapped[str] = mapped_column(

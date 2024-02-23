@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from pydantic import Field, field_validator
 
@@ -12,8 +12,8 @@ from ..model_factory import AppUiReport as Report, AppUiReportStep as ReportStep
 class GetReportListForm(PaginationForm):
     """ 查询报告 """
     project_id: int = Field(..., title="服务id")
-    report_name: Optional[str] = Field(None, title="报告名")
-    create_user: Optional[int] = Field(None, title="创建人")
+    name: Optional[str] = Field(None, title="报告名")
+    create_user: Optional[Union[int, str]] = Field(None, title="创建人")
     trigger_type: Optional[str] = Field(None, title="触发类型")
     run_type: Optional[str] = Field(None, title="执行类型")
     is_passed: Optional[int] = Field(None, title="是否通过")
@@ -22,8 +22,8 @@ class GetReportListForm(PaginationForm):
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = [Report.project_id == self.project_id]
-        if self.report_name:
-            filter_list.append(Report.name.like(f'%{self.report_name}%'))
+        if self.name:
+            filter_list.append(Report.name.like(f'%{self.name}%'))
         if self.create_user:
             filter_list.append(Report.create_user == self.create_user)
         if self.trigger_type:

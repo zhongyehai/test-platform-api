@@ -28,7 +28,7 @@ def app_case_suite_upload():
     return app.restful.fail("文件格式错误")
 
 
-@app_test.login_post("/suite/list")
+@app_test.login_get("/suite/list")
 def app_get_case_suite_list():
     """ 用例集list """
     form = GetCaseSuiteListForm()

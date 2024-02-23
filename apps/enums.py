@@ -18,6 +18,7 @@ class AuthType(str, BaseEnum):
 
 class QueueTypeEnum(str, BaseEnum):
     """ 消息队列类型 """
+    rabbit_mq = "rabbit_mq"
     rocket_mq = "rocket_mq"
     redis = "redis"
 

@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from pydantic import field_validator, ValidationInfo
+from pydantic import field_validator
 
 from ...base_form import BaseForm, Field, PaginationForm, AddCaseDataForm, VariablesModel, SkipIfModel, HeaderModel, \
     required_str_field
@@ -72,16 +72,15 @@ class ChangeCaseStatusForm(BaseForm):
 
 
 class CopyCaseStepForm(BaseForm):
-    """ 复制用例的步骤 """
+    """ 复制指定用例的步骤到当前用例下 """
 
     from_case: int = Field(..., title="复制源用例id")
     to_case: int = Field(..., title="当前用例id")
 
-    @field_validator('to_case')
-    def validate_to_case(cls, value, info: ValidationInfo):
-        cls.validate_is_true(
-            len(Case.query.filter(Case.id.in_([info.data["from_case"], value])).all()) == 2, "用例不存在")
-        return value
+    def depends_validate(self):
+        if self.from_case != self.to_case:
+            self.validate_is_true(
+                len(Case.query.filter(Case.id.in_([self.from_case, self.to_case])).all()) == 2, "用例不存在")
 
 
 class PullCaseStepForm(BaseForm):
@@ -105,22 +104,13 @@ class PullCaseStepForm(BaseForm):
 class AddCaseForm(BaseForm):
     """ 添加用例的校验 """
     suite_id: int = Field(..., title="用例集id")
-    case_list: List[AddCaseDataForm] = required_str_field(title="用例")
+    case_list: List[AddCaseDataForm] = required_str_field(title="用例列表")
 
-    @field_validator('case_list')
-    def validate_case_list(cls, vlue, info: ValidationInfo):
-        """ 用例名不重复 """
-        suite_id, case_list, name_list = info.data["suite_id"], [], []
-        for index, case in enumerate(vlue):
-            cls.validate_is_true(case.name, f'第【{index + 1}】行，用例名必传')
-            if case.name in name_list:
-                raise ValueError(f'第【{index + 1}】行，与第【{name_list.index(case.name) + 1}】行，用例名重复')
-            cls.validate_is_true(case.desc, f'第【{index + 1}】行，用例描述必传')
-            cls.validate_data_is_not_exist(
-                f'第【{index + 1}】行，用例名【{case.name}】已存在', Case, name=case.name, suite_id=suite_id)
-            name_list.append(case.name)
-            case_list.append({"suite_id": suite_id, **case.model_dump()})  # 保存用例数据，并加上用例集id
-        return case_list
+    def depends_validate(self):
+        case_data_list = []
+        for index, case in enumerate(self.case_list):
+            case_data_list.append({"suite_id": self.suite_id, **case.model_dump()})  # 保存用例数据，并加上用例集id
+        self.case_list = case_data_list
 
 
 class EditCaseForm(GetCaseForm):
@@ -134,58 +124,49 @@ class EditCaseForm(GetCaseForm):
     headers: List[HeaderModel] = required_str_field(title="头部信息")
     run_times: int = Field(1, title="运行次数")
 
-    @field_validator('suite_id')
-    def validate_suite_id(cls, value):
-        project = Project.query.filter(CaseSuite.id == value, Project.id == CaseSuite.project_id).first()
-        cls.validate_is_true(project, "用例集不存在")
+    def depends_validate(self):
+        self.validate_suite_id()
+        self.validate_script_list()
+        self.validate_variables()
+        self.validate_headers()
+
+    def validate_suite_id(self):
+        project = Project.query.filter(CaseSuite.id == self.suite_id, Project.id == CaseSuite.project_id).first()
+        self.validate_is_true(project, "用例集不存在")
         project_env = ProjectEnv.query.filter_by(project_id=project.id).first()
-        setattr(cls, 'project', project)
-        setattr(cls, 'project_env', project_env)
-        return value
+        setattr(self, 'project', project)
+        setattr(self, 'project_env', project_env)
 
-    @field_validator('name')
-    def validate_name(cls, value, info: ValidationInfo):
-        """ 同一用例集下用例名不重复 """
-        cls.validate_data_is_not_repeat(
-            f"用例名【{value}】已存在", Case, info.data["id"], name=value, suite_id=info.data["suite_id"])
-        return value
-
-    @field_validator('script_list')
-    def validate_script_list(cls, value):
+    def validate_script_list(self):
         # 合并项目选择的自定义函数和用例选择的脚本文件
-        all_script_list = cls.project.script_list
-        all_script_list.extend(value)
+        all_script_list = getattr(self, 'project').script_list
+        all_script_list.extend(self.script_list)
         all_func_name = Script.get_func_by_script_id(all_script_list)
-        setattr(cls, 'all_func_name', all_func_name)
-        return value
+        setattr(self, 'all_func_name', all_func_name)
 
-    @field_validator('variables')
-    def validate_variables(cls, value):
+    def validate_variables(self):
         # 合并环境的变量和case的变量
-        variables = cls.project_env.variables
-        current_variables = [variable.model_dump() for variable in value]
+        variables = getattr(self, 'project_env').variables
+        current_variables = [variable.model_dump() for variable in self.variables]
         variables.extend(current_variables)
         all_variables = {variable.get("key"): variable.get("value") for variable in variables if variable.get("key")}
-        setattr(cls, 'all_variables', all_variables)
+        setattr(self, 'all_variables', all_variables)
 
         # 1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
         # 2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
-        cls.validate_variable_format(current_variables)  # 校验格式
-        cls.validate_func(cls.all_func_name, content=cls.dumps(current_variables))  # 校验引用的自定义函数
-        cls.validate_variable(cls.all_variables, cls.dumps(current_variables), "自定义变量")  # 校验变量
-        return current_variables
+        self.validate_variable_format(current_variables)  # 校验格式
+        self.validate_func(getattr(self, 'all_func_name'), content=self.dumps(current_variables))  # 校验引用的自定义函数
+        self.validate_variable(all_variables, self.dumps(current_variables), "自定义变量")  # 校验变量
 
-    @field_validator('headers')
-    def validate_headers(cls, value):
+    def validate_headers(self):
         """ 头部参数的校验
         1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
-        headers = [header.model_dump() for header in value]
-        cls.validate_header_format(headers)  # 校验格式
-        cls.validate_func(cls.all_func_name, content=cls.dumps(headers))  # 校验引用的自定义函数
-        cls.validate_variable(cls.all_variables, cls.dumps(headers), "头部信息")  # 校验引用的变量
-        return value
+        headers = [header.model_dump() for header in self.headers]
+        self.validate_header_format(headers)  # 校验格式
+        self.validate_func(getattr(self, 'all_func_name'), content=self.dumps(headers))  # 校验引用的自定义函数
+        self.validate_variable(getattr(self, 'all_variables'), self.dumps(headers), "头部信息")  # 校验引用的变量
 
 
 class RunCaseForm(BaseForm):
@@ -195,33 +176,31 @@ class RunCaseForm(BaseForm):
     temp_variables: Optional[dict] = Field(title="临时指定参数")
     is_async: int = Field(default=0, title="执行模式", description="0：用例维度串行执行，1：用例维度并行执行")
 
-    @field_validator("temp_variables")
-    def validate_temp_variables(cls, value, info: ValidationInfo):
+    def depends_validate(self):
         """ 公共变量参数的校验
         1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
-        case_id_list = info.data["case_id_list"]
-        if value and len(case_id_list) == 1:
-            variables, headers = value.get("variables", []), value.get("headers", [])
+        if self.temp_variables and len(self.case_id_list) == 1:
+            variables, headers = self.temp_variables.get("variables", []), self.temp_variables.get("headers", [])
 
             # 1、先校验数据格式
             if len(variables) > 0:  # 校验变量
-                cls.validate_variable_format(variables)  # 校验格式
+                self.validate_variable_format(variables)  # 校验格式
 
             if len(headers) > 0:  # 校验头部参数
-                cls.validate_header_format(headers)  # 校验格式
+                self.validate_header_format(headers)  # 校验格式
 
             # 2、校验数据引用是否合法
             suite_id, case_script_list = Case.db.session.query(
-                Case.suite_id, Case.script_list).filter(Case.id == case_id_list[0]).first()
+                Case.suite_id, Case.script_list).filter(Case.id == self.case_id_list[0]).first()
             project = Project.query.filter(CaseSuite.id == suite_id, Project.id == CaseSuite.project_id).first()
 
             # 自定义函数
             project_script_id_list = project.script_list
             project_script_id_list.extend(case_script_list)
             all_func_name = Script.get_func_by_script_id(project_script_id_list)
-            cls.validate_func(all_func_name, content=cls.dumps(variables))  # 校验引用的自定义函数
+            self.validate_func(all_func_name, content=self.dumps(variables))  # 校验引用的自定义函数
 
             # 变量
             env_variables = ProjectEnv.get_first(project_id=project.id).variables
@@ -230,9 +209,8 @@ class RunCaseForm(BaseForm):
                 variable.get("key"): variable.get("value") for variable in env_variables if variable.get("key")
             }
             if len(variables) > 0:  # 校验变量
-                cls.validate_variable(all_variables, cls.dumps(variables), "自定义变量")  # 校验变量
+                self.validate_variable(all_variables, self.dumps(variables), "自定义变量")  # 校验变量
 
             if len(headers) > 0:  # 校验头部参数
-                cls.validate_func(all_func_name, content=cls.dumps(headers))  # 校验引用的自定义函数
-                cls.validate_variable(all_variables, cls.dumps(headers), "头部信息")  # 校验引用的变量
-        return value
+                self.validate_func(all_func_name, content=self.dumps(headers))  # 校验引用的自定义函数
+                self.validate_variable(all_variables, self.dumps(headers), "头部信息")  # 校验引用的变量

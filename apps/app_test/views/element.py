@@ -61,6 +61,7 @@ def app_upload_element():
     file, page, user_id = request.files.get("file"), Page.get_first(id=request.form.get("id")), g.user_id
     if not page:
         return app.restful.fail("页面不存在")
+    template_device = Project.db.session.query(Project.template_device).filter_by(id=page.project_id).first()[0]
     if file and file.filename.endswith("xls"):
         # [{"元素名称": "账号输入框", "定位方式": "根据id属性定位", "元素表达式": "account", "等待元素出现的超时时间": 10.0}]
         excel_data = parse_file_content(file.read())
@@ -79,6 +80,8 @@ def app_upload_element():
                     new_element.project_id = page.project_id
                     new_element.module_id = page.module_id
                     new_element.page_id = page.id
+                    new_element.template_device = template_device
+                    new_element.create_user = new_element.update_user = g.user_id
                     element_list.append(new_element)
             Element.db.session.add_all(element_list)
         return app.restful.upload_success()

@@ -56,6 +56,7 @@ def ui_change_task():
     """ 修改定时任务 """
     form = EditTaskForm()
     form.task.model_update(form.model_dump())
+    form.task.update_task_to_memory()
     return app.restful.change_success()
 
 
@@ -109,7 +110,7 @@ def ui_run_task():
             report_model=Report,
             trigger_id=form.id,
             case_id_list=case_id_list,
-            run_type="webUi",
+            run_type="ui",
             runner=RunCase,
             extend_data=form.extend,
             task_dict=form.task.to_dict()

@@ -78,7 +78,7 @@ def assist_debug_script():
         sys.stdout = sys.__stdout__  # 恢复输出到console
         app.logger.info(str(e))
         error_data = "\n".join("{}".format(traceback.format_exc()).split("↵"))
-        return app.restful.fail(msg="语法错误，请检查", result={
+        return app.restful.success(msg="语法错误，请检查", result={
             "env": form.env,
             "expression": form.expression,
             "result": error_data,

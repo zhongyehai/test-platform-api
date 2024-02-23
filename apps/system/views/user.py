@@ -13,7 +13,7 @@ def system_manage_get_user_list():
     """ 用户列表 """
     form = GetUserListForm()
     if form.detail:  # 获取用户详情列表
-        get_filed = [User.id, User.name, User.account, User.status, User.create_time]
+        get_filed = [User.id, User.name, User.account, User.status, User.create_time, User.business_list]
     else:
         get_filed = User.get_simple_filed_list()
     return app.restful.get_success(User.make_pagination(form, get_filed=get_filed))
@@ -71,7 +71,9 @@ def system_manage_change_status():
 def system_manage_get_user():
     """ 获取用户 """
     form = GetUserForm()
-    return app.restful.get_success({"account": form.user.account, "name": form.user.name, "role_id": form.user.role_id})
+    return app.restful.get_success({
+        "id": form.user.id, "account": form.user.account, "name": form.user.name, "role_list": form.user.roles
+    })
 
 
 @system_manage.permission_post("/user")

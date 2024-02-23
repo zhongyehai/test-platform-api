@@ -16,9 +16,9 @@ class Permission(NumFiled):
     __tablename__ = "system_permission"
     __table_args__ = {"comment": "权限表"}
 
-    name: Mapped[str] = mapped_column(String(64), unique=True, comment="权限名称")
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="权限名称")
     desc: Mapped[str] = mapped_column(String(256), nullable=True, comment="权限备注")
-    source_addr: Mapped[str] = mapped_column(String(256), comment="权限路径")
+    source_addr: Mapped[str] = mapped_column(String(256), nullable=False, comment="权限路径")
     source_type: Mapped[str] = mapped_column(String(256), default="api", comment="权限类型， front前端, api后端")
     source_class: Mapped[str] = mapped_column(
         String(256), default="api",
@@ -56,7 +56,7 @@ class Role(BaseModel):
     __tablename__ = "system_role"
     __table_args__ = {"comment": "角色表"}
 
-    name: Mapped[str] = mapped_column(String(30), unique=True, comment="角色名称")
+    name: Mapped[str] = mapped_column(String(30), nullable=False, unique=True, comment="角色名称")
     extend_role: Mapped[list] = mapped_column(JSON, default=[], comment="继承其他角色的权限")
     desc: Mapped[str] = mapped_column(String(256), comment="权限备注")
 
@@ -113,8 +113,8 @@ class RolePermissions(BaseModel):
     __tablename__ = "system_role_permissions"
     __table_args__ = {"comment": "角色权限映射表"}
 
-    role_id: Mapped[int] = mapped_column(Integer(), comment="角色id")
-    permission_id: Mapped[int] = mapped_column(Integer(), comment="权限id")
+    role_id: Mapped[int] = mapped_column(Integer(), nullable=False, comment="角色id")
+    permission_id: Mapped[int] = mapped_column(Integer(), nullable=False, comment="权限id")
 
 
 class User(BaseModel):
@@ -123,9 +123,9 @@ class User(BaseModel):
     __table_args__ = {"comment": "用户表"}
 
     sso_user_id: Mapped[str] = mapped_column(String(50), index=True, nullable=True, comment="该用户在oss数据库的账号")
-    account: Mapped[str] = mapped_column(String(50), unique=True, index=True, comment="账号")
+    account: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True, comment="账号")
     password_hash: Mapped[str] = mapped_column(String(255), comment="密码")
-    name: Mapped[str] = mapped_column(String(12), comment="姓名")
+    name: Mapped[str] = mapped_column(String(12), nullable=False, comment="姓名")
     status: Mapped[int] = mapped_column(Integer(), default=1, comment="状态，1为启用，0为冻结")
     business_list: Mapped[str] = mapped_column(JSON, default=[], comment="用户拥有的业务线")
 
@@ -218,5 +218,5 @@ class UserRoles(BaseModel):
     __tablename__ = "system_user_roles"
     __table_args__ = {"comment": "用户角色映射表"}
 
-    user_id: Mapped[str] = mapped_column(Integer(), comment="用户id")
-    role_id: Mapped[str] = mapped_column(Integer(), comment="角色id")
+    user_id: Mapped[str] = mapped_column(Integer(), nullable=False, comment="用户id")
+    role_id: Mapped[str] = mapped_column(Integer(), nullable=False, comment="角色id")

@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 from sqlalchemy import or_
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
@@ -116,11 +116,8 @@ class AddWeeklyForm(BaseForm):
     start_time: Optional[str] = Field(title="开始时间")
     end_time: Optional[str] = Field(title="结束时间")
 
-    @field_validator("project_id")
-    def validate_project_id(cls, value, info: ValidationInfo):
-        """ 校验产品id或者项目id必须存在 """
-        cls.validate_is_true(value or info.data["product_id"], '请选择产品或者项目')
-        return value
+    def depends_validate(self):
+        self.validate_is_true(self.project_id or self.product_id, '请选择产品或者项目')
 
     @field_validator("task_item")
     def validate_task_item(cls, value):

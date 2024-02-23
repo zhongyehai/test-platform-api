@@ -56,6 +56,7 @@ def app_change_task():
     """ 修改定时任务 """
     form = EditTaskForm()
     form.task.model_update(form.model_dump())
+    form.task.update_task_to_memory()
     return app.restful.change_success()
 
 
@@ -63,6 +64,7 @@ def app_change_task():
 def app_delete_task():
     """ 删除定时任务 """
     form = DeleteTaskForm()
+    form.task.delete_task_to_memory()
     form.task.delete()
     return app.restful.delete_success()
 
@@ -93,6 +95,7 @@ def app_disable_task():
 def app_run_task():
     """ 单次运行定时任务 """
     form = RunTaskForm()
+    form.env_list = form.env_list or form.task.env_list
     case_id_list = CaseSuite.get_case_id(Case, form.task.project_id, form.task.suite_ids, form.task.case_ids)
     appium_config = RunCaseBusiness.get_appium_config(form.task.project_id, form)
     batch_id = Report.get_batch_id()

@@ -18,13 +18,13 @@ class RunCase(RunTestRunner):
     """ 运行测试用例 """
 
     def __init__(self, case_id_list, temp_variables=None, task_dict={}, report_id=None, is_async=True, browser=True,
-                 env_code="test", env_name=None, appium_config={}, run_type="web_ui", extend={}, **kwargs):
+                 env_code="test", env_name=None, appium_config={}, run_type="ui", extend={}, **kwargs):
 
         super().__init__(report_id=report_id, env_code=env_code, env_name=env_name, run_type=run_type, extend=extend,
                          task_dict=task_dict)
         self.temp_variables = temp_variables
         self.run_type = run_type
-        if run_type == "webUi":
+        if run_type == "ui":
             self.suite_model = WebUiCaseSuite
             self.step_model = WebUiStep
             self.report_step_model = WebUiReportStep
@@ -54,7 +54,7 @@ class RunCase(RunTestRunner):
         """ 把解析放到异步线程里面 """
         with create_app().app_context():  # 手动入栈
             Script.create_script_file(self.env_code)  # 创建所有函数文件
-            if self.run_type != "webUi":
+            if self.run_type != "ui":
                 self.device_dict = {device.id: device.to_dict() for device in AppUiRunPhone.query.all()}
             self.report = self.report_model.get_first(id=self.report_id)
             self.parse_all_case()
@@ -83,7 +83,7 @@ class RunCase(RunTestRunner):
                 "execute_name": step.execute_name,
                 "action": step.execute_type,
                 "by_type": element.by,
-                "screen": None if self.run_type == 'webUi' else self.device_dict[element.template_device]["screen"],
+                "screen": None if self.run_type == 'ui' else self.device_dict[element.template_device]["screen"],
                 # 如果是打开页面，则设置为项目域名+页面地址
                 "element": build_url(project.host, element.element) if element.by == "url" else element.element,
                 "text": step.send_keys,
@@ -259,7 +259,7 @@ class RunCase(RunTestRunner):
                     },
                     "step_list": []
                 }
-                if self.run_type == 'webUi':
+                if self.run_type == 'ui':
                     # 用例格式模板, # 火狐：geckodriver
                     case_template["config"]["browser_type"] = self.browser
                     case_template["config"]["browser_path"] = FileUtil.get_driver_path(self.browser)

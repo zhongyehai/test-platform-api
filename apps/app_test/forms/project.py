@@ -2,8 +2,7 @@
 from typing import Optional, Union, List
 
 from flask import g
-from sqlalchemy import or_
-from pydantic import field_validator, ValidationInfo
+from pydantic import field_validator
 
 from ...base_form import BaseForm, Field, PaginationForm, ValidateModel, required_str_field
 from ..model_factory import AppUiProject as Project, AppUiProjectEnv as ProjectEnv, AppUiModule as Module, \
@@ -85,21 +84,17 @@ class GetEnvForm(BaseForm):
     project_id: int = Field(..., title="项目id")
     env_id: int = Field(..., title="环境id")
 
-    @field_validator('project_id', 'env_id')
-    def validate_env_id(cls, value, info: ValidationInfo):
-        if info.field_name == 'env_id':
-            project_id = info.data["project_id"]
-            env_data = ProjectEnv.get_first(project_id=project_id, env_id=value)
-            if not env_data:  # 如果没有就插入一条记录， 并且自动同步当前APP已有的环境数据
-                project_other_env = ProjectEnv.get_first(project_id=project_id)
-                if project_other_env:
-                    insert_env_data = project_other_env.to_dict()
-                    insert_env_data["env_id"] = value
-                else:
-                    insert_env_data = {"env_id": value, "project_id": project_id}
-                ProjectEnv.model_create(insert_env_data)
-            setattr(cls, "env_data", env_data)
-        return value
+    def depends_validate(self):
+        env_data = ProjectEnv.get_first(project_id=self.project_id, env_id=self.env_id)
+        if not env_data:  # 如果没有就插入一条记录， 并且自动同步当前服务已有的环境数据
+            project_other_env = ProjectEnv.get_first(project_id=self.project_id)
+            if project_other_env:
+                insert_env_data = project_other_env.to_dict()
+                insert_env_data["env_id"] = self.env_id
+            else:
+                insert_env_data = {"env_id": self.env_id, "project_id": self.project_id}
+            ProjectEnv.model_create(insert_env_data)
+        setattr(self, "env_data", env_data)
 
 
 class EditEnv(GetEnvForm):
@@ -107,23 +102,32 @@ class EditEnv(GetEnvForm):
     id: int = Field(..., title="环境数据id")
     variables: List[ValidateModel] = Field(title="变量")
 
-    @field_validator('variables')
-    def validate_variables(cls, value):
+    @field_validator('id')
+    def validate_id(cls, value):
+        project_env = cls.validate_data_is_exist("环境不存在", ProjectEnv, id=value)
+        setattr(cls, 'project_env', project_env)
+        return value
+
+    def depends_validate(self):
+        self.validate_project_id()
+        self.validate_variables()
+
+    def validate_project_id(self):
+        project = self.validate_data_is_exist("app不存在", Project, id=self.project_id)
+        all_func_name = Script.get_func_by_script_id(project.script_list)
+        setattr(self, 'all_func_name', all_func_name)
+
+    def validate_variables(self):
         """ 公共变量参数的校验
         1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
-        all_variables = {variable.key: variable.value for variable in value if variable.key}
-        variables = [variable.model_dump() for variable in value]
-        cls.validate_variable_format(variables)  # 校验格式
-
-        script_list = Project.query.with_entities(
-            Project.script_list).filter(id=getattr(cls, 'env_data').project_id).first()
-        all_func_name = Script.get_func_by_script_id(script_list)
-        cls.validate_func(all_func_name, content=cls.dumps(variables))  # 校验引用的自定义函数
-        cls.validate_variable(all_variables, cls.dumps(variables), "自定义变量")  # 校验变量
-        setattr(cls, 'all_variables', all_variables)
-        return value
+        all_variables = {variable.key: variable.value for variable in self.variables if variable.key}
+        variables = [variable.model_dump() for variable in self.variables]
+        self.validate_variable_format(variables)  # 校验格式
+        self.validate_func(getattr(self, 'all_func_name'), content=self.dumps(variables))  # 校验引用的自定义函数
+        self.validate_variable(all_variables, self.dumps(variables), "自定义变量")  # 校验变量
+        setattr(self, 'all_variables', all_variables)
 
 
 class SynchronizationEnvForm(BaseForm):
@@ -132,15 +136,16 @@ class SynchronizationEnvForm(BaseForm):
     env_from: int = Field(..., title="环境数据源")
     env_to: list = required_str_field(title="要同步到环境")
 
-    @field_validator('project_id')
-    def validate_project_id(cls, value):
-        project = cls.validate_data_is_exist("服务不存在", Project, id=value)
-        setattr(cls, "project", project)
-        return value
+    def depends_validate(self):
+        self.validate_project_id()
+        self.validate_env_from()
 
-    @field_validator('env_from')
-    def validate_env_from(cls, value):
-        env_from_data = cls.validate_data_is_exist(
-            "环境不存在", ProjectEnv, project_id=getattr(cls, 'project').id, env_id=value)
-        setattr(cls, "env_from_data", env_from_data)
-        return value
+    def validate_project_id(self):
+        project = self.validate_data_is_exist("服务不存在", Project, id=self.project_id)
+        setattr(self, "project", project)
+
+    def validate_env_from(self):
+        self.validate_project_id()
+        env_from_data = self.validate_data_is_exist(
+            "环境不存在", ProjectEnv, project_id=getattr(self, 'project').id, env_id=self.env_from)
+        setattr(self, "env_from_data", env_from_data)

@@ -39,7 +39,7 @@ class DeleteConfigTypeForm(GetConfigTypeForm):
 class PostConfigTypeForm(BaseForm):
     """ 新增配置类型表单校验 """
     name: str = required_str_field(title="配置类型名")
-    desc: Optional[str] = Field(title="备注")
+    desc: Optional[str] = Field('', title="备注")
 
 
 class PutConfigTypeForm(GetConfigTypeForm, PostConfigTypeForm):

@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from pydantic import Field, field_validator
 
@@ -12,8 +12,8 @@ from ..model_factory import ApiReport as Report, ApiReportStep as ReportStep, Ap
 class GetReportListForm(PaginationForm):
     """ 查询报告 """
     project_id: int = Field(..., title="服务id")
-    report_name: Optional[str] = Field(None, title="报告名")
-    create_user: Optional[int] = Field(None, title="创建人")
+    name: Optional[str] = Field(None, title="报告名")
+    create_user: Optional[Union[int, str]] = Field(None, title="创建人")
     trigger_type: Optional[str] = Field(None, title="触发类型")
     run_type: Optional[str] = Field(None, title="执行类型")
     is_passed: Optional[int] = Field(None, title="是否通过")
@@ -22,8 +22,8 @@ class GetReportListForm(PaginationForm):
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = [Report.project_id == self.project_id]
-        if self.report_name:
-            filter_list.append(Report.name.like(f'%{self.report_name}%'))
+        if self.name:
+            filter_list.append(Report.name.like(f'%{self.name}%'))
         if self.create_user:
             filter_list.append(Report.create_user == self.create_user)
         if self.trigger_type:
@@ -89,13 +89,16 @@ class GetReportStepListForm(PaginationForm):
 
 class GetReportStepForm(BaseForm):
     """ 获取报告步骤数据 """
-    id: int = Field(..., title="报告步骤id")
+    id: Optional[int] = Field(None, title="报告步骤id，二选一")
+    report_id: Optional[int] = Field(None, title="测试报告id，二选一")
 
-    @field_validator("id")
-    def validate_id(cls, value):
-        report_step = cls.validate_data_is_exist("数据不存在", ReportStep, id=value)
-        setattr(cls, "report_step", report_step)
-        return value
+    def depends_validate(self):
+        self.validate_is_true(self.id or self.report_id, '报告id或者报告步骤id必传')
+        if self.id:
+            report_step = self.validate_data_is_exist("数据不存在", ReportStep, id=self.id)
+        else:
+            report_step = self.validate_data_is_exist("数据不存在", ReportStep, report_id=self.report_id)
+        setattr(self, "report_step", report_step)
 
 
 class GetReportShowIdForm(BaseForm):

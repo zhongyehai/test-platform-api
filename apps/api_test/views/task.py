@@ -56,6 +56,7 @@ def api_change_task():
     """ 修改定时任务 """
     form = EditTaskForm()
     form.task.model_update(form.model_dump())
+    form.task.update_task_to_memory()
     return app.restful.change_success()
 
 

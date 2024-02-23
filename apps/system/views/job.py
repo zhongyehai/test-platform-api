@@ -187,7 +187,7 @@ class JobFuncs:
 def system_manage_get_job_list():
     """ 获取定时任务列表 """
     job_query = ApschedulerJobs.db.session.query(ApschedulerJobs.id, ApschedulerJobs.next_run_time).filter().all()
-    return app.restful.app.restful.get_success([{"id": job[0], "next_run_time": job[1]} for job in job_query])
+    return app.restful.get_success([{"id": job[0], "next_run_time": job[1]} for job in job_query])
 
 
 @system_manage.admin_get("/job/func-list")

@@ -12,7 +12,7 @@ class WeeklyConfigModel(BaseModel):
     __tablename__ = "test_work_weekly_config"
     __table_args__ = {"comment": "周报配置表"}
 
-    name: Mapped[str] = mapped_column(String(255), nullable=True, comment="名字")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="名字")
     parent: Mapped[int] = mapped_column(
         Integer(), nullable=True, default=None, comment="上一级的id，有上一级则为项目，否则为产品")
     desc: Mapped[str] = mapped_column(Text(), comment="备注")
@@ -84,13 +84,13 @@ class WeeklyModel(BaseModel):
     __tablename__ = "test_work_weekly"
     __table_args__ = {"comment": "周报明细表"}
 
-    product_id: Mapped[int] = mapped_column(Integer(), index=True, comment="产品id")
-    project_id: Mapped[int] = mapped_column(Integer(), index=True, comment="项目id")
+    product_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="产品id")
+    project_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="项目id")
     version: Mapped[str] = mapped_column(String(255), comment="版本号")
     task_item: Mapped[list] = mapped_column(JSON, default=[], comment="任务明细和进度")
     start_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="开始时间")
-    end_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now,
-                                               comment="结束时间")
+    end_time: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, onupdate=datetime.now, comment="结束时间")
     desc: Mapped[str] = mapped_column(Text(), comment="备注")
 
     @property

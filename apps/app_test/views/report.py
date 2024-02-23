@@ -9,7 +9,7 @@ from ..forms.report import GetReportForm, GetReportListForm, DeleteReportForm, G
 from utils.util.file_util import FileUtil
 
 
-@app_test.login_post("/report/list")
+@app_test.login_get("/report/list")
 def app_get_report_list():
     """ 报告列表 """
     form = GetReportListForm()

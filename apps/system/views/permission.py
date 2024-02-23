@@ -22,7 +22,7 @@ def system_manage_get_permission_list():
         get_filed = [Permission.id, Permission.source_type, Permission.name, Permission.source_addr, Permission.desc,
                      Permission.create_time]
     else:
-        get_filed = [Permission.id, Permission.name]
+        get_filed = [Permission.id, Permission.name, Permission.source_type]
     return app.restful.get_success(Permission.make_pagination(form, get_filed=get_filed))
 
 

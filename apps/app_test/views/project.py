@@ -77,7 +77,7 @@ def app_change_project_env():
     return app.restful.change_success()
 
 
-@app_test.login_post("/project/env/synchronization")
+@app_test.login_put("/project/env/synchronization")
 def app_synchronization_project_env():
     """ 同步环境数据 """
     form = SynchronizationEnvForm()

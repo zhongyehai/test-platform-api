@@ -4,7 +4,11 @@ import pika
 import datetime
 
 
-def send_rocket_mq(info, message):  # 消息生产者
+def send_rocket_mq(info, message):
+    pass
+
+
+def send_rabbit_mq(info, message):  # 消息生产者
     user_info = pika.PlainCredentials(info["account"], info["password"])
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host=info["host"], port=info["port"], credentials=user_info))

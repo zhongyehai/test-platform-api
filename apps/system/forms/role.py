@@ -10,13 +10,12 @@ from ..model_factory import Role, User, UserRoles, Permission, RolePermissions
 class GetRoleListForm(PaginationForm):
     """ 查找角色参数校验 """
     name: Optional[str] = Field(None, title="角色名")
-    role_id: Optional[int] = Field(None, title="权角色id")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = []
         if self.name:
-            filter_list.append(Permission.name.like(f'%{self.name}%'))
+            filter_list.append(Role.name.like(f'%{self.name}%'))
 
         # 当前用户如果不是管理员权限，则只返回当前用户有的角色
         if User.is_not_admin():

@@ -2,7 +2,7 @@
 from typing import Optional
 
 from flask import request, g
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import User
@@ -40,9 +40,9 @@ class GetUserListForm(PaginationForm):
         if self.name:
             filter_list.append(User.name.like(f'%{self.name}%'))
         if self.account:
-            filter_list.append(User.account == self.account)
+            filter_list.append(User.account.like(f'%{self.account}%'))
         if self.status:
-            filter_list.append(User.status == self.status)
+            filter_list.append(User.status == self.status.value)
         if self.role_id:
             filter_list.append(User.role_id == self.role_id)
         return filter_list
@@ -78,10 +78,8 @@ class ChangePasswordForm(BaseForm):
     new_password: str = required_str_field(title="新密码")
     sure_password: str = required_str_field(title="确认密码")
 
-    @field_validator("sure_password")
-    def validate_sure_password(cls, value, info: ValidationInfo):
-        cls.validate_is_true(info.data["new_password"] == value, "新密码与确认密码不一致")
-        return value
+    def depends_validate(self):
+        self.validate_is_true(self.new_password == self.sure_password, "新密码与确认密码不一致")
 
     @field_validator("old_password")
     def validate_old_password(cls, value):

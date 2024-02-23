@@ -145,7 +145,10 @@ def api_get_api():
 def api_add_api():
     """ 新增接口 """
     form = AddApiForm()
-    Api.model_create(form.model_dump())
+    if len(form.api_list) == 1:
+        api = Api.model_create_and_get(form.api_list[0])
+        return app.restful.add_success(api.to_dict())
+    Api.model_batch_create(form.api_list)
     return app.restful.add_success()
 
 

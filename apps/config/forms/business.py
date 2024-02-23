@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Optional
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import BusinessLine
@@ -13,8 +13,7 @@ class GetBusinessListForm(PaginationForm):
     """ 获取业务线列表 """
     code: Optional[str] = Field(None, title="业务线code")
     name: Optional[str] = Field(None, title="业务线名")
-    get_all: Optional[int] = Field(None, title="获取所有业务线，需管理员权限")
-    create_user: Optional[str] = Field(None, title="创建者")
+    create_user: Optional[int] = Field(None, title="创建者")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
@@ -51,27 +50,27 @@ class DeleteBusinessForm(GetBusinessForm):
         return value
 
 
-class PostBusinessForm(BaseForm):
+class ReceiveType(BaseForm):
+    receive_type: ReceiveTypeEnum = Field(
+        ..., title="接收通知类型", description="not_receive:不接收、we_chat:企业微信、ding_ding:钉钉")
+
+    def validate_receive_type(self, webhook_list):
+        if self.receive_type != ReceiveTypeEnum.not_receive:
+            self.validate_is_true(webhook_list, f"要接收段统计通知，则通知地址必填")
+
+
+class PostBusinessForm(ReceiveType):
     """ 新增业务线表单校验 """
     code: str = required_str_field(title="业务线code")
     name: str = required_str_field(title="业务线名")
-    receive_type: ReceiveTypeEnum = Field(
-        ..., title="接收通知类型", description="not_receive:不接收、we_chat:企业微信、ding_ding:钉钉")
     webhook_list: Optional[list] = Field([], title="接收通统计知的渠道")
     bind_env: BusinessLineBindEnvTypeEnum = Field(
         ..., title="绑定环境机制", description="auto：新增环境时自动绑定，human：新增环境后手动绑定")
     env_list: list = required_str_field(title="业务线要用的环境")
     desc: Optional[str] = Field(title="备注")
 
-    @field_validator("receive_type")
-    def validate_receive_type(cls, value, info: ValidationInfo):
-        if value != ReceiveTypeEnum.not_receive:
-            cls.validate_is_true(info.data.get("webhook_list"), f"要接收段统计通知，则通知地址必填")
-        return value.value
-
-    @field_validator("bind_env")
-    def validate_bind_env(cls, value):
-        return value.value
+    def depends_validate(self):
+        self.validate_receive_type(self.webhook_list)
 
 
 class PutBusinessForm(GetBusinessForm, PostBusinessForm):

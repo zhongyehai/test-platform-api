@@ -79,6 +79,7 @@ def ui_upload_element():
                     new_element.project_id = page.project_id
                     new_element.module_id = page.module_id
                     new_element.page_id = page.id
+                    new_element.create_user = new_element.update_user = g.user_id
                     element_list.append(new_element)
                 Element.db.session.add_all(element_list)
         return app.restful.upload_success()

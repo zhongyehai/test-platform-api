@@ -35,15 +35,14 @@ def request_run_task_api(task_id, task_type, skip_holiday=1):
         api_addr = '/system/job/run'
     else:  # 自动化测试定时任务
         api_addr = f'/{task_type}-test/task/run'
-
-    re = requests.post(
-        url=f'{_main_server_host}/api{api_addr}',
-        json={
+    request_url = f'{_main_server_host}/api{api_addr}'
+    request_data = {
             "id": task_id,
             "func_name": task_id,
             "trigger_type": "cron"
         }
-    )
+    re = requests.post(url=request_url, json=request_data)
+    job.logger.info(f'触发参数：\nurl: {_main_server_host}/api{api_addr}\n请求参数: {request_data}')
     job.logger.info(f'{"*" * 20} 定时任务触发完毕 {"*" * 20}')
     job.logger.info(f'{"*" * 20} 触发响应为：{re.json()} {"*" * 20}')
 

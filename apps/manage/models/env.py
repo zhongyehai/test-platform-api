@@ -11,8 +11,8 @@ class Env(NumFiled):
     __table_args__ = {"comment": "环境、资源表"}
 
     business: Mapped[int] = mapped_column(Integer(), nullable=True, comment="业务线")
-    name: Mapped[int] = mapped_column(String(255), comment="资源名")
-    source_type: Mapped[int] = mapped_column(String(255), comment="资源类型，账号:account、地址:addr")
+    name: Mapped[int] = mapped_column(String(255), nullable=False, comment="资源名")
+    source_type: Mapped[int] = mapped_column(String(255), nullable=False, comment="资源类型，账号:account、地址:addr")
     value: Mapped[int] = mapped_column(String(255), comment="数据值")
     password: Mapped[int] = mapped_column(String(255), default='', comment="登录密码")
     desc: Mapped[int] = mapped_column(Text(), default='', comment="备注")

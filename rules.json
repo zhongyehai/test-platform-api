@@ -40,88 +40,92 @@
       {
         "name": "首页",
         "source_addr": "/"
+      },
+      {
+        "name": "首页-统计",
+        "source_addr": "/dashboard"
       }
     ],
     "接口自动化菜单": [
       {
         "name": "接口自动化菜单",
-        "source_addr": "/apiTest"
+        "source_addr": "/api-test"
       },
       {
         "name": "接口自动化-服务管理菜单",
-        "source_addr": "/apiTest/project"
+        "source_addr": "/api-test/project"
       },
       {
         "name": "接口自动化-接口管理菜单",
-        "source_addr": "/apiTest/api"
+        "source_addr": "/api-test/api"
       },
       {
         "name": "接口自动化-用例管理菜单",
-        "source_addr": "/apiTest/case"
+        "source_addr": "/api-test/case"
       },
       {
         "name": "接口自动化-任务管理菜单",
-        "source_addr": "/apiTest/task"
+        "source_addr": "/api-test/task"
       },
       {
         "name": "接口自动化-测试报告菜单",
-        "source_addr": "/apiTest/report"
+        "source_addr": "/api-test/report"
       }
     ],
-    "webUi自动化菜单": [
+    "ui自动化菜单": [
       {
-        "name": "webUi自动化菜单",
-        "source_addr": "/webUiTest"
+        "name": "ui自动化菜单",
+        "source_addr": "/ui-test"
       },
       {
-        "name": "webUi自动化-项目管理菜单",
-        "source_addr": "/webUiTest/project"
+        "name": "ui自动化-项目管理菜单",
+        "source_addr": "/ui-test/project"
       },
       {
-        "name": "webUi自动化-页面管理菜单",
-        "source_addr": "/webUiTest/page"
+        "name": "ui自动化-页面管理菜单",
+        "source_addr": "/ui-test/page"
       },
       {
-        "name": "webUi自动化-用例管理菜单",
-        "source_addr": "/webUiTest/case"
+        "name": "ui自动化-用例管理菜单",
+        "source_addr": "/ui-test/case"
       },
       {
-        "name": "webUi自动化-任务管理菜单",
-        "source_addr": "/webUiTest/task"
+        "name": "ui自动化-任务管理菜单",
+        "source_addr": "/ui-test/task"
       },
       {
-        "name": "webUi自动化-测试报告菜单",
-        "source_addr": "/webUiTest/report"
+        "name": "ui自动化-测试报告菜单",
+        "source_addr": "/ui-test/report"
       }
     ],
     "app自动化菜单": [
       {
         "name": "app自动化菜单",
-        "source_addr": "/appUiTest"
+        "source_addr": "/app-test"
       },
       {
         "name": "app自动化-设备管理菜单",
-        "source_addr": "/appUiTest/device"
+        "source_addr": "/app-test/device"
       },
       {
         "name": "app自动化-app管理菜单",
-        "source_addr": "/appUiTest/project"
+        "source_addr": "/app-test/project"
       },
       {
         "name": "app自动化-页面管理菜单",
-        "source_addr": "/appUiTest/page"
+        "source_addr": "/app-test/page"
       },
       {
         "name": "app自动化-用例管理菜单",
-        "source_addr": "/appUiTest/case"
+        "source_addr": "/app-test/case"
       },
       {
         "name": "app自动化-任务管理菜单",
-        "source_addr": "/appUiTest/task"
+        "source_addr": "/app-test/task"
       },
       {
         "name": "app自动化-测试报告菜单",
-        "source_addr": "/appUiTest/report"
+        "source_addr": "/app-test/report"
       }
     ],
     "脚本管理菜单": [
@@ -131,7 +135,7 @@
       },
       {
         "name": "脚本管理菜单-Python脚本菜单",
-        "source_addr": "/python"
+        "source_addr": "/script/python"
       }
     ],
     "工具菜单": [
@@ -145,15 +149,15 @@
       },
       {
         "name": "工具-数据池菜单",
-        "source_addr": "/tools/dataPool"
+        "source_addr": "/tools/data-pool"
       },
       {
         "name": "工具-造数据菜单",
-        "source_addr": "/tools/makeData"
+        "source_addr": "/tools/make-data"
       },
       {
         "name": "工具-生成用户信息菜单",
-        "source_addr": "/tools/makeUserInfo"
+        "source_addr": "/tools/make-user-info"
       },
       {
         "name": "工具-消息队列",
@@ -175,11 +179,11 @@
       },
       {
         "name": "配置管理-配置参数管理菜单",
-        "source_addr": "/config/args"
+        "source_addr": "/config/value"
       },
       {
         "name": "配置管理-配置运行环境菜单",
-        "source_addr": "/config/runEnv"
+        "source_addr": "/config/run-env"
       },
       {
         "name": "配置管理-业务线管理菜单",
@@ -223,27 +227,27 @@
     "测试管理菜单": [
       {
         "name": "测试管理菜单",
-        "source_addr": "/testManage"
+        "source_addr": "/manage"
       },
       {
         "name": "测试管理-周报菜单",
-        "source_addr": "/testManage/weekly"
+        "source_addr": "/manage/weekly"
       },
       {
         "name": "测试管理-KYM分析菜单",
-        "source_addr": "/testManage/kym"
+        "source_addr": "/manage/kym"
       },
       {
         "name": "测试管理-用例编写菜单",
-        "source_addr": "/testManage/makeTestCase"
+        "source_addr": "/manage/make-test-case"
       },
       {
         "name": "测试管理-测试账号菜单",
-        "source_addr": "/testManage/account"
+        "source_addr": "/manage/account"
       },
       {
         "name": "测试管理-生产bug跟踪菜单",
-        "source_addr": "/testManage/bugTrack"
+        "source_addr": "/manage/bug-track"
       }
     ],
     "自动化辅助菜单": [
@@ -253,7 +257,7 @@
       },
       {
         "name": "自动化辅助-回调记录菜单",
-        "source_addr": "/assist/callBack"
+        "source_addr": "/assist/call-back"
       },
       {
         "name": "自动化辅助-文件管理菜单",
@@ -261,23 +265,15 @@
       },
       {
         "name": "自动化辅助-执行错误记录菜单",
-        "source_addr": "/assist/errorRecord"
+        "source_addr": "/assist/error-record"
       },
       {
         "name": "自动化辅助-自动化用户数据菜单",
-        "source_addr": "/assist/autoTestUser"
+        "source_addr": "/assist/auto-test-user"
       },
       {
         "name": "自动化辅助-自动化问题记录菜单",
         "source_addr": "/assist/hit"
-      },
-      {
-        "name": "自动化辅助-yapi监控记录菜单",
-        "source_addr": "/assist/diffRecord"
-      },
-      {
-        "name": "自动化辅助-yapi对比详情菜单",
-        "source_addr": "/assist/diffRecordShow"
       }
     ]
   }

@@ -11,15 +11,15 @@ class BusinessLine(NumFiled):
 
     __tablename__ = "config_business"
     __table_args__ = {"comment": "业务线配置表"}
-    name: Mapped[str] = mapped_column(String(128), nullable=True, unique=True, comment="业务线名")
-    code: Mapped[str] = mapped_column(String(128), nullable=True, unique=True, comment="业务线编码")
+    name: Mapped[str] = mapped_column(String(128), unique=True, comment="业务线名")
+    code: Mapped[str] = mapped_column(String(128), unique=True, comment="业务线编码")
     receive_type: Mapped[str] = mapped_column(
         String(16), default="0", comment="接收通知类型：0:不接收、we_chat:企业微信、ding_ding:钉钉")
     webhook_list: Mapped[list] = mapped_column(JSON, default=[], comment="接收该业务线自动化测试阶段统计通知地址")
     env_list: Mapped[list] = mapped_column(JSON, default=[], comment="业务线能使用的运行环境")
     bind_env: Mapped[str] = mapped_column(
         String(8), default="human", comment="绑定环境机制，auto：新增环境时自动绑定，human：新增环境后手动绑定")
-    desc: Mapped[str] = mapped_column(Text(), comment="描述")
+    desc: Mapped[str] = mapped_column(Text(), nullable=True, comment="描述")
 
     @classmethod
     def get_auto_bind_env_id_list(cls):

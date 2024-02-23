@@ -21,16 +21,17 @@ def get_sso_server_info():
 
 def get_sso_token(code):
     """ 从sso服务器获取用户token """
-    res = requests.post(
-        url=f'{app.config["SSO"].sso_host}{app.config["SSO"].sso_token_endpoint}',
-        data={
-            "grant_type": "authorization_code",
-            "code": code,
-            "client_id": app.config["SSO"].client_id,
-            "client_secret": app.config["SSO"].client_secret,
-            "redirect_uri": app.config["SSO"].redirect_uri
-        }
-    )
+    sso_config = app.config["SSO"]
+    url = f'{sso_config.sso_host}{sso_config.sso_token_endpoint}'
+    data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "client_id": sso_config.client_id,
+        "client_secret": sso_config.client_secret,
+        "redirect_uri": sso_config.redirect_uri
+    }
+    logger.info(f'get_sso_token: \nurl: {url}, \ndata: {data}')
+    res = requests.post(url=url, data=data)
     logger.info(f'get_sso_token.res.text: \n{res.text}')
     return res.json()
 
@@ -38,7 +39,7 @@ def get_sso_token(code):
 @system_manage.get("/sso/redirect-uri")
 def system_manage_get_sso_redirect_uri():
     """ 返回重定向的登录地址 """
-    return app.restful.success(app.config["SSO"].front_redirect_addr if app.config["AUTH_TYPE"] == "SSO" else None)
+    return app.restful.not_login(app.config["SSO"].front_redirect_addr if app.config["AUTH_TYPE"] == "SSO" else None)
 
 
 @system_manage.post("/sso/token")

@@ -61,7 +61,7 @@ class RunTestRunner:
             self.report_step_model = ApiReportStep
             self.time_out = Config.get_request_time_out()
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_api_report_addr()}'
-        elif self.run_type == "webUi":  # web-ui自动化
+        elif self.run_type == "ui":  # web-ui自动化
             self.project_model = WebUiProject
             self.project_env_model = WebUiProjectEnv
             self.element_model = WebUiElement
@@ -118,7 +118,7 @@ class RunTestRunner:
         if self.run_type == "api":  # 接口自动化
             report_addr = Config.get_api_report_addr()
             return f'{report_host}{report_addr}'
-        elif self.run_type == "webUi":  # web-ui自动化
+        elif self.run_type == "ui":  # web-ui自动化
             report_addr = Config.get_web_ui_report_addr()
             return f'{report_host}{report_addr}'
         else:  # app-ui自动化

@@ -11,8 +11,8 @@ class ConfigType(BaseModel):
     __tablename__ = "config_type"
     __table_args__ = {"comment": "配置类型表"}
 
-    name: Mapped[str] = mapped_column(String(128), nullable=True, unique=True, comment="字段名")
-    desc: Mapped[str] = mapped_column(Text(), comment="描述")
+    name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, comment="字段名")
+    desc: Mapped[str] = mapped_column(Text(), nullable=True, comment="描述")
 
 
 class Config(BaseModel):
@@ -21,10 +21,10 @@ class Config(BaseModel):
     __tablename__ = "config_config"
     __table_args__ = {"comment": "配置表"}
 
-    name: Mapped[str] = mapped_column(String(128), nullable=True, index=True, unique=True, comment="字段名")
-    value: Mapped[str] = mapped_column(Text(), nullable=True, comment="字段值")
-    type: Mapped[int] = mapped_column(Integer(), index=True, nullable=True, comment="配置类型")
-    desc: Mapped[str] = mapped_column(Text(), comment="描述")
+    type: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="配置类型")
+    name: Mapped[str] = mapped_column(String(128), nullable=False, index=True, unique=True, comment="配置名")
+    value: Mapped[str] = mapped_column(Text(), comment="配置值")
+    desc: Mapped[str] = mapped_column(Text(), nullable=True, comment="描述")
 
     @classmethod
     def get_config_value(cls, config_name):

@@ -251,8 +251,8 @@ def init_config_type():
         {"name": "系统配置", "desc": "全局配置"},
         {"name": "邮箱", "desc": "邮箱服务器"},
         {"name": "接口自动化", "desc": "接口自动化测试"},
-        {"name": "webUi自动化", "desc": "webUi自动化测试"},
-        {"name": "appUi自动化", "desc": "appUi自动化测试"}
+        {"name": "ui自动化", "desc": "ui自动化测试"},
+        {"name": "app自动化", "desc": "app自动化测试"}
     ]
     for data in config_type_list:
         if ConfigType.get_first(name=data["name"]) is None:
@@ -291,7 +291,7 @@ def init_config():
             },
             {
                 "name": "func_error_addr",
-                "value": "/assist/errorRecord",
+                "value": "/assist/error-record",
                 "desc": "展示自定义函数错误记录的前端地址（用于即时通讯通知）"
             }
         ],
@@ -301,26 +301,21 @@ def init_config():
             {"name": "request_time_out", "value": 60, "desc": "运行测试步骤时，request超时时间"},
             {
                 "name": "api_report_addr",
-                "value": "/apiTest/reportShow?id=",
+                "value": "/api-test/report-show?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
-            },
-            {
-                "name": "diff_api_addr",
-                "value": "/assist/diffRecordShow?id=",
-                "desc": "展示yapi监控报告页面的前端地址（用于即时通讯通知）"
             }
         ],
 
-        "webUi自动化": [
+        "ui自动化": [
             {"name": "wait_time_out", "value": 10, "desc": "等待元素出现时间"},
             {
                 "name": "web_ui_report_addr",
-                "value": "/webUiTest/reportShow?id=",
+                "value": "/ui-test/report-show?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
             }
         ],
 
-        "appUi自动化": [
+        "app自动化": [
             {"name": "device_extends", "value": JsonUtil.dumps(device_extends),
              "desc": "创建设备时，默认的设备详细数据"},
             {
@@ -330,7 +325,7 @@ def init_config():
             },
             {
                 "name": "app_ui_report_addr",
-                "value": "/appUiTest/reportShow?id=",
+                "value": "/app-test/report-show?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
             }
         ]

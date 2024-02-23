@@ -728,11 +728,11 @@ class GetAppDriver(Actions):
             raise error
         super().__init__(self.appium_webdriver)
 
-    def __del__(self):
-        try:
-            self.appium_webdriver.close_app()
-        except:
-            pass
+    # def __del__(self):
+    #     try:
+    #         self.appium_webdriver.close_app()
+    #     except:
+    #         pass
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 from typing import Optional, Union, List
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, ExtractModel, ValidateModel, HeaderModel, ParamModel, DataFormModel, \
     SkipIfModel, required_str_field
@@ -47,7 +47,7 @@ class CopyStepForm(GetStepForm):
 class AddStepForm(BaseForm):
     """ 添加步骤校验 """
     case_id: int = Field(..., title="步骤所属的用例id")
-    quote_case: Optional[int] = Field(title="引用用例id（步骤为引用用例时必传）")
+    quote_case: Optional[int] = Field(None, title="引用用例id（步骤为引用用例时必传）")
     name: str = required_str_field(title="步骤名称")
     up_func: Optional[list] = Field(default=[], title="前置条件")
     down_func: Optional[list] = Field(default=[], title="后置条件")
@@ -85,35 +85,33 @@ class AddStepForm(BaseForm):
         cls.validate_header_format(params, content_title='url参数')
         return params
 
-    @field_validator("quote_case")
-    def validate_quote_case(cls, value, info: ValidationInfo):
+    def depends_validate(self):
+        self.validate_quote_case()
+        self.validate_extracts()
+        self.validate_validates()
+        self.validate_data_form()
+
+    def validate_quote_case(self):
         """ 不能自己引用自己 """
-        if value:
-            cls.validate_is_true(value != info.data["case_id"], "不能自己引用自己")
-        return value
+        if self.quote_case:
+            self.validate_is_true(self.quote_case != self.case_id, "不能自己引用自己")
 
-    @field_validator("extracts")
-    def validate_extracts(cls, value, info: ValidationInfo):
+    def validate_extracts(self):
         """ 校验数据提取信息 """
-        extracts_value = [extracts.model_dump() for extracts in value]
-        if not info.data["quote_case"]:
-            cls.validate_api_extracts(extracts_value)
-        return extracts_value
+        if not self.quote_case:
+            extracts_value = [extracts.model_dump() for extracts in self.extracts]
+            self.validate_api_extracts(extracts_value)
 
-    @field_validator("validates")
-    def validate_validates(cls, value, info: ValidationInfo):
+    def validate_validates(self):
         """ 校验断言信息 """
-        validates_value = [extracts.model_dump() for extracts in value]
-        if not info.data["quote_case"]:
-            cls.validate_base_validates(validates_value)
-        return validates_value
+        if not self.quote_case:
+            validates_value = [extracts.model_dump() for extracts in self.validates]
+            self.validate_base_validates(validates_value)
 
-    @field_validator("data_form")
-    def validate_data_form(cls, value, info: ValidationInfo):
-        data_form_value = [data_form.model_dump() for data_form in value]
-        if not info.data["quote_case"] and info.data["body_type"] == ApiBodyTypeEnum.form.value:
-            cls.validate_variable_format(data_form_value, msg_title='form-data')
-        return data_form_value
+    def validate_data_form(self):
+        data_form_value = [data_form.model_dump() for data_form in self.data_form]
+        if not self.quote_case and self.body_type == ApiBodyTypeEnum.form.value:
+            self.validate_variable_format(data_form_value, msg_title='form-data')
 
 
 class EditStepForm(GetStepForm, AddStepForm):

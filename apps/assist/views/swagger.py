@@ -421,14 +421,14 @@ def assist_pull_by_swagger():
     return app.restful.success("数据拉取并更新完成")
 
 
-@assist.login_get("/swagger/pull-list")
+@assist.login_get("/swagger/pull-log-list")
 def assist_get_swagger_pull_list():
     form = GetSwaggerPullListForm()
     get_filed = [SwaggerPullLog.id, SwaggerPullLog.status, SwaggerPullLog.create_time, SwaggerPullLog.create_user]
     return app.restful.get_success(SwaggerPullLog.make_pagination(form, get_filed=get_filed))
 
 
-@assist.login_get("/swagger/pull")
+@assist.login_get("/swagger/pull-log")
 def assist_get_swagger_pull_data():
     form = GetSwaggerPullForm()
     return app.restful.get_success(form.pull_log.to_dict())

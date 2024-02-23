@@ -1,7 +1,6 @@
 from typing import Optional, List
 
 from pydantic import field_validator
-from pydantic_core.core_schema import ValidationInfo
 
 from ...base_form import BaseForm, PaginationForm, AddCaseDataForm, Field, required_str_field
 from ..model_factory import WebUiPage as Page, WebUiElement as Element
@@ -47,22 +46,11 @@ class AddPageForm(BaseForm):
     module_id: int = Field(..., title="模块id")
     page_list: List[AddCaseDataForm] = required_str_field(title="页面list")
 
-    @field_validator("page_list")
-    def validate_page_list(cls, value, info: ValidationInfo):
-        """ 校验同一模块下页面名不重复 """
-        page_list, name_list = [], []
-        for index, page in enumerate(value):
-            page_name = page.name
-            cls.validate_is_true(page_name, f'第【{index + 1}】行，页面名必传')
-            if page_name in name_list:
-                raise ValueError(f'第【{index + 1}】行，与第【{name_list.index(page_name) + 1}】行，页面名重复')
-            cls.validate_data_is_not_exist(
-                f"当前模块下，名为【{page_name}】的页面已存在", Page, name=page_name, module_id=info.data["module_id"]
-            )
-            name_list.append(page.name)
-            page_list.append({
-                "project_id": info.data["project_id"], "module_id": info.data["module_id"], **page.model_dump()})
-        return page_list
+    def depends_validate(self):
+        page_data_list = []
+        for index, page in enumerate(self.page_list):
+            page_data_list.append({"project_id": self.project_id, "module_id": self.module_id, **page.model_dump()})
+        self.page_list = page_data_list
 
 
 class EditPageForm(GetPageForm):
@@ -70,10 +58,3 @@ class EditPageForm(GetPageForm):
     module_id: int = Field(..., title="模块id")
     name: str = required_str_field(title="页面名")
     desc: Optional[str] = Field(None, title="描述")
-
-    @field_validator("name")
-    def validate_name(cls, value, info: ValidationInfo):
-        page = Page.query.with_entities(Page.name).filter(
-            Page.module_id == info.data["module_id"], Page.id != info.data["id"], Page.name == value).first()
-        cls.validate_is_false(page, f"当前模块下，名为【{value}】的页面已存在")
-        return value

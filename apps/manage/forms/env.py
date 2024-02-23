@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, AddEnvDataForm, AddEnvAccountDataForm, required_str_field
 from ..models.env import Env
@@ -8,7 +8,7 @@ from ..models.env import Env
 
 class GetEnvListForm(PaginationForm):
     """ 获取数据列表 """
-    business: Optional[list] = Field(None, title="业务线")
+    business_list: Optional[str] = Field(None, title="业务线")
     name: Optional[str] = Field(None, title="环境名")
     value: Optional[str] = Field(None, title="数据值")
 
@@ -19,8 +19,8 @@ class GetEnvListForm(PaginationForm):
             filter_list.append(Env.name.like(f'%{self.name}%'))
         if self.value:
             filter_list.append(Env.value.like(f'%{self.value}%'))
-        if self.business:
-            filter_list.append(Env.business.in_(self.business))
+        if self.business_list:
+            filter_list.append(Env.business.in_(self.business_list.split(',')))
 
         return filter_list
 
@@ -42,23 +42,16 @@ class DeleteEnvForm(GetEnvForm):
 
 class AddEnvForm(BaseForm):
     """ 添加数据 """
-    business: Optional[int] = required_str_field(title="业务线")
+    business: Optional[int] = Field(..., title="业务线")
     data_list: List[AddEnvDataForm] = required_str_field(title="资源数据")
 
-    @field_validator("data_list")
-    def validate_data_list(cls, value, info: ValidationInfo):
-        """ 校验数据项
-        [{"name": "", "value": "", "password": "", "desc": ""}]
-        """
-        data_list = []
-        for index, data in enumerate(value):
+    def depends_validate(self):
+        env_data_list = []
+        for index, data in enumerate(self.data_list):
             data = data.model_dump()
-            if not data.get("name") or not data.get("value"):
-                raise ValueError(f'第【{index + 1}】行，名字和值必填')
-
-            data["source_type"], data["business"] = 'addr', info.data["business"]
-            data_list.append(data)
-        return data_list
+            data["source_type"], data["business"] = 'addr', self.business
+            env_data_list.append(data)
+        self.data_list = env_data_list
 
 
 class ChangeEnvForm(GetEnvForm):
@@ -73,12 +66,12 @@ class GetAccountListForm(PaginationForm):
     """ 获取数据列表 """
     business: Optional[list] = Field(None, title="业务线")
     name: Optional[str] = Field(None, title="环境名")
-    parent: Optional[int] = required_str_field(title="所属资源id")
+    parent_id: int = Field(..., title="所属资源id")
     value: Optional[str] = Field(None, title="数据值")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
-        filter_list = [Env.parent == self.parent, Env.source_type == 'account']
+        filter_list = [Env.parent == self.parent_id, Env.source_type == 'account']
         if self.name:
             filter_list.append(Env.name.like(f'%{self.name}%'))
         if self.value:
@@ -109,20 +102,13 @@ class AddAccountForm(BaseForm):
     parent: Optional[int] = Field(None, title="数据父级id")
     data_list: List[AddEnvAccountDataForm] = required_str_field(title="资源数据")
 
-    @field_validator("data_list")
-    def validate_data_list(cls, value, info: ValidationInfo):
-        """ 校验数据项
-        [{"name": "", "value": "", "password": "", "desc": ""}]
-        """
-        data_list = []
-        for index, data in enumerate(value):
+    def depends_validate(self):
+        env_data_list = []
+        for index, data in enumerate(self.data_list):
             data = data.model_dump()
-            if not data.get("name") or not data.get("value"):
-                raise ValueError(f'第【{index + 1}】行，名字和值必填')
-
-            data["source_type"], data["parent"] = 'account', info.data["parent"]
-            data_list.append(data)
-        return data_list
+            data["source_type"], data["parent"] = 'account', self.parent
+            env_data_list.append(data)
+        self.data_list = env_data_list
 
 
 class ChangeAccountForm(GetEnvForm):

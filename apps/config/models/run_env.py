@@ -12,10 +12,10 @@ class RunEnv(NumFiled):
     __tablename__ = "config_run_env"
     __table_args__ = {"comment": "运行环境配置表"}
 
-    name: Mapped[str] = mapped_column(String(255), nullable=True, comment="环境名字")
-    code: Mapped[str] = mapped_column(String(255), nullable=True, unique=True, comment="环境code")
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="环境名字")
+    code: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, comment="环境code")
     desc: Mapped[str] = mapped_column(String(255), nullable=True, comment="备注")
-    group: Mapped[str] = mapped_column(String(255), nullable=True, comment="环境分组")
+    group: Mapped[str] = mapped_column(String(255), nullable=False, comment="环境分组")
 
     @classmethod
     def get_data_by_id_or_code(cls, id_or_code):

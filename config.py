@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import email
+import platform
 from urllib import parse
 
 import urllib3.fields as f
@@ -18,6 +19,7 @@ _job_server_host = f'http://localhost:{_job_server_port}/api/job/status'  # job�
 _default_web_hook = ''
 
 platform_name = "极测平台"  # 测试平台名字
+is_linux = platform.platform().startswith('Linux')
 # 从 testRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
 assert_mapping, assert_mapping_list = {}, []
 for func in dir(assert_func_file):
@@ -54,8 +56,8 @@ skip_if_type_mapping = [
 # 测试类型
 test_type = [
     {"key": "api", "label": "接口测试"},
-    {"key": "appUi", "label": "app测试"},
-    {"key": "webUi", "label": "ui测试"}
+    {"key": "app", "label": "app测试"},
+    {"key": "ui", "label": "ui测试"}
 ]
 
 # 运行测试的类型
@@ -292,7 +294,7 @@ class _SystemConfig:
     # 数据库信息
     DB_HOST = "localhost"
     DB_PORT = 3306
-    DB_USER = ""
+    DB_USER = "root"
     DB_PASSWORD = ""
     DB_DATABASE = ""
 

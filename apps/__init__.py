@@ -37,26 +37,24 @@ def create_app():
     from apps.ui_test.blueprint import ui_test
     from apps.app_test.blueprint import app_test
     from apps.assist.blueprint import assist
-    from apps.test_work.blueprint import test_work
+    from apps.manage.blueprint import manage
     from apps.config.blueprint import config_blueprint
     from apps.tools.blueprint import tool
-    from apps.home.blueprint import home
     from apps.system.blueprint import system_manage
     app.register_blueprint(api_test, url_prefix="/api/api-test")
     app.register_blueprint(ui_test, url_prefix="/api/ui-test")
     app.register_blueprint(app_test, url_prefix="/api/app-test")
     app.register_blueprint(assist, url_prefix="/api/assist")
     app.register_blueprint(config_blueprint, url_prefix="/api/config")
-    app.register_blueprint(test_work, url_prefix="/api/test-work")
+    app.register_blueprint(manage, url_prefix="/api/manage")
     app.register_blueprint(tool, url_prefix="/api/tools")
-    app.register_blueprint(home, url_prefix="/api/home")
     app.register_blueprint(system_manage, url_prefix="/api/system")
 
     from apps.api_test import model_factory
     from apps.ui_test import model_factory
     from apps.app_test import model_factory
     from apps.assist import model_factory
-    from apps.test_work import model_factory
+    from apps.manage import model_factory
     from apps.config import model_factory
     from apps.system import model_factory
 

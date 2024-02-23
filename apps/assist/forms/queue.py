@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Queue, QueueMsgLog
@@ -40,12 +40,12 @@ class DeleteQueueForm(GetQueueForm):
 
 class CreatQueueLinkForm(BaseForm):
     """ 创建息队列链接 """
-    queue_type: QueueTypeEnum = Field(title="队列类型", description="rocket_mq、redis，目前只支持mq")
+    queue_type: QueueTypeEnum = Field(title="队列类型", description="rocket_mq、rabbit_mq、redis，目前只支持mq")
     host: str = required_str_field(title="地址")
-    port: int = Field(5672, title="端口")
-    account: str = required_str_field(title="账号")
-    password: str = required_str_field(title="密码")
-    desc: Optional[str] = Field(title="描述")
+    port: Optional[int] = Field(5672, title="端口")
+    account: Optional[str] = Field(None, title="账号")
+    password: Optional[str] = Field(None, title="密码")
+    desc: Optional[str] = Field(None, title="描述")
 
 
 class EditQueueLinkForm(GetQueueForm, CreatQueueLinkForm):
