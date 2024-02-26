@@ -52,7 +52,7 @@ def ui_get_element_from():
 @ui_test.login_get("/element/template/download")
 def ui_get_element_template():
     """ 下载元素导入模板 """
-    return send_from_directory(STATIC_ADDRESS, "元素导入模板.xls", as_attachment=True)
+    return send_from_directory(STATIC_ADDRESS, "element_upload_template.xls", as_attachment=True)
 
 
 @ui_test.post("/element/upload")

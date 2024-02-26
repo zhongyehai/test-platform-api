@@ -13,7 +13,7 @@ from utils.util.file_util import STATIC_ADDRESS
 @ui_test.login_get("/suite/template/download")
 def ui_get_case_suite_template():
     """ 获取用例集导入模板 """
-    return send_from_directory(STATIC_ADDRESS, "用例集导入模板.xmind", as_attachment=True)
+    return send_from_directory(STATIC_ADDRESS, "case_suite_upload_template.xmind", as_attachment=True)
 
 
 @ui_test.login_post("/suite/upload")

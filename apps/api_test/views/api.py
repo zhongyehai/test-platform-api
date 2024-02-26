@@ -131,7 +131,7 @@ def api_upload_api():
 @api_test.login_get("/api/template/download")
 def api_get_api_template():
     """ 下载接口导入模板 """
-    return send_from_directory(STATIC_ADDRESS, "接口导入模板.xls", as_attachment=True)
+    return send_from_directory(STATIC_ADDRESS, "api_upload_template.xls", as_attachment=True)
 
 
 @api_test.login_get("/api")

@@ -58,7 +58,7 @@ class ValidateModel(HeaderModel):
 
 class SkipIfModel(HeaderModel):
     status: Optional[Union[str, int, None]] = None
-    expect: Union[str, None] = None
+    expect: Union[str, int, None] = None
     data_type: Union[str, None] = None
     skip_type: Union[str, None] = None
     comparator: Union[str, None] = None
