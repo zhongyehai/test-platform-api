@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from flask import current_app as app
+import jwt
+from flask import current_app as app, request, abort
 
 from ..blueprint import system_manage
 from ..model_factory import User
@@ -30,11 +31,22 @@ def system_manage_get_user_role_list():
 def system_manage_login():
     """ 登录 """
     form = LoginForm()
-    user_info = form.user.to_dict()
-    user_permissions = form.user.get_permissions()
-    user_info["token"] = form.user.make_token(user_permissions["api_addr_list"])
-    user_info["front_permissions"] = user_permissions["front_addr_list"]
+    user_info = form.user.build_access_token()
+    user_info["refresh_token"] = form.user.make_refresh_token()
     return app.restful.login_success(user_info)
+
+
+@system_manage.get("/user/refresh")
+def system_manage_refresh_token():
+    """ 刷新token """
+    refresh_token = request.headers.get("refresh-token")
+    try:
+        parsed_data = jwt.decode(refresh_token, app.config["SECRET_KEY"], algorithms=["HS256"])
+        user = User.get_first(id=parsed_data["user_id"])
+        user_info = user.build_access_token()
+        return app.restful.get_success(user_info)
+    except:
+        abort(401)
 
 
 @system_manage.get("/user/logout")

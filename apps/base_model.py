@@ -1071,7 +1071,7 @@ class BaseReport(BaseModel):
 
     @classmethod
     def get_batch_id(cls):
-        """ 生产运行id """
+        """ 生成运行id """
         return f'{g.user_id}_{int(time.time() * 1000000)}'
 
     @classmethod

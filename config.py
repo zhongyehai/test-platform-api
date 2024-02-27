@@ -287,7 +287,8 @@ class _Sso:
 class _SystemConfig:
     AUTH_TYPE = 'test_platform'  # 身份验证机制 OSS, test_platform
     SSO = _Sso
-    TOKEN_TIME_OUT = 36000
+    ACCESS_TOKEN_TIME_OUT = 0.5 * 60 * 60  # access_token 有效期，2个小时
+    REFRESH_TOKEN_TIME_OUT = 7 * 24 * 60 * 60  # refresh_token 有效期，7天
     SECRET_KEY = "localhost"
     URL_NOT_FIND_MSG = None  # 统一自定义404消息，若没有对应使用场景设为None即可
 

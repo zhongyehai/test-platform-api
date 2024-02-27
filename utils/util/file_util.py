@@ -130,19 +130,25 @@ class FileUtil:
         return REPORT_IMG_UI_ADDRESS if report_type == 'ui' else REPORT_IMG_APP_ADDRESS
 
     @classmethod
+    def delete_report_report_folder(cls, report_folder_path):
+        if os.path.exists(report_folder_path):  # 有可能先手动去服务器删了截图，先判断报告目录是否存在
+            shutil.rmtree(report_folder_path)
+
+    @classmethod
     def delete_report_img_by_report_id(cls, report_id_list, report_type='ui'):
         """ 根据测试报告id，删除此测试报告下的截图 """
+        report_img_path = cls.get_report_img_path(report_type)
         for report_id in report_id_list:
-            report_path = os.path.join(cls.get_report_img_path(report_type), str(report_id))
-            if os.path.exists(report_path):  # 有可能先手动去服务器删了截图，先判断报告目录是否存在
-                shutil.rmtree(report_path)
+            report_folder_path = os.path.join(report_img_path, str(report_id))
+            cls.delete_report_report_folder(report_folder_path)
 
     @classmethod
     def make_img_folder_by_report_id(cls, report_id, report_type='ui'):
         """ 生成存放截图的文件夹 """
-        folder_path = os.path.join(cls.get_report_img_path(report_type), str(report_id))
-        os.makedirs(folder_path)
-        return folder_path
+        report_folder_path = os.path.join(cls.get_report_img_path(report_type), str(report_id))
+        cls.delete_report_report_folder(report_folder_path)
+        os.makedirs(report_folder_path)
+        return report_folder_path
 
     @classmethod
     def get_report_step_img(cls, report_id, report_step_id, img_type, report_type='ui'):

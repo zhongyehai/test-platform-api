@@ -12,6 +12,10 @@ def register_before_hook(app):
     """ 注册前置钩子函数，有请求时，会按函数所在位置，以从近到远的序顺序执行以下钩子函数 """
 
     @app.before_request
+    def set_user_info():
+        g.user_id, g.user_name, g.api_permissions, g.business_list = None, None, [], []
+
+    @app.before_request
     def set_request_id():
         g.request_id = uuid.uuid4()
 

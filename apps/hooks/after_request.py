@@ -26,10 +26,13 @@ def register_after_hook(app):
     def after_request_save_response_log(response):
         """ 后置钩子函数，每个请求最后都会经过此函数 """
         response.headers['X-Request-Id'] = str(g.request_id)
+
         if "download" in request.path or "." in request.path or request.path.endswith("swagger"):
             return response
+
         result = copy.copy(response.response)
         if isinstance(result[0], bytes):
             result[0] = bytes.decode(result[0])
+
         save_response_log(result)
         return response

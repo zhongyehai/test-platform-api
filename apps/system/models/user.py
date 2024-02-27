@@ -156,7 +156,14 @@ class User(BaseModel):
         self.model_update({"password": new_password})
         return new_password
 
-    def make_token(self, api_permissions: list = []):
+    def build_access_token(self):
+        user_info = self.to_dict()
+        user_permissions = self.get_permissions()
+        user_info["access_token"] = self.make_access_token(user_permissions["api_addr_list"])
+        user_info["front_permissions"] = user_permissions["front_addr_list"]
+        return user_info
+
+    def make_access_token(self, api_permissions: list = []):
         """ 生成token，默认有效期为系统配置的时长 """
         user_info = {
             "id": self.id,
@@ -164,8 +171,12 @@ class User(BaseModel):
             "role_list": self.roles,
             "api_permissions": api_permissions,
             "business_list": self.business_list,
-            "exp": datetime.now().timestamp() + app.config["TOKEN_TIME_OUT"]
+            "exp": datetime.now().timestamp() + app.config["ACCESS_TOKEN_TIME_OUT"]
         }
+        return jwt.encode(user_info, app.config["SECRET_KEY"])
+
+    def make_refresh_token(self):
+        user_info = {"user_id": self.id, "exp": datetime.now().timestamp() + app.config["REFRESH_TOKEN_TIME_OUT"]}
         return jwt.encode(user_info, app.config["SECRET_KEY"])
 
     @property
@@ -173,7 +184,7 @@ class User(BaseModel):
         """ 获取用户的角色id """
         return [user_role.role_id for user_role in UserRoles.get_all(user_id=self.id)]
 
-    def get_permissions(self):
+    def get_permissions(self, get_api=True, get_front=True):
         """ 获取用户的前端权限 """
         role_id_list = Role.get_user_role_list(self.id)
 
@@ -181,18 +192,19 @@ class User(BaseModel):
         all_permission_id_list = RolePermissions.query.with_entities(
             RolePermissions.permission_id).filter(RolePermissions.role_id.in_(role_id_list)).distinct().all()
         permission_id_list = list(self.format_with_entities_query_list(all_permission_id_list))
+        front_addr_list = self.get_front_permissions_addr_list(permission_id_list) if get_front else []  # 所有前端权限
+        api_addr_list = self.get_api_permissions_addr_list(permission_id_list) if get_api else []  # 所有后端权限
+        return {"front_addr_list": front_addr_list, "api_addr_list": api_addr_list}
 
-        # 所有前端权限
-        all_front_addr_list = Permission.query.with_entities(Permission.source_addr).filter(
-            Permission.id.in_(permission_id_list), Permission.source_type == 'front').distinct().all()
-        front_addr_list = list(self.format_with_entities_query_list(all_front_addr_list))
-
-        # 所有后端权限
+    def get_api_permissions_addr_list(self, permission_id_list: list):
         all_api_addr_list = Permission.query.with_entities(Permission.source_addr).filter(
             Permission.id.in_(permission_id_list), Permission.source_type == 'api').distinct().all()
-        api_addr_list = list(self.format_with_entities_query_list(all_api_addr_list))
+        return list(self.format_with_entities_query_list(all_api_addr_list))
 
-        return {"front_addr_list": front_addr_list, "api_addr_list": api_addr_list}
+    def get_front_permissions_addr_list(self, permission_id_list: list):
+        all_front_addr_list = Permission.query.with_entities(Permission.source_addr).filter(
+            Permission.id.in_(permission_id_list), Permission.source_type == 'front').distinct().all()
+        return list(self.format_with_entities_query_list(all_front_addr_list))
 
     def insert_user_roles(self, role_id_list):
         """ 插入用户角色映射 """
