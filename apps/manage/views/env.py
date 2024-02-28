@@ -15,6 +15,14 @@ def manage_get_env_list():
     return app.restful.get_success(Env.make_pagination(form, get_filed=get_filed))
 
 
+@manage.post("/env/copy")
+def manage_copy_env_list():
+    """ 获取数据列表 """
+    form = GetEnvForm()
+    Env.model_create(form.env.to_dict())
+    return app.restful.add_success()
+
+
 @manage.login_get("/env")
 def manage_get_env():
     """ 获取数据 """
