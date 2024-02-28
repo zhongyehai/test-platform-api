@@ -64,6 +64,7 @@ def api_change_task():
 def api_delete_task():
     """ 删除定时任务 """
     form = DeleteTaskForm()
+    form.task.delete_task_to_memory()
     form.task.delete()
     return app.restful.delete_success()
 
