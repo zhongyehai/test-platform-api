@@ -30,9 +30,10 @@ def register_after_hook(app):
         if "download" in request.path or "." in request.path or request.path.endswith("swagger"):
             return response
 
-        result = copy.copy(response.response)
-        if isinstance(result[0], bytes):
-            result[0] = bytes.decode(result[0])
-
-        save_response_log(result)
+        # result = copy.copy(response.response)
+        # if isinstance(result[0], bytes):
+        #     result[0] = bytes.decode(result[0])
+        # save_response_log(result)
+        response.headers['Content-Type'] = 'application/json'
+        save_response_log(response.response)
         return response

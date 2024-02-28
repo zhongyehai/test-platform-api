@@ -69,8 +69,6 @@ def system_manage_get_token():
             UserRoles.model_create({"user_id": user.id, "role_id": role_id})
 
     # 根据用户id信息生成token，并返回给前端
-    user_info = user.to_dict()
-    user_permissions = user.get_permissions()
-    user_info["token"] = user.make_token(user_permissions["api_addr_list"])
-    user_info["front_permissions"] = user_permissions["front_addr_list"]
+    user_info = user.build_access_token()
+    user_info["refresh_token"] = user.make_refresh_token()
     return app.restful.success("登录成功", user_info)

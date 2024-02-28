@@ -45,7 +45,7 @@ def config_add_business():
     user.model_update({"business_list": user.business_list})
 
     # 重新生成token
-    token = user.make_token(g.api_permissions)
+    token = user.make_access_token(g.api_permissions)
     return app.restful.add_success({"token": token, "business_id": user.business_list})
 
 
