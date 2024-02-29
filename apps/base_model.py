@@ -954,7 +954,7 @@ class BaseTask(StatusFiled, NumFiled):
             res = requests.post(
                 url=_job_server_host,
                 headers=request.headers,
-                json={"task_id": g.user_id, "task": task, "type": task_type}
+                json={"task": task, "type": task_type}
             ).json()
             if res.get("status") == 200:
                 self.enable()
