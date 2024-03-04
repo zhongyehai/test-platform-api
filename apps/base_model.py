@@ -12,6 +12,7 @@ from flask_sqlalchemy import SQLAlchemy as _SQLAlchemy
 from flask_sqlalchemy.query import Query as BaseQuery
 from sqlalchemy import MetaData, or_, text, Integer, String, DateTime, JSON, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
+from werkzeug.security import generate_password_hash
 
 from apps.enums import DataStatusEnum, ApiCaseSuiteTypeEnum, CaseStatusEnum, SendReportTypeEnum, ReceiveTypeEnum, \
     TriggerTypeEnum, ApiBodyTypeEnum
@@ -102,6 +103,9 @@ class BaseModel(db.Model, JsonUtil):
         if "id" in data_dict:
             data_dict.pop("id")
 
+        if cls.__name__ == "User" and "password" in data_dict:
+            data_dict["password"] = generate_password_hash(data_dict["password"])
+
         try:  # 执行初始化脚本、执行测试时，不在上下文中，不能使用g对象
             if hasattr(g, 'user_id') and g.user_id:
                 current_user = g.user_id  # 真实用户
@@ -168,6 +172,9 @@ class BaseModel(db.Model, JsonUtil):
         """ 更新数据 """
         if "num" in data_dict: data_dict.pop("num")
         if "id" in data_dict: data_dict.pop("id")
+        if self.__class__.__name__ == "User" and "password" in data_dict:
+            data_dict["password"] = generate_password_hash(data_dict["password"])
+
         try:
             data_dict["update_user"] = g.user_id if hasattr(g, "user_id") else None
         except:

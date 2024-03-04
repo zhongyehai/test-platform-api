@@ -64,8 +64,8 @@ def system_manage_get_token():
             user = User.model_create_and_get({
                 "sso_user_id": sso_user_id,
                 "name": sso_user_name,
-                "business_list": [common_id],
-                "password": User.password_to_hash("123456")
+                "business_list": [common_id[0]],
+                "password": "123456"
             })
             # 角色为测试人员
             role_id = Role.db.session.query(Role.id).filter(Role.name == "测试人员").first()

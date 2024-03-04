@@ -80,7 +80,6 @@ class ChangePasswordForm(BaseForm):
 
     def depends_validate(self):
         self.validate_is_true(self.new_password == self.sure_password, "新密码与确认密码不一致")
-        self.new_password = User.password_to_hash(self.new_password)
 
     @field_validator("old_password")
     def validate_old_password(cls, value):
@@ -136,8 +135,6 @@ class CreateUserForm(BaseForm):
                 raise ValueError(f'第【{index + 1}】行，与第【{account_list.index(account) + 1}】行，账号重复')
             cls.validate_is_true(1 < len(account) < 50, f'第【{index + 1}】行，账号长度长度为2~50位')
             cls.validate_data_is_not_exist(f'第【{index + 1}】行，账号【{account}】已存在', User, account=account)
-
-            user["password"] = User.password_to_hash(user["password"])
 
             name_list.append(name)
             account_list.append(account)

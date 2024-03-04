@@ -148,7 +148,7 @@ class User(BaseModel):
         str_list_3 = random.sample(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 2)
         str_list_4 = random.sample(letter_list, 4)
         new_password = ''.join([*str_list_1, *str_list_2, *str_list_3, *str_list_4])
-        self.model_update({"password": self.password_to_hash(new_password)})
+        self.model_update({"password": new_password})
         return new_password
 
     def build_access_token(self):
