@@ -69,7 +69,7 @@ def system_manage_get_token():
             })
             # 角色为测试人员
             role_id = Role.db.session.query(Role.id).filter(Role.name == "测试人员").first()
-            UserRoles.model_create({"user_id": user.id, "role_id": role_id})
+            UserRoles.model_create({"user_id": user.id, "role_id": role_id[0]})
 
     # 根据用户id信息生成token，并返回给前端
     user_info = user.build_access_token()
