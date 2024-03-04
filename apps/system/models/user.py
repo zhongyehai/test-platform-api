@@ -124,23 +124,18 @@ class User(BaseModel):
 
     sso_user_id: Mapped[str] = mapped_column(String(50), index=True, nullable=True, comment="该用户在oss数据库的账号")
     account: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True, comment="账号")
-    password_hash: Mapped[str] = mapped_column(String(255), comment="密码")
+    password: Mapped[str] = mapped_column(String(255), comment="密码", )
     name: Mapped[str] = mapped_column(String(12), nullable=False, comment="姓名")
     status: Mapped[int] = mapped_column(Integer(), default=1, comment="状态，1为启用，0为冻结")
     business_list: Mapped[str] = mapped_column(JSON, default=[], comment="用户拥有的业务线")
 
-    @property
-    def password(self):
-        return self.password_hash
-
-    @password.setter
-    def password(self, _password):
-        """ 设置加密密码 """
-        self.password_hash = generate_password_hash(_password)
+    @classmethod
+    def password_to_hash(cls, password: str) -> str:
+        return generate_password_hash(password)
 
     def verify_password(self, password):
         """ 校验密码 """
-        return check_password_hash(self.password_hash, password)
+        return check_password_hash(self.password, password)
 
     def reset_password(self):
         """ 重置密码 """
@@ -153,7 +148,7 @@ class User(BaseModel):
         str_list_3 = random.sample(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 2)
         str_list_4 = random.sample(letter_list, 4)
         new_password = ''.join([*str_list_1, *str_list_2, *str_list_3, *str_list_4])
-        self.model_update({"password": new_password})
+        self.model_update({"password": self.password_to_hash(new_password)})
         return new_password
 
     def build_access_token(self):
@@ -222,7 +217,7 @@ class User(BaseModel):
         self.insert_user_roles(role_id_list)
 
     def to_dict(self, *args, **kwargs):
-        return super(User, self).to_dict(pop_list=["password_hash"], filter_list=kwargs.get("filter_list", []))
+        return super(User, self).to_dict(pop_list=["password"], filter_list=kwargs.get("filter_list", []))
 
 
 class UserRoles(BaseModel):

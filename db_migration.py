@@ -227,9 +227,9 @@ def init_user():
     # 创建用户
     print_type_delimiter("开始创建用户")
     user_list = [
-        {"account": "admin", "password": "123456", "name": "管理员", "role": ["管理员-后端", "管理员-前端"]},
-        {"account": "manager", "password": "manager", "name": "业务线负责人", "role": ["业务线负责人"]},
-        {"account": "common", "password": "common", "name": "测试员", "role": ["测试人员"]}
+        {"account": "admin", "password": User.password_to_hash("123456"), "name": "管理员", "role": ["管理员-后端", "管理员-前端"]},
+        {"account": "manager", "password": User.password_to_hash("manager"), "name": "业务线负责人", "role": ["业务线负责人"]},
+        {"account": "common", "password": User.password_to_hash("common"), "name": "测试员", "role": ["测试人员"]}
     ]
     for user_info in user_list:
         if User.get_first(account=user_info["account"]) is None:
