@@ -123,7 +123,7 @@ class User(BaseModel):
     __table_args__ = {"comment": "用户表"}
 
     sso_user_id: Mapped[str] = mapped_column(String(50), index=True, nullable=True, comment="该用户在oss数据库的账号")
-    account: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True, comment="账号")
+    account: Mapped[str] = mapped_column(String(50), nullable=True, unique=True, index=True, comment="账号")
     password: Mapped[str] = mapped_column(String(255), comment="密码", )
     name: Mapped[str] = mapped_column(String(12), nullable=False, comment="姓名")
     status: Mapped[int] = mapped_column(Integer(), default=1, comment="状态，1为启用，0为冻结")
