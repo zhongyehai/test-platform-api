@@ -99,7 +99,7 @@ class BaseModel(db.Model, JsonUtil):
         return [data[0] for data in cls.query.with_entities(cls.id).filter_by(**kwargs).all()]
 
     @classmethod
-    def format_create_data(cls, data_dict):
+    def format_insert_data(cls, data_dict):
         if "id" in data_dict:
             data_dict.pop("id")
 
@@ -116,6 +116,9 @@ class BaseModel(db.Model, JsonUtil):
         data_dict["create_user"] = data_dict["update_user"] = current_user
         data_dict["create_time"] = data_dict["update_time"] = None
 
+        # 只保留模型中有的字段
+        return {key: value for key, value in data_dict.items() if key in cls.get_table_column_name_list()}
+
     @classmethod
     def model_create(cls, data_dict: dict):
         """ 创建数据 """
@@ -123,9 +126,7 @@ class BaseModel(db.Model, JsonUtil):
         if "num" in column_name_list:  # 如果有num字段，自动获取最大的num，并赋值
             data_dict["num"] = cls.get_insert_num()
 
-        cls.format_create_data(data_dict)
-        insert_dict = {key: value for key, value in data_dict.items() if key in column_name_list}
-
+        insert_dict = cls.format_insert_data(data_dict)
         with db.auto_commit():
             db.session.add(cls(**insert_dict))
 
@@ -164,8 +165,8 @@ class BaseModel(db.Model, JsonUtil):
         with db.auto_commit():
             obj_list = []
             for data_dict in data_list:
-                cls.format_create_data(data_dict)
-                obj_list.append(cls(**data_dict))
+                insert_dict = cls.format_insert_data(data_dict)
+                obj_list.append(cls(**insert_dict))
             db.session.add_all(obj_list)
 
     def model_update(self, data_dict: dict):

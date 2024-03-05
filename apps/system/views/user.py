@@ -14,7 +14,9 @@ def system_manage_get_user_list():
     """ 用户列表 """
     form = GetUserListForm()
     if form.detail:  # 获取用户详情列表
-        get_filed = [User.id, User.name, User.account, User.status, User.create_time, User.business_list]
+        get_filed = [
+            User.id, User.name, User.account, User.status, User.create_time, User.business_list, User.sso_user_id
+        ]
     else:
         get_filed = User.get_simple_filed_list()
     return app.restful.get_success(User.make_pagination(form, get_filed=get_filed))

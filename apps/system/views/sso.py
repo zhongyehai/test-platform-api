@@ -55,7 +55,7 @@ def system_manage_get_token():
 
     user = User.query.filter_by(sso_user_id=sso_user_id, name=sso_user_name).first()
     if not user:  # 数据库中没有这个用户，需插入一条数据，再生成token
-        user = User.query.filter_by(name=sso_user_name).first()
+        user = User.query.filter_by(sso_user_id=None, name=sso_user_name).first()
         if user:
             user.model_update({"sso_user_id": sso_user_id})
         else:
