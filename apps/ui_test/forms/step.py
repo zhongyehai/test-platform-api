@@ -66,7 +66,7 @@ class AddStepForm(BaseForm):
         self.validate_quote_case()
         self.validate_extracts()
         self.validate_validates()
-        self.validate_data_form()
+        self.validate_execute_type()
 
     def validate_quote_case(self):
         """ 不能自己引用自己 """
