@@ -108,6 +108,7 @@ class CreatScriptForm(BaseForm):
     @field_validator("name")
     def validate_name(cls, value):
         cls.validate_is_true(re.match('^[a-zA-Z_]+$', value), "脚本文名错误，支持大小写字母和下划线")
+        return value
 
     def depends_validate(self):
         self.validate_has_permissions()
