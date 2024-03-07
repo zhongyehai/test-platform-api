@@ -1006,6 +1006,19 @@ class BaseTask(StatusFiled, NumFiled):
             except Exception as error:
                 pass
 
+    @classmethod
+    def clear_case_quote(cls, case_model, suite_model):
+        """ 清理任务对于已删除的用例的引用 """
+        task_list = cls.get_all()
+        for task in task_list:
+            query_list = case_model.db.session.query(case_model.id).filter(case_model.id.in_(task.case_ids)).all()
+            case_id_list = [case_id[0] for case_id in query_list]
+
+            query_list = suite_model.db.session.query(suite_model.id).filter(suite_model.id.in_(task.suite_ids)).all()
+            suite_id_list = [suite_id[0] for suite_id in query_list]
+
+            task.model_update({"case_ids": case_id_list, "suite_ids": suite_id_list})
+
 
 class BaseReport(BaseModel):
     """ 测试报告基类表 """

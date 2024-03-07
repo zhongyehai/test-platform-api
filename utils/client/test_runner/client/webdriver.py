@@ -16,8 +16,6 @@ class WebDriverSession(BaseSession):
         self.init_step_meta_data()
 
     def do_action(self, driver, name=None, case_id=None, variables_mapping={}, **kwargs):
-
-        self.init_step_meta_data()
         self.meta_data["name"] = name  # 记录测试名
         self.meta_data["case_id"] = case_id  # 步骤对应的用例id
         self.meta_data["variables_mapping"] = variables_mapping  # 记录发起此次请求时内存中的自定义变量
@@ -84,6 +82,8 @@ class WebDriverSession(BaseSession):
                 '实例化浏览器失败，请联系管理员检查驱动与浏览器是否匹配，异常代码【SessionNotCreatedException】')
 
         except WebDriverException as error:
+            if "ERR_CONNECTION_REFUSED" in str(error):  # 域名不可访问 Message: unknown error: net::ERR_CONNECTION_REFUSED
+                raise RunTimeException('地址不可访问，请检查')
             raise RunTimeException('事件驱动异常，请查看日志')
 
 

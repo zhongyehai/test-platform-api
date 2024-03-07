@@ -13,11 +13,11 @@ from ..blueprint import system_manage
 from ..model_factory import JobRunLog
 from ...config.model_factory import BusinessLine
 from ...api_test.model_factory import ApiProject, ApiReport, ApiReportCase, ApiReportStep, ApiCase, ApiStep, \
-    ApiMsg, ApiProjectEnv
+    ApiMsg, ApiProjectEnv, ApiCaseSuite, ApiTask
 from ...ui_test.model_factory import WebUiReport, WebUiReportCase, WebUiReportStep, WebUiCase, WebUiStep, \
-    WebUiProjectEnv, WebUiProject
+    WebUiProjectEnv, WebUiProject, WebUiCaseSuite, WebUiTask
 from ...app_test.model_factory import AppUiReport, AppUiReportCase, AppUiReportStep, AppUiCase, AppUiStep, \
-    AppUiProjectEnv, AppUiProject
+    AppUiProjectEnv, AppUiProject, AppUiCaseSuite, AppUiTask
 from utils.message.send_report import send_business_stage_count
 from config import _job_server_host
 from ... import create_app
@@ -82,6 +82,20 @@ class JobFuncs:
             ApiProject.clear_env(ApiProjectEnv)
             WebUiProject.clear_env(WebUiProjectEnv)
             AppUiProject.clear_env(AppUiProjectEnv)
+
+    @classmethod
+    def cron_clear_case_quote(cls):
+        """
+        {
+            "name": "清理任务对于已删除的用例的引用",
+            "id": "cron_clear_case_quote",
+            "cron": "0 25 2 * * ?"
+        }
+        """
+        with create_app().app_context():
+            ApiTask.clear_case_quote(ApiCase, ApiCaseSuite)
+            WebUiTask.clear_case_quote(WebUiCase, WebUiCaseSuite)
+            AppUiTask.clear_case_quote(AppUiCase, AppUiCaseSuite)
 
     @classmethod
     def cron_count_of_week(cls):

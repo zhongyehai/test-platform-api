@@ -101,8 +101,6 @@ class HttpSession(BaseSession):
         return req_resp_dict
 
     def send_client_request(self, method, url, name=None, case_id=None, variables_mapping={}, **kwargs):
-        self.init_step_meta_data()
-
         self.meta_data["name"] = name  # 记录测试名
         self.meta_data["case_id"] = case_id  # 步骤对应的用例id
         self.meta_data["variables_mapping"] = variables_mapping  # 记录发起此次请求时内存中的自定义变量

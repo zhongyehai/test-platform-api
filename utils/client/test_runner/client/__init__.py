@@ -28,5 +28,8 @@ class BaseSession:
                 "content_size": "",
                 "response_time_ms": 0,
                 "elapsed_ms": 0,
-            }
+            },
+            "setup_hooks": [],
+            "teardown_hooks": [],
+            "skip_if": []
         }

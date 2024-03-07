@@ -7,6 +7,7 @@ from . import exceptions, response, extract
 from .runner_context import SessionContext
 from .webdriver_action import GetWebDriver, GetAppDriver
 from utils.logs.redirect_print_log import RedirectPrintLogToMemory
+from utils.client.test_runner import logger
 from utils.client.test_runner.client.http import HttpSession
 from utils.client.test_runner.client.webdriver import WebDriverSession
 
@@ -59,6 +60,7 @@ class Runner:
         self.driver = None
         self.client_session = None
         self.redirect_print = None
+        self.client_init_error = None
 
         self.browser_driver_path = config.get("browser_path")
         self.browser_name = config.get("browser_type")
@@ -84,8 +86,6 @@ class Runner:
                 self.client_session = WebDriverSession()
                 self.driver = GetAppDriver(**self.appium_config)
 
-        self.client_session.meta_data["result"] = None  # 开始执行步骤前，把执行结果置为None
-
     def try_close_browser(self):
         """ 强制关闭浏览器 """
         try:
@@ -103,7 +103,7 @@ class Runner:
             return
 
         self.validation_results = []
-        self.client_session.init_step_meta_data()
+        # self.client_session.init_step_meta_data()
 
     def check_step_is_skip(self, test_dict):
         """ 判断是否跳过当前测试
@@ -204,7 +204,9 @@ class Runner:
 
         """
         self.__clear_step_test_data()
-        # self.redirect_print = RedirectPrintLogToMemory()  # 重定向自定义函数的打印到内存中
+        self.client_session.meta_data["setup_hooks"] = step_dict.get("setup_hooks", [])
+        self.client_session.meta_data["teardown_hooks"] = step_dict.get("teardown_hooks", [])
+        self.client_session.meta_data["skip_if"] = step_dict.get("skip_if", [])
 
         test_variables = step_dict.get("variables", {})
         self.session_context.init_test_variables(test_variables)
@@ -294,7 +296,9 @@ class Runner:
                 resp_obj=self.resp_obj,
                 driver=self.driver
             )
-        except (exceptions.ParamsError, exceptions.ValidationFailure, exceptions.ExtractFailure):
+            logger.log_info(f"""步骤: {step_name}, 执行成功\n""")
+        except (exceptions.ParamsError, exceptions.ValidationFailure, exceptions.ExtractFailure) as error:
+            logger.log_info(f"""步骤: {step_name}, 执行报错：{error}\n""")
             raise
         finally:
             self.validation_results = self.session_context.validation_results
@@ -322,7 +326,10 @@ class Runner:
             "extract_msgs": self.client_session.meta_data["data"][0].get("extract_msgs", {}),
             "validation_results": self.client_session.meta_data["data"][0].get("validation_results", []),
             "before": self.client_session.meta_data["data"][0].get("before"),
-            "after": self.client_session.meta_data["data"][0].get("after")
+            "after": self.client_session.meta_data["data"][0].get("after"),
+            "setup_hooks": self.client_session.meta_data["setup_hooks"],
+            "teardown_hooks": self.client_session.meta_data["teardown_hooks"],
+            "skip_if": self.client_session.meta_data["skip_if"]
         }
         return data
 
@@ -344,11 +351,26 @@ class Runner:
         try:
             self.init_client_session()  # 执行步骤前判断有没有初始化client_session
         except Exception as error:
-            print(f'初始化执行终端报错：{traceback.format_exc()}')
+            # ui
+            if "PATH" in str(error):
+                # ("'chromedriver.exe' executable needs to be in PATH. Please see https://chromedriver.chromium.org/home",)
+                self.client_init_error = "浏览器驱动找不到"
+            elif "version" in str(error):
+                # Message: session not created: This version of ChromeDriver only supports Chrome version
+                self.client_init_error = "驱动版本与浏览器不匹配"
+            elif "Could not find a connected" in str(error):  # app
+                # Message: An unknown server-side error occurred while processing the command. Original error: Could not find a connected Android device in 23322ms.
+                self.client_init_error = "服务器未识别到测试设备"
+            elif "'app' option is required for reinstall" in str(error):
+                # Message: An unknown server-side error occurred while processing the command. Original error: 'app' option is required for reinstall
+                self.client_init_error = "启动app失败，请检查 app是否安装、包名是否正确"
 
         self.report_step = report_step_model.query.filter_by(id=step_dict.get("report_step_id")).first()
         self.report_step.test_is_running()
         self.report_step.test_is_start_parse(step_dict)
+
+        if self.client_init_error:
+            raise RuntimeError(self.client_init_error)
 
         try:
             self._run_test(step_dict)
