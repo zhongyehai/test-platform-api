@@ -55,17 +55,17 @@ def config_get_run_env():
 def config_add_run_env():
     """ 新增运行环境 """
     form = PostRunEnvForm()
-    run_env = RunEnv.model_create_and_get(form.model_dump())
+    for env in form.env_list:
+        run_env = RunEnv.model_create_and_get(env.model_dump())
 
-    # 给所有的服务/项目/app创建此运行环境的数据
-    # ProjectEnvBusiness.add_env(run_env.id)
-    ApiProjectEnv.add_env(run_env.id, ApiProject)
-    WebUiProjectEnv.add_env(run_env.id, WebUiProject)
-    AppUiProjectEnv.add_env(run_env.id, AppUiProject)
+        # 给所有的服务/项目/app创建此运行环境的数据
+        ApiProjectEnv.add_env(run_env.id, ApiProject)
+        WebUiProjectEnv.add_env(run_env.id, WebUiProject)
+        AppUiProjectEnv.add_env(run_env.id, AppUiProject)
 
-    # 把环境分配给设置了自动绑定的业务线
-    business_list = BusinessLine.get_auto_bind_env_id_list()
-    RunEnv.env_to_business([run_env.id], business_list, "add")
+        # 把环境分配给设置了自动绑定的业务线
+        business_list = BusinessLine.get_auto_bind_env_id_list()
+        RunEnv.env_to_business([run_env.id], business_list, "add")
 
     return app.restful.add_success()
 

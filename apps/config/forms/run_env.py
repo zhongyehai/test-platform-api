@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import Field, field_validator
 
 from ..model_factory import RunEnv, BusinessLine
-from ...base_form import BaseForm, PaginationForm, required_str_field
+from ...base_form import BaseForm, PaginationForm, required_str_field, pydanticBaseModel
 
 
 class GetRunEnvListForm(PaginationForm):
@@ -47,15 +47,32 @@ class DeleteRunEnvForm(GetRunEnvForm):
     """ 删除环境表单校验 """
 
 
-class PostRunEnvForm(BaseForm):
-    """ 新增环境表单校验 """
+class RunEnvForm(pydanticBaseModel):
+    """ 环境表单校验 """
     name: str = required_str_field(title="环境名")
     code: str = required_str_field(title="环境code")
     group: str = required_str_field(title="环境分组")
     desc: Optional[str] = Field(None, title="备注")
 
 
-class PutRunEnvForm(GetRunEnvForm, PostRunEnvForm):
+class PostRunEnvForm(BaseForm):
+    """ 新增环境表单校验 """
+    env_list: List[RunEnvForm] = Field(..., title="环境list")
+
+    @field_validator("env_list")
+    def validate_env_list(cls, value):
+        code_list = []
+        for env in value:
+            if env.code in code_list:
+                raise ValueError(f"环境code【{env.code}】重复")
+            code_list.append(env.code)
+
+        run_env = RunEnv.db.session.query(RunEnv.code).filter(RunEnv.code.in_(code_list)).first()
+        cls.validate_is_false(run_env, f"环境code{run_env}已存在")
+        return value
+
+
+class PutRunEnvForm(GetRunEnvForm, RunEnvForm):
     """ 修改环境表单校验 """
 
 

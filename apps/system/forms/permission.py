@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm, required_str_field
+from ...base_form import BaseForm, PaginationForm, required_str_field, pydanticBaseModel
 from ..model_factory import Permission, RolePermissions
 
 
@@ -45,18 +45,31 @@ class DeletePermissionForm(GetPermissionForm):
         return value
 
 
-class CreatePermissionForm(BaseForm):
-    """ 创建权限的验证 """
+class PermissionForm(pydanticBaseModel):
+    """ 权限的验证 """
     name: str = required_str_field(title="权限名")
     desc: Optional[str] = Field(None, title="备注")
     source_addr: str = required_str_field(title="权限地址")
     source_type: str = Field("front", title="权限类型")
     source_class: str = Field("menu", title="权限分类")
 
-    def validate_name(self, field):
-        """ 权限名不重复 """
-        self.validate_data_is_not_exist(f"权限名 {field.data} 已存在", Permission, name=field.data)
+
+class CreatePermissionForm(BaseForm):
+    """ 创建权限的验证 """
+    data_list: List[PermissionForm] = Field(..., title="权限列表")
+
+    @field_validator("data_list")
+    def validate_data_list(cls, value):
+        name_list = []
+        for permission in value:
+            if permission.name in name_list:
+                raise ValueError(f"【{permission.name}】重复")
+            name_list.append(permission.name)
+
+        permission_name = Permission.db.session.query(Permission.name).filter(Permission.name.in_(name_list)).first()
+        cls.validate_is_false(permission_name, f"{permission_name}已存在")
+        return value
 
 
-class EditPermissionForm(GetPermissionForm, CreatePermissionForm):
+class EditPermissionForm(GetPermissionForm, PermissionForm):
     """ 编辑权限的校验 """

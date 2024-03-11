@@ -45,7 +45,7 @@ def system_manage_get_permission():
 def system_manage_add_permission():
     """ 新增权限 """
     form = CreatePermissionForm()
-    Permission.model_create(form.model_dump())
+    Permission.model_batch_create([permission.model_dump() for permission in form.data_list])
     return app.restful.add_success()
 
 

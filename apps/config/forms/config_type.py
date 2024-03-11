@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm, required_str_field
+from ...base_form import BaseForm, PaginationForm, required_str_field, pydanticBaseModel
 from ..model_factory import ConfigType
 
 
@@ -36,11 +36,28 @@ class DeleteConfigTypeForm(GetConfigTypeForm):
     """ 删除配置类型表单校验 """
 
 
-class PostConfigTypeForm(BaseForm):
-    """ 新增配置类型表单校验 """
+class ConfigTypeForm(pydanticBaseModel):
+    """ 配置类型表单校验 """
     name: str = required_str_field(title="配置类型名")
     desc: Optional[str] = Field('', title="备注")
 
 
-class PutConfigTypeForm(GetConfigTypeForm, PostConfigTypeForm):
+class PostConfigTypeForm(BaseForm):
+    """ 新增配置类型表单校验 """
+    data_list: List[ConfigTypeForm] = Field(..., title="配置类型list")
+
+    @field_validator("data_list")
+    def validate_data_list(cls, value):
+        name_list = []
+        for c_type in value:
+            if c_type.name in name_list:
+                raise ValueError(f"【{c_type.name}】重复")
+            name_list.append(c_type.name)
+
+        c_type = ConfigType.db.session.query(ConfigType.name).filter(ConfigType.name.in_(name_list)).first()
+        cls.validate_is_false(c_type, f"{c_type}已存在")
+        return value
+
+
+class PutConfigTypeForm(GetConfigTypeForm, ConfigTypeForm):
     """ 修改配置类型表单校验 """

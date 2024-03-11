@@ -28,7 +28,7 @@ def config_get_config_type():
 def config_add_config_type():
     """ 新增配置类型 """
     form = PostConfigTypeForm()
-    ConfigType.model_create(form.model_dump())
+    ConfigType.model_batch_create([c_type.model_dump() for c_type in form.data_list])
     return app.restful.add_success()
 
 
