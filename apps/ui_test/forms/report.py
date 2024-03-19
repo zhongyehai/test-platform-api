@@ -22,8 +22,6 @@ class GetReportListForm(PaginationForm):
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = [Report.project_id == self.project_id]
-        if self.name:
-            filter_list.append(Report.name.like(f'%{self.name}%'))
         if self.create_user:
             filter_list.append(Report.create_user == self.create_user)
         if self.trigger_type:
@@ -34,6 +32,8 @@ class GetReportListForm(PaginationForm):
             filter_list.append(Report.is_passed == self.is_passed)
         if self.env_list:
             filter_list.append(Report.env.in_(self.env_list))
+        if self.name:
+            filter_list.append(Report.name.like(f'%{self.name}%'))
         return filter_list
 
 

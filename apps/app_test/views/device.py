@@ -11,7 +11,7 @@ from ..forms.device import (
 )
 
 
-@app_test.login_get("/device/server/list")
+@app_test.get("/device/server/list")
 def app_get_run_server_list():
     """ 服务器列表 """
     form = GetServerListForm()
@@ -85,7 +85,7 @@ def app_delete_server():
     return app.restful.delete_success()
 
 
-@app_test.login_get("/device/phone/list")
+@app_test.get("/device/phone/list")
 def app_get_phone_list():
     """ 手机列表 """
     form = GetPhoneListForm()
