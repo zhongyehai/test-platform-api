@@ -188,6 +188,10 @@
       {
         "name": "配置管理-业务线管理菜单",
         "source_addr": "/config/business"
+      },
+      {
+        "name": "配置管理-webhook管理菜单",
+        "source_addr": "/config/webhook"
       }
     ],
     "系统管理菜单": [
