@@ -79,9 +79,7 @@ class AddTaskForm(BaseForm):
     @field_validator("conf")
     def validate_conf(cls, value):
         """ 校验任务运行配置 """
-        cls.validate_is_true(value.get("server_id"), '请选择运行服务器')
-        cls.validate_is_true(value.get("phone_id"), '请选择运行手机')
-        value["no_reset"] = value.get("no_reset") if value.get("no_reset") is not None else True
+        cls.validate_is_true(value.get("browser"), '请选择运行浏览器')
         return value
 
     def depends_validate(self):
