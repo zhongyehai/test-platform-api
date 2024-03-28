@@ -80,9 +80,16 @@ class ApiCaseSuiteTypeEnum(str, BaseEnum):
 class ReceiveTypeEnum(str, BaseEnum):
     """ 接收通知方式 """
     not_receive = "not_receive"  # 不接收
-    ding_ding = "ding_ding"  # 不接收
-    we_chat = "we_chat"  # 不接收
-    email = "email"  # 不接收
+    ding_ding = "ding_ding"  # 钉钉
+    we_chat = "we_chat"  # 微信
+    email = "email"  # 邮件
+
+
+class WebHookTypeEnum(str, BaseEnum):
+    """ webhook枚举 """
+    ding_ding = "ding_ding"  # 钉钉
+    we_chat = "we_chat"  # 微信
+    fei_shu = "fei_shu"  # 飞书
 
 
 class SendReportTypeEnum(str, BaseEnum):

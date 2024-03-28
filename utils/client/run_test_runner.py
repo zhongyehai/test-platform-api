@@ -13,7 +13,7 @@ from apps.ui_test.model_factory import WebUiProject, WebUiProjectEnv, WebUiEleme
     WebUiReport, WebUiReportCase, WebUiReportStep
 from apps.app_test.model_factory import AppUiProject, AppUiProjectEnv, AppUiElement, AppUiCaseSuite, AppUiCase, \
     AppUiStep, AppUiReport, AppUiReportCase, AppUiReportStep
-from apps.config.model_factory import RunEnv
+from apps.config.model_factory import RunEnv, WebHook
 from apps.assist.model_factory import Script
 from apps.config.model_factory import Config
 from apps.enums import TriggerTypeEnum
@@ -319,6 +319,10 @@ class RunTestRunner:
 
             # 发送测试报告
             logger.info(f'开始发送测试报告')
+
+            # 解析并组装webhook地址并加签
+            self.task_dict["webhook_list"] = WebHook.get_webhook_list(
+                self.task_dict["receive_type"], self.task_dict["webhook_list"])
             async_send_report(content_list=notify_list, **self.task_dict, report_addr=self.front_report_addr)
 
     @staticmethod

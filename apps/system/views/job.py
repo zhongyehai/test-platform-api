@@ -11,7 +11,7 @@ from ..forms.job import GetJobRunLogList, GetJobForm, GetJobLogForm, EnableJobFo
 from ..model_factory import ApschedulerJobs
 from ..blueprint import system_manage
 from ..model_factory import JobRunLog
-from ...config.model_factory import BusinessLine
+from ...config.model_factory import BusinessLine, WebHook
 from ...api_test.model_factory import ApiProject, ApiReport, ApiReportCase, ApiReportStep, ApiCase, ApiStep, \
     ApiMsg, ApiProjectEnv, ApiCaseSuite, ApiTask
 from ...ui_test.model_factory import WebUiReport, WebUiReportCase, WebUiReportStep, WebUiCase, WebUiStep, \
@@ -131,10 +131,10 @@ class JobFuncs:
             count_day = 'DATE_FORMAT(create_time, "%Y%m") = DATE_FORMAT(CURDATE(), "%Y%m")'
 
         with create_app().app_context():
-            business_list = BusinessLine.query.filter(BusinessLine.receive_type != "0").all()
+            business_list = BusinessLine.query.filter(BusinessLine.receive_type != "not_receive").all()
 
             for business in business_list:
-                run_log = JobRunLog.model_create({"business_id": business.id, "func_name": run_func})
+                run_log = JobRunLog.model_create_and_get({"business_id": business.id, "func_name": run_func})
                 business_template = {
                     "countTime": count_time,
                     "total": 0,
@@ -180,8 +180,8 @@ class JobFuncs:
                         business_template["record"].append(project_template)
 
                 # 聚合业务线的数据
-                business_template["webhookList"] = json.loads(business.webhook_list)
                 business_template["receiveType"] = business.receive_type
+                business_template["webhookList"] = WebHook.get_webhook_list(business.receive_type, business.webhook_list)
                 for project_count in business_template["record"]:
                     business_template["total"] += project_count["total"]
                     business_template["pass"] += project_count["pass"]

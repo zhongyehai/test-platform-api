@@ -4,14 +4,14 @@ from threading import Thread
 
 import requests
 
-from apps.config.model_factory import Config
+from apps.config.model_factory import Config, WebHook
 from apps.assist.model_factory import CallBack
 from apps.enums import SendReportTypeEnum, ReceiveTypeEnum
 from .send_email import SendEmail
 from .template import diff_api_msg, run_time_error_msg, call_back_webhook_msg, render_html_report, \
     get_business_stage_count_msg, inspection_ding_ding, inspection_we_chat
 from ..logs.log import logger
-from config import _default_web_hook
+from config import _default_web_hook, _web_hook_secret
 
 
 def send_msg(addr, msg):
@@ -33,7 +33,7 @@ def send_server_status(server_name, app_title=None, action_type="启动"):
                     f'#### 服务<font color=#FF0000>【{server_name}】【{app_title}】</font>{action_type}完成 \n> '
         }
     }
-    send_msg(_default_web_hook, msg)
+    send_msg(WebHook.build_ding_ding_addr(_default_web_hook, _web_hook_secret), msg)
 
 
 def send_system_error(title, content):
@@ -44,7 +44,7 @@ def send_system_error(title, content):
             "content": f"{title}:\n\n{content}"
         }
     }
-    send_msg(_default_web_hook, msg)
+    send_msg(WebHook.build_ding_ding_addr(_default_web_hook, _web_hook_secret), msg)
 
 
 def send_inspection_by_msg(receive_type, content_list, kwargs):
@@ -52,8 +52,7 @@ def send_inspection_by_msg(receive_type, content_list, kwargs):
     msg = inspection_ding_ding(content_list, kwargs) \
         if receive_type == ReceiveTypeEnum.ding_ding else inspection_we_chat(content_list, kwargs)
     for webhook in kwargs["webhook_list"]:
-        if webhook:
-            send_msg(webhook, msg)
+        send_msg(webhook, msg)
 
 
 def send_inspection_by_email(content_list, kwargs):
@@ -115,16 +114,10 @@ def call_back_for_pipeline(task_id, call_back_info: list, extend: dict, status):
     logger.info("回调执行结束")
 
 
-def send_diff_api_message(content, report_id, addr):
-    """ 发送接口对比报告 """
-    msg = diff_api_msg(content, Config.get_report_host(), Config.get_diff_api_addr(), report_id)
-    send_msg(addr, msg)
-
-
-def send_run_time_error_message(content, addr):
+def send_run_time_error_message(content):
     """ 执行自定义函数时发生了异常的报告 """
     msg = run_time_error_msg(content, Config.get_report_host(), Config.get_func_error_addr())
-    send_msg(addr, msg)
+    send_msg(WebHook.build_ding_ding_addr(_default_web_hook, _web_hook_secret), msg)
 
 
 def async_send_run_time_error_message(**kwargs):
@@ -136,10 +129,7 @@ def async_send_run_time_error_message(**kwargs):
 
 def send_run_func_error_message(content):
     """ 运行自定义函数错误通知 """
-    async_send_run_time_error_message(
-        content=content,
-        addr=f'{Config.get_report_host()}{Config.get_run_time_error_message_send_addr()}'
-    )
+    async_send_run_time_error_message(content=content)
 
 
 def send_business_stage_count(content):
