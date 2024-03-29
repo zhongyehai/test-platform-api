@@ -7,6 +7,7 @@ from urllib import parse
 import urllib3.fields as f
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
+from apps.enums import WebHookTypeEnum
 from utils.client.test_runner import built_in as assert_func_file
 from utils.client.test_runner.webdriver_action import Actions
 
@@ -17,6 +18,7 @@ _job_server_port = 8025  # job服务端口
 _job_server_host = f'http://localhost:{_job_server_port}/api/job/status'  # job服务接口
 
 # 默认的webhook地址，用于接收系统状态通知、系统异常/错误通知...
+_default_web_hook_type = WebHookTypeEnum.ding_ding  # 默认通知的webhook类型，见枚举类
 _default_web_hook = ''
 _web_hook_secret = ''  # secret，若是关键词模式，不用设置
 

@@ -8,10 +8,10 @@ from apps.config.model_factory import Config, WebHook
 from apps.assist.model_factory import CallBack
 from apps.enums import SendReportTypeEnum, ReceiveTypeEnum
 from .send_email import SendEmail
-from .template import diff_api_msg, run_time_error_msg, call_back_webhook_msg, render_html_report, \
+from .template import run_time_error_msg, call_back_webhook_msg, render_html_report, \
     get_business_stage_count_msg, inspection_ding_ding, inspection_we_chat
 from ..logs.log import logger
-from config import _default_web_hook, _web_hook_secret
+from config import _default_web_hook_type, _default_web_hook, _web_hook_secret
 
 
 def send_msg(addr, msg):
@@ -33,7 +33,7 @@ def send_server_status(server_name, app_title=None, action_type="启动"):
                     f'#### 服务<font color=#FF0000>【{server_name}】【{app_title}】</font>{action_type}完成 \n> '
         }
     }
-    send_msg(WebHook.build_ding_ding_addr(_default_web_hook, _web_hook_secret), msg)
+    send_msg(WebHook.build_webhook_addr(_default_web_hook_type, _default_web_hook, _web_hook_secret), msg)
 
 
 def send_system_error(title, content):
@@ -44,7 +44,7 @@ def send_system_error(title, content):
             "content": f"{title}:\n\n{content}"
         }
     }
-    send_msg(WebHook.build_ding_ding_addr(_default_web_hook, _web_hook_secret), msg)
+    send_msg(WebHook.build_webhook_addr(_default_web_hook_type, _default_web_hook, _web_hook_secret), msg)
 
 
 def send_inspection_by_msg(receive_type, content_list, kwargs):
@@ -117,7 +117,7 @@ def call_back_for_pipeline(task_id, call_back_info: list, extend: dict, status):
 def send_run_time_error_message(content):
     """ 执行自定义函数时发生了异常的报告 """
     msg = run_time_error_msg(content, Config.get_report_host(), Config.get_func_error_addr())
-    send_msg(WebHook.build_ding_ding_addr(_default_web_hook, _web_hook_secret), msg)
+    send_msg(WebHook.build_webhook_addr(_default_web_hook_type, _default_web_hook, _web_hook_secret), msg)
 
 
 def async_send_run_time_error_message(**kwargs):
