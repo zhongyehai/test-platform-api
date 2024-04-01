@@ -65,7 +65,7 @@ def system_manage_change_password():
     return app.restful.change_success()
 
 
-@system_manage.admin_put("/user/reset-password")
+@system_manage.login_put("/user/reset-password")
 def system_manage_reset_password():
     """ 重置密码 """
     form = GetUserForm()
