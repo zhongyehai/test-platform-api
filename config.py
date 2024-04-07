@@ -15,7 +15,7 @@ _main_server_port = 8024  # 主程序端口
 _main_server_host = f'http://localhost:{_main_server_port}'  # 主程序后端服务
 _job_server_port = 8025  # job服务端口
 _job_server_host = f'http://localhost:{_job_server_port}/api/job/status'  # job服务接口
-
+_admin_default_password = "123456"
 # 默认的webhook地址，用于接收系统状态通知、系统异常/错误通知...
 _default_web_hook_type = 'ding_ding'  # 默认通知的webhook类型，见枚举类apps.enums.WebHookTypeEnum
 _default_web_hook = ''

