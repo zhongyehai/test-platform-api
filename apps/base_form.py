@@ -260,7 +260,7 @@ class BaseForm(pydanticBaseModel, JsonUtil):
     def validate_data_format(cls, value, data_type):
         """ 校验数据格式 """
         try:
-            if data_type in ["variable", "func", "str", "file", "True", "False"]:
+            if data_type in ["variable", "func", "str", "file", "None", "True", "False"]:
                 pass
             elif data_type == "json":
                 cls.dumps(cls.loads(value))

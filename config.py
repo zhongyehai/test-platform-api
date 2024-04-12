@@ -126,6 +126,7 @@ data_type_mapping = [
     {"label": "小数", "value": "float"},
     {"label": "列表", "value": "list"},
     {"label": "字典", "value": "dict"},
+    {"label": "空值(null)", "value": "None"},
     {"label": "布尔值True", "value": "True"},
     {"label": "布尔值False", "value": "False"},
     {"label": "自定义函数", "value": "func"},

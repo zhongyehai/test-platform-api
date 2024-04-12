@@ -137,10 +137,8 @@ class FormatModel(JsonUtil):
             return value
         elif data_type == "json":
             return self.dumps(self.loads(value))
-        elif data_type == "True":
-            return True
-        elif data_type == "False":
-            return False
+        elif data_type in ["None", "True", "False"]:
+            return eval(data_type)
         else:  # python数据类型
             return eval(f'{data_type}({value})')
 
