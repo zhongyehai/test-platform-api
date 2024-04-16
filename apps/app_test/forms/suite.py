@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import field_validator
 from sqlalchemy import or_
@@ -50,16 +50,29 @@ class DeleteCaseSuiteForm(GetCaseSuiteForm):
 
 class AddCaseSuiteForm(BaseForm):
     """ 添加用例集的校验 """
+    project_id: int = Field(..., title="app id")
+    suite_type: UiCaseSuiteTypeEnum = Field(
+        ..., title="用例集类型", description="base: 基础用例集，process: 流程用例集，make_data: 造数据用例集")
+    parent: Optional[int] = Field(title="父用例集id")
+    data_list: List[str] = required_str_field(title="用例集名称list")
+
+    def depends_validate(self):
+        suite_data_list = [{
+            "project_id": self.project_id,
+            "suite_type": self.suite_type,
+            "parent": self.parent,
+            "name": suite_name
+        } for suite_name in self.data_list]
+        self.data_list = suite_data_list
+
+
+class EditCaseSuiteForm(GetCaseSuiteForm):
+    """ 编辑用例集 """
     project_id: int = Field(..., title="服务id")
     suite_type: UiCaseSuiteTypeEnum = Field(
-        ..., title="用例集类型",
-        description="base: 基础用例集，api: 单接口用例集，process: 流程用例集，make_data: 造数据用例集")
+        ..., title="用例集类型", description="base: 基础用例集，process: 流程用例集，make_data: 造数据用例集")
     parent: Optional[int] = Field(title="父用例集id")
     name: str = required_str_field(title="用例集名称")
-
-
-class EditCaseSuiteForm(AddCaseSuiteForm, GetCaseSuiteForm):
-    """ 编辑用例集 """
 
     def depends_validate(self):
         setattr(

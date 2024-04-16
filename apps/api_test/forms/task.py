@@ -1,7 +1,6 @@
 from typing import Optional, Union
 
 from pydantic import Field, field_validator
-from crontab import CronTab
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import ApiTask as Task
@@ -63,26 +62,9 @@ class AddTaskForm(BaseForm):
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     call_back: Optional[Union[list, dict]] = Field(title="回调给流水线")
 
-    @field_validator("cron")
-    def validate_cron(cls, value):
-        """ 校验cron格式 """
-        try:
-            if len(value.strip().split(" ")) == 6:
-                value += " *"
-            CronTab(value)
-        except Exception as error:
-            raise ValueError(f"时间配置【{value}】错误，需为cron格式, 请检查")
-        if value.startswith("*"):  # 每秒钟
-            raise ValueError(f"设置的执行频率过高，请重新设置")
-        return value
-
     def depends_validate(self):
-        """ 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
-        if self.is_send in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
-            if self.receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
-                self.validate_is_true(self.webhook_list, '选择了要通过机器人发送报告，则webhook地址必填')
-            elif self.receive_type == ReceiveTypeEnum.email.value:
-                self.validate_email(self.email_server, self.email_from, self.email_pwd, self.email_to)
+        self.validate_cron()
+        self.validate_is_send()
 
 
 class EditTaskForm(AddTaskForm, GetTaskForm):
@@ -90,6 +72,8 @@ class EditTaskForm(AddTaskForm, GetTaskForm):
 
     def depends_validate(self):
         """ 启用中 且 cron表达式有更改的，需要更新内存中的任务"""
+        self.validate_cron()
+        self.validate_is_send()
         old_task = getattr(self, 'task')
         setattr(self.task, 'update_to_memory', old_task.status == 1 and self.cron != old_task.cron)
 

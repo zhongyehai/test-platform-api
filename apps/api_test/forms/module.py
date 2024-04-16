@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import field_validator
 from sqlalchemy import or_
@@ -48,9 +48,18 @@ class DeleteModuleForm(GetModuleForm):
 
 class AddModuleForm(GetModuleTreeForm):
     """ 添加模块的校验 """
+    data_list: List[str] = required_str_field(title="模块名list")
+    parent: Optional[int] = Field(title="父级id")
+
+    def depends_validate(self):
+        module_list = [
+            {"project_id": self.project_id, "parent": self.parent, "name": module_name}
+            for module_name in self.data_list
+        ]
+        self.data_list = module_list
+
+
+class EditModuleForm(GetModuleTreeForm, GetModuleForm):
+    """ 修改模块的校验 """
     parent: Optional[int] = Field(title="父级id")
     name: str = required_str_field(title="模块名")
-
-
-class EditModuleForm(AddModuleForm, GetModuleForm):
-    """ 修改模块的校验 """

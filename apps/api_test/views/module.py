@@ -38,8 +38,10 @@ def api_get_module():
 def api_add_module():
     """ 新增模块 """
     form = AddModuleForm()
-    new_model = Module.add_module(form.model_dump())
-    return app.restful.add_success(new_model.to_dict())
+    if len(form.data_list) == 1:
+        return app.restful.add_success(Module.model_create_and_get(form.data_list[0]).to_dict())
+    Module.model_batch_create(form.data_list)
+    return app.restful.add_success()
 
 
 @api_test.login_put("/module")

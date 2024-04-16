@@ -47,8 +47,10 @@ def api_get_case_suite():
 def api_add_case_suite():
     """ 新增用例集 """
     form = AddCaseSuiteForm()
-    new_suite = CaseSuite.model_create_and_get(form.model_dump())
-    return app.restful.add_success(new_suite.to_dict())
+    if len(form.data_list) == 1:
+        return app.restful.add_success(CaseSuite.model_create_and_get(form.data_list[0]).to_dict())
+    CaseSuite.model_batch_create(form.data_list)
+    return app.restful.add_success()
 
 
 @api_test.login_put("/suite")

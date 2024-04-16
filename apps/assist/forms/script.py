@@ -94,7 +94,7 @@ class DebuggerScriptForm(GetScriptForm):
     @field_validator("expression")
     def validate_expression(cls, value):
         """ 调试表达式 """
-        cls.validate_is_true(value, "调试表达式必填")
+        cls.validate_is_true(value.startswith("${") and value.endswith("}"), "调试表达式格式错误，请按照 ${func(abc,123)} 格式填写")
         return value
 
 

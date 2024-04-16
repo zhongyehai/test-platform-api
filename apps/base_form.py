@@ -4,9 +4,11 @@ from typing import Optional, Union
 
 import requests
 import validators
+from crontab import CronTab
 from pydantic import BaseModel as pydanticBaseModel, Field, field_validator
 from flask import request, g
 
+from apps.enums import SendReportTypeEnum, ReceiveTypeEnum
 from utils.util.json_util import JsonUtil
 from utils.client.test_runner.parser import extract_variables, parse_function, extract_functions
 
@@ -374,6 +376,27 @@ class BaseForm(pydanticBaseModel, JsonUtil):
                 if key or extract_type:
                     if not key or not extract_type or not validate.get("remark"):
                         raise ValueError(f"{row_msg}要设置数据提取，则【key、提取方式、备注】都需设置")
+
+    def validate_cron(self):
+        """ 校验cron格式 """
+        if self.cron.startswith("*"):  # 每秒钟
+            raise ValueError(f"设置的执行频率过高，请重新设置")
+
+        try:
+            if len(self.cron.strip().split(" ")) == 6:
+                CronTab(self.cron + " *")
+            else:
+                CronTab(self.cron)
+        except Exception as error:
+            raise ValueError(f"时间配置cron格式【{self.cron}】错误，请检查")
+
+    def validate_is_send(self):
+        """ 发送报告相关校验, 发送报告类型 1.不发送、2.始终发送、3.仅用例不通过时发送 """
+        if self.is_send in [SendReportTypeEnum.always.value, SendReportTypeEnum.on_fail.value]:
+            if self.receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
+                self.validate_is_true(self.webhook_list, '选择了要通过机器人发送报告，则webhook地址必填')
+            elif self.receive_type == ReceiveTypeEnum.email.value:
+                self.validate_email(self.email_server, self.email_from, self.email_pwd, self.email_to)
 
     @classmethod
     def validate_appium_server_is_running(cls, server_ip, server_port):
