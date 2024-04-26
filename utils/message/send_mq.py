@@ -1,22 +1,38 @@
 # -*- coding: utf-8 -*-
-import json
 import pika
 import datetime
 
+from .mq_http_sdk.mq_producer import *
+from .mq_http_sdk.mq_client import *
 
-def send_rocket_mq(info, message):
-    pass
+
+def send_rocket_mq(host, access_id, access_key, topic, instance_id, message_body, message_tag, options: dict):
+    mq_client = MQClient(host, access_id, access_key)  # 初始化client。
+    producer = mq_client.get_producer(instance_id, topic)
+    try:
+        body = message_body if isinstance(message_body, str) else json.dumps(message_body)
+        topic_message = TopicMessage(body, message_tag)
+        for key, value in options.items():  # 自定义的属性
+            if value:
+                topic_message.put_property(key.upper(), value)
+        re_msg = producer.publish_message(topic_message)
+        # print("消息发送成功： MessageID: %s, BodyMD5: %s" % (re_msg.message_id, re_msg.message_body_md5))
+        return {"status": "success", "res": "MessageID: %s, BodyMD5: %s" % (re_msg.message_id, re_msg.message_body_md5)}
+
+    except MQExceptionBase as error:
+        # print(f"消息发送失败: {error}")
+        return {"status": "fail", "res": error}
 
 
-def send_rabbit_mq(info, message):  # 消息生产者
-    user_info = pika.PlainCredentials(info["account"], info["password"])
+def send_rabbit_mq(host, port, account, password, topic, message):  # 消息生产者
+    user_info = pika.PlainCredentials(account, password)
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=info["host"], port=info["port"], credentials=user_info))
+        pika.ConnectionParameters(host=host, port=port, credentials=user_info))
     channel = connection.channel()
-    channel.queue_declare(queue=info["queue_name"])  # 声明消息队列，消息将在这个队列传递，如不存在，则创建
+    channel.queue_declare(queue=topic)  # 声明消息队列，消息将在这个队列传递，如不存在，则创建
     # 向队列插入数值 routing_key的队列名为tester，body 就是放入的消息内容，exchange指定消息在哪个队列传递，
     # 这里是空的exchange但仍然能够发送消息到队列中，因为使用的是定义的空字符串"" exchange（默认的exchange）
-    channel.basic_publish(exchange='', routing_key=info["queue_name"], body=message)
+    channel.basic_publish(exchange='', routing_key=topic, body=message)
     connection.close()  # 关闭连接
 
 
@@ -30,4 +46,4 @@ if __name__ == "__main__":
     }
     message = json.dumps({"create_time": str(datetime.datetime.now())})
     print(message)
-    send_rocket_mq(mq_info, message)
+    send_rabbit_mq(**mq_info, message=message)

@@ -78,7 +78,6 @@ class GetFindElementByForm(BaseForm):
     def validate_type(cls, value):
         if value == "app":
             data = config.find_element_option + [
-                {"label": "根据元素范围坐标定位", "value": "bounds"},
                 {"label": "accessibility_id", "value": "accessibility id"}
             ]
         else:

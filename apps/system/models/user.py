@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
+import string
 from datetime import datetime
 
 from sqlalchemy import String, Integer, JSON
@@ -139,15 +140,10 @@ class User(BaseModel):
 
     def reset_password(self):
         """ 重置密码 """
-        letter_list = [
-            'z', 'y', 'x', 'w', 'v', 'u', 't', 's', 'r', 'q', 'p', 'o', 'n', 'm', 'l', 'k',
-            'j', 'i', 'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'
-        ]
-        str_list_1 = random.sample(letter_list, 4)
-        str_list_2 = random.sample(['.', '/', '_', '*'], 2)
-        str_list_3 = random.sample(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 2)
-        str_list_4 = random.sample(letter_list, 4)
-        new_password = ''.join([*str_list_1, *str_list_2, *str_list_3, *str_list_4])
+        new_password = ''.join(random.sample(string.ascii_letters, 4))  # 随机字母
+        new_password += ''.join(random.sample(string.punctuation, 2))  # 随机标点
+        new_password += ''.join(random.sample(string.digits, 2))  # 随机数字
+        new_password += ''.join(random.sample(string.ascii_letters, 4))  # 随机字母
         self.model_update({"password": new_password})
         return new_password
 

@@ -103,7 +103,8 @@ find_element_option = [
     {"label": "根据tag名字定位 ", "value": "tag name"},
     {"label": "根据超链接文本定位", "value": "link text"},
     {"label": "页面地址", "value": "url"},
-    {"label": "坐标定位(APP)", "value": "coordinate"}
+    {"label": "根据元素具体坐标定位", "value": "coordinate"},
+    {"label": "根据元素范围坐标定位", "value": "bounds"}
 ]
 
 # 数据提取类型

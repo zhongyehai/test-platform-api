@@ -121,6 +121,34 @@ def parse_swagger2_args(api_msg, api_detail, swagger_data, options):
     update_obj(api_msg, "data_json", json_data, update_data_json)
     update_obj(api_msg, "data_form", form_data, update_data_form)
 
+    # 解析response
+    all_definitions = swagger_data.get("definitions", {})  # 所有
+    res_ref = api_detail.get("responses", {}).get("200", {}).get("schema", {}).get("$ref")
+    if res_ref is None:
+        update_obj(api_msg, "response", {}, True)
+        return
+    definition = res_ref.split("/")[-1]
+    response = parse_openapi2_response(all_definitions, definition)
+    update_obj(api_msg, "response", response, True)
+    if not api_msg.mock_response:
+        update_obj(api_msg, "mock_response", response, api_msg.mock_response)
+
+
+def parse_openapi2_response(all_definition, definition):
+    definition_boj = all_definition.get(definition, {})
+    if not definition_boj:
+        return
+
+    args = {}
+    for key, value in definition_boj['properties'].items():
+        ref = value.get('$ref')
+        if ref is None:
+            response_item_value = f'{value.get("description")} {value.get("type")}'
+        else:
+            response_item_value = parse_openapi2_response(all_definition, ref.split('/')[-1])
+        args[key] = response_item_value
+    return args if definition_boj['type'] == 'object' else [args]
+
 
 def parse_openapi3_parameters(parameters):
     """ 解析 openapi3 parameters字段 """
@@ -327,6 +355,8 @@ def parse_openapi3_args(db_api, swagger_api, data_models, options):
     # 更新api数据
     db_api.headers, db_api.params, db_api.data_json, db_api.data_form = headers, query, json_data, form_data
     db_api.response = response_template
+    if not db_api.mock_response:  # 修改过 mock_response 的不自动更新，让用户手动更新
+        db_api.mock_response = response_template
 
 
 @assist.login_post("/swagger/pull")

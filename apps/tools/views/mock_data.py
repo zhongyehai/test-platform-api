@@ -9,10 +9,12 @@ import traceback
 import requests
 from flask import request, jsonify, current_app as app
 
+from apps.api_test.model_factory import ApiMsg
 from apps.tools.blueprint import tool
 from utils.util.file_util import CALL_BACK_ADDRESS, FileUtil
 from apps.assist.models.script import Script
 from apps.config.models.config import Config
+from utils.view import restful
 
 
 def send_msg_by_webhook(msg_type, msg):
@@ -169,3 +171,18 @@ def tool_mock_call_back():
 def tool_mock_api():
     """ 模拟接口处理，收到什么就返回什么 """
     return mock_api()
+
+
+@tool.route("/mock/api/<path:api_addr>", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def tool_mock_by_api(api_addr):
+    """ 自定义mock接口返回 """
+    if api_addr.startswith("/") is False:
+        api_addr = f"/{api_addr}"
+    query_set = ApiMsg.db.session.query(ApiMsg.mock_response).filter(ApiMsg.addr == api_addr, ApiMsg.method == request.method).first()
+    if not query_set:
+        query_set = ApiMsg.db.session.query(ApiMsg.mock_response).filter(ApiMsg.addr == api_addr).first()
+        if not query_set:
+            return restful.url_not_find()
+        else:
+            return restful.method_error()
+    return query_set[0]

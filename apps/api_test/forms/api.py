@@ -78,6 +78,8 @@ class EditApiForm(GetApiForm):
     data_urlencoded: dict = Field(title="urlencoded参数")
     data_text: Optional[str] = Field(title="文本参数")
     time_out: Optional[int] = Field(title="请求超时时间")
+    response: Optional[Union[str, dict, list]] = Field({}, title="接口响应")
+    mock_response: Optional[Union[str, dict, list]] = Field({}, title="mock接口响应")
 
     @field_validator('headers')
     def validate_headers(cls, value):

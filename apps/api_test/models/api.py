@@ -22,4 +22,5 @@ class ApiMsg(
     level: Mapped[ApiLevelEnum] = mapped_column(default=ApiLevelEnum.P1, comment="接口重要程度：P0、P1、P2")
     data_text: Mapped[str] = mapped_column(Text(), nullable=True, default="", comment="文本参数")
     response: Mapped[dict] = mapped_column(JSON, default={}, comment="响应对象")
+    mock_response: Mapped[dict] = mapped_column(JSON, default={}, comment="mock响应对象，用于前端提前对接后端进行调试")
     use_count: Mapped[int] = mapped_column(Integer(), default=0, comment="被使用次数，即多少个步骤直接使用了此接口")
