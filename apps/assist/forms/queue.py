@@ -3,12 +3,12 @@ from typing import Optional, Union
 from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
-from ..model_factory import QueueLink, QueueTopic, QueueMsgLog
+from ..model_factory import QueueInstance, QueueTopic, QueueMsgLog
 from ...enums import QueueTypeEnum
 
 
-class GetQueueLinkListForm(PaginationForm):
-    host: Optional[str] = Field(None, title="队列链接地址")
+class GetQueueInstanceListForm(PaginationForm):
+    host: Optional[str] = Field(None, title="队列实例地址")
     queue_type: Optional[str] = Field(None, title="队列类型")
     instance_id: Optional[str] = Field(None, title="rocket_mq 实例id")
 
@@ -16,25 +16,25 @@ class GetQueueLinkListForm(PaginationForm):
         """ 查询条件 """
         filter_list = []
         if self.host:
-            filter_list.append(QueueLink.host.like(f'%{self.host}%'))
+            filter_list.append(QueueInstance.host.like(f'%{self.host}%'))
         if self.queue_type:
-            filter_list.append(QueueLink.queue_type == self.queue_type)
+            filter_list.append(QueueInstance.queue_type == self.queue_type)
         if self.instance_id:
-            filter_list.append(QueueLink.instance_id.like(f'%{self.instance_id}%'))
+            filter_list.append(QueueInstance.instance_id.like(f'%{self.instance_id}%'))
         return filter_list
 
 
-class GetQueueLinkForm(BaseForm):
-    id: int = Field(..., title="队列链接id")
+class GetQueueInstanceForm(BaseForm):
+    id: int = Field(..., title="队列实例数据id")
 
     @field_validator("id")
     def validate_id(cls, value):
-        queue = cls.validate_data_is_exist('数据不存在', QueueLink, id=value)
-        setattr(cls, "queue_link", queue)
+        queue = cls.validate_data_is_exist('数据不存在', QueueInstance, id=value)
+        setattr(cls, "queue_instance", queue)
         return value
 
 
-class CreatQueueLinkForm(BaseForm):
+class CreatQueueInstanceForm(BaseForm):
     queue_type: QueueTypeEnum = Field(title="队列类型", description="rocket_mq、rabbit_mq、redis，目前只支持mq")
     instance_id: Optional[str] = Field(None, title="rocket_mq 实例id")
     name: Optional[str] = Field(None, title="别名")
@@ -47,8 +47,8 @@ class CreatQueueLinkForm(BaseForm):
     desc: Optional[str] = Field(None, title="描述")
 
 
-class EditQueueLinkForm(GetQueueLinkForm):
-    """ 修改消息队列链接 """
+class EditQueueInstanceForm(GetQueueInstanceForm):
+    """ 修改消息队列实例 """
     queue_type: QueueTypeEnum = Field(title="队列类型", description="rocket_mq、rabbit_mq、redis，目前只支持mq")
     instance_id: Optional[str] = Field(None, title="rocket_mq 实例id")
     name: Optional[str] = Field(None, title="别名")
@@ -57,14 +57,14 @@ class EditQueueLinkForm(GetQueueLinkForm):
 
 
 class GetQueueTopicListForm(PaginationForm):
-    link_id: Optional[str] = Field(None, title="队列链接id")
+    instance_id: Optional[str] = Field(None, title="队列实例数据id")
     topic: Optional[str] = Field(None, title="topic名字")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = []
-        if self.link_id:
-            filter_list.append(QueueTopic.link_id == self.link_id)
+        if self.instance_id:
+            filter_list.append(QueueTopic.instance_id == self.instance_id)
         if self.topic:
             filter_list.append(QueueTopic.topic.like(f'%{self.topic}%'))
         return filter_list
@@ -86,7 +86,7 @@ class DeleteQueueTopicForm(GetQueueTopicForm):
 
 class CreatQueueTopicForm(BaseForm):
     """ 创建消息队列 """
-    link_id: int = Field(..., title="所属消息队列链接id")
+    instance_id: int = Field(..., title="所属消息队列实例数据id")
     topic: Optional[str] = Field(title="rocket_mq对应topic，rabbit_mq对应queue_name")
     desc: Optional[str] = Field(None, title="备注")
 
@@ -106,13 +106,13 @@ class SendMessageForm(GetQueueTopicForm):
         topic = cls.validate_data_is_exist('数据不存在', QueueTopic, id=value)
         setattr(cls, "queue_topic", topic)
 
-        query_set = QueueLink.db.session.query(
-            QueueLink.id, QueueLink.queue_type, QueueLink.host, QueueLink.port, QueueLink.account,
-            QueueLink.password, QueueLink.access_id, QueueLink.access_key, QueueLink.instance_id
-        ).filter(QueueTopic.id == value, QueueLink.id == QueueTopic.link_id).one()
+        query_set = QueueInstance.db.session.query(
+            QueueInstance.id, QueueInstance.queue_type, QueueInstance.host, QueueInstance.port, QueueInstance.account,
+            QueueInstance.password, QueueInstance.access_id, QueueInstance.access_key, QueueInstance.instance_id
+        ).filter(QueueTopic.id == value, QueueInstance.id == QueueTopic.instance_id).one()
         cls.validate_is_true(query_set, "数据不存在")
-        setattr(cls, "queue_link", {
-            "link_id": query_set[0],
+        setattr(cls, "queue_instance", {
+            "id": query_set[0],
             "queue_type": query_set[1],
             "host": query_set[2],
             "port": query_set[3],

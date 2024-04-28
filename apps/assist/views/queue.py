@@ -2,9 +2,9 @@
 from flask import current_app as app
 
 from ..blueprint import assist
-from ..model_factory import QueueLink, QueueTopic, QueueMsgLog
+from ..model_factory import QueueInstance, QueueTopic, QueueMsgLog
 from ...base_form import ChangeSortForm
-from ..forms.queue import GetQueueLinkListForm, GetQueueLinkForm, CreatQueueLinkForm, EditQueueLinkForm, \
+from ..forms.queue import GetQueueInstanceListForm, GetQueueInstanceForm, CreatQueueInstanceForm, EditQueueInstanceForm, \
     GetQueueTopicListForm, GetQueueTopicForm, CreatQueueTopicForm, EditQueueTopicForm, DeleteQueueTopicForm, \
     SendMessageForm, GetQueueMsgLogForm
 
@@ -12,48 +12,48 @@ from utils.message.send_mq import send_rabbit_mq, send_rocket_mq
 from ...enums import QueueTypeEnum
 
 
-@assist.login_get("/queue-link/list")
-def assist_get_queue_link_list():
-    """ 消息队列链接列表 """
-    form = GetQueueLinkListForm()
-    get_filed = [QueueLink.id, QueueLink.queue_type, QueueLink.host, QueueLink.port, QueueLink.desc,
-                 QueueLink.instance_id, QueueLink.create_user]
-    return app.restful.get_success(QueueLink.make_pagination(form, get_filed=get_filed))
+@assist.login_get("/queue-instance/list")
+def assist_get_queue_instance_list():
+    """ 消息队列实例列表 """
+    form = GetQueueInstanceListForm()
+    get_filed = [QueueInstance.id, QueueInstance.queue_type, QueueInstance.host, QueueInstance.port, QueueInstance.desc,
+                 QueueInstance.instance_id, QueueInstance.create_user]
+    return app.restful.get_success(QueueInstance.make_pagination(form, get_filed=get_filed))
 
 
-@assist.login_put("/queue-link/sort")
-def assist_change_queue_link_sort():
+@assist.login_put("/queue-instance/sort")
+def assist_change_queue_instance_sort():
     """ 更新消息队列排序 """
     form = ChangeSortForm()
-    QueueLink.change_sort(**form.model_dump())
+    QueueInstance.change_sort(**form.model_dump())
     return app.restful.change_success()
 
 
-@assist.login_get("/queue-link")
-def assist_get_queue_link():
-    """ 获取消息队列链接 """
-    form = GetQueueLinkForm()
-    queue_link_dict = form.queue_link.to_dict()
-    queue_link_dict.pop('account')
-    queue_link_dict.pop('password')
-    queue_link_dict.pop('access_id')
-    queue_link_dict.pop('access_key')
-    return app.restful.get_success(queue_link_dict)
+@assist.login_get("/queue-instance")
+def assist_get_queue_instance():
+    """ 获取消息队列实例 """
+    form = GetQueueInstanceForm()
+    queue_instance_dict = form.queue_instance.to_dict()
+    queue_instance_dict.pop('account')
+    queue_instance_dict.pop('password')
+    queue_instance_dict.pop('access_id')
+    queue_instance_dict.pop('access_key')
+    return app.restful.get_success(queue_instance_dict)
 
 
-@assist.login_post("/queue-link")
-def assist_add_queue_link():
-    """ 新增消息队列链接 """
-    form = CreatQueueLinkForm()
-    QueueLink.model_create(form.model_dump())
+@assist.login_post("/queue-instance")
+def assist_add_queue_instance():
+    """ 新增消息队列实例 """
+    form = CreatQueueInstanceForm()
+    QueueInstance.model_create(form.model_dump())
     return app.restful.add_success()
 
 
-@assist.login_put("/queue-link")
-def assist_change_queue_link():
-    """ 修改消息队列链接 """
-    form = EditQueueLinkForm()
-    form.queue_link.model_update(form.model_dump())
+@assist.login_put("/queue-instance")
+def assist_change_queue_instance():
+    """ 修改消息队列实例 """
+    form = EditQueueInstanceForm()
+    form.queue_instance.model_update(form.model_dump())
     return app.restful.change_success()
 
 
@@ -61,7 +61,7 @@ def assist_change_queue_link():
 def assist_get_queue_topic_list():
     """ 消息队列列表 """
     form = GetQueueTopicListForm()
-    get_filed = [QueueTopic.id, QueueTopic.link_id, QueueTopic.topic, QueueTopic.desc, QueueTopic.create_user]
+    get_filed = [QueueTopic.id, QueueTopic.instance_id, QueueTopic.topic, QueueTopic.desc, QueueTopic.create_user]
     return app.restful.get_success(QueueTopic.make_pagination(form, get_filed=get_filed))
 
 
@@ -116,23 +116,23 @@ def assist_delete_queue_topic():
 def assist_send_message_to_queue():
     """ 发送消息队列 """
     form = SendMessageForm()
-    match form.queue_link["queue_type"]:
+    match form.queue_instance["queue_type"]:
         case QueueTypeEnum.rabbit_mq:
             send_res = send_rabbit_mq(
-                form.queue_link["host"],
-                form.queue_link["port"],
-                form.queue_link["account"],
-                form.queue_link["password"],
-                form.queue_link["topic"],
+                form.queue_instance["host"],
+                form.queue_instance["port"],
+                form.queue_instance["account"],
+                form.queue_instance["password"],
+                form.queue_topic.topic,
                 form.message
             )
         case QueueTypeEnum.rocket_mq:
             send_res = send_rocket_mq(
-                form.queue_link["host"],
-                form.queue_link["access_id"],
-                form.queue_link["access_key"],
+                form.queue_instance["host"],
+                form.queue_instance["access_id"],
+                form.queue_instance["access_key"],
                 form.queue_topic.topic,
-                form.queue_link["instance_id"],
+                form.queue_instance["instance_id"],
                 form.message,
                 form.tag,
                 form.options
@@ -140,7 +140,7 @@ def assist_send_message_to_queue():
         case _:
             return app.restful.fail("不支持当前队列")
     QueueMsgLog.model_create({
-        "link_id": form.queue_link["link_id"],
+        "instance_id": form.queue_instance["id"],
         "topic_id": form.id,
         "tag": form.tag,
         "options": form.options,
