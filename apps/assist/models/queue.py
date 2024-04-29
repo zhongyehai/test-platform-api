@@ -2,7 +2,7 @@
 from sqlalchemy import String, Integer, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.base_model import NumFiled
+from apps.base_model import NumFiled, BaseModel
 from apps.enums import QueueTypeEnum
 
 
@@ -14,7 +14,6 @@ class QueueInstance(NumFiled):
     queue_type: Mapped[QueueTypeEnum] = mapped_column(String(128), default="", comment="消息队列类型")
     instance_id: Mapped[str] = mapped_column(String(128), default="", comment="rocket_mq 对应的 instance_id")
     desc: Mapped[str] = mapped_column(String(512), nullable=True, default="", comment="描述")
-    num: Mapped[int] = mapped_column(Integer, nullable=True, default=0, comment="排序字段")
 
     # rabbit_mq
     host: Mapped[str] = mapped_column(String(128), default="", comment="rabbit_mq 地址")
@@ -29,15 +28,13 @@ class QueueInstance(NumFiled):
 
 class QueueTopic(NumFiled):
     __tablename__ = "auto_test_queue_topic"
-    __table_args__ = {"comment": "具体消息队列管理"}
-    # 具体队列
-    num: Mapped[int] = mapped_column(Integer, nullable=True, default=0, comment="排序字段")
+    __table_args__ = {"comment": "topic 管理"}
     instance_id: Mapped[int] = mapped_column(Integer(), nullable=True, comment="rocket_mq 实例数据id")
     topic: Mapped[str] = mapped_column(String(128), default="", comment="rocket_mq topic，rabbit_mq queue_name")
     desc: Mapped[str] = mapped_column(String(512), nullable=True, default="", comment="描述")
 
 
-class QueueMsgLog(NumFiled):
+class QueueMsgLog(BaseModel):
     """ 消息发送记录 """
     __tablename__ = "auto_test_queue_message_log"
     __table_args__ = {"comment": "消息发送记录表"}

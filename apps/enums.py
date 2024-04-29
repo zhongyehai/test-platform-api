@@ -111,3 +111,11 @@ class TriggerTypeEnum(str, BaseEnum):
     pipeline = "pipeline"  # 流水线
     page = "page"  # 页面
     cron = "cron"  # 定时任务
+
+
+class TodoListEnum(str, BaseEnum):
+    """ 待办枚举 """
+    todo = "todo"
+    doing = "doing"
+    testing = "testing"
+    done = "done"

@@ -252,6 +252,10 @@
       {
         "name": "测试管理-生产bug跟踪菜单",
         "source_addr": "/manage/bug-track"
+      },
+      {
+        "name": "测试管理-待办管理",
+        "source_addr": "/manage/todo"
       }
     ],
     "自动化辅助菜单": [
