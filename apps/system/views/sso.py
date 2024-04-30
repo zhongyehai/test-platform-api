@@ -51,25 +51,31 @@ def system_manage_get_token():
 
     # 解析token
     payload = parse_token(sso_token["id_token"])["payload"]
-    sso_user_id, sso_user_name = payload["sub"], payload["user_name"]
+    sso_user_id, sso_user_name = payload.get("sub"), payload.get("user_name")
+    phone_number, email = payload.get("phoneNumber"), payload.get("email")
 
     user = User.query.filter_by(sso_user_id=sso_user_id, name=sso_user_name).first()
     if not user:  # 数据库中没有这个用户，需插入一条数据，再生成token
         user = User.query.filter_by(sso_user_id=None, name=sso_user_name).first()
         if user:
-            user.model_update({"sso_user_id": sso_user_id})
+            user.model_update({"sso_user_id": sso_user_id, "email": email, "phone_number": phone_number})
         else:
             # 新增用户，默认为公共业务线权限
             common_id = BusinessLine.db.session.query(BusinessLine.id).filter(BusinessLine.code == "common").first()
             user = User.model_create_and_get({
                 "sso_user_id": sso_user_id,
                 "name": sso_user_name,
+                "phone_number": phone_number,
+                "email": email,
                 "business_list": [common_id[0]],
                 "password": "123456"
             })
             # 角色为测试人员
             role_id = Role.db.session.query(Role.id).filter(Role.name == "测试人员").first()
             UserRoles.model_create({"user_id": user.id, "role_id": role_id[0]})
+    else:  # 历史数据，如果没有手机号，需要更新一下
+        if user.phone_number is None:
+            user.model_update({"email": email, "phone_number": phone_number})
 
     # 根据用户id信息生成token，并返回给前端
     user_info = user.build_access_token()

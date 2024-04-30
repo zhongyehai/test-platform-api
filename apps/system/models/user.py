@@ -127,6 +127,8 @@ class User(BaseModel):
     account: Mapped[str] = mapped_column(String(50), nullable=True, unique=True, index=True, comment="账号")
     password: Mapped[str] = mapped_column(String(255), comment="密码", )
     name: Mapped[str] = mapped_column(String(12), nullable=False, comment="姓名")
+    phone_number: Mapped[str] = mapped_column(String(12), nullable=True, comment="手机号")
+    email: Mapped[str] = mapped_column(String(255), nullable=True, comment="邮箱")
     status: Mapped[int] = mapped_column(Integer(), default=1, comment="状态，1为启用，0为冻结")
     business_list: Mapped[str] = mapped_column(JSON, default=[], comment="用户拥有的业务线")
 
