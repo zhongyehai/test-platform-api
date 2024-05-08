@@ -16,7 +16,7 @@ def save_response_log(result):
         return
     else:
         logger.info(
-            f'【{g.get("request_id")}】【{g.get("user_name")}】【{g.user_ip}】【{request.method}】【{request.full_path}】, \n响应数据:{json.loads(result[0])}\n')
+            f'【{g.get("request_id")}】【{g.get("user_name")}】【{g.get("user_ip")}】【{request.method}】【{request.full_path}】, \n响应数据:{json.loads(result[0])}\n')
 
 
 def register_after_hook(app):

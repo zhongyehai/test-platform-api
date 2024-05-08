@@ -6,6 +6,7 @@ from ..model_factory import WebUiModule as Module
 from ..forms.module import (
     AddModuleForm, EditModuleForm, DeleteModuleForm, GetModuleForm, GetModuleTreeForm, GetModuleListForm
 )
+from ...base_form import ChangeSortForm
 
 
 @ui_test.login_get("/module/list")
@@ -25,6 +26,14 @@ def ui_get_module_tree():
             project_id=form.project_id).order_by(Module.parent.asc()).all()
     ]
     return app.restful.get_success(module_list)
+
+
+@ui_test.login_put("/module/sort")
+def ui_change_case_module_sort():
+    """ 修改模块排序 """
+    form = ChangeSortForm()
+    Module.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @ui_test.login_get("/module")

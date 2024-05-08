@@ -20,13 +20,6 @@ def register_before_hook(app):
         g.request_id = uuid.uuid4()
 
     @app.before_request
-    def set_default_user():
-        """ 设置一个默认用户 """
-        if hasattr(g, "common_user_id") is False:
-            current_user_query = User.db.session.query(User.id).filter(User.account == "common").first()
-            g.common_user_id = current_user_query[0] if current_user_query else None
-
-    @app.before_request
     def parse_request_ip():
         """ 获取用户ip """
         g.user_ip = request.headers.get("X-Forwarded-History") or request.headers.get(
@@ -36,6 +29,13 @@ def register_before_hook(app):
     def login_and_permission_required():
         """ 登录校验和权限校验 """
         check_login_and_permissions()  # 校验登录状态和权限
+
+    @app.before_request
+    def set_default_user():
+        """ 如果没有解析到用户信息，且可访问路由，则设置一个默认用户 """
+        if hasattr(g, "user_id") is False:
+            current_user_query = User.db.session.query(User.id).filter(User.account == "common").first()
+            g.common_user_id = current_user_query[0] if current_user_query else None
 
     @app.before_request
     def save_request_log():

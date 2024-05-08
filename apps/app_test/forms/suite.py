@@ -15,10 +15,13 @@ class GetCaseSuiteListForm(PaginationForm):
     name: Optional[str] = Field(None, title="用例集名")
     suite_type: Optional[str] = Field(None, title="用例集类型")
     project_id: int = Field(..., title="服务id")
+    parent: Optional[int] = Field(None, title="父级id")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = [CaseSuite.project_id == self.project_id]
+        if self.parent:
+            filter_list.append(CaseSuite.parent == self.parent)
         if self.suite_type:
             filter_list.append(CaseSuite.suite_type.in_(self.suite_type.split(',')))
         if self.name:
@@ -57,12 +60,14 @@ class AddCaseSuiteForm(BaseForm):
     data_list: List[str] = required_str_field(title="用例集名称list")
 
     def depends_validate(self):
+        max_num = CaseSuite.get_max_num()
         suite_data_list = [{
             "project_id": self.project_id,
             "suite_type": self.suite_type,
             "parent": self.parent,
-            "name": suite_name
-        } for suite_name in self.data_list]
+            "name": suite_name,
+            "num": max_num + index + 1
+        } for index, suite_name in enumerate(self.data_list)]
         self.data_list = suite_data_list
 
 

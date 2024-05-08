@@ -8,6 +8,7 @@ from ..model_factory import ApiCase as Case, ApiReport as Report, ApiCaseSuite a
 from apps.busines import RunCaseBusiness
 from utils.util.file_util import STATIC_ADDRESS
 from utils.client.run_api_test import RunCase
+from ...base_form import ChangeSortForm
 
 
 @api_test.login_get("/suite/template/download")
@@ -34,6 +35,14 @@ def api_get_case_suite_list():
     form = GetCaseSuiteListForm()
     get_filed = [CaseSuite.id, CaseSuite.name, CaseSuite.parent, CaseSuite.project_id, CaseSuite.suite_type]
     return app.restful.get_success(CaseSuite.make_pagination(form, get_filed=get_filed))
+
+
+@api_test.login_put("/suite/sort")
+def api_change_case_suite_sort():
+    """ 修改用例集排序 """
+    form = ChangeSortForm()
+    CaseSuite.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @api_test.login_get("/suite")

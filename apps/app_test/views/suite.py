@@ -2,6 +2,7 @@
 from flask import request, current_app as app, send_from_directory
 
 from ..blueprint import app_test
+from ...base_form import ChangeSortForm
 from ...busines import RunCaseBusiness
 from ..model_factory import AppUiCase as Case, AppUiReport as Report, AppUiCaseSuite as CaseSuite
 from ..forms.suite import AddCaseSuiteForm, EditCaseSuiteForm, GetCaseSuiteListForm, GetCaseSuiteForm, \
@@ -34,6 +35,14 @@ def app_get_case_suite_list():
     form = GetCaseSuiteListForm()
     get_filed = [CaseSuite.id, CaseSuite.name, CaseSuite.parent, CaseSuite.project_id, CaseSuite.suite_type]
     return app.restful.get_success(CaseSuite.make_pagination(form, get_filed=get_filed))
+
+
+@app_test.login_put("/suite/sort")
+def app_change_case_suite_sort():
+    """ 修改用例集排序 """
+    form = ChangeSortForm()
+    CaseSuite.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @app_test.login_get("/suite")

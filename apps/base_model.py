@@ -10,7 +10,7 @@ import requests
 from flask import g, request
 from flask_sqlalchemy import SQLAlchemy as _SQLAlchemy
 from flask_sqlalchemy.query import Query as BaseQuery
-from sqlalchemy import MetaData, or_, text, Integer, String, DateTime, JSON, Text, Boolean
+from sqlalchemy import MetaData, or_, text, Integer, String, DateTime, JSON, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from werkzeug.security import generate_password_hash
 

@@ -15,10 +15,13 @@ class GetModuleTreeForm(BaseForm):
 class GetModuleListForm(GetModuleTreeForm, PaginationForm):
     """ 查找模块 """
     name: Optional[str] = Field(None, title="模块名")
+    parent: Optional[int] = Field(None, title="父级id")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = [Module.project_id == self.project_id]
+        if self.parent:
+            filter_list.append(Module.parent == self.parent)
         if self.name:
             filter_list.append(Project.name.like(f'%{self.name}%'))
         return filter_list
@@ -52,9 +55,10 @@ class AddModuleForm(GetModuleTreeForm):
     parent: Optional[int] = Field(title="父级id")
 
     def depends_validate(self):
+        max_num = Module.get_max_num()
         module_list = [
-            {"project_id": self.project_id, "parent": self.parent, "name": module_name}
-            for module_name in self.data_list
+            {"project_id": self.project_id, "parent": self.parent, "name": module_name, "num": max_num + index + 1}
+            for index, module_name in enumerate(self.data_list)
         ]
         self.data_list = module_list
 
