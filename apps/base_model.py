@@ -110,8 +110,9 @@ class BaseModel(db.Model, JsonUtil):
             if hasattr(g, 'user_id') and g.user_id:
                 current_user = g.user_id  # 真实用户
             else:
-                current_user = g.common_user_id  # 预设的用户id
-        except:
+                from apps.system.model_factory import User
+                current_user = User.db.session.query(User.id).filter(User.account == "common").first()[0]
+        except Exception as error:
             current_user = None
         data_dict["create_user"] = data_dict["update_user"] = current_user
         data_dict["create_time"] = data_dict["update_time"] = None
