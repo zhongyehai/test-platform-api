@@ -31,13 +31,6 @@ def register_before_hook(app):
         check_login_and_permissions()  # 校验登录状态和权限
 
     @app.before_request
-    def set_default_user():
-        """ 如果没有解析到用户信息，且可访问路由，则设置一个默认用户 """
-        if hasattr(g, "user_id") is False:
-            current_user_query = User.db.session.query(User.id).filter(User.account == "common").first()
-            g.common_user_id = current_user_query[0] if current_user_query else None
-
-    @app.before_request
     def save_request_log():
         """ 打日志 """
         if request.method != "HEAD":
