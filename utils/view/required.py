@@ -25,11 +25,7 @@ def check_login_and_permissions():
     request_path = request.path.split('/', 3)[-1]  # /api/apiTest/project/detail  =>  project/detail
     auth_type = app.url_required_map.get(f'{request.method}_/{request_path}')
 
-    try:
-        parse_access_token(request.headers.get("access-token"))  # 存在不需要校验身份，但是需要用户id的接口
-    except Exception as e:
-        pass
-
+    parse_access_token(request.headers.get("access-token"))  # 存在不需要校验身份，但是需要用户id的接口
     if auth_type != AuthType.not_auth:
         if auth_type == AuthType.login:
             if not g.user_id:
