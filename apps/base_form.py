@@ -135,7 +135,7 @@ class BaseForm(pydanticBaseModel, JsonUtil):
         self.__dict__[key] = value
 
     def __getattr__(self, item):
-        return self.__dict__[item]
+        return self.__dict__.get(item, None)
 
     def __init__(self):
         """ 实例化的时候获取所有参数一起传给BaseForm，pydantic会在实例化的时候自动进行数据校验 """

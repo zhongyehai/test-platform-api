@@ -157,9 +157,9 @@ def parse_openapi3_parameters(parameters):
         required = "必填" if arg_dict.get("required") else "非必填"
         arg_value = f'{arg_dict.get("description", "")} {arg_dict.get("schema", {}).get("type")} {required}'
 
-        if arg_dict["in"] == "header":  # 头部参数
+        if arg_dict.get("in") == "header":  # 头部参数
             headers[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
-        elif arg_dict["in"] == "query":  # 查询字符串参数
+        elif arg_dict.get("in") in [None, "query"]:  # 查询字符串参数
             querys[arg_dict["name"]] = {"key": arg_dict["name"], "remark": None, "value": arg_value}
     return headers, querys
 

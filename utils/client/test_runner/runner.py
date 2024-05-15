@@ -103,7 +103,7 @@ class Runner:
             return
 
         self.validation_results = []
-        # self.client_session.init_step_meta_data()
+        self.client_session.init_step_meta_data()
 
     def check_step_is_skip(self, test_dict):
         """ 判断是否跳过当前测试
@@ -204,6 +204,7 @@ class Runner:
 
         """
         self.__clear_step_test_data()
+        # self.client_session.init_step_meta_data()
         self.client_session.meta_data["setup_hooks"] = step_dict.get("setup_hooks", [])
         self.client_session.meta_data["teardown_hooks"] = step_dict.get("teardown_hooks", [])
         self.client_session.meta_data["skip_if"] = step_dict.get("skip_if", [])

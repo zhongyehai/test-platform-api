@@ -173,16 +173,18 @@ def tool_mock_api():
     return mock_api()
 
 
-@tool.route("/mock/api/<path:api_addr>", methods=['GET', 'POST', 'PUT', 'DELETE'])
-def tool_mock_by_api(api_addr):
+@tool.route("/mock/swagger/<path:api_addr>",
+            methods=['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'])
+def tool_mock_by_swagger(api_addr):
     """ 自定义mock接口返回 """
     if api_addr.startswith("/") is False:
         api_addr = f"/{api_addr}"
-    query_set = ApiMsg.db.session.query(ApiMsg.mock_response).filter(ApiMsg.addr == api_addr, ApiMsg.method == request.method).first()
-    if not query_set:
+    query_set = ApiMsg.db.session.query(
+        ApiMsg.id, ApiMsg.mock_response).filter(ApiMsg.addr == api_addr, ApiMsg.method == request.method).first()
+    if not query_set or query_set[0] is None:
         query_set = ApiMsg.db.session.query(ApiMsg.mock_response).filter(ApiMsg.addr == api_addr).first()
         if not query_set:
             return restful.url_not_find()
         else:
             return restful.method_error()
-    return query_set[0]
+    return query_set[1] or 'null'

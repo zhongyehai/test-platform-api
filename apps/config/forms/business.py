@@ -67,7 +67,7 @@ class PostBusinessForm(ReceiveType):
     bind_env: BusinessLineBindEnvTypeEnum = Field(
         ..., title="绑定环境机制", description="auto：新增环境时自动绑定，human：新增环境后手动绑定")
     env_list: list = required_str_field(title="业务线要用的环境")
-    desc: Optional[str] = Field(title="备注")
+    desc: Optional[str] = Field(None, title="备注")
 
     def depends_validate(self):
         self.validate_receive_type(self.webhook_list)
