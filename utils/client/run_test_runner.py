@@ -14,7 +14,7 @@ from apps.ui_test.model_factory import WebUiProject, WebUiProjectEnv, WebUiEleme
 from apps.app_test.model_factory import AppUiProject, AppUiProjectEnv, AppUiElement, AppUiCaseSuite, AppUiCase, \
     AppUiStep, AppUiReport, AppUiReportCase, AppUiReportStep
 from apps.config.model_factory import RunEnv, WebHook
-from apps.assist.model_factory import Script
+from apps.assist.model_factory import Script, Hits
 from apps.config.model_factory import Config
 from apps.enums import TriggerTypeEnum
 from utils.client.test_runner.api import TestRunner
@@ -231,6 +231,7 @@ class RunTestRunner:
         self.report.save_report_start()
         self.report.update_report_result(result["result"], summary=result)
         self.report.save_report_finish()
+        self.push_hit_if_fail(result["result"])
         logger.info(f'测试报告保存完成')
 
         # 有可能是多环境一次性批量运行，根据batch_id查是否全部运行完毕
@@ -307,15 +308,7 @@ class RunTestRunner:
     def send_report_if_task(self, notify_list):
         """ 发送测试报告 """
         if self.task_dict:
-            # 如果是流水线触发的，则回调给流水线
-            if self.report.trigger_type == TriggerTypeEnum.pipeline:
-                all_res = [notify["report_summary"]["result"] for notify in notify_list]
-                call_back_for_pipeline(
-                    self.task_dict["id"],
-                    self.task_dict["call_back"] or [],
-                    self.extend,
-                    "fail" if "fail" in all_res else "success"
-                )
+            self.call_back_to_pipeline(notify_list)  # 回调流水线
 
             # 发送测试报告
             logger.info(f'开始发送测试报告')
@@ -324,6 +317,34 @@ class RunTestRunner:
             self.task_dict["webhook_list"] = WebHook.get_webhook_list(
                 self.task_dict["receive_type"], self.task_dict["webhook_list"])
             async_send_report(content_list=notify_list, **self.task_dict, report_addr=self.front_report_addr)
+
+    def call_back_to_pipeline(self, notify_list):
+        """ 如果是流水线触发的，则回调给流水线 """
+        if self.report.trigger_type == TriggerTypeEnum.pipeline:
+            all_res = [notify["report_summary"]["result"] for notify in notify_list]
+            call_back_for_pipeline(
+                self.task_dict["id"],
+                self.task_dict["call_back"] or [],
+                self.extend,
+                "fail" if "fail" in all_res else "success"
+            )
+
+    def push_hit_if_fail(self, result):
+        """ 如果测试为不通过，且设置了要自动保存问题记录，且处罚类型为定时任务或者流水线触发，则保存 """
+        if self.task_dict:
+            # logger.info(f'开始保存问题记录')
+            if (result == "fail" and self.task_dict["push_hit"] == 1
+                    and self.report.trigger_type in [TriggerTypeEnum.cron, TriggerTypeEnum.pipeline]):
+                Hits.model_create({
+                  "hit_type": "巡检不通过",
+                  "hit_detail": "",
+                  "test_type": self.run_type,
+                  "project_id": self.report.project_id,
+                  "env": self.env_code,
+                  "record_from": 2,  # 自动记录
+                  "report_id": self.report.id,
+                  "desc": "自动化测试创建"
+                })
 
     @staticmethod
     def parse_api(project, api):

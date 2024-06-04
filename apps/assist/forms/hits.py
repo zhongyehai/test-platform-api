@@ -13,6 +13,7 @@ class GetHitListForm(PaginationForm):
     test_type: Optional[str] = Field(None, title='测试类型')
     hit_detail: Optional[str] = Field(None, title='问题内容')
     report_id: Optional[int] = Field(None, title='报告id')
+    record_from: Optional[int] = Field(None, title='数据记录的来源', description='数据记录的来源，1、人为/2、自动')
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
@@ -25,6 +26,8 @@ class GetHitListForm(PaginationForm):
             filter_list.append(Hits.test_type == self.test_type)
         if self.report_id:
             filter_list.append(Hits.report_id == self.report_id)
+        if self.record_from:
+            filter_list.append(Hits.record_from == self.record_from)
         if self.hit_detail:
             filter_list.append(Hits.hit_detail.like(f'%{self.hit_detail}%'))
         return filter_list
@@ -51,7 +54,7 @@ class CreatHitForm(BaseForm):
     env: str = required_str_field(title='环境')
     project_id: int = Field(..., title='服务id')
     report_id: int = Field(..., title='测试报告id')
-    desc: Optional[str] = Field(title='描述')
+    desc: Optional[str] = Field(None, title='描述')
 
     @field_validator("date")
     def validate_date(cls, value):

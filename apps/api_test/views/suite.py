@@ -25,7 +25,7 @@ def api_case_suite_upload():
         return app.restful.fail("服务必传")
     if file and file.filename.endswith("xmind"):
         upload_res = CaseSuite.upload_case_suite(project_id, file, Case)
-        return app.restful.upload_success(upload_res)
+        return app.restful.upload_success(upload_res) if upload_res else app.restful.fail("请下载xmind8，并用xmind8重新创建此文件")
     return app.restful.fail("文件格式错误")
 
 

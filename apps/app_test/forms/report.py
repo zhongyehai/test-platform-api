@@ -66,9 +66,15 @@ class DeleteReportForm(BaseForm):
         return value
 
 
+class GetReportCaseSuiteListForm(PaginationForm):
+    """ 获取报告用例集列表 """
+    report_id: int = Field(..., title="报告id")
+
+
 class GetReportCaseListForm(PaginationForm):
     """ 获取报告用例列表 """
     report_id: int = Field(..., title="报告id")
+    suite_id: Optional[int] = Field(None, title="用例集id")
 
 
 class GetReportCaseForm(BaseForm):

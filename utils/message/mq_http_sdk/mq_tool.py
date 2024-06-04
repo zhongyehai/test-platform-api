@@ -152,7 +152,8 @@ class MQUtils:
 
     @staticmethod
     def check_property(prop):
-        if ":" in prop or "|" in prop or "\"" in prop or "&" in prop or "'" in prop or "<" in prop or ">" in prop:
+        # if ":" in prop or "|" in prop or "\"" in prop or "&" in prop or "'" in prop or "<" in prop or ">" in prop:
+        if "|" in prop or "\"" in prop or "&" in prop or "'" in prop or "<" in prop or ">" in prop:
             return False
 
         return True

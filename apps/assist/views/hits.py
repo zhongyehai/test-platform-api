@@ -18,7 +18,7 @@ def assist_get_hit_list():
     """ 自动化测试命中问题列表 """
     form = GetHitListForm()
     get_filed = [Hits.id, Hits.date, Hits.project_id, Hits.test_type, Hits.env, Hits.hit_type, Hits.hit_detail,
-                 Hits.report_id]
+                 Hits.report_id, Hits.record_from, Hits.create_user]
     return app.restful.get_success(Hits.make_pagination(form, get_filed=get_filed))
 
 

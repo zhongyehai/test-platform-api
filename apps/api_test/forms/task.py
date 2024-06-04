@@ -61,6 +61,7 @@ class AddTaskForm(BaseForm):
     conf: Optional[dict] = Field({}, title="运行配置", description="webUi存浏览器，appUi存运行服务器、手机、是否重置APP")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     call_back: Optional[Union[list, dict]] = Field(title="回调给流水线")
+    push_hit: int = Field(title="任务不通过时，是否自动记录问题", description="任务不通过时，是否自动记录，0：不记录，1：记录，默认1")
 
     def depends_validate(self):
         self.validate_cron()

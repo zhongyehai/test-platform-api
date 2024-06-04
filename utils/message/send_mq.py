@@ -11,16 +11,13 @@ def send_rocket_mq(host, access_id, access_key, topic, instance_id, message_body
     producer = mq_client.get_producer(instance_id, topic)
     try:
         body = message_body if isinstance(message_body, str) else json.dumps(message_body)
-        topic_message = TopicMessage(body, message_tag)
+        message = TopicMessage(body, message_tag)
         for key, value in options.items():  # 自定义的属性
             if value:
-                topic_message.put_property(key.upper(), value)
-        re_msg = producer.publish_message(topic_message)
-        # print("消息发送成功： MessageID: %s, BodyMD5: %s" % (re_msg.message_id, re_msg.message_body_md5))
-        return {"status": "success", "res": "MessageID: %s, BodyMD5: %s" % (re_msg.message_id, re_msg.message_body_md5)}
-
+                message.set_message_key(value) if key.upper() == "KEYS" else message.put_property(key, value)
+        re_msg = producer.publish_message(message)
+        return {"status": "success", "res": f"MessageID: {re_msg.message_id}, BodyMD5: {re_msg.message_body_md5}"}
     except MQExceptionBase as error:
-        # print(f"消息发送失败: {error}")
         return {"status": "fail", "res": error}
 
 

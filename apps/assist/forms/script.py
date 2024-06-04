@@ -102,7 +102,7 @@ class CreatScriptForm(BaseForm):
     """ 创建自定义脚本文件 """
     name: str = required_str_field(title="脚本文件名")
     script_type: str = required_str_field(title="脚本类型")
-    desc: Optional[str] = Field(title="脚本描述")
+    desc: Optional[str] = Field(None, title="脚本描述")
     script_data: str = required_str_field(title="脚本内容")
 
     @field_validator("name")

@@ -633,6 +633,8 @@ class BaseCaseSuite(NumFiled):
         file_path = os.path.join(TEMP_FILE_ADDRESS, file_obj.filename)
         file_obj.save(file_path)
         xmind_data = get_xmind_first_sheet_data(file_path)
+        if "Warning" in xmind_data.get("topic", {}).get("title", {}):
+            return
         return cls.upload(project_id, xmind_data, case_model)
 
     @classmethod
@@ -944,10 +946,11 @@ class BaseTask(StatusFiled, NumFiled):
     email_pwd: Mapped[str] = mapped_column(String(255), nullable=True, comment="发件人邮箱密码")
     email_to: Mapped[list] = mapped_column(JSON, default=[], comment="收件人邮箱")
     skip_holiday: Mapped[int] = mapped_column(Integer(), default=1, nullable=True, comment="是否跳过节假日、调休日")
-    is_async: Mapped[int] = mapped_column(Integer(), default=1, comment="任务的运行机制，0：串行，1：并行，默认0")
+    is_async: Mapped[int] = mapped_column(Integer(), default=1, comment="任务的运行机制，0：串行，1：并行，默认1")
     suite_ids: Mapped[list] = mapped_column(JSON, default=[], comment="用例集id")
     call_back: Mapped[list] = mapped_column(JSON, default=[], comment="回调给流水线")
     project_id: Mapped[int] = mapped_column(Integer(), nullable=False, index=True, comment="所属的服务id")
+    push_hit: Mapped[int] = mapped_column(Integer(), default=1, comment="任务不通过时，是否自动记录，0：不记录，1：记录，默认1")
     conf: Mapped[dict] = mapped_column(
         JSON, nullable=True,
         default={"browser": "chrome", "server_id": "", "phone_id": "", "no_reset": ""},
@@ -1195,6 +1198,7 @@ class BaseReportCase(BaseModel):
 
     name: Mapped[str] = mapped_column(String(128), nullable=True, comment="测试用例名称")
     case_id: Mapped[int] = mapped_column(Integer(), nullable=True, index=True, comment="执行记录对应的用例id")
+    suite_id: Mapped[int] = mapped_column(Integer(), nullable=True, default=None, comment="执行用例所在的用例集id")
     report_id: Mapped[int] = mapped_column(Integer(), index=True, comment="测试报告id")
     result: Mapped[str] = mapped_column(
         String(128), default='waite',
@@ -1241,18 +1245,84 @@ class BaseReportCase(BaseModel):
             self.test_is_success(summary=self.summary)
 
     @classmethod
-    def get_resport_case_list(cls, report_id, get_detail):
+    def get_resport_suite_list(cls, report_id, suite_model):
+        """ 根据报告id，获取用例集列表 """
+        query_res = cls.db.session.query(
+            cls.suite_id, cls.result, suite_model.name).filter(
+            cls.report_id == report_id, cls.suite_id == suite_model.id).order_by(suite_model.num.asc()).all()
+
+        # 把数据解析成固定格式
+        # [{'id': 2, 'name': '单接口用例集', 'result': ['fail', 'success']}, {'id': 3, 'name': '流程用例集', 'result': ['fail']}]
+        suite_list, tmep_suite_status = [], {"id": None, "name": None, "result": [], "children": []}
+        for suite in query_res:  # [(2, 'fail', '单接口用例集'), (2, 'success', '单接口用例集'), (3, 'fail', '流程用例集')]
+            if tmep_suite_status["id"] == suite[0]:
+                tmep_suite_status["result"].append(suite[1])
+            else:
+                if tmep_suite_status["id"]:
+                    suite_list.append(copy.deepcopy(tmep_suite_status))
+                # 把当前这条数据更新到 tmep_suite_status
+                tmep_suite_status = {"id": suite[0], "name": suite[2], "result": [suite[1]], "children": []}
+        else:
+            if tmep_suite_status["id"]:
+                suite_list.append(copy.deepcopy(tmep_suite_status))
+
+        def parse_suite_item(suite_item):
+            """ 判断用例集状态，并加入到最终结果 """
+            if "error" in suite_item["result"]:
+                suite_item["result"] = "error"
+            elif "fail" in suite_item["result"]:
+                suite_item["result"] = "fail"
+            elif "success" in suite_item["result"]:
+                suite_item["result"] = "success"
+            elif "skip" in suite_item["result"]:
+                suite_item["result"] = "skip"
+            elif "running" in suite_item["result"]:
+                suite_item["result"] = "running"
+            elif "wait" in suite_item["result"]:
+                suite_item["result"] = "wait"
+            return suite_item
+
+        return [parse_suite_item(suite_item) for suite_item in suite_list]
+
+    @classmethod
+    def get_resport_case_list(cls, report_id, suite_id=None, get_detail=False):
         """ 根据报告id，获取用例列表，性能考虑，只查关键字段 """
-        field_title = ["id", "case_id", "name", "result", "summary", "case_data", "error_msg"]
-        query_fields = [cls.id, cls.case_id, cls.name, cls.result]
+        field_title = ["id", "case_id", "suite_id", "name", "result", "summary", "case_data", "error_msg"]
+        query_fields = [cls.id, cls.case_id, cls.suite_id, cls.name, cls.result]
         if get_detail is True:
             query_fields.extend([cls.summary, cls.case_data, cls.error_msg])
 
-        # [(1, '用例1', 'running')]
-        query_data = cls.query.filter(cls.report_id == report_id).with_entities(*query_fields).all()
+        query = cls.query.filter(cls.report_id == report_id)  # 执行进度展示，根据报告id查
+        if suite_id:
+            query = cls.query.filter(cls.report_id == report_id, cls.suite_id == suite_id)  # 报告展示，根据用例集id查
+        query_data = query.with_entities(*query_fields).all()
 
-        # [{ 'id': 1, 'name': '用例1', 'result': 'running' }]
+        # [(1, '用例1', 'running')] =>> [{ 'id': 1, 'name': '用例1', 'result': 'running' }]
         return [dict(zip(field_title, d)) for d in query_data]
+
+    @classmethod
+    def get_resport_suite_and_case_list(cls, report_id, suite_model, report_step_model):
+        """ 根据报告id，获取用例集/用例列表 """
+        # 报告可能是用例，可能是接口
+        suite_list = cls.get_resport_suite_list(report_id, suite_model)
+        resport_case_list = cls.get_resport_case_list(report_id, get_detail=True)
+        resport_step_list = report_step_model.get_resport_step_list_by_report(report_id)
+        if not suite_list and len(resport_case_list) == 1 and len(resport_step_list) == 1:  # 接口，没有用例集归属，需要手动生成
+            suite_list = [{
+                "id": resport_case_list[0]["suite_id"],
+                "name": resport_case_list[0]["name"],
+                "result": resport_case_list[0]["result"],
+                "children": []
+            }]
+        for suite_item in suite_list:
+            for resport_case_index, resport_case_item in enumerate(resport_case_list):
+                if resport_case_item["suite_id"] == suite_item["id"]:
+                    resport_case_item["children"] = []
+                    for resport_step_index, resport_step_item in enumerate(resport_step_list):
+                        if resport_step_item["report_case_id"] == resport_case_item["id"]:
+                            resport_case_item["children"].append(resport_step_item)
+                    suite_item["children"].append(resport_case_item)
+        return suite_list
 
     def update_report_case_data(self, case_data, summary=None):
         """ 更新测试数据 """
@@ -1330,6 +1400,18 @@ class BaseReportStep(BaseModel):
 
         # [(1, '步骤1', 'before', 'running')]
         query_data = cls.query.filter(cls.report_case_id == report_case_id).with_entities(*query_fields).all()
+
+        # [{ 'id': 1, 'name': '步骤1', 'process': 'before', 'result': 'success' }]
+        return [dict(zip(field_title, d)) for d in query_data]
+
+    @classmethod
+    def get_resport_step_list_by_report(cls, report_id):
+        """ 获取步骤列表，性能考虑，只查关键字段 """
+        field_title = ["id", "case_id", "report_case_id", "name", "process", "result", "summary"]
+        query_fields = [cls.id, cls.case_id, cls.report_case_id, cls.name, cls.process, cls.result, cls.summary]
+
+        # [(1, '步骤1', 'before', 'running')]
+        query_data = cls.query.filter(cls.report_id == report_id).with_entities(*query_fields).all()
 
         # [{ 'id': 1, 'name': '步骤1', 'process': 'before', 'result': 'success' }]
         return [dict(zip(field_title, d)) for d in query_data]

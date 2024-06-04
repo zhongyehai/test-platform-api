@@ -2,10 +2,11 @@
 from flask import current_app as app
 
 from ..blueprint import ui_test
-from ..model_factory import WebUiReport as Report, WebUiReportStep as ReportStep, WebUiReportCase as ReportCase
+from ..model_factory import WebUiReport as Report, WebUiReportStep as ReportStep, WebUiReportCase as ReportCase, \
+    WebUiCaseSuite as CaseSuite
 from ..forms.report import GetReportForm, GetReportListForm, DeleteReportForm, GetReportCaseForm, \
     GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStatusForm, GetReportShowIdForm, \
-    GetReportStepImgForm
+    GetReportStepImgForm, GetReportCaseSuiteListForm
 from utils.util.file_util import FileUtil
 
 
@@ -53,11 +54,19 @@ def ui_delete_report():
     return app.restful.delete_success()
 
 
+@ui_test.get("/report/suite-list")
+def ui_get_report_suite_list():
+    """ 报告的用例集列表 """
+    form = GetReportCaseSuiteListForm()
+    suite_and_case_list = ReportCase.get_resport_suite_and_case_list(form.report_id, CaseSuite, ReportStep)
+    return app.restful.get_success(suite_and_case_list)
+
+
 @ui_test.get("/report/case-list")
 def ui_get_report_case_list():
     """ 报告的用例列表 """
     form = GetReportCaseListForm()
-    case_list = ReportCase.get_resport_case_list(form.report_id, form.detail)
+    case_list = ReportCase.get_resport_case_list(form.report_id, form.suite_id, form.detail)
     return app.restful.get_success(case_list)
 
 

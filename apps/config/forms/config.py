@@ -106,7 +106,7 @@ class PostConfigForm(BaseForm):
     name: str = required_str_field(title="配置名")
     value: str = required_str_field(title="配置值")
     type: int = Field(..., title="配置类型 id")
-    desc: Optional[str] = Field(title="备注")
+    desc: Optional[str] = Field(None, title="备注")
 
 
 class PutConfigForm(GetConfigForm, PostConfigForm):

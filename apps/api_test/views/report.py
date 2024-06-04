@@ -6,7 +6,8 @@ from ..blueprint import api_test
 from ..model_factory import ApiReport as Report, ApiReportStep as ReportStep, ApiReportCase as ReportCase, \
     ApiMsg, ApiCaseSuite as CaseSuite, ApiCase as Case, ApiStep as Step
 from ..forms.report import GetReportForm, GetReportListForm, DeleteReportForm, GetReportCaseForm, \
-    GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStatusForm, GetReportShowIdForm
+    GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStatusForm, GetReportShowIdForm, \
+    GetReportCaseSuiteListForm
 from ...enums import ApiCaseSuiteTypeEnum
 
 
@@ -65,11 +66,19 @@ def api_delete_report():
     return app.restful.delete_success()
 
 
+@api_test.get("/report/suite-list")
+def api_get_report_suite_list():
+    """ 报告的用例集列表 """
+    form = GetReportCaseSuiteListForm()
+    suite_and_case_list = ReportCase.get_resport_suite_and_case_list(form.report_id, CaseSuite, ReportStep)
+    return app.restful.get_success(suite_and_case_list)
+
+
 @api_test.get("/report/case-list")
 def api_get_report_case_list():
     """ 报告的用例列表 """
     form = GetReportCaseListForm()
-    case_list = ReportCase.get_resport_case_list(form.report_id, form.detail)
+    case_list = ReportCase.get_resport_case_list(form.report_id, form.suite_id, form.detail)
     return app.restful.get_success(case_list)
 
 

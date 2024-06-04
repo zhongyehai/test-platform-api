@@ -41,7 +41,9 @@ class RunApi(RunTestRunner):
 
             # 记录解析下后的用例，单接口运行时，没有用例，为了统一数据结构，所以把接口视为一条用例
             report_case = ReportCase.model_create_and_get({
-                "report_id": self.report_id, "name": api_dict["name"], "case_data": api_dict,
+                "report_id": self.report_id,
+                "name": api_dict["name"],
+                "case_data": api_dict,
                 "summary": ReportCase.get_summary_template()
             })
 
@@ -191,8 +193,12 @@ class RunCase(RunTestRunner):
                 case_summary = ReportCase.get_summary_template()
                 case_summary["case_name"] = case_name
                 report_case = ReportCase.model_create_and_get({
-                    "name": case_name, "case_id": current_case.id, "report_id": self.report_id,
-                    "case_data": current_case.get_attr(), "summary": case_summary
+                    "name": case_name,
+                    "case_id": current_case.id,
+                    "suite_id": current_case.suite_id,
+                    "report_id": self.report_id,
+                    "case_data": current_case.get_attr(),
+                    "summary": case_summary
                 })
                 current_case.report_case_id = report_case.id
 

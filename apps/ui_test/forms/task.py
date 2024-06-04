@@ -40,8 +40,8 @@ class DeleteTaskForm(GetTaskForm):
 class AddTaskForm(BaseForm):
     """ 添加定时任务的校验 """
     project_id: int = Field(..., title="服务id")
-    suite_ids: Optional[list] = Field(title="用例集id")
-    case_ids: Optional[list] = Field(title="用例id")
+    suite_ids: Optional[list] = Field([], title="用例集id")
+    case_ids: Optional[list] = Field([], title="用例id")
     env_list: list = required_str_field(title="运行环境")
     status: Optional[int] = Field(DataStatusEnum.DISABLE.value, title='任务状态')
     receive_type: ReceiveTypeEnum = Field(
@@ -60,7 +60,8 @@ class AddTaskForm(BaseForm):
     skip_holiday: int = Field(1, title="是否跳过节假日、调休日")
     conf: Optional[dict] = Field({}, title="运行配置", description="ui运行的浏览器，app运行的服务器、手机、是否重置APP")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
-    call_back: Optional[Union[list, dict]] = Field(title="回调给流水线")
+    call_back: Optional[Union[list, dict]] = Field([], title="回调给流水线")
+    push_hit: int = Field(title="任务不通过时，是否自动记录问题", description="任务不通过时，是否自动记录，0：不记录，1：记录，默认1")
 
     @field_validator("conf")
     def validate_conf(cls, value):

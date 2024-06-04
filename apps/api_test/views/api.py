@@ -21,7 +21,7 @@ def api_get_api_list():
     form = ApiListForm()
     if form.detail:
         get_filed = [Api.id, Api.name, Api.project_id, Api.module_id, Api.addr, Api.method, Api.use_count, Api.level,
-                     Api.status]
+                     Api.status, Api.create_user]
     else:
         get_filed = Api.get_simple_filed_list()
     return app.restful.get_success(Api.make_pagination(form, get_filed=get_filed))

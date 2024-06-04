@@ -18,5 +18,6 @@ class Hits(BaseModel):
     test_type: Mapped[str] = mapped_column(Text(), default="", comment="测试类型，接口、app、ui")
     project_id: Mapped[int] = mapped_column(Integer(), index=True, comment="服务id")
     env: Mapped[str] = mapped_column(String(128), index=True, comment="运行环境")
+    record_from: Mapped[int] = mapped_column(Integer(), index=True, default=1, comment="数据记录的来源，1、人为/2、自动")
     report_id: Mapped[int] = mapped_column(Integer(), index=True, comment="测试报告id")
     desc: Mapped[str] = mapped_column(Text(), nullable=True, comment="备注")

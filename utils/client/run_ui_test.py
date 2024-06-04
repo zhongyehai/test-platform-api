@@ -239,8 +239,12 @@ class RunCase(RunTestRunner):
 
                 # 记录解析下后的用例
                 report_case = self.report_case_model.model_create_and_get({
-                    "name": case_name, "case_id": current_case.id, "report_id": self.report_id,
-                    "case_data": current_case.get_attr(), "summary": self.report_case_model.get_summary_template()
+                    "name": case_name,
+                    "case_id": current_case.id,
+                    "suite_id": current_case.suite_id,
+                    "report_id": self.report_id,
+                    "case_data": current_case.get_attr(),
+                    "summary": self.report_case_model.get_summary_template()
                 })
 
                 # 满足跳过条件则跳过
