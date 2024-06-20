@@ -64,10 +64,16 @@ class JobFuncs:
         }
         """
         with create_app().app_context():
+            run_log = JobRunLog.model_create_and_get({"business_id": -99, "func_name": "cron_api_use_count"})
             api_id_list = ApiMsg.get_id_list()
+            change_dict = {}
             for api_id in api_id_list:
                 use_count = ApiStep.query.filter_by(api_id=api_id).count()
-                ApiMsg.query.filter_by(id=api_id).update({"use_count": use_count})
+                db_use_count = ApiMsg.db.session.query(ApiMsg.use_count).filter(ApiMsg.id == api_id).first()[0]
+                if use_count != db_use_count:
+                    change_dict[api_id] = use_count
+                    ApiMsg.query.filter_by(id=api_id).update({"use_count": use_count})
+            run_log.run_success(change_dict)
 
     @classmethod
     def cron_clear_project_env(cls):
@@ -181,7 +187,8 @@ class JobFuncs:
 
                 # 聚合业务线的数据
                 business_template["receiveType"] = business.receive_type
-                business_template["webhookList"] = WebHook.get_webhook_list(business.receive_type, business.webhook_list)
+                business_template["webhookList"] = WebHook.get_webhook_list(business.receive_type,
+                                                                            business.webhook_list)
                 for project_count in business_template["record"]:
                     business_template["total"] += project_count["total"]
                     business_template["pass"] += project_count["pass"]
@@ -224,7 +231,7 @@ def system_manage_get_job_func_list():
     return app.restful.get_success(data_list)
 
 
-@system_manage.login_post("/job/run")
+@system_manage.post("/job/run")
 def system_manage_run_job():
     """ 执行任务 """
     form = RunJobForm()

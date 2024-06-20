@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 from typing import Optional, List
 
 from pydantic import Field, field_validator
@@ -65,6 +66,8 @@ class PostRunEnvForm(BaseForm):
         for env in value:
             if env.code in code_list:
                 raise ValueError(f"环境code【{env.code}】重复")
+            if re.match('^[a-zA-Z][a-zA-Z0-9_\\.]+$', env.code) is None:
+                raise ValueError(f"环境code【{env.code}】错误，正确格式为：英文字母开头+英文字母/下划线/数字")
             code_list.append(env.code)
 
         run_env = RunEnv.db.session.query(RunEnv.code).filter(RunEnv.code.in_(code_list)).first()
@@ -74,6 +77,12 @@ class PostRunEnvForm(BaseForm):
 
 class PutRunEnvForm(GetRunEnvForm, RunEnvForm):
     """ 修改环境表单校验 """
+
+    @field_validator("code")
+    def validate_code(cls, value):
+        if re.match('^[a-zA-Z][a-zA-Z0-9_\\.]+$', value) is None:
+            raise ValueError(f"环境code【{value}】错误，正确格式为：英文字母开头+英文字母/下划线/数字")
+        return value
 
 
 class GetEnvGroupForm(BaseForm):

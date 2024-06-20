@@ -1,52 +1,6 @@
 # -*- coding: utf-8 -*-
-import io
-import os
+
 from datetime import datetime
-
-from jinja2 import Template
-
-from apps.enums import ReceiveTypeEnum
-
-
-def inspection_ding_ding_copy(content, task_kwargs):
-    """ 巡检-钉钉报告模板 """
-    # todo 消息加@
-    """
-    {
-         "msgtype": "markdown",
-         "markdown": {
-             "title":"杭州天气",
-             "text": "#### 杭州天气 @150XXXXXXXX \n> 9度，西北风1级，空气良89，相对温度73%\n> ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png)\n> ###### 10点20分发布 [天气](https://www.dingalk.com) \n"
-         },
-          "at": {
-              "atMobiles": [
-                  "150XXXXXXXX"
-              ],
-              "atUserIds": [
-                  "user123"
-              ],
-              "isAtAll": false
-          }
-     }
-    """
-    case_stat, step_stat = content["stat"]["test_case"], content["stat"]["test_step"]
-    pass_rate = round(case_stat["success"] / case_stat["total"] * 100, 3) if case_stat["total"] else 100
-    return {
-        "msgtype": "markdown",
-        "markdown": {
-            "title": "巡检通知",
-            "text": f'### 巡检通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} \n> '
-                    f'#### 任务名: {task_kwargs["name"]} \n> '
-                    f'#### 运行环境:<font color=#409EFF> {content["env"]["name"]} </font>\n> '
-                    f'#### 执行用例:<font color=#409EFF> {case_stat["total"]} </font>条 \n> '
-                    f'#### 成功:<font color=#00FF00> {case_stat["success"]} </font>条 \n> '
-                    f'#### 失败:<font color=#FF0000> {case_stat["fail"]} </font>条 \n> '
-                    f'#### 通过率:<font color=#409EFF> {pass_rate}% </font> \n> '
-                    f'#### 此次共运行<font color=#19D4AE> {step_stat["total"]} </font>个步骤，'
-                    f'涉及<font color=#19D4AE> {content["stat"]["count"]["api"]} </font>个接口 \n> '
-                    f'#### 详情请登录[测试平台]({task_kwargs["report_addr"] + str(task_kwargs["report_id"])})查看\n'
-        }
-    }
 
 
 def inspection_ding_ding(content_list, task_kwargs):
@@ -315,3 +269,24 @@ def get_business_stage_count_msg(content):
     if content["receiveType"] == "ding_ding":
         return business_stage_count_ding_ding(content)
     return business_stage_count_we_chat(content)
+
+
+def debug_msg_ding_ding():
+    """ 钉钉消息测试 """
+    return {
+        "msgtype": "markdown",
+        "markdown": {
+            "title": "测试通知",
+            "text": "这是一条测试消息通知"
+        }
+    }
+
+
+def debug_msg_we_chat():
+    """ 企业微信消息测试 """
+    return {
+        "msgtype": "text",
+        "text": {
+            "content": "这是一条测试消息通知"
+        }
+    }
