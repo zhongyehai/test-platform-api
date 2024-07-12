@@ -108,7 +108,6 @@ class HttpSession(BaseSession):
         # 记录原始的请求信息
         self.meta_data["data"][0]["request"]["method"] = method
         self.meta_data["data"][0]["request"]["url"] = url
-        kwargs.setdefault("allow_redirects", False)
         self.meta_data["data"][0]["request"].update(kwargs)
 
         # 构建请求的url
@@ -141,8 +140,9 @@ class HttpSession(BaseSession):
             "response_at": self.response_at.strftime("%Y-%m-%d %H:%M:%S.%f"),
         }
         # 记录请求和响应历史记录，包括 3x 的重定向
-        response_list = response.history + [response]
-        self.meta_data["data"] = [self.get_req_resp_record(resp_obj) for resp_obj in response_list]
+        # response_list = response.history + [response]
+        # self.meta_data["data"] = [self.get_req_resp_record(resp_obj) for resp_obj in response_list]
+        self.meta_data["data"] = [self.get_req_resp_record(response)]  # 不保存重定向数据
         self.meta_data["data"][0]["request"].update(kwargs)
         try:
             response.raise_for_status()

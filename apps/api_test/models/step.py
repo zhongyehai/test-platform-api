@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from sqlalchemy import Integer, JSON, Text
+from sqlalchemy import Integer, JSON, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from apps.base_model import BaseStep, HeadersFiled, ParamsFiled, DataFormFiled, DataUrlencodedFiled, DataJsonFiled, \
@@ -22,3 +22,4 @@ class ApiStep(
     data_text: Mapped[str] = mapped_column(Text(), nullable=True, default="", comment="文本参数")
     pop_header_filed: Mapped[list] = mapped_column(JSON, default=[], comment="头部参数中去除指定字段")
     api_id: Mapped[int] = mapped_column(Integer(), nullable=True, comment="步骤所引用的接口的id")
+    allow_redirect: Mapped[bool] = mapped_column(Boolean(), nullable=False, default=False, comment="是否允许重定向")

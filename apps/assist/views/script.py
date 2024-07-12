@@ -7,10 +7,10 @@ import traceback
 from flask import current_app as app
 
 from ..blueprint import assist
-from ..model_factory import Script
+from ..model_factory import Script, ScriptMockRecord
 from ...base_form import ChangeSortForm
 from ..forms.script import GetScriptForm, CreatScriptForm, EditScriptForm, DebuggerScriptForm, \
-    DeleteScriptForm, GetScriptListForm
+    DeleteScriptForm, GetScriptListForm, GetRecordListForm, GetRecordForm
 from utils.util.file_util import FileUtil
 from utils.logs.redirect_print_log import RedirectPrintLogToMemory
 from utils.client.test_runner.parser import parse_function, extract_functions
@@ -115,3 +115,21 @@ def assist_delete_script():
     form = DeleteScriptForm()
     form.script.delete()
     return app.restful.delete_success()
+
+
+@assist.route("/script/mock-list", methods=['GET'])
+def tool_mock_get_record_list():
+    """ 获取mock调用记录 """
+    form = GetRecordListForm()
+    get_filed = [
+        ScriptMockRecord.id, ScriptMockRecord.name, ScriptMockRecord.create_time, ScriptMockRecord.create_time,
+        ScriptMockRecord.request, ScriptMockRecord.response
+    ]
+    return app.restful.get_success(ScriptMockRecord.make_pagination(form, get_filed=get_filed))
+
+
+@assist.route("/script/mock-record", methods=['GET'])
+def tool_mock_get_record():
+    """ 获取mock调用记录 """
+    form = GetRecordForm()
+    return app.restful.get_success(form.record.to_dict())

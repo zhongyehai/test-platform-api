@@ -111,7 +111,7 @@ def api_run_task():
             trigger_type=form.trigger_type,
             is_async=form.is_async,
             task_type="task",
-            trigger_id=form.id,
+            trigger_id=[form.id],
             case_id_list=case_id_list,
             run_type="api",
             runner=RunCase,

@@ -112,7 +112,7 @@ def ui_run_task():
             report_name=form.task.name,
             task_type="task",
             report_model=Report,
-            trigger_id=form.id,
+            trigger_id=[form.id],
             case_id_list=case_id_list,
             run_type="ui",
             runner=RunCase,

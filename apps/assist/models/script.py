@@ -2,7 +2,7 @@
 import importlib
 import types
 
-from sqlalchemy import Text, String
+from sqlalchemy import Text, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.mysql import LONGTEXT
 
@@ -52,3 +52,13 @@ class Script(NumFiled):
                 name: item for name, item in vars(func_list).items() if isinstance(item, types.FunctionType)
             })
         return func_dict
+
+
+class ScriptMockRecord(NumFiled):
+    """ python脚本 """
+    __tablename__ = "python_script_mock_record"
+    __table_args__ = {"comment": "python脚本mock执行记录"}
+
+    name: Mapped[str] = mapped_column(String(128), nullable=False, index=True, comment="脚本名称")
+    request: Mapped[dict] = mapped_column(JSON, nullable=True, comment="请求数据")
+    response: Mapped[str] = mapped_column(Text(), nullable=True, default='mock脚本文件不存在', comment="响应数据")

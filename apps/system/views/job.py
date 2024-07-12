@@ -71,7 +71,7 @@ class JobFuncs:
                 use_count = ApiStep.query.filter_by(api_id=api_id).count()
                 db_use_count = ApiMsg.db.session.query(ApiMsg.use_count).filter(ApiMsg.id == api_id).first()[0]
                 if use_count != db_use_count:
-                    change_dict[api_id] = use_count
+                    change_dict[api_id] = f"数据库:【{db_use_count}】，实时统计:【{use_count}】, 差值:【{use_count - db_use_count}】"
                     ApiMsg.query.filter_by(id=api_id).update({"use_count": use_count})
             run_log.run_success(change_dict)
 

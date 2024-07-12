@@ -188,8 +188,8 @@ class FormatModel(JsonUtil):
 
         # 处理kwargs参数
         for kw_key, kw_value in kwargs.items():
-            # 如果是自定义变量则不改变, 如果不是，则把数据源加上
-            if extract_variables(kw_value).__len__() >= 1:
+            # 如果是自定义变量或者数据源是func则不改变, 如果不是，则把数据源加上
+            if extract_variables(kw_value).__len__() >= 1 or data_source == "func":
                 args_and_kwargs.append(f'{kw_key}={kw_value}')
             else:
                 args_and_kwargs.append(f'{kw_key}={data_source}.{kw_value}')
@@ -338,6 +338,7 @@ class StepModel(FormatModel):
 
         # 接口自动化
         self.time_out = kwargs.get("time_out")
+        self.allow_redirect = kwargs.get("allow_redirect")
         self.replace_host = kwargs.get("replace_host")
         self.headers = self.parse_list_data(kwargs.get("headers", {}))
         self.params = self.parse_list_data(kwargs.get("params", {}))

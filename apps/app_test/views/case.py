@@ -18,7 +18,7 @@ def app_get_case_list():
     form = GetCaseListForm()
     if form.detail:
         get_filed = [Case.id, Case.name, Case.desc, Case.status, Case.skip_if, Case.variables, Case.output,
-                     Case.suite_id, Case.run_times, Case.create_user]
+                     Case.suite_id, Case.run_times, Case.create_user, Case.update_user]
     else:
         get_filed = Case.get_simple_filed_list()
     pagination_data = Case.make_pagination(form, get_filed=get_filed)

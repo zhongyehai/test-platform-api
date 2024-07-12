@@ -145,6 +145,7 @@ class RunCase(RunTestRunner):
                 "json": step.data_json,
                 "data": step.data_form,
                 "files": step.data_file,
+                "allow_redirects": step.allow_redirect
             }
         }
         report_step = reportStep.model_create_and_get({

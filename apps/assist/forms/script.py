@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import Field, field_validator
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
-from ..model_factory import Script
+from ..model_factory import Script, ScriptMockRecord
 from ...config.model_factory import Config
 from ...api_test.model_factory import ApiProject, ApiCase
 from ...system.model_factory import User
@@ -94,7 +94,8 @@ class DebuggerScriptForm(GetScriptForm):
     @field_validator("expression")
     def validate_expression(cls, value):
         """ 调试表达式 """
-        cls.validate_is_true(value.startswith("${") and value.endswith("}"), "调试表达式格式错误，请按照 ${func(abc,123)} 格式填写")
+        cls.validate_is_true(value.startswith("${") and value.endswith("}"),
+                             "调试表达式格式错误，请按照 ${func(abc,123)} 格式填写")
         return value
 
 
@@ -150,3 +151,24 @@ class CreatScriptForm(BaseForm):
 
 class EditScriptForm(GetScriptForm, CreatScriptForm):
     """ 修改自定义脚本文件 """
+
+
+class GetRecordListForm(PaginationForm):
+    """ 查找服务form """
+    name: str = Field(None, title="脚本名")
+
+    def get_query_filter(self, *args, **kwargs):
+        """ 查询条件 """
+        filter_list = [ScriptMockRecord.name == self.name]
+        return filter_list
+
+
+class GetRecordForm(BaseForm):
+    """ 查找服务form """
+    id: int = Field(..., title='服务id')
+
+    @field_validator("id")
+    def validate_id(cls, value):
+        record = cls.validate_data_is_exist("记录不存在", ScriptMockRecord, id=value)
+        setattr(cls, "record", record)
+        return value

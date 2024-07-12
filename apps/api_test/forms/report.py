@@ -1,6 +1,8 @@
 from typing import Optional, List, Union
 
 from pydantic import Field, field_validator
+from sqlalchemy import func
+from sqlalchemy.dialects.mysql import JSON
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ...enums import TriggerTypeEnum
@@ -18,6 +20,7 @@ class GetReportListForm(PaginationForm):
     run_type: Optional[str] = Field(None, title="执行类型")
     is_passed: Optional[int] = Field(None, title="是否通过")
     env_list: Optional[list] = Field(None, title="运行环境")
+    trigger_id: Optional[int] = Field(None, title="运行数据id", description="接口id、用例id、任务id")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
@@ -34,6 +37,9 @@ class GetReportListForm(PaginationForm):
             filter_list.append(Report.env.in_(self.env_list))
         if self.name:
             filter_list.append(Report.name.like(f'%{self.name}%'))
+        if self.trigger_id:  # 只查具体数据的测试报告
+            filter_list.append(func.cast(Report.trigger_id, JSON) == func.json_array(self.trigger_id))  # 相等
+            # filter_list.append(func.JSON_CONTAINS(Report.trigger_id, json.dumps([self.trigger_id])))  # 包含
         return filter_list
 
 

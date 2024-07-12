@@ -490,6 +490,10 @@ class BaseProject(ScriptListFiled, NumFiled):
                 cls.id == project_id, or_(cls.manager == g.user_id, cls.create_user == g.user_id)).first()
         return True
 
+    @classmethod
+    def get_business_id(cls, project_id):
+        return cls.query.with_entities(cls.business_id).filter(cls.id == project_id).first()
+
 
 class BaseProjectEnv(VariablesFiled):
     """ 服务环境基类表 """

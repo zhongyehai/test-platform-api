@@ -12,7 +12,7 @@ from flask import request, jsonify, current_app as app
 from apps.api_test.model_factory import ApiMsg
 from apps.tools.blueprint import tool
 from utils.util.file_util import CALL_BACK_ADDRESS, FileUtil
-from apps.assist.models.script import Script
+from apps.assist.models.script import Script, ScriptMockRecord
 from apps.config.models.config import Config
 from utils.view import restful
 
@@ -124,6 +124,21 @@ def mock_api():
 @tool.route("/mock/<script_name>", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def tool_mock_by_script(script_name):
     """ 根据python脚本文件处理mock机制 """
+    try:
+        request_data = request.form.to_dict() or request.json
+    except:
+        request_data = {}
+
+    mock_record = {
+        "name": script_name,
+        "request": {
+            "path": request.path,
+            "headers": dict(request.headers),
+            "query": request.args.to_dict(),
+            "body": request_data
+        }
+    }
+
     script = Script.get_first(name=script_name)
     if not script:
         return app.restful.fail('mock脚本文件不存在')
@@ -144,11 +159,19 @@ def tool_mock_by_script(script_name):
             query=request.args.to_dict(),
             body=request_data
         )
-        script_obj = importlib.reload(importlib.import_module(import_path))
-        return script_obj.result
+        result = importlib.reload(importlib.import_module(import_path)).result
+        if isinstance(result, str):
+            mock_record["response"] = result
+        elif isinstance(result, (list, tuple, dict)):
+            mock_record["response"] = json.dumps(result)
+        else:
+            mock_record["response"] = str(result)
+        ScriptMockRecord.model_create(mock_record)
+        return result if isinstance(result, (str, list, tuple, dict)) else str(result)
     except Exception as e:
+        mock_record["response"] = traceback.format_exc()
+        ScriptMockRecord.model_create(mock_record)
         return app.restful.fail(msg="脚本执行错误，请检查", result=traceback.format_exc())
-
 
 @tool.route("/mock/auto-test", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def tool_mock_auto_test():

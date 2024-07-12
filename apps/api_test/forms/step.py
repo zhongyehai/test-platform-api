@@ -70,6 +70,7 @@ class AddStepForm(BaseForm):
     replace_host: int = Field(0, title="是否使用用例所在项目的域名")
     pop_header_filed: list = Field([], title="头部参数中去除指定字段")
     time_out: int = Field(60, title="请求超时时间")
+    allow_redirect: bool = Field(False, title="是否允许重定向, true/false")
 
     @field_validator('headers')
     def validate_headers(cls, value):

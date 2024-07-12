@@ -5,6 +5,9 @@ from typing import Optional, List
 from pydantic import Field, field_validator
 
 from ..model_factory import RunEnv, BusinessLine
+from ...api_test.model_factory import ApiProject
+from ...app_test.model_factory import AppUiProject
+from ...ui_test.model_factory import WebUiProject
 from ...base_form import BaseForm, PaginationForm, required_str_field, pydanticBaseModel
 
 
@@ -15,10 +18,20 @@ class GetRunEnvListForm(PaginationForm):
     group: Optional[str] = Field(None, title="环境分组")
     create_user: Optional[str] = Field(None, title="创建者")
     business_id: Optional[int] = Field(None, title="业务线")
+    project_id: Optional[int] = Field(None, title="服务id")
+    test_type: Optional[str] = Field(None, title="测试类型", description="与project_id搭配")
 
     def get_query_filter(self, *args, **kwargs):
         """ 查询条件 """
         filter_list = []
+        if self.project_id:
+            if self.test_type == "api":
+                business_id = ApiProject.get_business_id(self.project_id)
+            elif self.test_type == "app":
+                business_id = AppUiProject.get_business_id(self.project_id)
+            else:
+                business_id = WebUiProject.get_business_id(self.project_id)
+            self.business_id = business_id
         if self.business_id:
             env_id_list = BusinessLine.get_env_list(self.business_id)
             filter_list.append(RunEnv.id.in_(env_id_list))
