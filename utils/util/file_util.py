@@ -86,7 +86,7 @@ class FileUtil:
         cls.save_file(os.path.join(SCRIPT_ADDRESS, f'{name}.py'), func_data)
 
     @classmethod
-    def save_mock_script_data(cls, name, content, path={}, headers={}, query={}, body={}):
+    def make_mock_script(cls, name, content, path={}, headers={}, query={}, body={}):
         """ 保存mock函数数据 """
         content = content or ''
         func_data = "# coding:utf-8\n\n" + f'path = "{path}"\n\n' + f'headers = {headers}\n\n' + f'query = {query}\n\n' + f'body = {body}\n\n' + content

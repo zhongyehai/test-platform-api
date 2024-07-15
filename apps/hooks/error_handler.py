@@ -2,7 +2,7 @@
 import re
 import traceback
 
-from flask import current_app as _app, request, g
+from flask import current_app as _app, request, g, jsonify
 from pydantic import ValidationError
 
 from apps.system.models.error_record import SystemErrorRecord
@@ -42,6 +42,13 @@ def register_errorhandler_hook(app):
             _app.logger.exception(f'【{g.get("request_id")}】405错误: {request.method} {request.path}')
         return _app.restful.method_error()
 
+    @app.errorhandler(500)
+    def system_error(e):
+        """ 捕获500异常 """
+        if request.path.startswith('/api/tools/mock/'):  # mock脚本执行报错的，抛出异常
+            response = jsonify({'code': 500, 'msg': f'执行mock脚本错误：{request.path}', 'data': None})
+            response.status_code = 500
+            return response
 
     @app.errorhandler(ValidationError)
     def pydantic_cls_validation_error(exc):
@@ -108,7 +115,8 @@ def register_errorhandler_hook(app):
             pass
         error = traceback.format_exc()
         try:
-            _app.logger.exception(f'【{g.get("request_id")}】系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
+            _app.logger.exception(
+                f'【{g.get("request_id")}】系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
             # 写数据库
             error_record = SystemErrorRecord.model_create_and_get({
@@ -124,6 +132,7 @@ def register_errorhandler_hook(app):
             # 发送即时通讯通知
             send_system_error(title=f'{_app.config["SECRET_KEY"]}报错通知，数据id：{error_record.id}', content=error)
         except Exception as error:
-            _app.logger.exception(f'【{g.get("request_id")}】系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
+            _app.logger.exception(
+                f'【{g.get("request_id")}】系统报错了:  \n\n url: {request.path} \n\n 错误详情: \n\n {error}')
 
         return _app.restful.error(f'服务器异常: {e}')

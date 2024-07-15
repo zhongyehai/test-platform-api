@@ -6,7 +6,7 @@ from sqlalchemy import Text, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.mysql import LONGTEXT
 
-from apps.base_model import NumFiled
+from apps.base_model import BaseModel, NumFiled
 from ...config.model_factory import RunEnv
 from utils.util.file_util import FileUtil
 
@@ -54,7 +54,7 @@ class Script(NumFiled):
         return func_dict
 
 
-class ScriptMockRecord(NumFiled):
+class ScriptMockRecord(BaseModel):
     """ python脚本 """
     __tablename__ = "python_script_mock_record"
     __table_args__ = {"comment": "python脚本mock执行记录"}
