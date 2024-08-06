@@ -121,6 +121,19 @@ def mock_api():
     })
 
 
+@tool.route("/mock/timeout", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def tool_mock_timeout():
+    """ 模拟超时 """
+    time.sleep(10)
+    return jsonify({
+        "success": True,
+        "result": "pass",
+        "error_msg": "",
+        "y_pred": "0.123",
+        "auto_test_model_res": "0.222"
+    })
+
+
 @tool.route("/mock/<script_name>", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def tool_mock_by_script(script_name):
     """ 根据python脚本文件处理mock机制 """

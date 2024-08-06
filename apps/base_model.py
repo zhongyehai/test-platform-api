@@ -750,6 +750,14 @@ class BaseCaseSuite(NumFiled):
             3、只选了用例集
             4、选定了用例和用例集
         """
+        # 任务选择了用例，可能存在选中后，把用例状态改为不运行的情况， 先排除
+        if len(case_id) != 0:
+            query = case_model.db.session.query(case_model.id).filter(
+                case_model.id.in_(case_id),
+                case_model.status == case_model.status == CaseStatusEnum.DEBUG_PASS_AND_RUN.value
+            ).order_by(case_model.num.asc()).all()
+            case_id = [id_query[0] for id_query in query]
+
         # 1、只选择了用例，则直接返回用例
         if len(case_id) != 0 and len(suite_id) == 0:
             return case_id
