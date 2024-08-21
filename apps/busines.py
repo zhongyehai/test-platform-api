@@ -37,46 +37,44 @@ class RunCaseBusiness:
         return report.id
 
     @classmethod
-    def get_appium_config(cls, project_id, form):
+    def get_appium_config(cls, project_id, server_dict, phone_dict, no_reset):
         """ 获取appium配置 """
         project = AppUiProject.get_first(id=project_id).to_dict()  # app配置
-        server = form.server.to_dict()  # appium服务器配置
-        phone = form.phone.to_dict()  # 运行手机配置
         appium_new_command_timeout = Config.get_appium_new_command_timeout() or 120
         appium_config = {
-            "host": server["ip"],
-            "port": server["port"],
+            "host": server_dict["ip"],
+            "port": server_dict["port"],
             "newCommandTimeout": int(appium_new_command_timeout),  # 两条appium命令间的最长时间间隔，若超过这个时间，appium会自动结束并退出app，单位为秒
-            "noReset": form.no_reset,  # 控制APP记录的信息是否不重置
+            "noReset": no_reset,  # 控制APP记录的信息是否不重置
             # "unicodeKeyboard": True,  # 使用 appium-ime 输入法
             # "resetKeyboard": True,  # 表示在测试结束后切回系统输入法
 
             # 设备参数
-            "platformName": phone["os"],
-            "platformVersion": phone["os_version"],
-            "deviceName": phone["device_id"],
+            "platformName": phone_dict["os"],
+            "platformVersion": phone_dict["os_version"],
+            "deviceName": phone_dict["device_id"],
 
             # 用于后续自动化测试中的参数
-            "server_id": server["id"],  # 用于判断跳过条件
-            "phone_id": phone["id"],  # 用于判断跳过条件
+            "server_id": server_dict["id"],  # 用于判断跳过条件
+            "phone_id": phone_dict["id"],  # 用于判断跳过条件
             # "device": phone  # 用于插入到公共变量
             "device": {
-                "id": phone["id"],
-                "name": phone["name"],
-                "os": phone["os"],
-                "os_version": phone["os_version"],
-                "device_id": phone["device_id"],
-                "extends": phone["screen"],
-                "screen": phone["screen"]
+                "id": phone_dict["id"],
+                "name": phone_dict["name"],
+                "os": phone_dict["os"],
+                "os_version": phone_dict["os_version"],
+                "device_id": phone_dict["device_id"],
+                "extends": phone_dict["screen"],
+                "screen": phone_dict["screen"]
             }  # 用于插入到公共变量
         }
-        if phone["os"] == "Android":  # 安卓参数
+        if phone_dict["os"] == "Android":  # 安卓参数
             appium_config["automationName"] = "UIAutomator2"
             appium_config["appPackage"] = project["app_package"]
             appium_config["appActivity"] = project["app_activity"]
         else:  # IOS参数
             appium_config["automationName"] = "XCUITest"
-            appium_config["udid"] = phone["device_id"]  # 设备唯一识别号(可以使用Itunes查看UDID, 点击左上角手机图标 - 点击序列号直到出现UDID为止)
+            appium_config["udid"] = phone_dict["device_id"]  # 设备唯一识别号(可以使用Itunes查看UDID, 点击左上角手机图标 - 点击序列号直到出现UDID为止)
             appium_config["xcodeOrgId"] = ""  # 开发者账号id，可在xcode的账号管理中查看
             appium_config["xcodeSigningId"] = "iPhone Developer"
 

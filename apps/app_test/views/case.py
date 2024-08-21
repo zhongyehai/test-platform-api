@@ -138,8 +138,8 @@ def app_run_case():
     """ 运行测试用例 """
     form = RunCaseForm()
     case_name, project_id = CaseSuite.db.session.query(Case.name, CaseSuite.project_id).filter(
-        Case.id.in_(form.case_id_list), CaseSuite.id == Case.suite_id).first()
-    appium_config = RunCaseBusiness.get_appium_config(project_id, form)
+        Case.id.in_(form.id_list), CaseSuite.id == Case.suite_id).first()
+    appium_config = RunCaseBusiness.get_appium_config(project_id, form.server_dict, form.phone_dict, form.no_reset)
     batch_id = Report.get_batch_id()
     report_id = RunCaseBusiness.run(
         project_id=project_id,
@@ -150,7 +150,7 @@ def app_run_case():
         is_async=form.is_async,
         temp_variables=form.temp_variables,
         task_type="case",
-        case_id_list=form.case_id_list,
+        case_id_list=form.id_list,
         run_type="app",
         runner=RunCase,
         appium_config=appium_config

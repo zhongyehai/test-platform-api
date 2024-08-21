@@ -37,7 +37,8 @@ def request_run_task_api(task_id, task_type, skip_holiday=1):
         api_addr = f'/{task_type}-test/task/run'
     request_url = f'{_main_server_host}/api{api_addr}'
     request_data = {
-            "id": task_id,
+            "id": task_id, # 系统定时任务
+            "id_list": [task_id], # 自动化测试任务
             "func_name": task_id,
             "trigger_type": "cron"
         }

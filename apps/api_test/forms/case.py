@@ -171,7 +171,7 @@ class EditCaseForm(GetCaseForm):
 
 class RunCaseForm(BaseForm):
     """ 运行用例 """
-    case_id_list: List[int] = required_str_field(title="用例id list")
+    id_list: list = Field(..., title="用例id list")
     env_list: List[str] = required_str_field(title="运行环境code")
     temp_variables: Optional[dict] = Field(title="临时指定参数")
     is_async: int = Field(default=0, title="执行模式", description="0：用例维度串行执行，1：用例维度并行执行")
@@ -181,7 +181,7 @@ class RunCaseForm(BaseForm):
         1.校验是否存在引用了自定义函数但是没有引用脚本文件的情况
         2.校验是否存在引用了自定义变量，但是自定义变量未声明的情况
         """
-        if self.temp_variables and len(self.case_id_list) == 1:
+        if self.temp_variables and len(self.id_list) == 1:
             variables, headers = self.temp_variables.get("variables", []), self.temp_variables.get("headers", [])
 
             # 1、先校验数据格式
@@ -193,7 +193,7 @@ class RunCaseForm(BaseForm):
 
             # 2、校验数据引用是否合法
             suite_id, case_script_list = Case.db.session.query(
-                Case.suite_id, Case.script_list).filter(Case.id == self.case_id_list[0]).first()
+                Case.suite_id, Case.script_list).filter(Case.id == self.id_list[0]).first()
             project = Project.query.filter(CaseSuite.id == suite_id, Project.id == CaseSuite.project_id).first()
 
             # 自定义函数

@@ -87,8 +87,9 @@ class EditTaskForm(AddTaskForm, GetTaskForm):
         setattr(self.task, 'update_to_memory', old_task.status == 1 and self.cron != old_task.cron)
 
 
-class RunTaskForm(GetTaskForm):
+class RunTaskForm(BaseForm):
     """ 运行任务 """
+    id_list: list = Field(..., title="任务id list")
     env_list: Optional[list] = Field(None, title="运行环境")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     trigger_type: Optional[TriggerTypeEnum] = Field(
@@ -99,26 +100,37 @@ class RunTaskForm(GetTaskForm):
     phone_id: Optional[int] = Field(None, title="执行手机")
     no_reset: Optional[bool] = Field(None, title="是否不重置手机")
 
-    def depends_validate(self):
-        self.validate_server_id()
-        self.validate_phone_id()
-        self.validate_no_reset()
+    @field_validator("id_list")
+    def validate_id(cls, value):
+        """ 校验id存在 """
+        task_list = Task.query.filter(Task.id.in_(value)).all()
+        setattr(cls, "task_list", task_list)
+        return value
 
-    def validate_server_id(self):
+    def depends_validate(self):
+        for task in self.task_list:
+            self.validate_server_id(task)
+            self.validate_phone_id(task)
+            self.validate_no_reset(task)
+
+    def validate_server_id(self, task):
         """ 校验服务id存在 """
-        data = self.server_id or getattr(self, 'task').conf["server_id"]
+        data = self.server_id or task.conf["server_id"]
         self.validate_is_true(data, '请设置运行服务器')
         server = self.validate_data_is_exist("服务器不存在", Server, id=data)
         self.validate_appium_server_is_running(server.ip, server.port)
-        setattr(self, "server", server)
+        task.conf["server"] = server.to_dict()
+        # setattr(self, "server", server)
 
-    def validate_phone_id(self):
+    def validate_phone_id(self, task):
         """ 校验手机id存在 """
-        data = self.phone_id or getattr(self, 'task').conf["phone_id"]
+        data = self.phone_id or task.conf["phone_id"]
         self.validate_is_true(data, '请设置运行手机')
         phone = self.validate_data_is_exist("手机不存在", Phone, id=data)
-        setattr(self, "phone", phone)
+        task.conf["phone"] = phone.to_dict()
+        # setattr(self, "phone", phone)
 
-    def validate_no_reset(self):
+    def validate_no_reset(self, task):
         """ 设置否重置手机，如果没传就用任务选定的配置 """
-        self.no_reset = self.no_reset if self.no_reset is not None else getattr(self, 'task').conf["no_reset"]
+        task.conf["no_reset"] = self.no_reset if self.no_reset is not None else getattr(self, 'task').conf["no_reset"]
+        # self.no_reset = self.no_reset if self.no_reset is not None else getattr(self, 'task').conf["no_reset"]

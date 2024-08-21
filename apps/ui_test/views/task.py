@@ -98,27 +98,28 @@ def ui_disable_task():
 def ui_run_task():
     """ 单次运行定时任务 """
     form = RunTaskForm()
-    case_id_list = CaseSuite.get_case_id(Case, form.task.project_id, form.task.suite_ids, form.task.case_ids)
-    batch_id = Report.get_batch_id()
-    env_list = form.env_list or form.task.env_list
-    for env_code in env_list:
-        report_id = RunCaseBusiness.run(
-            batch_id=batch_id,
-            env_code=env_code,
-            browser=form.browser if hasattr(form, 'browser') else form.task.browser,
-            trigger_type=form.trigger_type,
-            is_async=form.is_async,
-            project_id=form.task.project_id,
-            report_name=form.task.name,
-            task_type="task",
-            report_model=Report,
-            trigger_id=[form.id],
-            case_id_list=case_id_list,
-            run_type="ui",
-            runner=RunCase,
-            extend_data=form.extend,
-            task_dict=form.task.to_dict()
-        )
+    for task in form.task_list:
+        case_id_list = CaseSuite.get_case_id(Case, task.project_id, task.suite_ids, task.case_ids)
+        batch_id = Report.get_batch_id()
+        env_list = form.env_list or task.env_list
+        for env_code in env_list:
+            report_id = RunCaseBusiness.run(
+                batch_id=batch_id,
+                env_code=env_code,
+                browser=form.browser if hasattr(form, 'browser') else task.browser,
+                trigger_type=form.trigger_type,
+                is_async=form.is_async,
+                project_id=task.project_id,
+                report_name=task.name,
+                task_type="task",
+                report_model=Report,
+                trigger_id=[task.id],
+                case_id_list=case_id_list,
+                run_type="ui",
+                runner=RunCase,
+                extend_data=form.extend,
+                task_dict=task.to_dict()
+            )
     return app.restful.trigger_success({
         "batch_id": batch_id,
         "report_id": report_id if len(env_list) == 1 else None

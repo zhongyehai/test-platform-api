@@ -179,7 +179,7 @@ def api_run_api():
         summary["env"]["code"], summary["env"]["name"] = env.code, env.name
         report = Report.get_new_report(
             batch_id=batch_id,
-            trigger_id=form.api_list,
+            trigger_id=form.id_list,
             name=form.api_name,
             run_type="api",
             env=env_code,

@@ -147,11 +147,11 @@ class ChangeStatus(GetApiForm):
 
 class RunApiMsgForm(BaseForm):
     """ 运行接口 """
-    api_list: List[int] = required_str_field(title="要运行的接口id")
+    id_list: list = required_str_field(title="要运行的接口id")
     env_list: List[str] = required_str_field(title="运行环境code")
 
-    @field_validator("api_list")
-    def validate_api_list(cls, value):
+    @field_validator("id_list")
+    def validate_id_list(cls, value):
         run_api_id_list_query = Api.db.session.query(Api.id).filter(Api.id.in_(value)).all()
         run_api_id_list = [query[0] for query in run_api_id_list_query]
         cls.validate_is_true(run_api_id_list, '接口不存在')

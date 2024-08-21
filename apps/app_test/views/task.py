@@ -98,25 +98,26 @@ def app_disable_task():
 def app_run_task():
     """ 单次运行定时任务 """
     form = RunTaskForm()
-    form.env_list = form.env_list or form.task.env_list
-    case_id_list = CaseSuite.get_case_id(Case, form.task.project_id, form.task.suite_ids, form.task.case_ids)
-    appium_config = RunCaseBusiness.get_appium_config(form.task.project_id, form)
-    batch_id = Report.get_batch_id()
-    report_id = RunCaseBusiness.run(
-        project_id=form.task.project_id,
-        batch_id=batch_id,
-        report_name=form.task.name,
-        report_model=Report,
-        env_code=form.env_list[0],
-        trigger_type=form.trigger_type,
-        is_async=form.is_async,
-        task_type="task",
-        trigger_id=[form.id],
-        case_id_list=case_id_list,
-        run_type="app",
-        runner=RunCase,
-        extend_data=form.extend,
-        task_dict=form.task.to_dict(),
-        appium_config=appium_config
-    )
+    for task in form.task_list:
+        form.env_list = form.env_list or task.env_list
+        case_id_list = CaseSuite.get_case_id(Case, task.project_id, task.suite_ids, task.case_ids)
+        appium_config = RunCaseBusiness.get_appium_config(task.project_id, task.conf["server"], task.conf["phone"], task.conf["no_reset"])
+        batch_id = Report.get_batch_id()
+        report_id = RunCaseBusiness.run(
+            project_id=task.project_id,
+            batch_id=batch_id,
+            report_name=task.name,
+            report_model=Report,
+            env_code=form.env_list[0],
+            trigger_type=form.trigger_type,
+            is_async=form.is_async,
+            task_type="task",
+            trigger_id=[task.id],
+            case_id_list=case_id_list,
+            run_type="app",
+            runner=RunCase,
+            extend_data=form.extend,
+            task_dict=task.to_dict(),
+            appium_config=appium_config
+        )
     return app.restful.trigger_success({"batch_id": batch_id, "report_id": report_id})

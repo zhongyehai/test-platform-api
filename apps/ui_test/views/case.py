@@ -137,7 +137,7 @@ def ui_run_case():
     """ 运行测试用例 """
     form = RunCaseForm()
     case_query = CaseSuite.db.session.query(Case.name, CaseSuite.project_id).filter(
-        Case.id.in_(form.case_id_list), CaseSuite.id == Case.suite_id).first()
+        Case.id.in_(form.id_list), CaseSuite.id == Case.suite_id).first()
     batch_id = Report.get_batch_id()
     for env_code in form.env_list:
         report_id = RunCaseBusiness.run(
@@ -151,7 +151,7 @@ def ui_run_case():
             temp_variables=form.temp_variables,
             task_type="case",
             run_type="ui",
-            case_id_list=form.case_id_list,
+            case_id_list=form.id_list,
             runner=RunCase
         )
     return app.restful.trigger_success({

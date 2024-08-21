@@ -79,11 +79,19 @@ class EditTaskForm(AddTaskForm, GetTaskForm):
         setattr(self.task, 'update_to_memory', old_task.status == 1 and self.cron != old_task.cron)
 
 
-class RunTaskForm(GetTaskForm):
+class RunTaskForm(BaseForm):
     """ 运行任务 """
+    id_list: list = Field(..., title="任务id list")
     env_list: Optional[list] = Field(None, title="运行环境")
     is_async: int = Field(default=0, title="任务的运行机制", description="0：串行，1：并行，默认0")
     trigger_type: Optional[TriggerTypeEnum] = Field(
         TriggerTypeEnum.page, title="触发类型", description="pipeline/page/cron")  # pipeline 跑完过后会发送测试报告
     extend: Optional[Union[list, dict, str]] = Field(
         None, title="扩展字段", description="运维传过来的扩展字段，接收的什么就返回什么")
+
+    @field_validator("id_list")
+    def validate_id(cls, value):
+        """ 校验id存在 """
+        task_list = Task.query.filter(Task.id.in_(value)).all()
+        setattr(cls, "task_list", task_list)
+        return value
