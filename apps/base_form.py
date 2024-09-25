@@ -8,6 +8,7 @@ from crontab import CronTab
 from pydantic import BaseModel as pydanticBaseModel, Field, field_validator
 from flask import request, g
 
+from apps.system.model_factory import User
 from apps.enums import SendReportTypeEnum, ReceiveTypeEnum
 from utils.util.json_util import JsonUtil
 from utils.client.test_runner.parser import extract_variables, parse_function, extract_functions
@@ -191,23 +192,19 @@ class BaseForm(pydanticBaseModel, JsonUtil):
             raise ValueError(msg)
 
     @classmethod
-    def validate_email(cls, email_server, email_from, email_pwd, email_to):
+    def validate_email(cls, email_server, email_from, email_to, email_account, email_pwd):
         """ 发件邮箱、发件人、收件人、密码 """
         if not email_server:
             raise ValueError("选择了要邮件接收，则发件邮箱服务器必填")
 
-        if not email_to or not email_from or not email_pwd:
-            raise ValueError("选择了要邮件接收，则发件人、收件人、密码3个必须有值")
+        if not email_to or not email_from:
+            raise ValueError("请选择发件人和收件人")
 
-        # 校验发件邮箱
-        if email_from and not validators.email(email_from.strip()):
-            raise ValueError(f"发件人邮箱【{email_from}】格式错误")
+        if not email_account:
+            raise ValueError("发件人邮箱未设置，请到用户管理处设置")
 
-        # 校验收件邮箱
-        for mail in email_to:
-            mail = mail.strip()
-            if mail and not validators.email(mail):
-                raise ValueError(f"收件人邮箱【{mail}】格式错误")
+        if not email_pwd:
+            raise ValueError("发件人邮箱密码未设置，请到用户管理处设置")
 
     @classmethod
     def validate_func(cls, func_container: dict, content: str, message=""):
@@ -266,6 +263,8 @@ class BaseForm(pydanticBaseModel, JsonUtil):
                 pass
             elif data_type == "json":
                 cls.dumps(cls.loads(value))
+            elif data_type == "data_driver_list":
+                list(value)
             else:  # python数据类型
                 eval(f"{data_type}({value})")
         except Exception as error:
@@ -396,7 +395,8 @@ class BaseForm(pydanticBaseModel, JsonUtil):
             if self.receive_type in (ReceiveTypeEnum.ding_ding.value, ReceiveTypeEnum.we_chat.value):
                 self.validate_is_true(self.webhook_list, '选择了要通过机器人发送报告，则webhook地址必填')
             elif self.receive_type == ReceiveTypeEnum.email.value:
-                self.validate_email(self.email_server, self.email_from, self.email_pwd, self.email_to)
+                user = User.get_first(id=self.email_from)
+                self.validate_email(self.email_server, self.email_from, self.email_to, user.email, user.email_password)
 
     @classmethod
     def validate_appium_server_is_running(cls, server_ip, server_port):

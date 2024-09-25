@@ -120,7 +120,6 @@ class RunTaskForm(BaseForm):
         server = self.validate_data_is_exist("服务器不存在", Server, id=data)
         self.validate_appium_server_is_running(server.ip, server.port)
         task.conf["server"] = server.to_dict()
-        # setattr(self, "server", server)
 
     def validate_phone_id(self, task):
         """ 校验手机id存在 """
@@ -128,9 +127,7 @@ class RunTaskForm(BaseForm):
         self.validate_is_true(data, '请设置运行手机')
         phone = self.validate_data_is_exist("手机不存在", Phone, id=data)
         task.conf["phone"] = phone.to_dict()
-        # setattr(self, "phone", phone)
 
     def validate_no_reset(self, task):
         """ 设置否重置手机，如果没传就用任务选定的配置 """
-        task.conf["no_reset"] = self.no_reset if self.no_reset is not None else getattr(self, 'task').conf["no_reset"]
-        # self.no_reset = self.no_reset if self.no_reset is not None else getattr(self, 'task').conf["no_reset"]
+        task.conf["no_reset"] = self.no_reset if self.no_reset is not None else task.conf["no_reset"]

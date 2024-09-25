@@ -41,3 +41,15 @@ class SendEmail:
             service.close()
         except Exception as error:
             print(f'发送邮件出错，错误信息为：\n {error}')
+
+if __name__ == '__main__':
+    # # sender_email = "yehai.zhong@timelinelabs.cn"  # 发件人的邮箱地址
+    # # sender_password = "autotestEmail242"  # 邮箱密码（尽量使用应用专用密码）
+    # # recipient_email = "yhai.zhang@timelinelabs.cn"  # 收件人的邮箱地址
+    SendEmail(
+        'smtphz.qiye.163.com',
+        'yehai.zhong@timelinelabs.cn',
+        'autotestEmail242',
+        [email.strip() for email in ['907728701@qq.com', 'yehai.zhong@timelinelabs.cn'] if email],
+        {"status": "success", "msg": "这是测试邮件"}
+    ).send_email()

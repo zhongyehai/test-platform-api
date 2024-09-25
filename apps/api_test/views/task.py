@@ -8,6 +8,8 @@ from ..model_factory import ApiReport as Report, ApiCase as Case, ApiCaseSuite a
 from ..forms.task import RunTaskForm, AddTaskForm, EditTaskForm, GetTaskForm, DeleteTaskForm, \
     GetTaskListForm
 from utils.client.run_api_test import RunCase
+from ...config.models.config import Config
+from ...system.models.user import User
 
 
 @api_test.login_get("/task/list")
@@ -102,6 +104,13 @@ def api_run_task():
         case_id_list = CaseSuite.get_case_id(Case, task.project_id, task.suite_ids, task.case_ids)
         batch_id = Report.get_batch_id()
         env_list = form.env_list or task.env_list
+        # task_dict = task.to_dict()
+        # email_server = Config.db.session.query(Config.value).filter(Config.name == task.email_server).first()
+        # task_dict["email_server"] = email_server[0]
+        # email_from = User.db.session.query(User.email, User.email_password).filter(User.id == task.email_from).first()
+        # task_dict["email_from"], task_dict["email_pwd"] = email_from[0], email_from[1]
+        # email_to = User.db.session.query(User.email).filter(User.id.in_(task.email_to)).all()
+        # task_dict["email_to"] = [email[0] for email in email_to]
         for env_code in env_list:
             report_id = RunCaseBusiness.run(
                 project_id=task.project_id,

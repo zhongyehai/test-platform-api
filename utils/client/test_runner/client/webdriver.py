@@ -84,7 +84,7 @@ class WebDriverSession(BaseSession):
         except WebDriverException as error:
             if "ERR_CONNECTION_REFUSED" in str(error):  # 域名不可访问 Message: unknown error: net::ERR_CONNECTION_REFUSED
                 raise RunTimeException('地址不可访问，请检查')
-            raise RunTimeException('事件驱动异常，请查看日志')
+            raise RunTimeException('事件执行异常，请查看日志')
 
 
 if __name__ == '__main__':

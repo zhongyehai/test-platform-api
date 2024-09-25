@@ -42,7 +42,7 @@ def inspection_ding_ding(content_list, task_kwargs):
             f'#### 通过率:<font color=#409EFF> {pass_rate}% </font> \n> '
             f'#### 此次共运行<font color=#19D4AE> {step_stat["total"]} </font>个步骤，'
             f'涉及<font color=#19D4AE> {content["stat"]["count"]["api"]} </font>个接口 \n> '
-            f'#### 详情请登录[测试平台]({task_kwargs["report_addr"] + str(report_id)})查看\n\n\n')
+            f'#### 详情请【[点击此处]({task_kwargs["report_addr"] + str(report_id)})】查看\n\n\n')
     return notify_template
 
 
@@ -61,8 +61,8 @@ def inspection_we_chat(content_list, task_kwargs):
     notify_template = {
         "msgtype": "markdown",
         "markdown": {
-            "content": f'>巡检通知 {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
-                       f'>任务名: {task_kwargs["name"]} \n\n\n'
+            "content": f'>**巡检通知** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n'
+                       f'>**任务名**: {task_kwargs["name"]} \n\n'
         }
     }
     for content_data in content_list:
@@ -70,14 +70,14 @@ def inspection_we_chat(content_list, task_kwargs):
         case_stat, step_stat = content["stat"]["test_case"], content["stat"]["test_step"]
         pass_rate = round(case_stat["success"] / case_stat["total"] * 100, 3) if case_stat["total"] else 100
         notify_template["markdown"]["content"] += (
-            f'>运行环境: {content["env"]["name"]} \n'
-            f'>执行用例:<font color="comment"> {case_stat["total"]} </font>条\n'
-            f'>成功:<font color="info"> {case_stat["success"]} </font>条\n'
-            f'>失败:<font color="warning"> {case_stat["fail"]} </font>条\n'
-            f'>通过率:<font color="warning"> {pass_rate}% </font>\n'
-            f'>此次共运行<font color=#info> {step_stat["total"]} </font>个步骤，'
-            f'涉及<font color=#info> {content["stat"]["count"]["api"]} </font>个接口 \n> '
-            f'详情请登录[测试平台]({task_kwargs["report_addr"] + str(report_id)})查看 \n\n\n'
+            f'>**运行环境**: {content["env"]["name"]} \n'
+            f'>**执行用例**:<font color="comment"> {case_stat["total"]} </font>条\n'
+            f'>**成功**:<font color="info"> {case_stat["success"]} </font>条\n'
+            f'>**失败**:<font color="warning"> {case_stat["fail"]} </font>条\n'
+            f'>**通过率**:<font color="info"> {pass_rate}% </font>\n'
+            f'>此次共运行<font color="info"> {step_stat["total"]} </font>个步骤，'
+            f'涉及<font color="info"> {content["stat"]["count"]["api"]} </font>个接口 \n> '
+            f'**详情请【[点击此处]({task_kwargs["report_addr"] + str(report_id)})】查看** \n\n\n'
         )
     return notify_template
 
@@ -125,7 +125,7 @@ def render_html_report(content_list, task_kwargs):
             </div>
             <div>
                 <span>
-                    详情请登录【<a style="color: #60C0DDFF" href="{task_kwargs["report_addr"] + str(report_id)}">测试平台</a>】查看
+                    详情请【<a style="color: #fe5b4c" href="{task_kwargs["report_addr"] + str(report_id)}">点击此处</a>】查看
                 </span>
             </div>        
             <br/>
@@ -161,7 +161,7 @@ def diff_api_msg(content, host, diff_api_addr, report_id):
                     f'##### 删除接口:<font color=#E74C3C> {content["api"]["remove"]} </font>个 \n> '
                     f'##### 乱码:<font color=#E74C3C> {content["api"]["errorCode"]} </font>个 \n> '
                     f'##### \n> '
-                    f'#### 请登录[测试平台]({host}{diff_api_addr}{str(report_id)})查看详情，并确认是否更新\n'
+                    f'#### 请【[点击此处]({host}{diff_api_addr}{str(report_id)})】查看详情，并确认是否更新\n'
         }
     }
 
@@ -172,7 +172,7 @@ def run_time_error_msg(content, host, func_error_addr):
         "msgtype": "markdown",
         "markdown": {
             "title": content.get("title"),
-            "text": content.get("detail") + f"#### 详情请登录[测试平台]({host}{func_error_addr})查看\n"
+            "text": content.get("detail") + f"#### 详情请【[点击此处]({host}{func_error_addr})】查看\n"
         }
     }
 

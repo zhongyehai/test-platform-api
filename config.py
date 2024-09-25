@@ -21,7 +21,7 @@ _default_web_hook_type = 'ding_ding'  # 默认通知的webhook类型，见枚举
 _default_web_hook = ''
 _web_hook_secret = ''  # secret，若是关键词模式，不用设置
 
-platform_name = "极测平台"  # 测试平台名字
+platform_name = "机测平台"  # 测试平台名字
 is_linux = platform.platform().startswith('Linux')
 # 从 testRunner.built_in 中获取断言方式并映射为字典和列表，分别给前端和运行测试用例时反射断言
 assert_mapping, assert_mapping_list = {}, []
@@ -126,6 +126,7 @@ data_type_mapping = [
     {"label": "整数", "value": "int"},
     {"label": "小数", "value": "float"},
     {"label": "列表", "value": "list"},
+    {"label": "数据驱动列表", "value": "data_driver_list"},
     {"label": "字典", "value": "dict"},
     {"label": "空值(null)", "value": "None"},
     {"label": "布尔值True", "value": "True"},
@@ -148,7 +149,7 @@ server_os_mapping = ["Windows", "Mac", "Linux"]
 phone_os_mapping = ["Android", "iOS"]
 
 # APP模拟键盘输入的code
-app_key_board_code = {
+app_key_code = {
     "7": "按键'0'",
     "8": "按键'1'",
     "9": "按键'2'",
@@ -290,9 +291,9 @@ class _Sso:
 
 
 class _SystemConfig:
-    AUTH_TYPE = 'test_platform'  # 身份验证机制 OSS, test_platform
+    AUTH_TYPE = 'test_platform'  # 身份验证机制 SSO, test_platform
     SSO = _Sso
-    ACCESS_TOKEN_TIME_OUT = 0.5 * 60 * 60  # access_token 有效期，2个小时
+    ACCESS_TOKEN_TIME_OUT = 0.5 * 60 * 60  # access_token 有效期，半个小时
     REFRESH_TOKEN_TIME_OUT = 7 * 24 * 60 * 60  # refresh_token 有效期，7天
     SECRET_KEY = "localhost"
     URL_NOT_FIND_MSG = None  # 统一自定义404消息，若没有对应使用场景设为None即可
@@ -300,12 +301,15 @@ class _SystemConfig:
     # 数据库信息
     DB_HOST = "localhost"
     DB_PORT = 3306
-    DB_USER = "root"
+    DB_USER = ""
     DB_PASSWORD = ""
     DB_DATABASE = ""
 
     # 数据库链接
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{parse.quote_plus(DB_PASSWORD)}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}?autocommit=true"
+
+    # 解决中文乱码的问题，将json数据内的中文正常显示
+    # JSON_AS_ASCII = False
 
     # 关闭数据追踪，避免内存资源浪费
     SQLALCHEMY_TRACK_MODIFICATIONS = False

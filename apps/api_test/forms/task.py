@@ -48,9 +48,8 @@ class AddTaskForm(BaseForm):
         ReceiveTypeEnum.ding_ding, title="接收测试报告类型", description="ding_ding、we_chat、email")
     webhook_list: list = Field(title="接收消息机器人地址")
     email_server: Optional[str] = Field(None, title="发件邮箱服务器")
-    email_to: Optional[list] = Field([], title="收件人邮箱")
-    email_from: Optional[str] = Field(None, title="发件人邮箱")
-    email_pwd: Optional[str] = Field(None, title="发件人邮箱密码")
+    email_to: Optional[list] = Field([], title="收件人")
+    email_from: Optional[int] = Field(None, title="发件人")
     is_send: SendReportTypeEnum = Field(
         SendReportTypeEnum.on_fail.value, title="是否发送测试报告", description="not_send/always/on_fail")
     merge_notify: Optional[int] = Field(

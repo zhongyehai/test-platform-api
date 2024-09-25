@@ -8,6 +8,7 @@ from threading import Thread
 from apps import create_app
 from apps.api_test.model_factory import ApiCaseSuite, ApiMsg, ApiCase, ApiStep, ApiProject, ApiProjectEnv, ApiReport, \
     ApiReportCase, ApiReportStep
+from apps.system.models.user import User
 from apps.ui_test.model_factory import WebUiProject, WebUiProjectEnv, WebUiElement, WebUiCaseSuite, WebUiCase, \
     WebUiStep, \
     WebUiReport, WebUiReportCase, WebUiReportStep
@@ -16,7 +17,7 @@ from apps.app_test.model_factory import AppUiProject, AppUiProjectEnv, AppUiElem
 from apps.config.model_factory import RunEnv, WebHook
 from apps.assist.model_factory import Script, Hits
 from apps.config.model_factory import Config
-from apps.enums import TriggerTypeEnum
+from apps.enums import TriggerTypeEnum, ReceiveTypeEnum
 from utils.client.test_runner.api import TestRunner
 from utils.client.test_runner.utils import build_url
 from utils.client.test_runner import built_in
@@ -313,9 +314,17 @@ class RunTestRunner:
             # 发送测试报告
             logger.info(f'开始发送测试报告')
 
-            # 解析并组装webhook地址并加签
-            self.task_dict["webhook_list"] = WebHook.get_webhook_list(
-                self.task_dict["receive_type"], self.task_dict["webhook_list"])
+            if self.task_dict["receive_type"] == ReceiveTypeEnum.email: # 邮件
+                email_server = Config.db.session.query(Config.value).filter(Config.name == self.task_dict["email_server"]).first()
+                self.task_dict["email_server"] = email_server[0]
+                email_from = User.db.session.query(User.email, User.email_password).filter(User.id == self.task_dict["email_from"]).first()
+                self.task_dict["email_from"], self.task_dict["email_pwd"] = email_from[0], email_from[1]
+                email_to = User.db.session.query(User.email).filter(User.id.in_(self.task_dict["email_to"])).all()
+                self.task_dict["email_to"] = [email[0] for email in email_to]
+            else: # 解析并组装webhook地址并加签
+                self.task_dict["webhook_list"] = WebHook.get_webhook_list(
+                    self.task_dict["receive_type"], self.task_dict["webhook_list"])
+
             async_send_report(content_list=notify_list, **self.task_dict, report_addr=self.front_report_addr)
 
     def call_back_to_pipeline(self, notify_list):

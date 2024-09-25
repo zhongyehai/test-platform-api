@@ -92,6 +92,7 @@ class GetEnvForm(BaseForm):
             else:
                 insert_env_data = {"env_id": self.env_id, "project_id": self.project_id}
             ProjectEnv.model_create(insert_env_data)
+            env_data = ProjectEnv.get_first(project_id=self.project_id, env_id=self.env_id)
         setattr(self, "env_data", env_data)
 
 

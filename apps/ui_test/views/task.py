@@ -8,6 +8,8 @@ from ..model_factory import WebUiReport as Report, WebUiCase as Case, WebUiCaseS
 from ..forms.task import RunTaskForm, AddTaskForm, EditTaskForm, GetTaskForm, DeleteTaskForm, \
     GetTaskListForm
 from utils.client.run_ui_test import RunCase
+from ...config.models.config import Config
+from ...system.models.user import User
 
 
 @ui_test.login_get("/task/list")

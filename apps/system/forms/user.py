@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Optional
 
+import validators
 from flask import request, g
 from pydantic import Field, field_validator
 
@@ -73,6 +74,10 @@ class ChangeStatusUserForm(GetUserForm):
     """ 改变用户状态 """
 
 
+class ChangeUserEmailForm(GetUserForm):
+    email: str = Field(None, title="邮箱")
+
+
 class ChangePasswordForm(BaseForm):
     """ 修改密码的校验 """
     old_password: str = required_str_field(title="旧密码")
@@ -117,6 +122,7 @@ class CreateUserForm(BaseForm):
         for index, user in enumerate(value):
             name, account, password = user.get("name"), user.get("account"), user.get("password")
             business_list, role_list = user.get("business_list"), user.get("role_list")
+            email = user.get("email")
             if not all((name, account, password, business_list, role_list)):
                 raise ValueError(f'第【{index + 1}】行，数据需填完')
 
@@ -132,6 +138,9 @@ class CreateUserForm(BaseForm):
             cls.validate_is_true(1 < len(account) < 50, f'第【{index + 1}】行，账号长度长度为2~50位')
             cls.validate_data_is_not_exist(f'第【{index + 1}】行，账号【{account}】已存在', User, account=account)
 
+            if email and not validators.email(email.strip()):
+                raise ValueError(f"第【{index + 1}】行，邮箱【{email}】格式错误")
+
             name_list.append(name)
             account_list.append(account)
             return value
@@ -143,3 +152,11 @@ class EditUserForm(GetUserForm):
     account: str = required_str_field(title="账号")
     business_list: list = required_str_field(title="业务线")
     role_list: list = required_str_field(title="角色")
+    email: Optional[str] = Field(None, title="邮箱")
+    email_password: Optional[str] = Field(None, title="邮箱密码")
+
+    @field_validator("email")
+    def validate_email(cls, value):
+        if value and not validators.email(value.strip()):
+            raise ValueError(f"邮箱【{value}】格式错误")
+        return value

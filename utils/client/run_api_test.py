@@ -187,79 +187,88 @@ class RunCase(RunTestRunner):
                 current_case.skip_if = FormatModel().parse_skip_if(self.temp_variables.get("skip_if"))
                 current_case.run_times = self.temp_variables.get("run_times", 1)
 
-            for index in range(current_case.run_times or 1):
-                case_name = f'{current_case.name}_{index + 1}' if current_case.run_times > 1 else current_case.name
+            for case_index in range(current_case.run_times or 1):
 
-                # 记录解析下后的用例
-                case_summary = ReportCase.get_summary_template()
-                case_summary["case_name"] = case_name
-                report_case = ReportCase.model_create_and_get({
-                    "name": case_name,
-                    "case_id": current_case.id,
-                    "suite_id": current_case.suite_id,
-                    "report_id": self.report_id,
-                    "case_data": current_case.get_attr(),
-                    "summary": case_summary
-                })
-                current_case.report_case_id = report_case.id
+                # 用例的公共变量设置了数据驱动
+                data_driver_dict = current_case.variables.get("data_driver_dict", {"key": "", "value": []})
+                if data_driver_dict["key"] == "":
+                    data_driver_dict = {"key": "data", "value": ["nothing"]}
 
-                # 满足跳过条件则跳过
-                if self.parse_case_is_skip(current_case.skip_if) is True:
-                    report_case.test_is_skip()
-                    continue
+                for data_driver_index, data_driver_value in enumerate(data_driver_dict["value"]):
+                    current_case.variables[data_driver_dict["key"]] = data_driver_value
+                    case_name = f'{current_case.name}_{case_index + 1}' if current_case.run_times > 1 else current_case.name
+                    case_name = f'{case_name}_{data_driver_index}' if data_driver_index > 0 else case_name
 
-                current_project = self.get_format_project(CaseSuite.get_first(id=current_case.suite_id).project_id)
+                    # 记录解析下后的用例
+                    case_summary = ReportCase.get_summary_template()
+                    case_summary["case_name"] = case_name
+                    report_case = ReportCase.model_create_and_get({
+                        "name": case_name,
+                        "case_id": current_case.id,
+                        "suite_id": current_case.suite_id,
+                        "report_id": self.report_id,
+                        "case_data": current_case.get_attr(),
+                        "summary": case_summary
+                    })
+                    current_case.report_case_id = report_case.id
 
-                # 用例格式模板
-                case_template = {
-                    "config": {
-                        "report_case_id": report_case.id, "variables": {}, "name": case_name, "run_type": self.run_type
-                    },  # "headers": {}
-                    "step_list": []
-                }
+                    # 满足跳过条件则跳过
+                    if self.parse_case_is_skip(current_case.skip_if) is True:
+                        report_case.test_is_skip()
+                        continue
 
-                self.get_all_steps(case_id)  # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
+                    current_project = self.get_format_project(CaseSuite.get_first(id=current_case.suite_id).project_id)
 
-                # 循环解析测试步骤
-                all_variables = {}  # 当前用例的所有公共变量
-                for step in self.all_case_steps:
-                    step = StepModel(**step.to_dict())
-                    step_case = self.get_format_case(step.case_id)
-                    api_temp = Api.get_first(id=step.api_id)
-                    api_project = self.get_format_project(api_temp.project_id)
-                    api_data = self.get_format_api(api_project, api_obj=api_temp)
+                    # 用例格式模板
+                    case_template = {
+                        "config": {
+                            "report_case_id": report_case.id, "variables": {}, "name": case_name, "run_type": self.run_type
+                        },  # "headers": {}
+                        "step_list": []
+                    }
 
-                    if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动， 此功能废弃
-                        """
-                        数据驱动格式
-                        [
-                            {"comment": "用例1描述", "data": "请求数据，支持参数化"},
-                            {"comment": "用例2描述", "data": "请求数据，支持参数化"}
-                        ]
-                        """
-                        for driver_data in step.data_driver:
-                            # 数据驱动的 comment 字段，用于做标识
-                            step.name += driver_data.get("comment", "")
-                            step.params = step.params = step.data_json = step.data_form = driver_data.get("data", {})
+                    self.get_all_steps(case_id)  # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
+
+                    # 循环解析测试步骤
+                    all_variables = {}  # 当前用例的所有公共变量
+                    for step in self.all_case_steps:
+                        step = StepModel(**step.to_dict())
+                        step_case = self.get_format_case(step.case_id)
+                        api_temp = Api.get_first(id=step.api_id)
+                        api_project = self.get_format_project(api_temp.project_id)
+                        api_data = self.get_format_api(api_project, api_obj=api_temp)
+
+                        if step.data_driver:  # 如果有step.data_driver，则说明是数据驱动， 此功能废弃
+                            """
+                            数据驱动格式
+                            [
+                                {"comment": "用例1描述", "data": "请求数据，支持参数化"},
+                                {"comment": "用例2描述", "data": "请求数据，支持参数化"}
+                            ]
+                            """
+                            for driver_data in step.data_driver:
+                                # 数据驱动的 comment 字段，用于做标识
+                                step.name += driver_data.get("comment", "")
+                                step.params = step.params = step.data_json = step.data_form = driver_data.get("data", {})
+                                case_template["step_list"].append(
+                                    self.parse_step(current_project, api_project, current_case, step_case, api_data, step))
+                        else:
                             case_template["step_list"].append(
                                 self.parse_step(current_project, api_project, current_case, step_case, api_data, step))
-                    else:
-                        case_template["step_list"].append(
-                            self.parse_step(current_project, api_project, current_case, step_case, api_data, step))
 
-                    # 把服务和用例的的自定义变量留下来
-                    all_variables.update(api_project.variables)
-                    all_variables.update(step_case.variables)
+                        # 把服务和用例的的自定义变量留下来
+                        all_variables.update(api_project.variables)
+                        all_variables.update(step_case.variables)
 
-                # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
-                all_variables.update(current_project.variables)
-                all_variables.update(current_case.variables)
-                case_template["config"]["variables"].update(all_variables)  # = all_variables
+                    # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
+                    all_variables.update(current_project.variables)
+                    all_variables.update(current_case.variables)
+                    case_template["config"]["variables"].update(all_variables)  # = all_variables
 
-                self.run_data_template["case_list"].append(copy.deepcopy(case_template))
+                    self.run_data_template["case_list"].append(copy.deepcopy(case_template))
 
-                # 完整的解析完一条用例后，去除对应的解析信息
-                self.all_case_steps = []
+                    # 完整的解析完一条用例后，去除对应的解析信息
+                    self.all_case_steps = []
 
         # 去除服务级的公共变量，保证用步骤上解析后的公共变量
         self.run_data_template["project_mapping"]["variables"] = {}

@@ -5,7 +5,7 @@ from flask import current_app as app, request, abort
 from ..blueprint import system_manage
 from ..model_factory import User
 from ..forms.user import CreateUserForm, EditUserForm, ChangePasswordForm, LoginForm, GetUserListForm, \
-    GetUserForm, DeleteUserForm, ChangeStatusUserForm
+    GetUserForm, DeleteUserForm, ChangeStatusUserForm, ChangeUserEmailForm
 from ...enums import DataStatusEnum
 
 
@@ -15,10 +15,10 @@ def system_manage_get_user_list():
     form = GetUserListForm()
     if form.detail:  # 获取用户详情列表
         get_filed = [
-            User.id, User.name, User.account, User.status, User.create_time, User.business_list, User.sso_user_id
+            User.id, User.name, User.account, User.email, User.status, User.create_time, User.business_list, User.sso_user_id
         ]
     else:
-        get_filed = User.get_simple_filed_list()
+        get_filed = [User.id, User.name, User.email]
     return app.restful.get_success(User.make_pagination(form, get_filed=get_filed))
 
 
@@ -65,6 +65,14 @@ def system_manage_change_password():
     return app.restful.change_success()
 
 
+@system_manage.login_put("/user/email")
+def system_manage_change_email():
+    """ 修改用户邮箱 """
+    form = ChangeUserEmailForm()
+    form.user.model_update({"email": form.email})
+    return app.restful.change_success()
+
+
 @system_manage.login_put("/user/reset-password")
 def system_manage_reset_password():
     """ 重置密码 """
@@ -86,7 +94,7 @@ def system_manage_get_user():
     """ 获取用户 """
     form = GetUserForm()
     return app.restful.get_success({
-        "id": form.user.id, "account": form.user.account, "name": form.user.name, "role_list": form.user.roles
+        "id": form.user.id, "account": form.user.account, "name": form.user.name, "email": form.user.email, "role_list": form.user.roles
     })
 
 
@@ -105,7 +113,10 @@ def system_manage_add_user():
 def system_manage_change_user():
     """ 修改用户 """
     form = EditUserForm()
-    form.user.model_update(form.model_dump())
+    user_dict = form.model_dump()
+    if user_dict.get("email_password") is None:
+        user_dict.pop("email_password")
+    form.user.model_update(user_dict)
     form.user.update_user_roles(form.role_list)
     return app.restful.change_success()
 

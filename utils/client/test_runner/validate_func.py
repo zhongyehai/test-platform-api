@@ -333,6 +333,11 @@ def _23length_less_than_or_equals(check_value, expect_value):
     assert len(check_value) <= expect_value
 
 
+def _23_1_length_equals(check_value, expect_value):
+    """ 长度相等 """
+    assert len(check_value) == len(expect_value)
+
+
 def _24type_match(check_value, expect_value):
     """ 断言数据类型 """
 

@@ -8,7 +8,7 @@ from ..forms.queue import GetQueueInstanceListForm, GetQueueInstanceForm, CreatQ
     GetQueueTopicListForm, GetQueueTopicForm, CreatQueueTopicForm, EditQueueTopicForm, DeleteQueueTopicForm, \
     SendMessageForm, GetQueueMsgLogForm
 
-from utils.message.send_mq import send_rabbit_mq, send_rocket_mq
+from utils.message.send_mq import send_rabbit_mq, send_rocket_mq, send_active_mq
 from ...enums import QueueTypeEnum
 
 
@@ -136,6 +136,16 @@ def assist_send_message_to_queue():
                 form.message,
                 form.tag,
                 form.options
+            )
+        case QueueTypeEnum.active_mq:
+            send_res = send_active_mq(
+                form.queue_instance["host"],
+                form.queue_instance["port"],
+                form.queue_instance["account"],
+                form.queue_instance["password"],
+                form.queue_instance["instance_id"],
+                form.queue_topic.topic,
+                form.message
             )
         case _:
             return app.restful.fail("不支持当前队列")

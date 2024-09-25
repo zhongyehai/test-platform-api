@@ -117,7 +117,7 @@ class HttpSession(BaseSession):
         copy_kwargs["files"] = FileUtil.build_request_file(copy_kwargs["files"])  # 构建文件请求对象
         # 如果是 x-www-form-urlencoded 则进行转码
         if copy_kwargs.get("headers", {}).get("Content-Type", None) == 'application/x-www-form-urlencoded':
-            copy_kwargs["headers"].pop("Content-Type")
+            # copy_kwargs["headers"].pop("Content-Type")
             copy_kwargs["data"] = parse.urlencode(copy_kwargs["data"])
 
         response = self._send_request_safe_mode(method, url, **copy_kwargs)  # 发送请求

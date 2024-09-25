@@ -26,10 +26,25 @@ class FormatModel(JsonUtil):
         :return
             {"auto_test_token": "eyJhbGciOiJIUzI1NiJ9", "rating_amount": "500000"}
         """
-        return {
-            v["key"]: self.build_data(v.get("data_type", "str"), v["value"])
-            for v in variables_list if v.get("key") is not None and v.get("value") is not None
+        data = {
+            "data_driver_dict": {
+                "key": "",
+                "value": []
+            }
         }
+        for v in variables_list:
+            if v.get("key") is not None and v.get("value") is not None:
+                if v.get("data_type", "str") != "data_driver_list":
+                    data[v["key"]] = self.build_data(v.get("data_type", "str"), v["value"])
+                else: # 用例的数据驱动，单独存放，后续解析用例的时候使用
+                    data["data_driver_dict"]["key"] = v["key"]
+                    data["data_driver_dict"]["value"] = self.build_data(v.get("data_type", "str"), v["value"])
+        return data
+
+        # return {
+        #     v["key"]: self.build_data(v.get("data_type", "str"), v["value"])
+        #     for v in variables_list if v.get("key") is not None and v.get("value") is not None
+        # }
 
     def parse_extracts(self, extracts_list, is_api=True):
         """ 解析要提取的参数
@@ -139,6 +154,8 @@ class FormatModel(JsonUtil):
             return self.dumps(self.loads(value))
         elif data_type in ["None", "True", "False"]:
             return eval(data_type)
+        elif data_type == "data_driver_list":
+            return eval(f'list({value})')
         else:  # python数据类型
             return eval(f'{data_type}({value})')
 
