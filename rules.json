@@ -166,6 +166,10 @@
       {
         "name": "工具-解析token",
         "source_addr": "/tools/token"
+      },
+      {
+        "name": "工具-代码对比",
+        "source_addr": "/tools/code-diff"
       }
     ],
     "配置管理菜单": [

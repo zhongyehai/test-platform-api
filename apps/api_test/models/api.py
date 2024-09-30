@@ -17,7 +17,7 @@ class ApiMsg(
     __table_args__ = {"comment": "接口测试接口信息表"}
 
     time_out: Mapped[int] = mapped_column(Integer(), default=60, comment="request超时时间，默认60秒")
-    addr: Mapped[str] = mapped_column(String(255), nullable=False, comment="接口地址")
+    addr: Mapped[str] = mapped_column(String(1024), nullable=False, comment="接口地址")
     method: Mapped[ApiMethodEnum] = mapped_column(default=ApiMethodEnum.GET, comment="请求方式")
     level: Mapped[ApiLevelEnum] = mapped_column(default=ApiLevelEnum.P1, comment="接口重要程度：P0、P1、P2")
     data_text: Mapped[str] = mapped_column(Text(), nullable=True, default="", comment="文本参数")

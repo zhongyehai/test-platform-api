@@ -287,9 +287,9 @@ class ApiModel(FormatModel):
         self.up_func = kwargs.get("up_func", [])
         self.down_func = kwargs.get("down_func", [])
         self.method = kwargs.get("method")
-        self.addr = kwargs.get("addr")
-        self.headers = self.parse_list_data(kwargs.get("headers", {}))
         self.params = self.parse_list_data(kwargs.get("params", {}))
+        self.addr = kwargs.get("addr").split("?")[0] if self.params else kwargs.get("addr") # 同时有 params 和 queryString，以 params为准
+        self.headers = self.parse_list_data(kwargs.get("headers", {}))
         self.extracts = self.parse_extracts(kwargs.get("extracts", []))
         self.validates = self.parse_validates(kwargs.get("validates", {}))
 

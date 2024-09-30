@@ -19,7 +19,7 @@ class GetReportListForm(PaginationForm):
     trigger_type: Optional[str] = Field(None, title="触发类型")
     run_type: Optional[str] = Field(None, title="执行类型")
     is_passed: Optional[int] = Field(None, title="是否通过")
-    env_list: Optional[list] = Field(None, title="运行环境")
+    run_env: Optional[str] = Field(None, title="运行环境")
     trigger_id: Optional[int] = Field(None, title="运行数据id", description="接口id、用例id、任务id")
 
     def get_query_filter(self, *args, **kwargs):
@@ -33,8 +33,8 @@ class GetReportListForm(PaginationForm):
             filter_list.append(Report.run_type == self.run_type)
         if self.is_passed:
             filter_list.append(Report.is_passed == self.is_passed)
-        if self.env_list:
-            filter_list.append(Report.env.in_(self.env_list))
+        if self.run_env:
+            filter_list.append(Report.env == self.run_env)
         if self.name:
             filter_list.append(Report.name.like(f'%{self.name}%'))
         if self.trigger_id:  # 只查具体数据的测试报告
