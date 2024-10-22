@@ -75,7 +75,7 @@ class EditApiForm(GetApiForm):
         ApiBodyTypeEnum.json.value, title="请求体数据类型", description="json/form/text/urlencoded")
     data_form: List[DataFormModel] = Field(title="data-form参数")
     data_json: Union[list, dict] = Field({}, title="json参数")
-    data_urlencoded: dict = Field(title="urlencoded参数")
+    data_urlencoded: Union[list, dict] = Field(title="urlencoded参数")
     data_text: Optional[str] = Field(title="文本参数")
     time_out: Optional[int] = Field(title="请求超时时间")
     response: Optional[Union[str, dict, list]] = Field({}, title="接口响应")

@@ -14,6 +14,7 @@ from ..model_factory import JobRunLog
 from ...config.model_factory import BusinessLine, WebHook
 from ...api_test.model_factory import ApiProject, ApiReport, ApiReportCase, ApiReportStep, ApiCase, ApiStep, \
     ApiMsg, ApiProjectEnv, ApiCaseSuite, ApiTask
+from ...enums import DataStatusEnum
 from ...ui_test.model_factory import WebUiReport, WebUiReportCase, WebUiReportStep, WebUiCase, WebUiStep, \
     WebUiProjectEnv, WebUiProject, WebUiCaseSuite, WebUiTask
 from ...app_test.model_factory import AppUiReport, AppUiReportCase, AppUiReportStep, AppUiCase, AppUiStep, \
@@ -68,7 +69,7 @@ class JobFuncs:
             api_id_list = ApiMsg.get_id_list()
             change_dict = {}
             for api_id in api_id_list:
-                use_count = ApiStep.query.filter_by(api_id=api_id).count()
+                use_count = ApiStep.query.filter_by(api_id=api_id, status=DataStatusEnum.ENABLE.value).count()
                 db_use_count = ApiMsg.db.session.query(ApiMsg.use_count).filter(ApiMsg.id == api_id).first()[0]
                 if use_count != db_use_count:
                     change_dict[api_id] = f"数据库:【{db_use_count}】，实时统计:【{use_count}】, 差值:【{use_count - db_use_count}】"

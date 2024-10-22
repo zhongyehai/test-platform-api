@@ -283,6 +283,7 @@ def init_config():
             {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名，部署后需手动修改为真实域名"},
             {"name": "callback_webhook", "value": "", "desc": "接口收到回调请求后即时通讯通知的地址"},
             {"name": "call_back_msg_addr", "value": call_back_msg_addr, "desc": "发送回调流水线消息内容地址"},
+            {"name": "default_account", "value": JsonUtil.dumps({"account": "admin", "password": "123456"}), "desc": "默认登录账号"},
             {"name": "save_func_permissions", "value": "0", "desc": "保存脚本权限，0所有人都可以，1管理员才可以"},
             {
                 "name": "call_back_response",

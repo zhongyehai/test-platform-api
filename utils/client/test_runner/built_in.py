@@ -56,13 +56,13 @@ def _06not_contains(check_value, expect_value):
 
 def _07included(check_value, expect_value):
     """ 被包含 """
-    assert isinstance(check_value, (list, tuple, dict, basestring)), '实际结果非list, tuple, dict, str, 不能进行包含相关断言'
+    assert isinstance(expect_value, (list, tuple, dict, basestring)), '预期结果非list, tuple, dict, str, 不能进行包含相关断言'
     assert check_value in expect_value
 
 
 def _08not_included(check_value, expect_value):
     """ 不被包含 """
-    assert isinstance(check_value, (list, tuple, dict, basestring)), '实际结果非list, tuple, dict, str, 不能进行包含相关断言'
+    assert isinstance(expect_value, (list, tuple, dict, basestring)), '预期结果非list, tuple, dict, str, 不能进行包含相关断言'
     assert check_value not in expect_value
 
 
