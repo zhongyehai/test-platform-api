@@ -42,6 +42,7 @@ class QueueMsgLog(BaseModel):
     topic_id: Mapped[int] = mapped_column(Integer(), comment="topic id")
     tag: Mapped[str] = mapped_column(String(128), comment="tag")
     options: Mapped[dict] = mapped_column(JSON, comment="自定义内容")
+    message_type: Mapped[str] = mapped_column(String(8), comment="消息类型")
     message: Mapped[dict] = mapped_column(JSON, comment="消息内容")
     status: Mapped[str] = mapped_column(Text(), comment="消息发送状态")
     response: Mapped[str] = mapped_column(Text(), comment="消息发送响应")

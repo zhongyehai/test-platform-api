@@ -221,6 +221,7 @@ class Runner:
             request_data["headers"] = self.session_context.update_filed_to_header(request_data["headers"])
         else:
             request_data = step_dict.get("test_action", {})
+            request_data["report_step_id"] = step_dict["report_step_id"]
 
         parsed_step = self.session_context.eval_content(request_data)
         self.session_context.update_test_variables("request", parsed_step)

@@ -155,6 +155,7 @@ def assist_send_message_to_queue():
         "tag": form.tag,
         "options": form.options,
         "message": form.message,
+        "message_type": form.message_type,
         "status": send_res["status"],
         "response": send_res["res"]
     })
@@ -166,7 +167,7 @@ def assist_get_queue_log_list():
     """ 消息发送记录 """
     form = GetQueueMsgLogForm()
     get_filed = [
-        QueueMsgLog.id, QueueMsgLog.topic_id, QueueMsgLog.tag, QueueMsgLog.options, QueueMsgLog.message, QueueMsgLog.status,
-        QueueMsgLog.response, QueueMsgLog.create_user, QueueMsgLog.create_time
+        QueueMsgLog.id, QueueMsgLog.topic_id, QueueMsgLog.tag, QueueMsgLog.options, QueueMsgLog.message_type,
+        QueueMsgLog.message, QueueMsgLog.status, QueueMsgLog.response, QueueMsgLog.create_user, QueueMsgLog.create_time
     ]
     return app.restful.get_success(QueueMsgLog.make_pagination(form, get_filed=get_filed))

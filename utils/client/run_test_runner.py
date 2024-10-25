@@ -88,7 +88,7 @@ class RunTestRunner:
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_app_ui_report_addr()}'
 
         # testRunner需要的数据格式
-        self.run_data_template = {
+        self.run_test_data = {
             "is_async": 0,
             "run_type": self.run_type,
             "report_id": self.report_id,
@@ -99,9 +99,7 @@ class RunTestRunner:
                 "functions": {},
                 "variables": {},
             },
-            "test_suites": [],  # 用例集
-            "case_list": [],  # 用例
-            "apis": [],  # 接口
+            "report_case_list": [],  # 用例
         }
 
         self.init_parsed_data()
@@ -176,7 +174,7 @@ class RunTestRunner:
         for func_file_id in func_list:
             func_file_name = Script.get_first(id=func_file_id).name
             func_file_data = importlib.reload(importlib.import_module(f'script_list.{self.env_code}_{func_file_name}'))
-            self.run_data_template["project_mapping"]["functions"].update({
+            self.run_test_data["project_mapping"]["functions"].update({
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
 
@@ -254,16 +252,16 @@ class RunTestRunner:
 
     def run_case(self):
         """ 调 testRunner().run() 执行测试 """
-        logger.info(f'请求数据：\n{self.run_data_template}')
+        logger.info(f'\n测试执行数据：\n{self.run_test_data}')
 
-        if self.run_data_template.get("is_async", 0):
+        if self.run_test_data.get("is_async", 0):
             # 并行执行, 遍历case，以case为维度多线程执行，测试报告按顺序排列
             run_case_res_dict = {}
             self.report.run_case_start()
-            for index, case in enumerate(self.run_data_template["case_list"]):
+            for index, case in enumerate(self.run_test_data["report_case_list"]):
                 run_case_res_dict[index] = False  # 用例运行标识，索引：是否运行完成
-                run_case_template = copy.deepcopy(self.run_data_template)
-                run_case_template["case_list"] = [case]
+                run_case_template = copy.deepcopy(self.run_test_data)
+                run_case_template["report_case_list"] = [case]
                 Thread(target=self.run_case_on_new_thread, args=[run_case_template, run_case_res_dict, index]).start()
         else:  # 串行执行
             self.sync_run_case()
@@ -297,7 +295,7 @@ class RunTestRunner:
         """ 串行运行用例 """
         self.report.run_case_start()
         runner = TestRunner()
-        runner.run(self.run_data_template)
+        runner.run(self.run_test_data)
         self.report.run_case_finish()
         logger.info(f'测试执行完成，开始保存测试报告和发送报告')
         summary = runner.summary

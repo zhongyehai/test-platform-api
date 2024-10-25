@@ -1073,7 +1073,7 @@ class BaseReport(BaseModel):
             "result": "success",
             "stat": {
                 "test_case": {  # 用例维度
-                    "total": 1,  # 初始化的时候给个1，方便用户查看运行中的报告，后续会在流程中更新为实际的total
+                    "total": 0,  # 初始化的时候给个1，方便用户查看运行中的报告，后续会在流程中更新为实际的total
                     "success": 0,
                     "fail": 0,
                     "error": 0,
@@ -1117,28 +1117,33 @@ class BaseReport(BaseModel):
             kwargs["summary"] = cls.get_summary_template()
         return cls.model_create_and_get(kwargs)
 
-    def merge_test_result(self, case_summary_list):
+    def merge_test_result(self, case_summary):
         """ 汇总测试数据和结果
         Args:
             case_summary_list (list): list of (testcase, result)
         """
-        case_result = []
-        total_case = len(case_summary_list)
-        self.summary["stat"]["test_case"]["total"] = total_case
-        self.summary["time"]["start_at"] = case_summary_list[0]["time"][
-            "start_at"] if total_case > 0 else datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-        for case_summary in case_summary_list:
-            case_result.append(case_summary["result"])
-            self.summary["stat"]["test_case"][case_summary["result"]] += 1
-            self.summary["stat"]["test_step"]["total"] += case_summary["stat"]["total"]
-            self.summary["stat"]["test_step"]["fail"] += case_summary["stat"]["fail"]
-            self.summary["stat"]["test_step"]["error"] += case_summary["stat"]["error"]
-            self.summary["stat"]["test_step"]["skip"] += case_summary["stat"]["skip"]
-            self.summary["stat"]["test_step"]["success"] += case_summary["stat"]["success"]
-            self.summary["time"]["step_duration"] += case_summary["time"]["step_duration"]
-            self.summary["time"]["case_duration"] += case_summary["time"]["case_duration"]
 
-        self.summary["result"] = "error" if "error" in case_result else "fail" if "fail" in case_result else "success"
+        self.summary["stat"]["test_case"]["total"] += 1
+
+        # if self.summary["time"]["start_at"] ==  '':
+        #     self.summary["time"]["start_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+
+        self.summary["stat"]["test_case"][case_summary["result"]] += 1
+        self.summary["stat"]["test_step"]["total"] += case_summary["stat"]["total"]
+        self.summary["stat"]["test_step"]["fail"] += case_summary["stat"]["fail"]
+        self.summary["stat"]["test_step"]["error"] += case_summary["stat"]["error"]
+        self.summary["stat"]["test_step"]["skip"] += case_summary["stat"]["skip"]
+        self.summary["stat"]["test_step"]["success"] += case_summary["stat"]["success"]
+        self.summary["time"]["step_duration"] += case_summary["time"]["step_duration"]
+        self.summary["time"]["case_duration"] += case_summary["time"]["case_duration"]
+        match case_summary["result"]:
+            case "error":
+                self.summary["result"] = "error"
+            case "fail":
+                self.summary["result"] = "fail"
+            case _:
+                self.summary["result"] = "success"
+
         return self.summary
 
     def update_report_process(self, **kwargs):
@@ -1399,6 +1404,16 @@ class BaseReportStep(BaseModel):
             "step_duration": 0,  # 当前步骤执行耗时，只统计请求耗时
             "all_duration": 0  # 当前步骤开始执行 - 执行结束 整个过程的耗时，包含测试过程中的数据解析、等待...
         }
+
+    @classmethod
+    def get_test_step_by_report_case(cls, report_case_id):
+        """ 执行测试时，根据report_case_id 获取测试步骤 """
+        report_step = cls.db.session.query(cls.id, cls.step_data).filter(cls.report_case_id == report_case_id).all()
+        report_step_list = []
+        for data in report_step:
+            data[1]["report_step_id"] = data[0]
+            report_step_list.append(data[1])
+        return report_step_list
 
     @classmethod
     def get_resport_step_list(cls, report_case_id, get_detail):
