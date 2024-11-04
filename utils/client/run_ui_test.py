@@ -45,7 +45,7 @@ class RunCase(RunTestRunner):
             self.device_dict = {}
             self.report_img_folder = FileUtil.make_img_folder_by_report_id(report_id, 'app')
 
-        self.run_test_data["is_async"] = is_async
+        self.run_data_template["is_async"] = is_async
         self.case_id_list = case_id_list  # 要执行的用例id_list
         self.appium_config = appium_config
         self.all_case_steps = []  # 所有测试步骤
@@ -61,7 +61,7 @@ class RunCase(RunTestRunner):
             self.report.parse_data_finish()
             self.run_case()
 
-    def parse_step(self, project, element, step, report_case_id):
+    def parse_step(self, project, element, step):
         """ 解析测试步骤
         project: 当前步骤对应元素所在的项目(解析后的)
         element: 解析后的element
@@ -92,15 +92,13 @@ class RunCase(RunTestRunner):
             }
         }
 
-        self.report_step_model.model_create({
-            "element_id": element.id,
-            "step_id": step.id,
-            "case_id": step.case_id,
-            "report_id": self.report_id,
-            "report_case_id": report_case_id,
-            "name": step_data["name"],
-            "step_data": step_data
+        report_step = self.report_step_model.model_create_and_get({
+            "element_id": element.id, "step_id": step.id, "case_id": step.case_id, "report_id": self.report_id,
+            "report_case_id": step.report_case_id, "name": step_data["name"], "step_data": step_data
         })
+        step_data["report_step_id"] = report_step.id
+        step_data["test_action"]["report_step_id"] = report_step.id  # 方便存截图
+        return step_data
 
     def parse_extracts(self, extracts: list):
         """ 解析数据提取
@@ -240,13 +238,12 @@ class RunCase(RunTestRunner):
                 case_name = f'{current_case.name}_{index + 1}' if current_case.run_times > 1 else current_case.name
 
                 # 记录解析下后的用例
-                report_case_data = current_case.get_attr()
                 report_case = self.report_case_model.model_create_and_get({
                     "name": case_name,
                     "case_id": current_case.id,
                     "suite_id": current_case.suite_id,
                     "report_id": self.report_id,
-                    "case_data": report_case_data,
+                    "case_data": current_case.get_attr(),
                     "summary": self.report_case_model.get_summary_template()
                 })
 
@@ -256,18 +253,22 @@ class RunCase(RunTestRunner):
                     continue
 
                 project_id_query = self.suite_model.db.session.query(
-                    self.suite_model.project_id
-                ).filter(
-                    self.suite_model.id == current_case.suite_id
-                ).first()
+                    self.suite_model.project_id).filter(self.suite_model.id == current_case.suite_id).first()
                 current_project = self.get_format_project(project_id_query[0])
 
+                # 用例格式模板
+                case_template = {
+                    "config": {
+                        "report_case_id": report_case.id, "variables": {}, "name": case_name, "run_type": self.run_type
+                    },
+                    "step_list": []
+                }
                 if self.run_type == 'ui':
                     # 用例格式模板, # 火狐：geckodriver
-                    report_case_data["browser_type"] = self.browser
-                    report_case_data["browser_path"] = FileUtil.get_driver_path(self.browser)
+                    case_template["config"]["browser_type"] = self.browser
+                    case_template["config"]["browser_path"] = FileUtil.get_driver_path(self.browser)
                 else:
-                    report_case_data["appium_config"] = self.appium_config
+                    case_template["config"]["appium_config"] = self.appium_config
 
                 self.get_all_steps(case_id)  # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
 
@@ -295,9 +296,10 @@ class RunCase(RunTestRunner):
                             # 数据驱动的 comment 字段，用于做标识
                             step.name += driver_data.get("comment", "")
                             step.params = step.params = step.data_json = step.data_form = driver_data.get("data", {})
-                            self.parse_step(element_project, step_element, step, report_case.id)
+                            case_template["step_list"].append(
+                                self.parse_step(element_project, step_element, step))
                     else:
-                        self.parse_step(element_project, step_element, step, report_case.id)
+                        case_template["step_list"].append(self.parse_step(element_project, step_element, step))
 
                     # 把服务和用例的的自定义变量留下来
                     all_variables.update(element_project.variables)
@@ -308,15 +310,13 @@ class RunCase(RunTestRunner):
                 all_variables.update(current_case.variables)
                 all_variables.update({"device": self.device})  # 强制增加一个变量为设备id，用于去数据库查数据
                 all_variables.update({"device_id": self.device_id})  # 强制增加一个变量为设备id，用于去数据库查数据
-                report_case_data["variables"].update(all_variables)
-                report_case_data["run_type"] = self.run_type
-                report_case.update_report_case_data(report_case_data)
+                case_template["config"]["variables"].update(all_variables)
 
-                self.run_test_data["report_case_list"].append(report_case.id)
+                self.run_data_template["case_list"].append(copy.deepcopy(case_template))
 
                 # 完整的解析完一条用例后，去除对应的解析信息
                 self.all_case_steps = []
 
         # 去除服务级的公共变量，保证用步骤上解析后的公共变量
-        self.run_test_data["project_mapping"]["variables"] = {}
+        self.run_data_template["project_mapping"]["variables"] = {}
         self.init_parsed_data()

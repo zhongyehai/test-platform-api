@@ -318,6 +318,7 @@ class CaseModel(FormatModel):
     def __init__(self, **kwargs):
         self.id = kwargs.get("id")
         self.name = kwargs.get("name")
+        self.script_list = kwargs.get("script_list")
         self.variables = self.parse_variables(kwargs.get("variables", {}))
         self.skip_if = self.parse_skip_if(kwargs.get("skip_if"))
         self.run_times = kwargs.get("run_times")
@@ -328,6 +329,7 @@ class CaseModel(FormatModel):
         return {
             "id": self.id,
             "name": self.name,
+            "script_list": self.script_list,
             "variables": self.variables,
             "skip_if": self.skip_if,
             "run_times": self.run_times,

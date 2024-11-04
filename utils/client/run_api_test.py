@@ -33,7 +33,7 @@ class RunApi(RunTestRunner):
 
     def format_data_for_template(self):
         """ 接口调试 """
-        logger.info(f'本次测试的接口id：{self.api_id_list}')
+        logger.info(f'本次测试的接口id：\n{self.api_id_list}')
 
         # 解析api
         for api_id in self.api_id_list:
@@ -43,29 +43,38 @@ class RunApi(RunTestRunner):
             report_case = ReportCase.model_create_and_get({
                 "report_id": self.report_id,
                 "name": api_dict["name"],
-                "run_type": "api",
-                "case_data": {
-                    "headers": {},
-                    "run_times": 1,
-                    "variables": self.project.variables
-                },
+                "case_data": api_dict,
                 "summary": ReportCase.get_summary_template()
             })
 
-            # 合并头部信息
-            step_headers = {}
-            step_headers.update(self.project.headers)
-            step_headers.update(api_dict["request"]["headers"])
-            api_dict["request"]["headers"] = step_headers
+            # 用例的数据结构
+            test_case_template = {
+                "config": {
+                    "report_case_id": report_case.id, "name": api_dict["name"], "variables": {},
+                    "run_type": self.run_type
+                    # , "setup_hooks": [], "teardown_hooks": []
+                },
+                "step_list": []  # 测试步骤
+            }
 
-            reportStep.model_create({
-                "element_id": api_dict["id"],
-                "report_id": self.report_id,
-                "report_case_id": report_case.id,
-                "name": api_dict["name"],
-                "step_data": api_dict
+            # 合并头部信息
+            headers = {}
+            headers.update(self.project.headers)
+            headers.update(api_dict["request"]["headers"])
+            api_dict["request"]["headers"] = headers
+
+            report_step = reportStep.model_create_and_get({
+                "element_id": api_dict["id"], "report_id": self.report_id, "report_case_id": report_case.id,
+                "name": api_dict["name"], "step_data": api_dict
             })
-            self.run_test_data["report_case_list"].append(report_case.id)
+            api_dict["report_step_id"] = report_step.id
+
+            # 把api加入到步骤
+            test_case_template["step_list"].append(api_dict)
+
+            # 更新公共变量
+            test_case_template["config"]["variables"].update(self.project.variables)
+            self.run_data_template["case_list"].append(copy.deepcopy(test_case_template))
         self.init_parsed_data()
 
 
@@ -77,7 +86,7 @@ class RunCase(RunTestRunner):
         super().__init__(report_id=report_id, env_code=env_code, env_name=env_name, run_type="api", task_dict=task_dict,
                          extend=extend)
         self.temp_variables = temp_variables
-        self.run_test_data["is_async"] = is_async
+        self.run_data_template["is_async"] = is_async
         self.case_id_list = case_id_list  # 要执行的用例id_list
         self.all_case_steps = []  # 所有测试步骤
 
@@ -90,7 +99,7 @@ class RunCase(RunTestRunner):
             self.report.parse_data_finish()
             self.run_case()
 
-    def parse_step(self, current_project, project, current_case, case, api, step, report_case_id):
+    def parse_step(self, current_project, project, current_case, case, api, step):
         """ 解析测试步骤
         current_project: 当前用例所在的服务(解析后的)
         project: 当前步骤对应接口所在的服务(解析后的)
@@ -106,6 +115,7 @@ class RunCase(RunTestRunner):
         if case:
             headers.update(case.headers)
         headers.update(current_project.headers)
+        # headers.update(api["request"]["headers"])
         headers.update(current_case.headers)
         headers.update(step.headers)
 
@@ -119,7 +129,9 @@ class RunCase(RunTestRunner):
             "name": step.name,
             "setup_hooks": step.up_func,
             "teardown_hooks": step.down_func,
+            # "skip": "",  # 直接指定当前步骤是否执行
             "skip_if": step.skip_if,  # 如果条件为真，则当前步骤不执行
+            # "skip_unless": "",  # 除非条件为真，否则跳过当前测试
             "times": step.run_times,  # 运行次数
             "extract": step.extracts,  # 接口要提取的信息
             "validate": step.validates,  # 接口断言信息
@@ -136,15 +148,12 @@ class RunCase(RunTestRunner):
                 "allow_redirects": step.allow_redirect
             }
         }
-        reportStep.model_create({
-            "element_id": api["id"],
-            "step_id": step.id,
-            "case_id": step.case_id,
-            "report_id": self.report_id,
-            "report_case_id": report_case_id,
-            "name": step_data["name"],
-            "step_data": step_data
+        report_step = reportStep.model_create_and_get({
+            "element_id": api["id"], "step_id": step.id, "case_id": step.case_id, "report_id": self.report_id,
+            "report_case_id": current_case.report_case_id, "name": step_data["name"], "step_data": step_data
         })
+        step_data["report_step_id"] = report_step.id
+        return step_data
 
     def get_all_steps(self, case_id: int):
         """ 解析引用的用例 """
@@ -191,15 +200,17 @@ class RunCase(RunTestRunner):
                     case_name = f'{case_name}_{data_driver_index}' if data_driver_index > 0 else case_name
 
                     # 记录解析下后的用例
-                    report_case_data = current_case.get_attr()
+                    case_summary = ReportCase.get_summary_template()
+                    case_summary["case_name"] = case_name
                     report_case = ReportCase.model_create_and_get({
                         "name": case_name,
                         "case_id": current_case.id,
                         "suite_id": current_case.suite_id,
                         "report_id": self.report_id,
-                        "case_data": report_case_data,
-                        "summary": ReportCase.get_summary_template()
+                        "case_data": current_case.get_attr(),
+                        "summary": case_summary
                     })
+                    current_case.report_case_id = report_case.id
 
                     # 满足跳过条件则跳过
                     if self.parse_case_is_skip(current_case.skip_if) is True:
@@ -207,6 +218,15 @@ class RunCase(RunTestRunner):
                         continue
 
                     current_project = self.get_format_project(CaseSuite.get_first(id=current_case.suite_id).project_id)
+
+                    # 用例格式模板
+                    case_template = {
+                        "config": {
+                            "report_case_id": report_case.id, "variables": {}, "name": case_name, "run_type": self.run_type
+                        },  # "headers": {}
+                        "step_list": []
+                    }
+
                     self.get_all_steps(case_id)  # 递归获取测试步骤（中间有可能某些测试步骤是引用的用例）
 
                     # 循环解析测试步骤
@@ -230,9 +250,11 @@ class RunCase(RunTestRunner):
                                 # 数据驱动的 comment 字段，用于做标识
                                 step.name += driver_data.get("comment", "")
                                 step.params = step.params = step.data_json = step.data_form = driver_data.get("data", {})
-                                self.parse_step(current_project, api_project, current_case, step_case, api_data, step, report_case.id)
+                                case_template["step_list"].append(
+                                    self.parse_step(current_project, api_project, current_case, step_case, api_data, step))
                         else:
-                            self.parse_step(current_project, api_project, current_case, step_case, api_data, step, report_case.id)
+                            case_template["step_list"].append(
+                                self.parse_step(current_project, api_project, current_case, step_case, api_data, step))
 
                         # 把服务和用例的的自定义变量留下来
                         all_variables.update(api_project.variables)
@@ -241,15 +263,13 @@ class RunCase(RunTestRunner):
                     # 更新当前服务+当前用例的自定义变量，最后以当前用例设置的自定义变量为准
                     all_variables.update(current_project.variables)
                     all_variables.update(current_case.variables)
-                    report_case_data["variables"].update(all_variables)  # = all_variables
-                    report_case_data["run_type"] = self.run_type
-                    report_case.update_report_case_data(report_case_data)
+                    case_template["config"]["variables"].update(all_variables)  # = all_variables
 
-                    self.run_test_data["report_case_list"].append(report_case.id)
+                    self.run_data_template["case_list"].append(copy.deepcopy(case_template))
 
                     # 完整的解析完一条用例后，去除对应的解析信息
                     self.all_case_steps = []
 
         # 去除服务级的公共变量，保证用步骤上解析后的公共变量
-        self.run_test_data["project_mapping"]["variables"] = {}
+        self.run_data_template["project_mapping"]["variables"] = {}
         self.init_parsed_data()

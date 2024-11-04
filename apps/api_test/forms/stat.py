@@ -22,5 +22,5 @@ class AnalyseForm(PaginationForm):
         if self.trigger_type:
             filters.append(Report.trigger_type == self.trigger_type)
         if self.start_time:
-            filters.append(Report.create_time.between(self.start_time, self.end_time))
+            filters.append(Report.create_time.between(f'{self.start_time} 00:00:00', f'{self.end_time} 23:59:59'))
         return filters

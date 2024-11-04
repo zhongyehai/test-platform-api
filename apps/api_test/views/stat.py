@@ -10,49 +10,54 @@ from apps.system.model_factory import User
 from utils.util.time_util import time_calculate, get_now
 
 
-def get_use_stat(time_slot, project_list: list = []):
+def get_use_stat(time_off_set, project_list: list = [], get_card=False):
     """ 获取时间段的统计 """
-    start_time, end_time = time_calculate(time_slot), get_now()
-    time_slot = Report.create_time.between(start_time, end_time)
-    project_id_in = Report.project_id.in_(project_list)
-    is_passed = Report.is_passed == 1
     page_trigger_count, page_trigger_pass_count, page_trigger_pass_rate = 0, 0, 0  # 页面触发使用次数维度
     patrol_count, patrol_pass_count, patrol_pass_rate = 0, 0, 0  # 巡检维度
 
-    # 人工使用（页面触发）统计
-    run_type = Report.trigger_type == "page"
-    if project_list:
-        page_trigger_count = Report.query.filter(time_slot, project_id_in, run_type).count()
-    else:
-        page_trigger_count = Report.query.filter(time_slot).count()
-    if page_trigger_count > 0:
-        if project_list:
-            page_trigger_pass_count = Report.query.filter(time_slot, run_type, is_passed, project_id_in).count()
-        else:
-            page_trigger_pass_count = Report.query.filter(time_slot, is_passed).count()
-        page_trigger_pass_rate = round(page_trigger_pass_count / page_trigger_count, 4)
+    start_time, end_time = time_calculate(time_off_set), get_now()
+    time_slot = Report.create_time.between(start_time, end_time)
+    is_passed = Report.is_passed == 1
+    if get_card is True:
+        # 人工使用（页面触发）统计
+        run_type = Report.trigger_type == "page"
+        page_trigger_count = Report.query.filter(time_slot, run_type).count()
+        if page_trigger_count > 0:
+            page_trigger_pass_count = Report.query.filter(time_slot, run_type, is_passed).count()
+            page_trigger_pass_rate = round(page_trigger_pass_count / page_trigger_count, 4)
 
-    # cron巡检统计
-    run_type = Report.trigger_type == "cron"
-    if project_list:
-        patrol_count = Report.query.filter(time_slot, run_type, project_id_in).count()
-    else:
+        # cron巡检统计
+        run_type = Report.trigger_type == "cron"
         patrol_count = Report.query.filter(time_slot, run_type).count()
-    if patrol_count > 0:
-        if project_list:
-            patrol_pass_count = Report.query.filter(time_slot, is_passed, run_type, project_id_in).count()
-        else:
+        if patrol_count > 0:
             patrol_pass_count = Report.query.filter(time_slot, is_passed, run_type).count()
-        patrol_pass_rate = round(patrol_pass_count / patrol_count, 4)
+            patrol_pass_rate = round(patrol_pass_count / patrol_count, 4)
+    else:
+        if project_list:
+            project_id_in = Report.project_id.in_(project_list)
 
-    # # 造数据统计
-    # if not project_list:
-    #     project_query_set = Project.query.with_entities(Project.id).filter().all()
-    #     project_list = [query_set[0] for query_set in project_query_set]
-    #
-    # make_data_count = Report.db.session.query(ReportCase.report_id).filter(Suite.project_id.in_(project_list)).filter(
-    #     Suite.suite_type == 'assist').filter(Case.suite_id == Suite.id).filter(ReportCase.from_id == Case.id).filter(
-    #     ReportCase.create_time.between(start_time, end_time)).distinct().count()
+            # 人工使用（页面触发）统计
+            run_type = Report.trigger_type == "page"
+            page_trigger_count = Report.query.filter(time_slot, project_id_in, run_type).count()
+            if page_trigger_count > 0:
+                page_trigger_pass_count = Report.query.filter(time_slot, run_type, is_passed, project_id_in).count()
+                page_trigger_pass_rate = round(page_trigger_pass_count / page_trigger_count, 4)
+
+            # cron巡检统计
+            run_type = Report.trigger_type == "cron"
+            patrol_count = Report.query.filter(time_slot, run_type, project_id_in).count()
+            if patrol_count > 0:
+                patrol_pass_count = Report.query.filter(time_slot, is_passed, run_type, project_id_in).count()
+                patrol_pass_rate = round(patrol_pass_count / patrol_count, 4)
+
+            # # 造数据统计
+            # if not project_list:
+            #     project_query_set = Project.query.with_entities(Project.id).filter().all()
+            #     project_list = [query_set[0] for query_set in project_query_set]
+            #
+            # make_data_count = Report.db.session.query(ReportCase.report_id).filter(Suite.project_id.in_(project_list)).filter(
+            #     Suite.suite_type == 'assist').filter(Case.suite_id == Suite.id).filter(ReportCase.from_id == Case.id).filter(
+            #     ReportCase.create_time.between(start_time, end_time)).distinct().count()
 
     return {
         "page_trigger_count": page_trigger_count,
@@ -68,7 +73,7 @@ def get_use_stat(time_slot, project_list: list = []):
 @api_test.login_get("/stat/use/card")
 def api_get_stat_use_card():
     """ 使用统计卡片 """
-    use_stat = get_use_stat(request.args.get("time_slot"))
+    use_stat = get_use_stat(request.args.get("time_slot"), get_card=True)
     return app.restful.get_success(use_stat)
 
 
