@@ -36,6 +36,19 @@ def send_rabbit_mq(host, port, account, password, topic, message):  # 消息生�
     connection.close()  # 关闭连接
 
 
+def send_active_mq(host, port, account, password, client_id, topic, message):
+    try:
+        build_message = build_active_mq_body(message, topic, client_id)
+        message_body, message_id = build_message[0], build_message[1]
+        conn = stomp.Connection([(host, port)], keepalive=True, auto_decode=False)  # 创建STOMP连接
+        conn.connect(account, password, wait=True)  # ActiveMQ的用户名和密码，默认为admin/admin
+        conn.send(body=message_body, destination=topic)  # 发送消息
+        conn.disconnect()  # 断开连接
+        return {"status": "success", "res": f"messageId: {message_id}"}
+    except Exception as error:
+        return {"status": "fail", "res": error}
+
+
 class ActiveMqBinaryMessage:
     def __init__(self, header, payload: bytes):
         self.header = header
@@ -60,7 +73,7 @@ def writeMUTF(to_write: str):  # 将Python的值根据格式符，转换为字�
 
 def build_active_mq_body(content, topic: str, client_id: str):
     if isinstance(content, bytes) is False:
-        if isinstance(content, str) is False:
+        if isinstance(content, str) is False and isinstance(content, bytearray) is False:
             content = json.dumps(content)
         content = content.encode('utf-8')
 
@@ -71,29 +84,28 @@ def build_active_mq_body(content, topic: str, client_id: str):
     bytes_to_send += writeMUTF(topic)
     bytes_to_send += writeMUTF(client_id)
     bytes_to_send += binary_message.payload
-    return bytes_to_send
-
-
-def send_active_mq(host, port, account, password, client_id, topic, message):
-    try:
-        message_body = build_active_mq_body(message, topic, client_id)
-        conn = stomp.Connection([(host, port)], keepalive=True, auto_decode=False)  # 创建STOMP连接
-        conn.connect(account, password, wait=True)  # ActiveMQ的用户名和密码，默认为admin/admin
-        conn.send(body=message_body, destination=topic)  # 发送消息
-        conn.disconnect()  # 断开连接
-        return {"status": "success", "res": "发送成功"}
-    except Exception as error:
-        return {"status": "fail", "res": error}
+    return bytes_to_send, header.messageId
 
 
 if __name__ == "__main__":
-    mq_info = {
-        "host": '127.0.0.1',
-        "port": 5672,
-        "account": "guest",
-        "password": "guest",
-        "queue_name": "test1",
-    }
-    message = json.dumps({"create_time": str(datetime.datetime.now())})
-    print(message)
-    send_rabbit_mq(**mq_info, message=message)
+    # mq_info = {
+    #     "host": '127.0.0.1',
+    #     "port": 5672,
+    #     "account": "guest",
+    #     "password": "guest",
+    #     "queue_name": "test1",
+    # }
+    # message = json.dumps({"create_time": str(datetime.datetime.now())})
+    # print(message)
+    # send_rabbit_mq(**mq_info, message=message)
+
+    res = send_active_mq(
+        host='192.168.0.76',
+        port=61613,
+        account=None,
+        password=None,
+        client_id=None,
+        topic="TS/Order/Reject",
+        message='sdfasdf'
+    )
+    print(res)

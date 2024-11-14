@@ -12,7 +12,7 @@ class QueueInstance(NumFiled):
     __table_args__ = {"comment": "消息队列实例管理"}
     # 消息队列链接属性
     queue_type: Mapped[QueueTypeEnum] = mapped_column(String(128), default="", comment="消息队列类型")
-    instance_id: Mapped[str] = mapped_column(String(128), default="", comment="rocket_mq 对应的 instance_id")
+    instance_id: Mapped[str] = mapped_column(String(128), default="test_platform_client", comment="rocket_mq 对应的 instance_id")
     desc: Mapped[str] = mapped_column(String(512), nullable=True, default="", comment="描述")
 
     # rabbit_mq

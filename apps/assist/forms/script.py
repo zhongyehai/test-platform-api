@@ -4,6 +4,7 @@ import traceback
 from typing import Optional
 
 from pydantic import Field, field_validator
+from sqlalchemy.sql import func
 
 from ...base_form import BaseForm, PaginationForm, required_str_field
 from ..model_factory import Script, ScriptMockRecord
@@ -63,24 +64,16 @@ class DeleteScriptForm(GetScriptForm):
             User.is_admin() or script.current_is_create_user(), "脚本文件仅【管理员】或【当前脚本文件的创建者】可删除")
 
         # 接口自动化
-        query_data = Script.db.session.query(ApiProject.name).filter(ApiProject.script_list.like(f'%{value}%')).first()
+        query_data = Script.db.session.query(ApiProject.name).filter(func.json_contains(ApiProject.script_list, f'{value}')).first()
         cls.validate_is_false(query_data, f'接口自动化，服务【{query_data}】已引此脚本，请先解除引用')
-        query_data = Script.db.session.query(ApiCase.name).filter(ApiCase.script_list.like(f'%{value}%')).first()
-        cls.validate_is_false(query_data, f'接口自动化，用例【{query_data}】已引此脚本，请先解除引用')
 
         # ui自动化
-        query_data = Script.db.session.query(WebUiProject.name).filter(
-            WebUiProject.script_list.like(f'%{value}%')).first()
+        query_data = Script.db.session.query(WebUiProject.name).filter(func.json_contains(WebUiProject.script_list, f'{value}')).first()
         cls.validate_is_false(query_data, f'ui自动化，服务【{query_data}】已引此脚本，请先解除引用')
-        query_data = Script.db.session.query(WebUiCase.name).filter(WebUiCase.script_list.like(f'%{value}%')).first()
-        cls.validate_is_false(query_data, f'ui自动化，用例【{query_data}】已引此脚本，请先解除引用')
 
         # app自动化
-        query_data = Script.db.session.query(AppUiProject.name).filter(
-            AppUiProject.script_list.like(f'%{value}%')).first()
+        query_data = Script.db.session.query(AppUiProject.name).filter(func.json_contains(AppUiProject.script_list, f'{value}')).first()
         cls.validate_is_false(query_data, f'app自动化，服务【{query_data}】已引此脚本，请先解除引用')
-        query_data = Script.db.session.query(AppUiCase.name).filter(AppUiCase.script_list.like(f'%{value}%')).first()
-        cls.validate_is_false(query_data, f'app自动化，用例【{query_data}】已引此脚本，请先解除引用')
 
         setattr(cls, "script", script)
         return value

@@ -67,7 +67,7 @@ def send_inspection_by_email(content_list, kwargs):
 
 
 def send_report(**kwargs):
-    """ 封装发送测试报告提供给多线程使用 """
+    """ 发送测试报告 """
     is_send, receive_type, content_list = kwargs.get("is_send"), kwargs.get("receive_type"), kwargs.get("content_list")
     result = [content_data["report_summary"]["result"] for content_data in content_list]
     if is_send == SendReportTypeEnum.always.value or (is_send == SendReportTypeEnum.on_fail.value and "fail" in result):
@@ -75,11 +75,6 @@ def send_report(**kwargs):
             send_inspection_by_email(content_list, kwargs)
         else:
             send_inspection_by_msg(receive_type, content_list, kwargs)
-
-
-def async_send_report(**kwargs):
-    """ 多线程发送测试报告 """
-    Thread(target=send_report, kwargs=kwargs).start()
 
 
 def call_back_for_pipeline(task_id, call_back_info: list, extend: dict, status):
@@ -120,16 +115,11 @@ def send_run_time_error_message(content):
     send_msg(WebHook.build_webhook_addr(_default_web_hook_type, _default_web_hook, _web_hook_secret), msg)
 
 
-def async_send_run_time_error_message(**kwargs):
-    """ 多线程发送错误信息 """
-    logger.info("开始发送错误信息")
-    Thread(target=send_run_time_error_message, kwargs=kwargs).start()
-    logger.info("错误信息发送完毕")
-
-
 def send_run_func_error_message(content):
     """ 运行自定义函数错误通知 """
-    async_send_run_time_error_message(content=content)
+    logger.info("开始发送错误信息")
+    send_run_time_error_message(content=content)
+    logger.info("错误信息发送完毕")
 
 
 def send_business_stage_count(content):

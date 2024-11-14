@@ -42,7 +42,7 @@ def config_add_business():
     # 给创建者添加绑定关系，并生成新的token
     user = User.get_first(id=g.user_id)
     user.business_list.append(business.id)
-    user.model_update({"business_list": user.business_list})
+    User.query.filter(User.id == user.id).update({"business_list": user.business_list})
 
     # 重新生成token
     token = user.make_access_token(g.api_permissions)

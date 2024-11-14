@@ -221,6 +221,7 @@ class Runner:
             request_data["headers"] = self.session_context.update_filed_to_header(request_data["headers"])
         else:
             request_data = step_dict.get("test_action", {})
+            request_data["report_step_id"] = step_dict["report_step_id"]
 
         parsed_step = self.session_context.eval_content(request_data)
         self.session_context.update_test_variables("request", parsed_step)
@@ -297,7 +298,6 @@ class Runner:
                 resp_obj=self.resp_obj,
                 driver=self.driver
             )
-            logger.log_info(f"""步骤: {step_name}, 执行成功\n""")
         except (exceptions.ParamsError, exceptions.ValidationFailure, exceptions.ExtractFailure) as error:
             logger.log_info(f"""步骤: {step_name}, 执行报错：{error}\n""")
             raise
@@ -374,6 +374,7 @@ class Runner:
             raise RuntimeError(self.client_init_error)
 
         try:
+            logger.log_info(f"""开始执行步骤: {step_dict.get("name")}\n""")
             self._run_test(step_dict)
             self.client_session.meta_data["result"] = "success"
         except Exception as error:  # 捕获步骤运行中报错(报错、断言不通过、跳过测试)

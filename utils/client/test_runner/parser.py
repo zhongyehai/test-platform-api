@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import ast
 import re
+import traceback
 
 from . import exceptions, utils
 from .compat import basestring, builtin_str, numeric_types
@@ -658,7 +659,7 @@ def parse_test_case(test_case, project_mapping):
     parse_test_step(test_case["step_list"], test_case["config"], project_mapping)
 
 
-def parse_test_data(tests_dict):
+def parse_test_data(tests_dict, report_case_id):
     """ 解析测试数据
 
     Args:
@@ -677,29 +678,31 @@ def parse_test_data(tests_dict):
                 ]
             }
 
+        report_case_id: 测试报告用例的id
     """
-    project_mapping = tests_dict.get("project_mapping", {})
     parsed_tests_mapping = {
         "project": tests_dict.get("project", {}),
-        "project_mapping": project_mapping,
+        "project_mapping": tests_dict.get("project_mapping", {}),
         "report_id": tests_dict["report_id"],
         "report_model": tests_dict["report_model"],
         "report_case_model": tests_dict["report_case_model"],
         "report_step_model": tests_dict["report_step_model"],
-        "case_list": []
+        "test_case": []
     }
 
-    for test_case in tests_dict["case_list"]:
-        # 如果解析用例报错了，就记录并跳过这条用例
-        try:
-            parse_test_case(test_case, project_mapping)
-        except Exception as error:
-            report_case = tests_dict["report_case_model"].query.filter_by(
-                id=test_case["config"]["report_case_id"]).first()
-            summary = report_case.summary
-            summary["success"] = 'error'
-            report_case.test_is_error(summary=summary, error_msg=error)
-            continue
-        parsed_tests_mapping["case_list"].append(test_case)
+    report_case = tests_dict["report_case_model"].query.filter_by(id=report_case_id).first()
+    report_case.case_data["report_case_id"] = report_case.id
 
+    test_case_mapping = {
+        "config": report_case.case_data,
+        "step_list": tests_dict["report_step_model"].get_test_step_by_report_case(report_case.id)
+    }
+    try:
+        parse_test_case(test_case_mapping, tests_dict.get("project_mapping", {}))
+    except Exception as error:
+        summary = report_case.summary
+        summary["success"] = 'error'
+        report_case.test_is_error(summary=summary, error_msg=traceback.format_exc())
+        return
+    parsed_tests_mapping["test_case_mapping"] = test_case_mapping
     return parsed_tests_mapping
