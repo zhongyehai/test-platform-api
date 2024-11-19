@@ -49,9 +49,9 @@ class TestRunner:
         report = run_test_data["report_model"].get_first(id=run_test_data["report_id"])
 
         for report_case_id in run_test_data["report_case_list"]: # 解析一条用例就执行一条用例，减少内存开销
-            parsed_test_mapping = parser.parse_test_data(run_test_data, report_case_id)  # 解析测试计划
-            if parsed_test_mapping is None:  # 解析测试计划
-                continue
-
-            case_summary = self.run_test(parsed_test_mapping)  # 执行测试
+            parsed_test_res = parser.parse_test_data(run_test_data, report_case_id)  # 解析测试计划
+            if parsed_test_res.get("result") == "error":  # 解析测试计划报错了，会返回当前用例的初始summary
+                case_summary = parsed_test_res
+            else:
+                case_summary = self.run_test(parsed_test_res)  # 执行测试
             self.summary = report.merge_test_result(case_summary)  # 汇总测试结果

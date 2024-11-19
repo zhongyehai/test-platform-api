@@ -38,7 +38,7 @@ def inspection_ding_ding(content_list, task_kwargs):
             f'#### 运行环境:<font color=#409EFF> {content["env"]["name"]} </font>\n> '
             f'#### 执行用例:<font color=#409EFF> {case_stat["total"]} </font>条 \n> '
             f'#### 成功:<font color=#00FF00> {case_stat["success"]} </font>条 \n> '
-            f'#### 失败:<font color=#FF0000> {case_stat["fail"]} </font>条 \n> '
+            f'#### 失败:<font color=#FF0000> {case_stat["fail"] + case_stat["error"]} </font>条 \n> '
             f'#### 通过率:<font color=#409EFF> {pass_rate}% </font> \n> '
             f'#### 此次共运行<font color=#19D4AE> {step_stat["total"]} </font>个步骤，'
             f'涉及<font color=#19D4AE> {content["stat"]["count"]["api"]} </font>个接口 \n> '
@@ -73,7 +73,7 @@ def inspection_we_chat(content_list, task_kwargs):
             f'>**运行环境**: {content["env"]["name"]} \n'
             f'>**执行用例**:<font color="comment"> {case_stat["total"]} </font>条\n'
             f'>**成功**:<font color="info"> {case_stat["success"]} </font>条\n'
-            f'>**失败**:<font color="warning"> {case_stat["fail"]} </font>条\n'
+            f'>**失败**:<font color="warning"> {case_stat["fail"] + case_stat["error"]} </font>条\n'
             f'>**通过率**:<font color="info"> {pass_rate}% </font>\n'
             f'>此次共运行<font color="info"> {step_stat["total"]} </font>个步骤，'
             f'涉及<font color="info"> {content["stat"]["count"]["api"]} </font>个接口 \n> '
@@ -108,7 +108,7 @@ def render_html_report(content_list, task_kwargs):
             <div><span>运行环境: <span style="color: #60C0DDFF">{content["env"]["name"]}</span></span></div>
             <div><span>执行用例: <span style="color: #60C0DDFF">{case_stat["total"]}</span> 条</span></div>
             <div><span>成功: <span style="color: #9BCA63FF">{case_stat["success"]}</span> 条</span></div>
-            <div><span>失败: <span style="color: #FA6E86FF">{case_stat["fail"]}</span> 条</span></div>
+            <div><span>失败: <span style="color: #FA6E86FF">{case_stat["fail"] + case_stat["error"]}</span> 条</span></div>
             <div><span>通过率: <span style="color: #60C0DDFF">{pass_rate}</span>%</span></div>
             <div>
                 <span>

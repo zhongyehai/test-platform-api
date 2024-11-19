@@ -700,9 +700,10 @@ def parse_test_data(tests_dict, report_case_id):
     try:
         parse_test_case(test_case_mapping, tests_dict.get("project_mapping", {}))
     except Exception as error:
+        # exceptions.FunctionNotFound
         summary = report_case.summary
-        summary["success"] = 'error'
+        summary["result"] = 'error'
         report_case.test_is_error(summary=summary, error_msg=traceback.format_exc())
-        return
+        return summary
     parsed_tests_mapping["test_case_mapping"] = test_case_mapping
     return parsed_tests_mapping
