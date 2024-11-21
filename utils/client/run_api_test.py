@@ -133,7 +133,7 @@ class RunCase(RunTestRunner):
                 "json": step.data_json,
                 "data": step.data_form,
                 "files": step.data_file,
-                "allow_redirects": step.allow_redirect
+                "follow_redirects": step.allow_redirect # httpx的重定向字段
             }
         }
         reportStep.model_create({

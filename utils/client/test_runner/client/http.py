@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
 import copy
+import traceback
 from datetime import datetime
 from urllib import parse
 
-import urllib3
-import requests
-from requests import Request, Response
-from requests.exceptions import InvalidSchema, InvalidURL, MissingSchema, RequestException
+import httpx
+from httpx import Response, HTTPStatusError
 
 from utils.util.file_util import FileUtil
 from utils.client.test_runner import logger
 from utils.client.test_runner.client import BaseSession
 from utils.client.test_runner.utils import build_url, lower_dict_keys, omit_long_data
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class ApiResponse(Response):
@@ -43,9 +40,6 @@ class HttpSession(BaseSession):
 
     def get_req_resp_record(self, resp_obj):
         """ 从response对象中获取请求和响应信息。 """
-        # 把编码统一设为utf-8，防止响应体乱码
-        resp_obj.encoding = 'utf-8'
-
         def log_print(req_resp_dict, r_type):
             msg = f"\n================== {r_type} 详细信息 ==================\n"
             for key, value in req_resp_dict[r_type].items():
@@ -53,28 +47,27 @@ class HttpSession(BaseSession):
             logger.log_debug(msg)
 
         req_resp_dict = {"request": {}, "response": {}}
-        # req_resp_dict["extractors"] = resp_obj.extractors
-        # record actual request info
         req_resp_dict["request"]["url"] = resp_obj.request.url
         req_resp_dict["request"]["method"] = resp_obj.request.method
         req_resp_dict["request"]["headers"] = dict(resp_obj.request.headers)
 
-        request_body = resp_obj.request.body
-        if request_body:
-            request_content_type = lower_dict_keys(req_resp_dict["request"]["headers"]).get("content-type")
-            if request_content_type and "multipart/form-data" in request_content_type:
-                # 文件上传类型
-                req_resp_dict["request"]["body"] = "upload file stream (OMITTED)"
-            else:
-                req_resp_dict["request"]["body"] = request_body
+        if hasattr(resp_obj.request, "_content"):
+            request_body = resp_obj.request.content
+            if request_body:
+                request_content_type = lower_dict_keys(req_resp_dict["request"]["headers"]).get("content-type")
+                if request_content_type and "multipart/form-data" in request_content_type:
+                    # 文件上传类型
+                    req_resp_dict["request"]["body"] = "upload file stream (OMITTED)"
+                else:
+                    req_resp_dict["request"]["body"] = request_body
 
         log_print(req_resp_dict, "request")
 
         # 解析响应对象
-        req_resp_dict["response"]["ok"] = resp_obj.ok
+        # req_resp_dict["response"]["ok"] = resp_obj.ok
         req_resp_dict["response"]["url"] = resp_obj.url
         req_resp_dict["response"]["status_code"] = resp_obj.status_code
-        req_resp_dict["response"]["reason"] = resp_obj.reason
+        req_resp_dict["response"]["reason"] = resp_obj.reason_phrase
         req_resp_dict["response"]["cookies"] = resp_obj.cookies or {}
         req_resp_dict["response"]["encoding"] = resp_obj.encoding
         resp_headers = dict(resp_obj.headers)
@@ -112,19 +105,19 @@ class HttpSession(BaseSession):
 
         # 构建请求的url
         url = build_url(self.base_url, url)
-
         copy_kwargs = copy.deepcopy(kwargs)  # 保留转码前的内容
         copy_kwargs["files"] = FileUtil.build_request_file(copy_kwargs["files"])  # 构建文件请求对象
+
         # 如果是 x-www-form-urlencoded 则进行转码
         if copy_kwargs.get("headers", {}).get("Content-Type", None) == 'application/x-www-form-urlencoded':
-            # copy_kwargs["headers"].pop("Content-Type")
             copy_kwargs["data"] = parse.urlencode(copy_kwargs["data"])
 
-        response = self._send_request_safe_mode(method, url, **copy_kwargs)  # 发送请求
+        # 头部信息如果有value为None，httpx会报错，处理为字符串"null"
+        for key, value in copy_kwargs["headers"].items():
+            if value is None:
+                copy_kwargs["headers"][key] = 'null'
 
-        # requests包get响应内容中文乱码解决
-        if response.content:
-            response.encoding = response.apparent_encoding
+        response = self._send_request_safe_mode(method, url, **copy_kwargs)
 
         # 获取内容的长度，如果stream为True，则从响应头部获取，否则计算响应内容的长度
         if kwargs.get("stream", False):
@@ -140,17 +133,14 @@ class HttpSession(BaseSession):
             "response_at": self.response_at.strftime("%Y-%m-%d %H:%M:%S.%f"),
         }
         # 记录请求和响应历史记录，包括 3x 的重定向
-        # response_list = response.history + [response]
-        # self.meta_data["data"] = [self.get_req_resp_record(resp_obj) for resp_obj in response_list]
         self.meta_data["data"] = [self.get_req_resp_record(response)]  # 不保存重定向数据
         self.meta_data["data"][0]["request"].update(kwargs)
         try:
             response.raise_for_status()
-        except RequestException as e:
+        except HTTPStatusError as e:
             logger.log_error(u"{exception}".format(exception=str(e)))
         else:
             logger.log_info(
-                # f"""status_code: {response.status_code}, response_time(ms): {response_time_ms} ms, response_length: {content_size} bytes\n"""
                 f"""步骤: {name}, 响应状态码: {response.status_code}, 耗时: {self.meta_data["stat"]["elapsed_ms"]} ms, response_length: {content_size} bytes\n"""
             )
 
@@ -160,15 +150,17 @@ class HttpSession(BaseSession):
         """ 发送HTTP请求，并捕获由于连接问题而可能发生的任何异常。 """
         try:
             self.request_at = datetime.now()
-            # response = requests.Session.request(self, method, url, **kwargs)
-            response = requests.request(method, url, **kwargs)
+            logger.log_info(f"_send_request_safe_mode.try: method: {method}, url: {url}, kwargs: {kwargs}")
+            response = httpx.request(method, url, **kwargs) # requests库出现过卡死发不出请求的情况，换为httpx后没有出现问题
             self.response_at = datetime.now()
             return response
-        except (MissingSchema, InvalidSchema, InvalidURL):
-            raise
-        except RequestException as ex:
+        except HTTPStatusError as ex:
+            logger.log_info("_send_request_safe_mode.HTTPStatusError: \n{traceback.format_exc()}")
             resp = ApiResponse()
             resp.error = ex
             resp.status_code = 0  # with this status_code, content returns None
-            resp.request = Request(method, url).prepare()
+            # resp.request = Request(method, url).prepare()
             return resp
+        except Exception as e:
+            logger.log_error(f"_send_request_safe_mode.Exception: \n{traceback.format_exc()}")
+            raise

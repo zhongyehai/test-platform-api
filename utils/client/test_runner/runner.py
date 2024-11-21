@@ -87,7 +87,7 @@ class Runner:
                 self.driver = GetAppDriver(**self.appium_config)
 
     def try_close_browser(self):
-        """ 强制关闭浏览器 """
+        """ 强制关闭客户端 """
         try:
             self.driver.close_browser()
         except Exception:
@@ -239,7 +239,6 @@ class Runner:
         variables_mapping = copy.deepcopy(self.session_context.test_variables_mapping)
         self.session_context.test_variables_mapping["request"] = copy_request
 
-        # 开始执行测试
         self.report_step.test_is_start_running()
         case_id, step_name, extractors = step_dict.get("case_id"), step_dict.get("name"), step_dict.get("extract", {})
         if self.run_type == "api":
@@ -374,7 +373,7 @@ class Runner:
             raise RuntimeError(self.client_init_error)
 
         try:
-            logger.log_info(f"""开始执行步骤: {step_dict.get("name")}\n""")
+            logger.log_info(f"""开始执行步骤: {step_dict.get("name")}""")
             self._run_test(step_dict)
             self.client_session.meta_data["result"] = "success"
         except Exception as error:  # 捕获步骤运行中报错(报错、断言不通过、跳过测试)
