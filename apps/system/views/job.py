@@ -2,11 +2,12 @@
 import copy
 import json
 from threading import Thread
-from datetime import datetime
+import datetime
 
 import requests
 from flask import current_app as app, request
 
+from utils.util.file_util import FileUtil
 from ..forms.job import GetJobRunLogList, GetJobForm, GetJobLogForm, EnableJobForm, DisableJobForm, RunJobForm
 from ..model_factory import ApschedulerJobs
 from ..blueprint import system_manage
@@ -42,6 +43,33 @@ class JobFuncs:
             AppUiReport.batch_delete_report_detail_data(AppUiReportCase, AppUiReportStep)
 
     @classmethod
+    def cron_clear_report_detail(cls):
+        """
+        {
+            "name": "清理30前的报告详细数据",
+            "id": "cron_clear_report_detail",
+            "cron": "0 35 2 * * ?"
+        }
+        """
+        with create_app().app_context():
+            time_point = (datetime.datetime.now() - datetime.timedelta(days=30))
+            # 清理测试报告数据
+            ApiReportCase.query.filter(ApiReportCase.create_time < time_point).delete()
+            ApiReportStep.query.filter(ApiReportStep.create_time < time_point).delete()
+
+            # 清理测试报告截图
+            report_query_set = AppUiReportCase.query.with_entities(AppUiReportCase.report_id).filter(AppUiReportCase.create_time < time_point).distinct().all()
+            FileUtil.delete_report_img_by_report_id([query_set[0] for query_set in report_query_set], 'app')
+            AppUiReportCase.query.filter(AppUiReportCase.create_time < time_point).delete()
+            AppUiReportStep.query.filter(AppUiReportStep.create_time < time_point).delete()
+
+            # 清理测试报告截图
+            report_query_set = WebUiReportCase.query.with_entities(WebUiReportCase.report_id).filter(WebUiReportCase.create_time < time_point).distinct().all()
+            FileUtil.delete_report_img_by_report_id([query_set[0] for query_set in report_query_set], 'app')
+            WebUiReportCase.query.filter(WebUiReportCase.create_time < time_point).delete()
+            WebUiReportStep.query.filter(WebUiReportStep.create_time < time_point).delete()
+
+    @classmethod
     def cron_clear_step(cls):
         """
         {
@@ -72,7 +100,8 @@ class JobFuncs:
                 use_count = ApiStep.query.filter_by(api_id=api_id, status=DataStatusEnum.ENABLE.value).count()
                 db_use_count = ApiMsg.db.session.query(ApiMsg.use_count).filter(ApiMsg.id == api_id).first()[0]
                 if use_count != db_use_count:
-                    change_dict[api_id] = f"数据库:【{db_use_count}】，实时统计:【{use_count}】, 差值:【{use_count - db_use_count}】"
+                    change_dict[
+                        api_id] = f"数据库:【{db_use_count}】，实时统计:【{use_count}】, 差值:【{use_count - db_use_count}】"
                     ApiMsg.query.filter_by(id=api_id).update({"use_count": use_count})
             run_log.run_success(change_dict)
 
@@ -226,7 +255,7 @@ def system_manage_get_job_func_list():
             # job = ApschedulerJobs.get_first(id=f'cron_{attr_doc["id"]}')
             if job_query:
                 func["id"] = job_query[0]
-                func["next_run_time"] = datetime.fromtimestamp(int(job_query[1])).strftime('%Y-%m-%d %H:%M:%S')
+                func["next_run_time"] = datetime.datetime.fromtimestamp(int(job_query[1])).strftime('%Y-%m-%d %H:%M:%S')
             data_list.append(func)
 
     return app.restful.get_success(data_list)
