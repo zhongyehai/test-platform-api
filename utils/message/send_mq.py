@@ -88,24 +88,4 @@ def build_active_mq_body(content, topic: str, client_id: str):
 
 
 if __name__ == "__main__":
-    # mq_info = {
-    #     "host": '127.0.0.1',
-    #     "port": 5672,
-    #     "account": "guest",
-    #     "password": "guest",
-    #     "queue_name": "test1",
-    # }
-    # message = json.dumps({"create_time": str(datetime.datetime.now())})
-    # print(message)
-    # send_rabbit_mq(**mq_info, message=message)
-
-    res = send_active_mq(
-        host='192.168.0.76',
-        port=61613,
-        account=None,
-        password=None,
-        client_id=None,
-        topic="TS/Order/Reject",
-        message='sdfasdf'
-    )
-    print(res)
+    pass
