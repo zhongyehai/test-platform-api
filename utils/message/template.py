@@ -4,24 +4,7 @@ from datetime import datetime
 
 
 def inspection_ding_ding(content_list, task_kwargs):
-    """ 巡检-钉钉报告模板
-     @content_list: [{"report_id": 1, "report_summary": {}}]
-     """
-    # todo 消息加@
-    """
-    {
-         "msgtype": "markdown",
-         "markdown": {
-             "title":"杭州天气",
-             "text": "#### 杭州天气 @150XXXXXXXX \n> 9度，西北风1级，空气良89，相对温度73%\n> ![screenshot](https://img.alicdn.com/tfs/TB1NwmBEL9TBuNjy1zbXXXpepXa-2400-1218.png)\n> ###### 10点20分发布 [天气](https://www.dingalk.com) \n"
-         },
-          "at": {
-              "atMobiles": ["150XXXXXXXX"],
-              "atUserIds": ["user123"],
-              "isAtAll": false
-          }
-     }
-    """
+    """ 巡检-钉钉报告模板，官方文档 https://open.dingtalk.com/document/orgapp/custom-robot-access """
     notify_template = {
         "msgtype": "markdown",
         "markdown": {
@@ -42,22 +25,24 @@ def inspection_ding_ding(content_list, task_kwargs):
             f'#### 通过率:<font color=#409EFF> {pass_rate}% </font> \n> '
             f'#### 此次共运行<font color=#19D4AE> {step_stat["total"]} </font>个步骤，'
             f'涉及<font color=#19D4AE> {content["stat"]["count"]["api"]} </font>个接口 \n> '
-            f'#### 详情请【[点击此处]({task_kwargs["report_addr"] + str(report_id)})】查看\n\n\n')
+            )
+        if content_data["report_summary"]["stat"]["response_time"]["slow"] or content_data["report_summary"]["stat"]["response_time"]["very_slow"]:
+            notify_template["markdown"]["text"] += "#### 其中: "
+            if content_data["report_summary"]["stat"]["response_time"]["slow"]:
+                notify_template += (
+                    f'<font color="#FF0000"> 有{len(content_data["report_summary"]["stat"]["response_time"]["slow"])}个接口响应时间超过{content_data["report_summary"]["stat"]["response_time"]["response_time_level"]["slow"]}毫秒 </font>, '
+                )
+            if content_data["report_summary"]["stat"]["response_time"]["very_slow"]:
+                notify_template["markdown"]["text"] += (
+                    f'<font color="#FF0000"> 有{len(content_data["report_summary"]["stat"]["response_time"]["very_slow"])}个接口响应时间超过{content_data["report_summary"]["stat"]["response_time"]["response_time_level"]["very_slow"]}毫秒 </font>, '
+                )
+            notify_template["markdown"]["text"] += """<font color="#FF0000">请确认是否需要优化</font>\n"""
+        notify_template["markdown"]["text"] += f'#### 详情请【[点击此处]({task_kwargs["report_addr"] + str(report_id)})】查看\n\n\n'
     return notify_template
 
 
 def inspection_we_chat(content_list, task_kwargs):
-    """ 巡检-企业微信报告模板 """
-    """
-    {
-        "msgtype": "text",
-        "text": {
-            "content": "广州今日天气：29度，大部分多云，降雨概率：60%",
-            "mentioned_list":["wangqing","@all"],
-            "mentioned_mobile_list":["13800001111","@all"]
-        }
-    }
-    """
+    """ 巡检-企业微信报告模板, 官方文档 https://developer.work.weixin.qq.com/document/path/91770 """
     notify_template = {
         "msgtype": "markdown",
         "markdown": {
@@ -77,8 +62,19 @@ def inspection_we_chat(content_list, task_kwargs):
             f'>**通过率**:<font color="info"> {pass_rate}% </font>\n'
             f'>此次共运行<font color="info"> {step_stat["total"]} </font>个步骤，'
             f'涉及<font color="info"> {content["stat"]["count"]["api"]} </font>个接口 \n> '
-            f'**详情请【[点击此处]({task_kwargs["report_addr"] + str(report_id)})】查看** \n\n\n'
         )
+        if content_data["report_summary"]["stat"]["response_time"]["slow"] or content_data["report_summary"]["stat"]["response_time"]["very_slow"]:
+            notify_template["markdown"]["content"] += "其中: "
+            if content_data["report_summary"]["stat"]["response_time"]["slow"]:
+                notify_template += (
+                    f'<font color="warning"> 有{len(content_data["report_summary"]["stat"]["response_time"]["slow"])}个接口响应时间超过{content_data["report_summary"]["stat"]["response_time"]["response_time_level"]["slow"]}毫秒 </font>, '
+                )
+            if content_data["report_summary"]["stat"]["response_time"]["very_slow"]:
+                notify_template["markdown"]["content"] += (
+                    f'<font color="warning"> 有{len(content_data["report_summary"]["stat"]["response_time"]["very_slow"])}个接口响应时间超过{content_data["report_summary"]["stat"]["response_time"]["response_time_level"]["very_slow"]}毫秒 </font>, '
+                )
+            notify_template["markdown"]["content"] += """<font color="warning">请确认是否需要优化</font>\n"""
+        notify_template["markdown"]["content"] += f'**详情请【[点击此处]({task_kwargs["report_addr"] + str(report_id)})】查看** \n\n\n'
     return notify_template
 
 
@@ -123,6 +119,29 @@ def render_html_report(content_list, task_kwargs):
                     个接口 
                 </span>
             </div>
+            """
+        )
+        if content_data["report_summary"]["stat"]["response_time"]["slow"] or content_data["report_summary"]["stat"]["response_time"]["very_slow"]:
+            notify_template += "其中: "
+            if content_data["report_summary"]["stat"]["response_time"]["slow"]:
+                notify_template += (
+                    f"""
+                    <span style="color: #E4080A">
+                        有{len(content_data["report_summary"]["stat"]["response_time"]["slow"])}个接口响应时间超过{content_data["report_summary"]["stat"]["response_time"]["response_time_level"]["slow"]}毫秒
+                    </span>, 
+                    """
+                )
+            if content_data["report_summary"]["stat"]["response_time"]["very_slow"]:
+                notify_template += (
+                    f"""
+                    <span style="color: #E4080A">
+                        有{len(content_data["report_summary"]["stat"]["response_time"]["very_slow"])}个接口响应时间超过{content_data["report_summary"]["stat"]["response_time"]["response_time_level"]["very_slow"]}毫秒
+                    </span>, 
+                    """
+                )
+            notify_template += """<span style="color: #E4080A">请确认是否需要优化</span>"""
+        notify_template += (
+            """
             <div>
                 <span>
                     详情请【<a style="color: #fe5b4c" href="{task_kwargs["report_addr"] + str(report_id)}">点击此处</a>】查看

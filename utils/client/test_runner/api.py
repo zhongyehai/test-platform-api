@@ -37,7 +37,10 @@ class TestRunner:
                     case_runner.client_session.meta_data["result"] = "error"
 
             case_runner.report_step.save_step_result_and_summary(case_runner, step_error_traceback)
-            case_runner.report_step.add_run_step_result_count(report_case.summary, case_runner.client_session.meta_data)
+            if case_runner.run_type == "api":
+                case_runner.report_step.add_run_step_result_count(report_case.summary, case_runner.client_session.meta_data, parsed_tests_mapping["response_time_level"], test_step["report_step_id"])
+            else:
+                case_runner.report_step.add_run_step_result_count(report_case.summary, case_runner.client_session.meta_data)
         report_case.summary["time"]["end_at"] = datetime.datetime.now()  # 用例执行结束时间
         case_runner.try_close_browser()  # 执行完一条用例，不管是不是ui自动化，都强制执行关闭浏览器，防止执行时报错，导致没有关闭到浏览器造成driver进程一直存在
         report_case.save_case_result_and_summary()

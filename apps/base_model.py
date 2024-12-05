@@ -1089,6 +1089,10 @@ class BaseReport(BaseModel):
                     "api": 1,
                     "step": 1,
                     "element": 0
+                },
+                "response_time": {  # 记录步骤响应速度统计
+                    "slow": [],
+                    "very_slow": []
                 }
             },
             "time": {  # 时间维度
@@ -1123,16 +1127,14 @@ class BaseReport(BaseModel):
         """
 
         self.summary["stat"]["test_case"]["total"] += 1
-
-        # if self.summary["time"]["start_at"] ==  '':
-        #     self.summary["time"]["start_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-
         self.summary["stat"]["test_case"][case_summary["result"]] += 1
         self.summary["stat"]["test_step"]["total"] += case_summary["stat"]["total"]
         self.summary["stat"]["test_step"]["fail"] += case_summary["stat"]["fail"]
         self.summary["stat"]["test_step"]["error"] += case_summary["stat"]["error"]
         self.summary["stat"]["test_step"]["skip"] += case_summary["stat"]["skip"]
         self.summary["stat"]["test_step"]["success"] += case_summary["stat"]["success"]
+        self.summary["stat"]["response_time"]["slow"] = list(set(self.summary["stat"]["response_time"]["slow"] + case_summary["stat"]["response_time"]["slow"]))
+        self.summary["stat"]["response_time"]["very_slow"] = list(set(self.summary["stat"]["response_time"]["very_slow"] + case_summary["stat"]["response_time"]["very_slow"]))
         self.summary["time"]["step_duration"] += case_summary["time"]["step_duration"]
         self.summary["time"]["case_duration"] += case_summary["time"]["case_duration"]
         match case_summary["result"]:
@@ -1229,7 +1231,11 @@ class BaseReportCase(BaseModel):
                 'fail': 0,
                 'error': 0,
                 'skip': 0,
-                'success': 0
+                'success': 0,
+                "response_time": {  # 记录步骤响应速度统计
+                    "slow": [],
+                    "very_slow": []
+                },
             },
             "time": {
                 "start_at": "",
@@ -1403,6 +1409,14 @@ class BaseReportStep(BaseModel):
         }
 
     @classmethod
+    def get_element_id_by_report_step_id(cls, report_step_id: list):
+        """ 获取报告步骤对应的接口/元素id """
+        if report_step_id:
+            query_set = cls.db.session.query(cls.element_id).filter(cls.id.in_(report_step_id)).all()
+            return list(set([res[0] for res in query_set]))
+        return []
+
+    @classmethod
     def get_test_step_by_report_case(cls, report_case_id):
         """ 执行测试时，根据report_case_id 获取测试步骤 """
         report_step = cls.db.session.query(cls.id, cls.step_data).filter(cls.report_case_id == report_case_id).all()
@@ -1450,8 +1464,9 @@ class BaseReportStep(BaseModel):
             step_data=step_data, result=step_meta_data["result"], summary=step_meta_data["stat"])
 
     @classmethod
-    def add_run_step_result_count(cls, case_summary, step_meta_data):
+    def add_run_step_result_count(cls, case_summary, step_meta_data, response_time_level=None, report_step_id=None):
         """ 记录步骤执行结果数量 """
+        # 结果测试维度
         if step_meta_data["result"] == "success":
             case_summary["stat"]["success"] += 1
             case_summary["time"]["step_duration"] += step_meta_data["stat"]["elapsed_ms"]
@@ -1462,6 +1477,14 @@ class BaseReportStep(BaseModel):
             case_summary["stat"]["error"] += 1
         elif step_meta_data["result"] == "skip":
             case_summary["stat"]["skip"] += 1
+
+        # 接口响应耗时维度
+        if response_time_level is not None:
+            if step_meta_data["stat"]["elapsed_ms"] > response_time_level.get("very_slow", 1000):
+                case_summary["stat"]["response_time"]["very_slow"].append(report_step_id)
+            elif step_meta_data["stat"]["elapsed_ms"] > response_time_level.get("slow", 300):
+                case_summary["stat"]["response_time"]["slow"].append(report_step_id)
+
 
     def update_report_step_data(self, **kwargs):
         """ 更新测试数据 """

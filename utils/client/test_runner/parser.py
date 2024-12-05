@@ -687,6 +687,7 @@ def parse_test_data(tests_dict, report_case_id):
         "report_model": tests_dict["report_model"],
         "report_case_model": tests_dict["report_case_model"],
         "report_step_model": tests_dict["report_step_model"],
+        "response_time_level": tests_dict["response_time_level"],
         "test_case": []
     }
 

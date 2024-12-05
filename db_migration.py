@@ -122,7 +122,7 @@ device_extends = {
     "app_installed_record_count": "APP安装数量"
 }
 
-# 2024 年的节假日，每年需手动更新
+# 2025 年的节假日，每年需手动更新
 holiday_list = [
     "01-01",
     "01-28", "01-29", "01-30", "01-31", "02-01", "02-02", "02-03", "02-04",
@@ -131,6 +131,21 @@ holiday_list = [
     "05-31", "06-01", "06-02",
     "10-01", "10-02", "10-03", "10-04", "10-05", "10-06", "10-07", "10-08"
 ]
+
+# 接口自动化测试内置断言，用于添加相似断言方式时，快速选择
+api_default_validator = [
+    {
+        "label": "code=0",
+        "value": {"key": "code", "value": "0", "status": 1, "data_type": "int", "data_source": "content", "validate_type": "data", "validate_method": "相等"}
+    },
+    {
+        "label": "data长度大于0",
+        "value": {"key": "data", "value": "0", "status": 1, "data_type": "int", "data_source": "content", "validate_type": "data", "validate_method": "长度大于"}
+    }
+]
+
+# 测试步骤响应时间级别的映射，毫秒
+response_time_level = {"slow": 300, "very_slow": 1000}
 
 # 回调流水线消息内容
 call_back_msg_addr = ""
@@ -279,7 +294,7 @@ def init_config():
             {"name": "async_mock_data", "value": JsonUtil.dumps({}), "desc": "异步回调数据源"},
             {"name": "holiday_list", "value": JsonUtil.dumps(holiday_list), "desc": "节假日/调休日期，需每年手动更新"},
             {"name": "run_time_out", "value": "600", "desc": "前端运行测试时，等待的超时时间，秒"},
-            {"name": "report_host", "value": "http://localhost", "desc": "查看报告域名，部署后需手动修改为真实域名"},
+            {"name": "report_host", "value": "http://localhost:8023", "desc": "查看报告域名，部署后需手动修改为真实域名"},
             {"name": "callback_webhook", "value": "", "desc": "接口收到回调请求后即时通讯通知的地址"},
             {"name": "call_back_msg_addr", "value": call_back_msg_addr, "desc": "发送回调流水线消息内容地址"},
             {"name": "default_account", "value": JsonUtil.dumps({"account": "admin", "password": "123456"}), "desc": "默认登录账号"},
@@ -299,11 +314,13 @@ def init_config():
         "接口自动化": [
             {"name": "run_time_error_message_send_addr", "value": "", "desc": "运行测试用例时，有错误信息实时通知地址"},
             {"name": "request_time_out", "value": 60, "desc": "运行测试步骤时，request超时时间"},
+            {"name": "response_time_level", "value": JsonUtil.dumps(response_time_level), "desc": "测试步骤响应时间级别的映射，毫秒"},
             {
                 "name": "api_report_addr",
                 "value": "/api-test/report-show?id=",
                 "desc": "展示测试报告页面的前端地址（用于即时通讯通知）"
-            }
+            },
+            {"name": "api_default_validator", "value": JsonUtil.dumps(api_default_validator), "desc": "接口自动化测试内置断言，用于添加相似断言方式时，快速选择"}
         ],
 
         "ui自动化": [

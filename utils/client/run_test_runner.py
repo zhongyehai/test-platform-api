@@ -48,7 +48,7 @@ class RunTestRunner:
         self.parsed_element_dict = {}
         self.run_env = None
         self.report = None
-
+        self.response_time_level = {"slow": 0, "very_slow": 0}
         self.api_model = ApiMsg
         self.element_model = None
         if self.run_type == "api":  # 接口自动化
@@ -61,6 +61,7 @@ class RunTestRunner:
             self.report_case_model = ApiReportCase
             self.report_step_model = ApiReportStep
             self.time_out = Config.get_request_time_out()
+            self.response_time_level = Config.get_response_time_level()
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_api_report_addr()}'
         elif self.run_type == "ui":  # web-ui自动化
             self.project_model = WebUiProject
@@ -95,6 +96,7 @@ class RunTestRunner:
             "report_model": self.report_model,
             "report_case_model": self.report_case_model,
             "report_step_model": self.report_step_model,
+            "response_time_level": self.response_time_level,
             "project_mapping": {
                 "functions": {},
                 "variables": {},
@@ -236,19 +238,32 @@ class RunTestRunner:
         # 有可能是多环境一次性批量运行，根据batch_id查是否全部运行完毕
         if self.report_model.select_is_all_done_by_batch_id(self.report.batch_id):  # 查询此batch_id下的报告是否全部生成
             if self.task_dict.get("merge_notify") != 1:  # 不合并通知
-                # 有失败的，则获取失败的报告
+                # 有失败的，则获取失败的报告, 否则只发送当前测试结果的报告
                 not_passed = self.report_model.db.session.query(
                     self.report_model.id, self.report_model.summary
                 ).filter_by(batch_id=self.report.batch_id, is_passed=0).first()
                 if not_passed:
-                    self.send_report_if_task([{"report_id": not_passed[0], "report_summary": not_passed[1]}])
+                    report_id, report_summary = not_passed[0], not_passed[1]
                 else:
-                    self.send_report_if_task([{"report_id": self.report.id, "report_summary": result}])
+                    report_id, report_summary = self.report.id, result
+                if self.run_type == "api": # 接口自动化，为了报告的精准性，慢接口的统计精确到接口个数
+                    result["stat"]["response_time"]["slow"] = ApiReportStep.get_element_id_by_report_step_id(result["stat"]["response_time"]["slow"])
+                    result["stat"]["response_time"]["very_slow"] = ApiReportStep.get_element_id_by_report_step_id(result["stat"]["response_time"]["very_slow"])
+                self.send_report_if_task([{"report_id": report_id, "report_summary": report_summary}])
             else:  # 合并通知
                 # 获取当前批次下的所有测试报告，summary
                 query_res = self.report_model.db.session.query(
                     self.report_model.id, self.report_model.summary).filter_by(batch_id=self.report.batch_id).all()
-                self.send_report_if_task([{"report_id": query[0], "report_summary": query[1]} for query in query_res])
+                send_list = []
+                if self.run_type == "api": # 接口自动化，为了报告的精准性，慢接口的统计精确到接口个数
+                    for query in query_res:
+                        summary = query[1]
+                        summary["stat"]["response_time"]["slow"] = ApiReportStep.get_element_id_by_report_step_id(summary["stat"]["response_time"]["slow"])
+                        summary["stat"]["response_time"]["very_slow"] = ApiReportStep.get_element_id_by_report_step_id(summary["stat"]["response_time"]["very_slow"])
+                        send_list.append({"report_id": query[0], "report_summary": summary})
+                else:
+                    send_list = [{"report_id": query[0], "report_summary": query[1]} for query in query_res]
+                self.send_report_if_task(send_list)
 
     def run_case(self):
         """ 调 testRunner().run() 执行测试 """
@@ -302,6 +317,8 @@ class RunTestRunner:
         summary["stat"]["count"]["step"] = self.count_step
         summary["stat"]["count"]["api"] = len(self.api_set)
         summary["stat"]["count"]["element"] = len(self.element_set)
+        if self.run_type == "api":
+            summary["stat"]["response_time"]["response_time_level"] = self.response_time_level
         self.save_report_and_send_message(summary)
 
     def send_report_if_task(self, notify_list):
