@@ -141,7 +141,7 @@ def render_html_report(content_list, task_kwargs):
                 )
             notify_template += """<span style="color: #E4080A">请确认是否需要优化</span>"""
         notify_template += (
-            """
+            f"""
             <div>
                 <span>
                     详情请【<a style="color: #fe5b4c" href="{task_kwargs["report_addr"] + str(report_id)}">点击此处</a>】查看
