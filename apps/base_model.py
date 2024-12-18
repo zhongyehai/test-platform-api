@@ -1137,11 +1137,12 @@ class BaseReport(BaseModel):
         self.summary["stat"]["response_time"]["very_slow"] = list(set(self.summary["stat"]["response_time"]["very_slow"] + case_summary["stat"]["response_time"]["very_slow"]))
         self.summary["time"]["step_duration"] += case_summary["time"]["step_duration"]
         self.summary["time"]["case_duration"] += case_summary["time"]["case_duration"]
-        match case_summary["result"]:
-            case "success":
-                self.summary["result"] = "success"
-            case _:
-                self.summary["result"] = "fail"
+        if self.summary["result"] != "fail":
+            match case_summary["result"]:
+                case "success":
+                    self.summary["result"] = "success"
+                case _:
+                    self.summary["result"] = "fail"
 
         return self.summary
 
