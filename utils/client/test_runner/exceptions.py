@@ -79,3 +79,10 @@ class RunTimeException(MyBaseError):
 
     def __init__(self, msg):
         MyBaseError.__init__(self, msg)
+
+
+class StopTest(MyBaseError):
+    """ 停止测试执行 """
+
+    def __init__(self, msg):
+        MyBaseError.__init__(self, msg)

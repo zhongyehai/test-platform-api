@@ -7,7 +7,7 @@ from ..model_factory import ApiReport as Report, ApiReportStep as ReportStep, Ap
     ApiMsg, ApiCaseSuite as CaseSuite, ApiCase as Case, ApiStep as Step
 from ..forms.report import GetReportForm, GetReportListForm, DeleteReportForm, GetReportCaseForm, \
     GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStatusForm, GetReportShowIdForm, \
-    GetReportCaseSuiteListForm
+    GetReportCaseSuiteListForm, ChangeReportStepStatus
 from ...enums import ApiCaseSuiteTypeEnum
 
 
@@ -102,3 +102,10 @@ def api_get_report_step():
     """ 报告的步骤数据 """
     form = GetReportStepForm()
     return app.restful.get_success(form.report_step.to_dict())
+
+@api_test.login_put("/report/step-status")
+def api_change_report_step_status():
+    """ 修改测试报告步骤的状态 stop、pause、resume """
+    form = ChangeReportStepStatus()
+    ReportStep.update_status(form.report_id, form.report_case_id, form.report_step_id, form.status)
+    return app.restful.change_success()

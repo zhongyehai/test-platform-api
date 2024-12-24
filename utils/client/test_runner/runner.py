@@ -4,6 +4,7 @@ import traceback
 from unittest.case import SkipTest
 
 from . import exceptions, response, extract
+from .exceptions import StopTest
 from .runner_context import SessionContext
 from .webdriver_action import GetWebDriver, GetAppDriver
 from utils.logs.redirect_print_log import RedirectPrintLogToMemory
@@ -68,6 +69,7 @@ class Runner:
 
         # 记录当前步骤的执行进度
         self.report_step = None
+        self.pause_step_time_out = config.get("pause_step_time_out", 10 * 60) # 暂停测试步骤状态变更的超时时间（暂停 => 放行），默认10分钟
         self.testcase_teardown_hooks = config.get("teardown_hooks", [])  # 用例级别的后置条件
 
         self.session_context = SessionContext(self.functions)
@@ -130,12 +132,17 @@ class Runner:
 
                 if skip_if["data_source"] == "run_env":
                     skip_if["check_value"] = self.run_env
+                    test_dict["skip_if"][index]["check_value"] = self.run_env
 
+                # test_dict["skip_if"][index]["check_value"] = self.run_env
+                test_dict["skip_if"][index]["check_value_real"] = skip_if["check_value"]
                 try:
                     # 借用断言来判断条件是否为真，满足条件时返回值为None
                     skip_if_res = self.session_context.do_api_validation(skip_if)
+                    test_dict["skip_if"][index]["check_result"] = "pass"
                 except Exception as error:  # 断言不通过
                     skip_if_res = error
+                    test_dict["skip_if"][index]["check_result"] = "fail"
 
                 if skip_if["skip_type"] == "or":  # 或
                     if skip_if_res is None:  # 任意一个满足就跳过
@@ -365,7 +372,10 @@ class Runner:
                 # Message: An unknown server-side error occurred while processing the command. Original error: 'app' option is required for reinstall
                 self.client_init_error = "启动app失败，请检查 app是否安装、包名是否正确"
 
-        self.report_step = report_step_model.query.filter_by(id=step_dict.get("report_step_id")).first()
+        self.report_step = report_step_model.get_resport_step_with_status(step_dict.get("report_step_id"), self.pause_step_time_out)
+        if self.report_step.status == "stop": # 停止测试
+            self.__clear_step_test_data()
+            raise StopTest("中断测试执行")
         self.report_step.test_is_running()
         self.report_step.test_is_start_parse(step_dict)
 

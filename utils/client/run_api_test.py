@@ -47,6 +47,7 @@ class RunApi(RunTestRunner):
                 "case_data": {
                     "headers": {},
                     "run_times": 1,
+                    "run_env": self.env_code,
                     "variables": self.project.variables
                 },
                 "summary": ReportCase.get_summary_template()
@@ -192,6 +193,7 @@ class RunCase(RunTestRunner):
 
                     # 记录解析下后的用例
                     report_case_data = current_case.get_attr()
+                    report_case_data["run_env"] = self.env_code
                     report_case = ReportCase.model_create_and_get({
                         "name": case_name,
                         "case_id": current_case.id,

@@ -97,6 +97,7 @@ class RunTestRunner:
             "report_case_model": self.report_case_model,
             "report_step_model": self.report_step_model,
             "response_time_level": self.response_time_level,
+            "pause_step_time_out": Config.get_pause_step_time_out(),
             "project_mapping": {
                 "functions": {},
                 "variables": {},

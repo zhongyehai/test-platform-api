@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 from contextlib import contextmanager
+from email.policy import default
 from typing import Union
 
 import requests
@@ -1388,6 +1389,7 @@ class BaseReportStep(BaseModel):
     element_id: Mapped[int] = mapped_column(Integer(), comment="步骤对应的元素/接口id")
     report_case_id: Mapped[int] = mapped_column(Integer(), index=True, nullable=True, default=None,
                                                 comment="用例数据id")
+    status: Mapped[str] = mapped_column(String(8), default="resume", comment="resume:放行、pause:暂停、stop:中断")
     report_id: Mapped[int] = mapped_column(Integer(), index=True, comment="测试报告id")
     process: Mapped[str] = mapped_column(
         String(128), default='waite',
@@ -1430,9 +1432,9 @@ class BaseReportStep(BaseModel):
     @classmethod
     def get_resport_step_list(cls, report_case_id, get_detail):
         """ 获取步骤列表，性能考虑，只查关键字段 """
-        field_title = ["id", "case_id", "name", "process", "result", "summary"]
-        query_fields = [cls.id, cls.case_id, cls.name, cls.process, cls.result]
+        field_title = ["id", "case_id", "name", "process", "result", "status", "summary"]
 
+        query_fields = [cls.id, cls.case_id, cls.name, cls.process, cls.result, cls.status]
         if get_detail is True:
             query_fields.append(cls.summary)
 
@@ -1445,14 +1447,43 @@ class BaseReportStep(BaseModel):
     @classmethod
     def get_resport_step_list_by_report(cls, report_id):
         """ 获取步骤列表，性能考虑，只查关键字段 """
-        field_title = ["id", "case_id", "report_case_id", "name", "process", "result", "summary"]
-        query_fields = [cls.id, cls.case_id, cls.report_case_id, cls.name, cls.process, cls.result, cls.summary]
+        field_title = ["id", "case_id", "report_case_id", "name", "process", "result", "summary", "status"]
+        query_fields = [cls.id, cls.case_id, cls.report_case_id, cls.name, cls.process, cls.result, cls.summary, cls.status]
 
         # [(1, '步骤1', 'before', 'running')]
         query_data = cls.query.filter(cls.report_id == report_id).with_entities(*query_fields).all()
 
         # [{ 'id': 1, 'name': '步骤1', 'process': 'before', 'result': 'success' }]
         return [dict(zip(field_title, d)) for d in query_data]
+
+    @classmethod
+    def get_resport_step_with_status(cls, resport_step_id, time_out=60):
+        """ 如果步骤的状态是暂停，则等暂停完毕或者暂停超时结束后再返回，模拟debug """
+        while time_out >= 0:
+            report_step = cls.query.filter_by(id=resport_step_id).first()
+            if report_step.status == "pause":  # 如果设置了当前步骤为暂停执行，则每5秒查询一次状态有没有变更
+                time_out -= 5
+                time.sleep(5)
+                if time_out >= 5: # 最后一次循环就不重置 report_step 变量了
+                    report_step = None
+                continue
+            return report_step
+        # 步骤暂停超时过后还没有放行，把后面的所有步骤都改为停止执行
+        cls.update_status(None, report_step.report_case_id, report_step.id, "stop")
+        report_step.status = "stop"
+        return report_step
+
+    @classmethod
+    def update_status(cls, report_id=None, report_case_id=None, report_step_id=None, status="resume"):
+        """ 修改步骤的执行状态, stop、pause、resume """
+        if report_id and report_case_id is None and report_step_id is None:  # 更新整个测试报告的数据
+            cls.query.filter(cls.report_id == report_id).update({"status": status})
+        elif report_id is None and report_case_id and report_step_id is None:  # 更新整个用例测试报告的数据
+            cls.query.filter(cls.report_case_id == report_case_id).update({"status": status})
+        elif report_id is None and report_case_id and report_step_id:  # 更新用例下指定步骤及之后的测试报告的数据
+            cls.query.filter(cls.report_case_id == report_case_id, cls.id >= report_step_id).update({"status": status})
+        elif report_id is None and report_case_id is None and report_step_id:  #  更新指定数据的状态
+            cls.query.filter(cls.id == report_step_id).update({"status": status})
 
     def save_step_result_and_summary(self, step_runner, step_error_traceback=None):
         """ 保存测试步骤的结果和数据 """

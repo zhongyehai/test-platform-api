@@ -6,7 +6,7 @@ from ..model_factory import WebUiReport as Report, WebUiReportStep as ReportStep
     WebUiCaseSuite as CaseSuite
 from ..forms.report import GetReportForm, GetReportListForm, DeleteReportForm, GetReportCaseForm, \
     GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStatusForm, GetReportShowIdForm, \
-    GetReportStepImgForm, GetReportCaseSuiteListForm
+    GetReportStepImgForm, GetReportCaseSuiteListForm, ChangeReportStepStatus
 from utils.util.file_util import FileUtil
 
 
@@ -98,3 +98,11 @@ def ui_get_report_step_img():
     form = GetReportStepImgForm()
     data = FileUtil.get_report_step_img(form.report_id, form.report_step_id, form.img_type, 'ui')
     return app.restful.get_success({"data": data, "total": 1 if data else 0})
+
+
+@ui_test.login_put("/report/step-status")
+def ui_change_report_step_status():
+    """ 修改测试报告步骤的状态 stop、pause、resume """
+    form = ChangeReportStepStatus()
+    ReportStep.update_status(form.report_id, form.report_case_id, form.report_step_id, form.status)
+    return app.restful.change_success()

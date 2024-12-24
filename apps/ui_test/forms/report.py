@@ -125,3 +125,12 @@ class GetReportStepImgForm(BaseForm):
     report_id: int = Field(..., title="报告id")
     report_step_id: int = Field(..., title="报告步骤id")
     img_type: str = required_str_field(title="截图类型", description="截图类型，before_page, after_page")
+
+
+class ChangeReportStepStatus(BaseForm):
+    """ 修改测试报告步骤的状态 stop、pause、resume """
+    report_id: Optional[int] = Field(None, title="报告id",
+                                     description="只传report_id，则代表是对整个测试报告的所有步骤进行操作")
+    report_case_id: Optional[int] = Field(None, title="报告用例id")
+    report_step_id: Optional[int] = Field(None, title="报告步骤id")
+    status: str = Field(..., title="状态", description="stop、pause、resume")

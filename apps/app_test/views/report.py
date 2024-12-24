@@ -6,7 +6,7 @@ from ..model_factory import AppUiReport as Report, AppUiReportStep as ReportStep
     AppUiCaseSuite as CaseSuite
 from ..forms.report import GetReportForm, GetReportListForm, DeleteReportForm, GetReportCaseForm, \
     GetReportCaseListForm, GetReportStepForm, GetReportStepListForm, GetReportStatusForm, GetReportShowIdForm, \
-    GetReportStepImgForm, GetReportCaseSuiteListForm
+    GetReportStepImgForm, GetReportCaseSuiteListForm, ChangeReportStepStatus
 from utils.util.file_util import FileUtil
 
 
@@ -61,6 +61,7 @@ def app_get_report_suite_list():
     suite_and_case_list = ReportCase.get_resport_suite_and_case_list(form.report_id, CaseSuite, ReportStep)
     return app.restful.get_success(suite_and_case_list)
 
+
 @app_test.get("/report/case-list")
 def app_get_report_case_list():
     """ 报告的用例列表 """
@@ -97,3 +98,11 @@ def app_get_report_step_img():
     form = GetReportStepImgForm()
     data = FileUtil.get_report_step_img(form.report_id, form.report_step_id, form.img_type, 'app')
     return app.restful.get_success({"data": data, "total": 1 if data else 0})
+
+
+@app_test.login_put("/report/step-status")
+def app_change_report_step_status():
+    """ 修改测试报告步骤的状态 stop、pause、resume """
+    form = ChangeReportStepStatus()
+    ReportStep.update_status(form.report_id, form.report_case_id, form.report_step_id, form.status)
+    return app.restful.change_success()

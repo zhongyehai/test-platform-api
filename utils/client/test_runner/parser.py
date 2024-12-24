@@ -698,6 +698,7 @@ def parse_test_data(tests_dict, report_case_id):
         "config": report_case.case_data,
         "step_list": tests_dict["report_step_model"].get_test_step_by_report_case(report_case.id)
     }
+    test_case_mapping["config"]["pause_step_time_out"] = tests_dict["pause_step_time_out"]
     try:
         parse_test_case(test_case_mapping, tests_dict.get("project_mapping", {}))
     except Exception as error:

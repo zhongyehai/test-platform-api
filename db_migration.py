@@ -150,6 +150,9 @@ response_time_level = {"slow": 300, "very_slow": 1000}
 # 回调流水线消息内容
 call_back_msg_addr = ""
 
+# 暂停测试步骤执行的超时时间
+pause_step_time_out = 10 * 60 # 10分钟
+
 with open('rules.json', 'r', encoding='utf8') as rules:
     permission_dict = json.load(rules)
 
@@ -299,6 +302,7 @@ def init_config():
             {"name": "call_back_msg_addr", "value": call_back_msg_addr, "desc": "发送回调流水线消息内容地址"},
             {"name": "default_account", "value": JsonUtil.dumps({"account": "admin", "password": "123456"}), "desc": "默认登录账号"},
             {"name": "save_func_permissions", "value": "0", "desc": "保存脚本权限，0所有人都可以，1管理员才可以"},
+            {"name": "pause_step_time_out", "value": pause_step_time_out, "desc": "暂停测试步骤执行的超时时间"},
             {
                 "name": "call_back_response",
                 "value": "",

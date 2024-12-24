@@ -220,6 +220,7 @@ class FormatModel(JsonUtil):
             if skip_if and skip_if.get("status") == 1 and skip_if.get("expect"):
                 if skip_if.get("data_source") not in ["run_env", "run_server", "run_device"]:  # 常规数据校验
                     skip_if["expect"] = self.build_data(skip_if["data_type"], skip_if["expect"])
+                skip_if["comparator_str"] = skip_if["comparator"]
                 skip_if["comparator"] = assert_mapping[skip_if["comparator"]]
                 data_list.append(skip_if)
 
@@ -229,6 +230,7 @@ class FormatModel(JsonUtil):
                 'data_source': 'variable',
                 'check_value': '$case_run_result',
                 'comparator': '_01equals',
+                'comparator_str': '相等',
                 'data_type': 'str',
                 'expect': 'fail'
             })

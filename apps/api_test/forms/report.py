@@ -122,3 +122,10 @@ class GetReportStatusForm(GetReportShowIdForm):
     """ 获取报告状态 """
     process: int = Field(1, title="当前进度")
     status: int = Field(1, title="当前进度下的状态")
+
+class ChangeReportStepStatus(BaseForm):
+    """ 修改测试报告步骤的状态 stop、pause、resume """
+    report_id: Optional[int] = Field(None, title="报告id", description="只传report_id，则代表是对整个测试报告的所有步骤进行操作")
+    report_case_id: Optional[int] = Field(None, title="报告用例id")
+    report_step_id: Optional[int] = Field(None, title="报告步骤id")
+    status: str = Field(..., title="状态", description="stop、pause、resume")

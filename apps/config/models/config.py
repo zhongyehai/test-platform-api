@@ -60,6 +60,10 @@ class Config(BaseModel):
         return cls.get_config_value("request_time_out")
 
     @classmethod
+    def get_pause_step_time_out(cls):
+        return int(cls.get_config_value("pause_step_time_out"))
+
+    @classmethod
     def get_response_time_level(cls):
         return cls.loads(cls.get_config_value("response_time_level"))
 
