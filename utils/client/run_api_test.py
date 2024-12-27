@@ -25,6 +25,7 @@ class RunApi(RunTestRunner):
     def parse_and_run(self):
         """ 把解析放到异步线程里面 """
         with create_app().app_context():  # 手动入栈
+            Script.create_script_file(self.env_code)  # 创建所有函数文件
             self.report = self.report_model.get_first(id=self.report_id)
             self.project = self.get_format_project(self.report.project_id)  # 解析当前服务信息
             self.format_data_for_template()  # 解析api

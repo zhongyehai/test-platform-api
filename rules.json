@@ -170,6 +170,10 @@
       {
         "name": "工具-代码对比",
         "source_addr": "/tools/code-diff"
+      },
+      {
+        "name": "工具-shell造数据",
+        "source_addr": "/tools/shell-mock"
       }
     ],
     "配置管理菜单": [
@@ -194,8 +198,8 @@
         "source_addr": "/config/business"
       },
       {
-        "name": "配置管理-webhook管理菜单",
-        "source_addr": "/config/webhook"
+        "name": "配置管理-通知管理菜单",
+        "source_addr": "/config/notify"
       }
     ],
     "系统管理菜单": [
