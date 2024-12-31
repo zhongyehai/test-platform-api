@@ -303,6 +303,8 @@ def init_config():
             {"name": "default_account", "value": JsonUtil.dumps({"account": "admin", "password": "123456"}), "desc": "默认登录账号"},
             {"name": "save_func_permissions", "value": "0", "desc": "保存脚本权限，0所有人都可以，1管理员才可以"},
             {"name": "pause_step_time_out", "value": pause_step_time_out, "desc": "暂停测试步骤执行的超时时间"},
+            {"name": "shell_command_list", "value": JsonUtil.dumps([{"command": "", "desc": ""}]), "desc": "造数工具执行的shell命令"},
+            {"name": "pip_command", "value": "pip", "desc": "执行 'pip install' 时指定的pip，或者pip的绝对路径，用于在线管理第三方库"},
             {
                 "name": "call_back_response",
                 "value": "",

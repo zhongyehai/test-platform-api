@@ -31,6 +31,11 @@ class Config(BaseModel):
         return cls.db.session.query(cls.value).filter(cls.name == config_name).first()[0]  # ('60',)
 
     @classmethod
+    def get_pip_command(cls):
+        """ 获取pip_command配置项 """
+        return cls.get_config_value("pip_command")
+
+    @classmethod
     def get_kym(cls):
         """ 获取kym配置项 """
         return cls.loads(cls.get_config_value("kym"))
