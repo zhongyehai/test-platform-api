@@ -47,12 +47,12 @@ class TestRunner:
 
         return report_case.summary
 
-    def run(self, run_test_data):
+    def run(self, test_plan):
         """ 执行测试的流程 """
-        report = run_test_data["report_model"].get_first(id=run_test_data["report_id"])
+        report = test_plan["report_model"].get_first(id=test_plan["report_id"])
 
-        for report_case_id in run_test_data["report_case_list"]: # 解析一条用例就执行一条用例，减少内存开销
-            parsed_test_res = parser.parse_test_data(run_test_data, report_case_id)  # 解析测试计划
+        for report_case_id in test_plan["report_case_list"]: # 解析一条用例就执行一条用例，减少内存开销
+            parsed_test_res = parser.parse_test_data(test_plan, report_case_id)  # 解析测试计划
             if parsed_test_res.get("result") == "error":  # 解析测试计划报错了，会返回当前用例的初始summary
                 case_summary = parsed_test_res
             else:

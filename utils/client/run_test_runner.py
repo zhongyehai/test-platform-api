@@ -89,7 +89,7 @@ class RunTestRunner:
             self.front_report_addr = f'{Config.get_report_host()}{Config.get_app_ui_report_addr()}'
 
         # testRunner需要的数据格式
-        self.run_test_data = {
+        self.test_plan = {
             "is_async": 0,
             "run_type": self.run_type,
             "report_id": self.report_id,
@@ -177,7 +177,7 @@ class RunTestRunner:
         for func_file_id in func_list:
             func_file_name = Script.get_first(id=func_file_id).name
             func_file_data = importlib.reload(importlib.import_module(f'script_list.{self.env_code}_{func_file_name}'))
-            self.run_test_data["project_mapping"]["functions"].update({
+            self.test_plan["project_mapping"]["functions"].update({
                 name: item for name, item in vars(func_file_data).items() if isinstance(item, types.FunctionType)
             })
 
@@ -243,13 +243,15 @@ class RunTestRunner:
                 not_passed = self.report_model.db.session.query(
                     self.report_model.id, self.report_model.summary
                 ).filter_by(batch_id=self.report.batch_id, is_passed=0).first()
+
                 if not_passed:
                     report_id, report_summary = not_passed[0], not_passed[1]
                 else:
                     report_id, report_summary = self.report.id, result
+
                 if self.run_type == "api": # 接口自动化，为了报告的精准性，慢接口的统计精确到接口个数
-                    result["stat"]["response_time"]["slow"] = ApiReportStep.get_element_id_by_report_step_id(result["stat"]["response_time"]["slow"])
-                    result["stat"]["response_time"]["very_slow"] = ApiReportStep.get_element_id_by_report_step_id(result["stat"]["response_time"]["very_slow"])
+                    report_summary["stat"]["response_time"]["slow"] = ApiReportStep.get_element_id_by_report_step_id(report_summary["stat"]["response_time"]["slow"])
+                    report_summary["stat"]["response_time"]["very_slow"] = ApiReportStep.get_element_id_by_report_step_id(report_summary["stat"]["response_time"]["very_slow"])
                 self.send_report_if_task([{"report_id": report_id, "report_summary": report_summary}])
             else:  # 合并通知
                 # 获取当前批次下的所有测试报告，summary
@@ -268,25 +270,25 @@ class RunTestRunner:
 
     def run_case(self):
         """ 调 testRunner().run() 执行测试 """
-        logger.info(f'\n测试执行数据：\n{self.run_test_data}')
+        logger.info(f'\n测试执行数据：\n{self.test_plan}')
 
-        if self.run_test_data.get("is_async", 0):
+        if self.test_plan.get("is_async", 0):
             # 并行执行, 遍历case，以case为维度多线程执行，测试报告按顺序排列
             run_case_res_dict = {}
             self.report.run_case_start()
-            for index, case in enumerate(self.run_test_data["report_case_list"]):
+            for index, case in enumerate(self.test_plan["report_case_list"]):
                 run_case_res_dict[index] = False  # 用例运行标识，索引：是否运行完成
-                run_case_template = copy.deepcopy(self.run_test_data)
-                run_case_template["report_case_list"] = [case]
-                Thread(target=self.run_case_on_new_thread, args=[run_case_template, run_case_res_dict, index]).start()
+                test_plan = copy.deepcopy(self.test_plan)
+                test_plan["report_case_list"] = [case]
+                Thread(target=self.run_case_on_new_thread, args=[test_plan, run_case_res_dict, index]).start()
         else:  # 串行执行
             self.sync_run_case()
 
-    def run_case_on_new_thread(self, run_case_template, run_case_res_dict, index):
+    def run_case_on_new_thread(self, test_plan, run_case_res_dict, index):
         """ 新线程运行用例 """
         with create_app().app_context():  # 手动入栈
             runner = TestRunner()
-            runner.run(run_case_template)
+            runner.run(test_plan)
             self.update_run_case_status(run_case_res_dict, index, runner.summary)
 
     def update_run_case_status(self, run_case_res_dict, run_index, summary):
@@ -311,7 +313,7 @@ class RunTestRunner:
         """ 串行运行用例 """
         self.report.run_case_start()
         runner = TestRunner()
-        runner.run(self.run_test_data)
+        runner.run(self.test_plan)
         self.report.run_case_finish()
         logger.info(f'测试执行完成，开始保存测试报告和发送报告')
         summary = runner.summary

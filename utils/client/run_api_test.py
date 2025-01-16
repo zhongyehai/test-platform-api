@@ -67,7 +67,7 @@ class RunApi(RunTestRunner):
                 "name": api_dict["name"],
                 "step_data": api_dict
             })
-            self.run_test_data["report_case_list"].append(report_case.id)
+            self.test_plan["report_case_list"].append(report_case.id)
         self.init_parsed_data()
 
 
@@ -79,7 +79,7 @@ class RunCase(RunTestRunner):
         super().__init__(report_id=report_id, env_code=env_code, env_name=env_name, run_type="api", task_dict=task_dict,
                          extend=extend)
         self.temp_variables = temp_variables
-        self.run_test_data["is_async"] = is_async
+        self.test_plan["is_async"] = is_async
         self.case_id_list = case_id_list  # 要执行的用例id_list
         self.all_case_steps = []  # 所有测试步骤
 
@@ -248,11 +248,11 @@ class RunCase(RunTestRunner):
                     report_case_data["run_type"] = self.run_type
                     report_case.update_report_case_data(report_case_data)
 
-                    self.run_test_data["report_case_list"].append(report_case.id)
+                    self.test_plan["report_case_list"].append(report_case.id)
 
                     # 完整的解析完一条用例后，去除对应的解析信息
                     self.all_case_steps = []
 
         # 去除服务级的公共变量，保证用步骤上解析后的公共变量
-        self.run_test_data["project_mapping"]["variables"] = {}
+        self.test_plan["project_mapping"]["variables"] = {}
         self.init_parsed_data()
