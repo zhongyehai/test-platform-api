@@ -63,3 +63,6 @@ class CreatHitForm(BaseForm):
 
 class EditHitForm(GetHitForm, CreatHitForm):
     """ 修改自定义自动化测试命中问题 """
+
+class DeleteHitForm(BaseForm):
+    id_list: list = required_str_field(title="问题记录id list")

@@ -3,7 +3,7 @@ from flask import current_app as app
 
 from ..blueprint import assist
 from ..model_factory import Hits
-from ..forms.hits import GetHitListForm, GetHitForm, CreatHitForm, EditHitForm
+from ..forms.hits import GetHitListForm, GetHitForm, CreatHitForm, EditHitForm, DeleteHitForm
 
 
 @assist.login_get("/hit/type-list")
@@ -48,6 +48,6 @@ def assist_change_hit():
 @assist.login_delete("/hit")
 def assist_delete_hit():
     """ 删除自动化测试命中问题 """
-    form = GetHitForm()
-    form.hit.delete()
+    form = DeleteHitForm()
+    Hits.query.filter(Hits.id.in_(form.id_list)).delete()
     return app.restful.delete_success()
