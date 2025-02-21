@@ -11,7 +11,7 @@ class TestRunner:
         self.summary = None
 
     def run_test(self, parsed_tests_mapping):
-        """ 执行测试 """
+        """ 执行测试用例 """
         functions = parsed_tests_mapping.get("project_mapping", {}).get("functions", {})
         report_case_model = parsed_tests_mapping.get("report_case_model")
         report_step_model = parsed_tests_mapping.get("report_step_model")
@@ -51,10 +51,15 @@ class TestRunner:
         """ 执行测试的流程 """
         report = test_plan["report_model"].get_first(id=test_plan["report_id"])
 
+        start_run_test_time = datetime.datetime.now()
         for report_case_id in test_plan["report_case_list"]: # 解析一条用例就执行一条用例，减少内存开销
             parsed_test_res = parser.parse_test_data(test_plan, report_case_id)  # 解析测试计划
             if parsed_test_res.get("result") == "error":  # 解析测试计划报错了，会返回当前用例的初始summary
                 case_summary = parsed_test_res
             else:
-                case_summary = self.run_test(parsed_test_res)  # 执行测试
+                case_summary = self.run_test(parsed_test_res)  # 执行测试用例
             self.summary = report.merge_test_result(case_summary)  # 汇总测试结果
+        run_case_finish_time = datetime.datetime.now()
+        self.summary["time"]["start_at"] = start_run_test_time.strftime("%Y-%m-%d %H:%M:%S")
+        self.summary["time"]["end_at"] = run_case_finish_time.strftime("%Y-%m-%d %H:%M:%S")
+        self.summary["time"]["all_duration"] = (run_case_finish_time - start_run_test_time).total_seconds()
