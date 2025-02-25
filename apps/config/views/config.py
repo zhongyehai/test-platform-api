@@ -5,6 +5,7 @@ from ..model_factory import Config
 from ..blueprint import config_blueprint
 from ..forms.config import GetConfigForm, DeleteConfigForm, PostConfigForm, PutConfigForm, GetConfigListForm, \
     GetConfigValueForm, GetSkipIfConfigForm, GetFindElementByForm
+from ...base_form import ChangeSortForm
 
 
 @config_blueprint.login_get("/config/list")
@@ -15,6 +16,14 @@ def config_get_config_list():
     else:
         get_filed = [Config.id, Config.name, Config.value]
     return app.restful.get_success(Config.make_pagination(form, get_filed=get_filed))
+
+
+@config_blueprint.login_put("/config/sort")
+def config_change_config_sort():
+    """ 更新排序 """
+    form = ChangeSortForm()
+    Config.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @config_blueprint.get("/config/by-code")

@@ -5,6 +5,7 @@ from ..blueprint import manage
 from ..forms.env import GetEnvListForm, GetEnvForm, DeleteEnvForm, AddEnvForm, ChangeEnvForm, GetAccountListForm, \
     GetAccountForm, AddAccountForm, ChangeAccountForm, DeleteAccountForm
 from ..model_factory import Env
+from ...base_form import ChangeSortForm
 
 
 @manage.get("/env/list")
@@ -13,6 +14,14 @@ def manage_get_env_list():
     form = GetEnvListForm()
     get_filed = [Env.id, Env.business, Env.name, Env.value, Env.desc]
     return app.restful.get_success(Env.make_pagination(form, get_filed=get_filed))
+
+
+@manage.login_put("/env/sort")
+def manage_change_env_sort():
+    """ 更新排序 """
+    form = ChangeSortForm()
+    Env.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @manage.post("/env/copy")
@@ -60,6 +69,14 @@ def manage_get_account_list():
     form = GetAccountListForm()
     get_filed = [Env.id, Env.name, Env.value, Env.password, Env.desc]
     return app.restful.get_success(Env.make_pagination(form, get_filed=get_filed))
+
+
+@manage.login_put("/account/sort")
+def manage_change_account_sort():
+    """ 更新排序 """
+    form = ChangeSortForm()
+    Env.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @manage.login_get("/account")

@@ -52,7 +52,7 @@ class Permission(NumFiled):
         return [source.source_addr for source in source_list]
 
 
-class Role(BaseModel):
+class Role(NumFiled):
     """ 角色表 """
     __tablename__ = "system_role"
     __table_args__ = {"comment": "角色表"}
@@ -118,7 +118,7 @@ class RolePermissions(BaseModel):
     permission_id: Mapped[int] = mapped_column(Integer(), nullable=False, comment="权限id")
 
 
-class User(BaseModel):
+class User(NumFiled):
     """ 用户表 """
     __tablename__ = "system_user"
     __table_args__ = {"comment": "用户表"}

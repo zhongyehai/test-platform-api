@@ -6,6 +6,7 @@ from ..blueprint import system_manage
 from ..model_factory import User
 from ..forms.user import CreateUserForm, EditUserForm, ChangePasswordForm, LoginForm, GetUserListForm, \
     GetUserForm, DeleteUserForm, ChangeStatusUserForm, ChangeUserEmailForm
+from ...base_form import ChangeSortForm
 from ...enums import DataStatusEnum
 
 
@@ -20,6 +21,14 @@ def system_manage_get_user_list():
     else:
         get_filed = [User.id, User.name, User.email]
     return app.restful.get_success(User.make_pagination(form, get_filed=get_filed))
+
+
+@system_manage.permission_put("/user/sort")
+def system_change_user_sort():
+    """ 更新排序 """
+    form = ChangeSortForm()
+    User.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @system_manage.permission_get("/user/role")

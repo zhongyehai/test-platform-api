@@ -4,6 +4,7 @@ from flask import current_app as app
 from ..blueprint import system_manage
 from ..forms.role import GetRoleListForm, GetRoleForm, CreateRoleForm, EditRoleForm, DeleteRoleForm
 from ..model_factory import Role, Permission
+from ...base_form import ChangeSortForm
 
 
 @system_manage.permission_get("/role/list")
@@ -15,6 +16,14 @@ def system_manage_get_role_list():
     else:
         get_filed = Role.get_simple_filed_list()
     return app.restful.get_success(Role.make_pagination(form, get_filed=get_filed))
+
+
+@system_manage.admin_put("/role/sort")
+def system_manage_change_role_sort():
+    """ 修改排序 """
+    form = ChangeSortForm()
+    Role.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @system_manage.admin_get("/role")

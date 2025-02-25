@@ -135,7 +135,7 @@ def app_change_phone():
     return app.restful.change_success()
 
 
-@app_test.login_get("/device/phone")
+@app_test.login_delete("/device/phone")
 def app_delete_phone():
     """ 删除手机 """
     form = GetPhoneForm()

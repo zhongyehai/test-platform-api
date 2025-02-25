@@ -5,6 +5,7 @@ from ..blueprint import config_blueprint
 from ..model_factory import ConfigType
 from ..forms.config_type import GetConfigTypeForm, DeleteConfigTypeForm, PostConfigTypeForm, PutConfigTypeForm, \
     GetConfigTypeListForm
+from ...base_form import ChangeSortForm
 
 
 @config_blueprint.login_get("/type/list")
@@ -15,6 +16,14 @@ def config_get_config_type_list():
     else:
         get_filed = ConfigType.get_simple_filed_list()
     return app.restful.get_success(ConfigType.make_pagination(form, get_filed=get_filed))
+
+
+@config_blueprint.login_put("/type/sort")
+def config_change_type_sort():
+    """ 更新排序 """
+    form = ChangeSortForm()
+    ConfigType.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @config_blueprint.login_get("/type")

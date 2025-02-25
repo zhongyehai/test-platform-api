@@ -5,6 +5,7 @@ from ..blueprint import manage
 from ..forms.bug_track import GetBugListForm, GetBugForm, DeleteBugForm, AddBugForm, ChangeBugForm, \
     ChangeBugStatusForm, ChangeBugReplayForm
 from ..model_factory import BugTrack
+from ...base_form import ChangeSortForm
 
 
 @manage.login_get("/bug-track/list")
@@ -14,6 +15,13 @@ def manage_get_bug_track_list():
     get_filed = [BugTrack.id, BugTrack.status, BugTrack.replay, BugTrack.business_id, BugTrack.name, BugTrack.detail,
                  BugTrack.iteration]
     return app.restful.get_success(BugTrack.make_pagination(form, get_filed=get_filed))
+
+@manage.login_put("/bug-track/sort")
+def manage_change_bug_track_sort():
+    """ 修改排序 """
+    form = ChangeSortForm()
+    BugTrack.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @manage.login_get("/bug-track/iteration")

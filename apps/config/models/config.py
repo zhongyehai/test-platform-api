@@ -2,10 +2,10 @@
 from sqlalchemy import Integer, Text, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from apps.base_model import BaseModel
+from apps.base_model import NumFiled
 
 
-class ConfigType(BaseModel):
+class ConfigType(NumFiled):
     """ 配置类型表 """
 
     __tablename__ = "config_type"
@@ -15,7 +15,7 @@ class ConfigType(BaseModel):
     desc: Mapped[str] = mapped_column(Text(), nullable=True, comment="描述")
 
 
-class Config(BaseModel):
+class Config(NumFiled):
     """ 配置表 """
 
     __tablename__ = "config_config"

@@ -5,6 +5,7 @@ from ..blueprint import config_blueprint
 from ..model_factory import BusinessLine
 from ..forms.business import GetBusinessForm, DeleteBusinessForm, PostBusinessForm, PutBusinessForm, \
     GetBusinessListForm, BusinessToUserForm
+from ...base_form import ChangeSortForm
 from ...system.model_factory import User
 
 
@@ -16,6 +17,14 @@ def config_get_business_list():
     else:
         get_filed = BusinessLine.get_simple_filed_list()
     return app.restful.get_success(BusinessLine.make_pagination(form, get_filed=get_filed))
+
+
+@config_blueprint.login_put("/business/sort")
+def config_change_business_sort():
+    """ 更新排序 """
+    form = ChangeSortForm()
+    BusinessLine.change_sort(**form.model_dump())
+    return app.restful.change_success()
 
 
 @config_blueprint.login_put("/business/user")
