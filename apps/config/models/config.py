@@ -119,3 +119,8 @@ class Config(NumFiled):
     @classmethod
     def get_call_back_msg_addr(cls):
         return cls.get_config_value("call_back_msg_addr")
+
+    @classmethod
+    def get_shell_command_info(cls):
+        """ 获取sell造数据的配置项 """
+        return cls.loads(cls.get_config_value("shell_command_info"))

@@ -5,3 +5,4 @@ from .models.hits import Hits
 from .models.script import Script, ScriptMockRecord
 from .models.swagger import SwaggerPullLog
 from .models.queue import QueueInstance, QueueTopic, QueueMsgLog
+from .models.shell_command import ShellCommandRecord

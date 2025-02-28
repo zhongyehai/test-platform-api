@@ -16,6 +16,6 @@ def assist_get_call_back_list():
 
 @assist.get("/call-back")
 def assist_get_call_back():
-    """ 回调列表 """
+    """ 回调记录 """
     form = GetCallBackForm()
     return app.restful.get_success(form.call_back.to_dict())

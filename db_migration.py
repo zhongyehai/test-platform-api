@@ -153,6 +153,16 @@ call_back_msg_addr = ""
 # 暂停测试步骤执行的超时时间
 pause_step_time_out = 10 * 60 # 10分钟
 
+# shell 造数据的，服务器信息
+shell_command_info = {
+    "ip": "",
+    "port": 22,
+    "username": "",
+    "password": "",
+    "file_path": "",
+    "log_path": ""
+}
+
 with open('rules.json', 'r', encoding='utf8') as rules:
     permission_dict = json.load(rules)
 
@@ -303,7 +313,7 @@ def init_config():
             {"name": "default_account", "value": JsonUtil.dumps({"account": "admin", "password": "123456"}), "desc": "默认登录账号"},
             {"name": "save_func_permissions", "value": "0", "desc": "保存脚本权限，0所有人都可以，1管理员才可以"},
             {"name": "pause_step_time_out", "value": pause_step_time_out, "desc": "暂停测试步骤执行的超时时间"},
-            {"name": "shell_command_list", "value": JsonUtil.dumps([{"command": "", "desc": ""}]), "desc": "造数工具执行的shell命令"},
+            {"name": "shell_command_info", "value": JsonUtil.dumps(shell_command_info), "desc": "shell 造数据的，服务器信息"},
             {"name": "pip_command", "value": "pip", "desc": "执行 'pip install' 时指定的pip，或者pip的绝对路径，用于在线管理第三方库"},
             {
                 "name": "call_back_response",
