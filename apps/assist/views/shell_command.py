@@ -18,8 +18,8 @@ def assist_get_shell_command_list():
     """ 获取命令列表 """
     return app.restful.get_success([
         {"label": "模拟下单", "command": "start"},
-        {"label": "直接shutdown", "command": "stop"},
-        {"label": "先抢单平仓再shutdown", "command": "update_tl_ctrl_task"},
+        {"label": "stop", "command": "stop"},
+        {"label": "先抢单平仓再shutdown", "command": "update_tl_ctrl_task"}
         # {"label": "先抢单平仓再shutdown", "command": "update_pause_resume"}
     ])
 
@@ -115,9 +115,8 @@ class SSHConnection:
 
     def send_shell_command(self, file_tab, content, command='start'):
         """ 创建shell请求文件, start/update/stop """
-        command = command.lower()
+        command, cats_file_path = command.lower(), None
         sftp = self.client.open_sftp()
-        cats_file_path, batch_file_path = None, f"{self.file_path}{file_tab}.json"
 
         # json文件
         if command == 'start':
@@ -162,7 +161,7 @@ class SSHConnection:
 
     def remove_command_file(self, file_tab):
         """ 删除shell请求文件 """
-        self.client.exec_command(f'sudo rm -rf f"{self.file_path}{file_tab}*"')
+        self.client.exec_command(f'sudo rm -rf {self.file_path}{file_tab}*')
 
     def get_cmd_id(self, command_out_put: str):
         """ start命令的返回中获取cmdId """
