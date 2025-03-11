@@ -36,10 +36,10 @@ def get_data_by_time(model):
 def get_api_test_card():
     """ 获取卡片统计 """
     return app.restful.get_success([
+        {"name": "report", "title": "测试报告数", "total": Report.query.filter().count()},
         {"name": "api", "title": "接口数", "total": Api.query.filter().count()},
         {"name": "case", "title": "用例数", "total": Case.query.filter().count()},
-        {"name": "step", "title": "测试步骤数", "total": Step.query.filter().count()},
-        {"name": "report", "title": "测试报告数", "total": Report.query.filter().count()}
+        {"name": "step", "title": "测试步骤数", "total": Step.query.filter().count()}
     ])
 
 
