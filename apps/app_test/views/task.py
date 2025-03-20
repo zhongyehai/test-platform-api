@@ -19,7 +19,7 @@ def app_get_task_list():
     if form.detail:
         get_filed = [
             Task.id, Task.name, Task.cron, Task.skip_holiday, Task.status, Task.project_id, Task.merge_notify,
-            Task.push_hit, Task.create_user, Task.receive_type, Task.is_send
+            Task.push_hit, Task.create_user, Task.receive_type, Task.is_send, Task.env_list
         ]
     else:
         get_filed = Task.get_simple_filed_list()

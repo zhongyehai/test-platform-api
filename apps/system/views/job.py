@@ -9,13 +9,13 @@ from flask import current_app as app, request
 
 from utils.util.file_util import FileUtil
 from ..forms.job import GetJobRunLogList, GetJobForm, GetJobLogForm, EnableJobForm, DisableJobForm, RunJobForm
-from ..model_factory import ApschedulerJobs
 from ..blueprint import system_manage
-from ..model_factory import JobRunLog
+from ...enums import DataStatusEnum
+from ..model_factory import ApschedulerJobs, JobRunLog
 from ...config.model_factory import BusinessLine, WebHook
+from ...assist.model_factory import Hits
 from ...api_test.model_factory import ApiProject, ApiReport, ApiReportCase, ApiReportStep, ApiCase, ApiStep, \
     ApiMsg, ApiProjectEnv, ApiCaseSuite, ApiTask
-from ...enums import DataStatusEnum
 from ...ui_test.model_factory import WebUiReport, WebUiReportCase, WebUiReportStep, WebUiCase, WebUiStep, \
     WebUiProjectEnv, WebUiProject, WebUiCaseSuite, WebUiTask
 from ...app_test.model_factory import AppUiReport, AppUiReportCase, AppUiReportStep, AppUiCase, AppUiStep, \
@@ -46,28 +46,49 @@ class JobFuncs:
     def cron_clear_report_detail(cls):
         """
         {
-            "name": "清理30前的报告详细数据",
+            "name": "清理30前的报告详细数据（不包含被 '自动化问题记录' 的报告）",
             "id": "cron_clear_report_detail",
             "cron": "0 35 2 * * ?"
         }
         """
         with create_app().app_context():
             time_point = (datetime.datetime.now() - datetime.timedelta(days=30))
-            # 清理测试报告数据
-            ApiReportCase.query.filter(ApiReportCase.create_time < time_point).delete()
-            ApiReportStep.query.filter(ApiReportStep.create_time < time_point).delete()
 
-            # 清理测试报告截图
-            report_query_set = AppUiReportCase.query.with_entities(AppUiReportCase.report_id).filter(AppUiReportCase.create_time < time_point).distinct().all()
-            FileUtil.delete_report_img_by_report_id([query_set[0] for query_set in report_query_set], 'app')
-            AppUiReportCase.query.filter(AppUiReportCase.create_time < time_point).delete()
-            AppUiReportStep.query.filter(AppUiReportStep.create_time < time_point).delete()
+            # 清理api测试报告数据
+            hits_report_id = Hits.format_with_entities_query_list(
+                Hits.db.session.query(Hits.report_id).filter(Hits.test_type == 'api').all())
+            report_id = ApiReport.format_with_entities_query_list(
+                ApiReport.db.session.query(ApiReport.id).filter(
+                    ApiReport.create_time < time_point,
+                    ApiReport.id.notin_(hits_report_id)
+                ).all())
+            ApiReportCase.query.filter(ApiReportCase.report_id.in_(report_id)).delete()
+            ApiReportStep.query.filter(ApiReportStep.report_id.in_(report_id)).delete()
 
-            # 清理测试报告截图
-            report_query_set = WebUiReportCase.query.with_entities(WebUiReportCase.report_id).filter(WebUiReportCase.create_time < time_point).distinct().all()
-            FileUtil.delete_report_img_by_report_id([query_set[0] for query_set in report_query_set], 'app')
-            WebUiReportCase.query.filter(WebUiReportCase.create_time < time_point).delete()
-            WebUiReportStep.query.filter(WebUiReportStep.create_time < time_point).delete()
+            # 清理app测试报告数据和截图
+            hits_report_id = Hits.format_with_entities_query_list(
+                Hits.db.session.query(Hits.report_id).filter(Hits.test_type == 'app').all())
+            report_id = ApiReport.format_with_entities_query_list(
+                AppUiReport.db.session.query(ApiReport.id).filter(
+                    AppUiReport.create_time < time_point,
+                    ApiReport.id.notin_(hits_report_id)
+                ).all())
+            FileUtil.delete_report_img_by_report_id(report_id, 'app')
+            AppUiReportCase.query.filter(AppUiReportCase.report_id.in_(report_id)).delete()
+            AppUiReportStep.query.filter(AppUiReportStep.report_id.in_(report_id)).delete()
+
+            # 清理ui测试报告数据和截图
+            hits_report_id = Hits.format_with_entities_query_list(
+                Hits.db.session.query(Hits.report_id).filter(Hits.test_type == 'ui').all())
+            report_id = ApiReport.format_with_entities_query_list(
+                WebUiReport.db.session.query(ApiReport.id).filter(
+                    WebUiReport.create_time < time_point,
+                    ApiReport.id.notin_(hits_report_id)
+                ).all())
+            FileUtil.delete_report_img_by_report_id(report_id, 'ui')
+            WebUiReportCase.query.filter(WebUiReportCase.report_id.in_(report_id)).delete()
+            WebUiReportStep.query.filter(WebUiReportStep.report_id.in_(report_id)).delete()
+
 
     @classmethod
     def cron_clear_step(cls):
