@@ -46,7 +46,7 @@ class JobFuncs:
     def cron_clear_report_detail(cls):
         """
         {
-            "name": "清理30前的报告详细数据（不包含被 '自动化问题记录' 的报告）",
+            "name": "清理30天前的报告详细数据（不包含被 '自动化问题记录' 的报告）",
             "id": "cron_clear_report_detail",
             "cron": "0 35 2 * * ?"
         }
@@ -57,37 +57,32 @@ class JobFuncs:
             # 清理api测试报告数据
             hits_report_id = Hits.format_with_entities_query_list(
                 Hits.db.session.query(Hits.report_id).filter(Hits.test_type == 'api').all())
-            report_id = ApiReport.format_with_entities_query_list(
-                ApiReport.db.session.query(ApiReport.id).filter(
-                    ApiReport.create_time < time_point,
-                    ApiReport.id.notin_(hits_report_id)
-                ).all())
-            ApiReportCase.query.filter(ApiReportCase.report_id.in_(report_id)).delete()
-            ApiReportStep.query.filter(ApiReportStep.report_id.in_(report_id)).delete()
+            ApiReportCase.query.filter(ApiReportCase.create_time < time_point, ApiReportCase.report_id.notin_(hits_report_id)).delete()
+            ApiReportStep.query.filter(ApiReportStep.create_time < time_point, ApiReportStep.report_id.notin_(hits_report_id)).delete()
 
             # 清理app测试报告数据和截图
             hits_report_id = Hits.format_with_entities_query_list(
                 Hits.db.session.query(Hits.report_id).filter(Hits.test_type == 'app').all())
-            report_id = ApiReport.format_with_entities_query_list(
-                AppUiReport.db.session.query(ApiReport.id).filter(
-                    AppUiReport.create_time < time_point,
-                    ApiReport.id.notin_(hits_report_id)
-                ).all())
-            FileUtil.delete_report_img_by_report_id(report_id, 'app')
-            AppUiReportCase.query.filter(AppUiReportCase.report_id.in_(report_id)).delete()
-            AppUiReportStep.query.filter(AppUiReportStep.report_id.in_(report_id)).delete()
+            delete_report_id = AppUiReport.format_with_entities_query_list(
+                AppUiReport.db.session.query(AppUiReport.id).filter(
+                    AppUiReport.create_time < time_point, AppUiReport.id.notin_(hits_report_id)).all())
+            # 删除截图
+            FileUtil.delete_report_img_by_report_id(delete_report_id, 'app')
+            # 删除数据
+            AppUiReportCase.query.filter(AppUiReportCase.create_time < time_point, AppUiReportCase.report_id.notin_(hits_report_id)).delete()
+            AppUiReportStep.query.filter(AppUiReportStep.create_time < time_point, AppUiReportStep.report_id.notin_(hits_report_id)).delete()
 
             # 清理ui测试报告数据和截图
             hits_report_id = Hits.format_with_entities_query_list(
                 Hits.db.session.query(Hits.report_id).filter(Hits.test_type == 'ui').all())
-            report_id = ApiReport.format_with_entities_query_list(
-                WebUiReport.db.session.query(ApiReport.id).filter(
-                    WebUiReport.create_time < time_point,
-                    ApiReport.id.notin_(hits_report_id)
-                ).all())
-            FileUtil.delete_report_img_by_report_id(report_id, 'ui')
-            WebUiReportCase.query.filter(WebUiReportCase.report_id.in_(report_id)).delete()
-            WebUiReportStep.query.filter(WebUiReportStep.report_id.in_(report_id)).delete()
+            delete_report_id = WebUiReport.format_with_entities_query_list(
+                WebUiReport.db.session.query(WebUiReport.id).filter(
+                    WebUiReport.create_time < time_point, WebUiReport.id.notin_(hits_report_id)).all())
+            # 删除截图
+            FileUtil.delete_report_img_by_report_id(delete_report_id, 'ui')
+            # 删除数据
+            WebUiReportCase.query.filter(WebUiReportCase.create_time < time_point, WebUiReportCase.report_id.notin_(hits_report_id)).delete()
+            WebUiReportStep.query.filter(WebUiReportStep.create_time < time_point, WebUiReportStep.report_id.notin_(hits_report_id)).delete()
 
 
     @classmethod

@@ -84,7 +84,7 @@ class BaseModel(db.Model, JsonUtil):
     db = db  # 方便直接使用，不用每次都导入
 
     id: Mapped[int] = mapped_column(Integer(), primary_key=True, comment="主键，自增")
-    create_time: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=datetime.now, comment="创建时间")
+    create_time: Mapped[datetime] = mapped_column(DateTime, nullable=True, index=True, default=datetime.now, comment="创建时间")
     update_time: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, default=datetime.now, onupdate=datetime.now, comment="修改时间")
     create_user: Mapped[int] = mapped_column(Integer(), nullable=True, default=None, comment="创建数据的用户id")

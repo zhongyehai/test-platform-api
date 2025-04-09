@@ -4,6 +4,7 @@ import json
 import platform
 import time
 import os
+import subprocess
 from unittest.case import SkipTest
 
 from appium import webdriver as appium_webdriver
@@ -457,9 +458,13 @@ class Actions:
         """ 【辅助】不操作元素 """
         return
 
-    def action_11_03_nothing_to_do(self, *args, **kwargs):
+    def action_11_03_reboot_app(self, *args, **kwargs):
         """ 【辅助】重启APP """
         self.driver.reset()
+
+    def action_11_04_reboot_device(self, *args, **kwargs):
+        """ 【辅助】使用 adb 命令重启设备 """
+        subprocess.run(['adb', 'reboot'])
 
     #################################### 数据提取相关事件 ####################################
     def extract_08_title(self, *args, **kwargs):
