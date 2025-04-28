@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import Field, field_validator
 from selenium.webdriver.common.keys import Keys
 
-from ...base_form import BaseForm, PaginationForm, required_str_field
+from ...base_form import BaseForm, PaginationForm, required_str_field, pydanticBaseModel
 from ..model_factory import Config
 import config
 
@@ -111,3 +111,29 @@ class PostConfigForm(BaseForm):
 
 class PutConfigForm(GetConfigForm, PostConfigForm):
     """ 修改配置表单校验 """
+
+
+class ValidatorForm(pydanticBaseModel):
+    """ 断言表单 """
+    key: str = Field(..., title="实际结果表达式")
+    value: str = Field(..., title="预期结果表达式")
+    status: int = Field(..., title="启用1、禁用0")
+    data_type: str = Field(..., title="数据类型")
+    data_source: str = Field(..., title="数据源")
+    validate_type: str = Field('data', title="断言类型，数据、ui")
+    validate_method: str = Field('相等', title="断言方法映射")
+
+
+class AddApiDefaultValidatorConfigForm(BaseForm):
+    """ 添加 api_default_validator 的配置项
+        {
+        "label": "code=0",
+        "value": {"key": "code", "value": "0", "status": 1, "data_type": "int", "data_source": "content", "validate_type": "data", "validate_method": "相等"}
+        }
+    """
+    label: str = Field(..., title="断言方式描述，如 code=0")
+    value: ValidatorForm
+
+    def depends_validate(self):
+        conf_data = self.validate_data_is_exist("配置不存在", Config, name='api_default_validator')
+        setattr(self, 'conf', conf_data)

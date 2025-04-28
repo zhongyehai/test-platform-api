@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import json
+
 from flask import current_app as app
 
 from ..model_factory import Config
 from ..blueprint import config_blueprint
 from ..forms.config import GetConfigForm, DeleteConfigForm, PostConfigForm, PutConfigForm, GetConfigListForm, \
-    GetConfigValueForm, GetSkipIfConfigForm, GetFindElementByForm
+    GetConfigValueForm, GetSkipIfConfigForm, GetFindElementByForm, AddApiDefaultValidatorConfigForm
 from ...base_form import ChangeSortForm
 
 
@@ -61,6 +63,16 @@ def config_delete_config():
     form = DeleteConfigForm()
     form.conf.delete()
     return app.restful.delet_success()
+
+
+@config_blueprint.login_put("/config/api-validator")
+def config_change_api_default_validator():
+    """ 修改 api_default_validator 配置 """
+    form = AddApiDefaultValidatorConfigForm()
+    conf_value = json.loads(form.conf.value)
+    conf_value.append(form.model_dump())
+    form.conf.model_update({"value": form.conf.dumps(conf_value)})
+    return app.restful.change_success()
 
 
 @config_blueprint.get("/config/skip-if")
