@@ -49,6 +49,7 @@ class AddStepForm(BaseForm):
     case_id: int = Field(..., title="步骤所属的用例id")
     quote_case: Optional[int] = Field(None, title="引用用例id（步骤为引用用例时必传）")
     name: str = required_str_field(title="步骤名称")
+    desc: Optional[str] = Field('', title="步骤描述")
     up_func: Optional[list] = Field(default=[], title="前置条件")
     down_func: Optional[list] = Field(default=[], title="后置条件")
     skip_if: List[SkipIfModel] = required_str_field(title="跳过条件")

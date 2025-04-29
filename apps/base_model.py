@@ -877,6 +877,7 @@ class BaseStep(StatusFiled, SkipIfFiled, UpFuncFiled, DownFuncFiled, NumFiled):
 
     run_times: Mapped[int] = mapped_column(Integer(), default=1, comment="执行次数，默认执行1次")
     name = db.Column(db.String(255), nullable=False, comment="步骤名称")
+    desc: Mapped[str] = mapped_column(Text(), nullable=False, comment="步骤描述")
     skip_on_fail: Mapped[int] = mapped_column(
         Integer(), default=1, nullable=True,
         comment="当用例有失败的步骤时，是否跳过此步骤，1跳过，0不跳过，默认跳过")
