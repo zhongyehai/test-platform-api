@@ -21,7 +21,7 @@ class SendEmail:
         message = MIMEMultipart()  # 邮件对象
 
         # 邮件title
-        email_title = f'自动化测试报告邮件，执行结果为：{"通过" if self.status == "success" else "不通过"}'
+        email_title = f'自动化测试：{"通过" if self.status == "success" else "不通过"}'
         message["Subject"] = Header(email_title, "utf-8").encode()
 
         # 邮件正文

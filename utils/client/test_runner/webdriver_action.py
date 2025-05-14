@@ -462,6 +462,14 @@ class Actions:
         """ 【辅助】重启APP """
         self.driver.reset()
 
+    def action_11_03_01_close_app(self, *args, **kwargs):
+        """ 【辅助】将应用置于后台 """
+        self.driver.close_app()
+
+    def action_11_03_02_quit(self, *args, **kwargs):
+        """ 【辅助】关闭APP """
+        self.driver.quit()
+
     def action_11_04_reboot_device(self, *args, **kwargs):
         """ 【辅助】使用 adb 命令重启设备 """
         subprocess.run(['adb', 'reboot'])
