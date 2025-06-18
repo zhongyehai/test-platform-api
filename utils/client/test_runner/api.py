@@ -50,6 +50,7 @@ class TestRunner:
     def run(self, test_plan):
         """ 执行测试的流程 """
         report = test_plan["report_model"].get_first(id=test_plan["report_id"])
+        self.summary = report.summary  # 防止任务中没有用例导致报错
 
         start_run_test_time = datetime.datetime.now()
         for report_case_id in test_plan["report_case_list"]: # 解析一条用例就执行一条用例，减少内存开销

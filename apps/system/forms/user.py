@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from typing import Optional
+from typing import Optional, List
 
 import validators
 from flask import request, g
 from pydantic import Field, field_validator
 
-from ...base_form import BaseForm, PaginationForm, required_str_field
+from ...base_form import BaseForm, PaginationForm, required_str_field, pydanticBaseModel
 from ..model_factory import User
 from ...enums import DataStatusEnum
 from config import _admin_default_password
@@ -110,19 +110,28 @@ class LoginForm(BaseForm):
             self.validate_is_true(user.verify_password(self.password), "账号或密码错误")
         setattr(self, "user", user)
 
+class UserForm(pydanticBaseModel):
+    name: str = required_str_field(title="用户名")
+    account: str = required_str_field(title="账号")
+    password: str = required_str_field(title="密码")
+    email: Optional[str] = Field(None, title="邮箱")
+    email_password: Optional[str] = Field(None, title="邮箱密码")
+    role_list: List[int] = required_str_field(title="角色")
+    business_list: List[int] = required_str_field(title="业务线")
+
 
 class CreateUserForm(BaseForm):
     """ 创建用户的验证 """
-    user_list: list = required_str_field(title="用户列表")
+    user_list: List[UserForm] = required_str_field(title="用户列表")
 
     @field_validator("user_list")
     def validate_user_list(cls, value):
         """ 校验用户数据 """
-        name_list, account_list = [], []
+        user_list, name_list, account_list = [], [], []
         for index, user in enumerate(value):
-            name, account, password = user.get("name"), user.get("account"), user.get("password")
-            business_list, role_list = user.get("business_list"), user.get("role_list")
-            email = user.get("email")
+            name, account, password = user.name, user.account, user.password
+            business_list, role_list = user.business_list, user.role_list
+            email = user.email
             if not all((name, account, password, business_list, role_list)):
                 raise ValueError(f'第【{index + 1}】行，数据需填完')
 
@@ -143,7 +152,8 @@ class CreateUserForm(BaseForm):
 
             name_list.append(name)
             account_list.append(account)
-            return value
+            user_list.append(user)
+        return user_list
 
 
 class EditUserForm(GetUserForm):

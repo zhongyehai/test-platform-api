@@ -1,5 +1,7 @@
 # 基于python-flask3.x + SQLAlchemy2.x生态开发的rest风格的测试平台后端
 
+# 此版本暂停更新，最新更新请移步fastapi版本：https://github.com/zhongyehai/test-platform-fastapi-api
+
 ### 截止2023-11-27，有历史数据的用户，执行以下两个步骤
 	1、执行init_sql.py里面的sql语句初始化数据库
 	2、执行数据库迁移那3条命令

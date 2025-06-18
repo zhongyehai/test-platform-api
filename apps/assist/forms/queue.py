@@ -37,7 +37,6 @@ class GetQueueInstanceForm(BaseForm):
 class CreatQueueInstanceForm(BaseForm):
     queue_type: QueueTypeEnum = Field(title="队列类型", description="rocket_mq、rabbit_mq、redis，目前只支持mq")
     instance_id: Optional[str] = Field(None, title="rocket_mq 实例id")
-    name: Optional[str] = Field(None, title="别名")
     host: str = required_str_field(title="地址")
     port: Optional[int] = Field(None, title="端口")
     account: Optional[str] = Field(None, title="rabbit_mq - 账号")
@@ -51,7 +50,6 @@ class EditQueueInstanceForm(GetQueueInstanceForm):
     """ 修改消息队列实例 """
     queue_type: QueueTypeEnum = Field(title="队列类型", description="rocket_mq、rabbit_mq、redis，目前只支持mq")
     instance_id: Optional[str] = Field(None, title="rocket_mq 实例id")
-    name: Optional[str] = Field(None, title="别名")
     host: str = required_str_field(title="地址")
     desc: Optional[str] = Field(None, title="描述")
 

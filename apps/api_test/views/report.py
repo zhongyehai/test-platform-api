@@ -89,6 +89,15 @@ def api_get_report_case():
     return app.restful.get_success(form.report_case.to_dict())
 
 
+@api_test.get("/report/case-filed")
+def api_get_report_case_filed():
+    """ 获取失败的用例id """
+    form = GetReportForm()
+    data = ReportCase.db.session.query(
+        ReportCase.case_id).filter(ReportCase.report_id == form.id, ReportCase.result != 'success').all()
+    return app.restful.get_success([d[0] for d in data])
+
+
 @api_test.get("/report/step-list")
 def api_get_report_step_list():
     """ 报告的步骤列表 """

@@ -778,7 +778,7 @@ class BaseCaseSuite(NumFiled):
         return list(set(case_id_list))
 
 
-class BaseCase(ScriptListFiled, VariablesFiled, SkipIfFiled, NumFiled):
+class BaseCase(VariablesFiled, SkipIfFiled, NumFiled):
     """ 用例基类表 """
 
     __abstract__ = True
@@ -1074,7 +1074,7 @@ class BaseReport(BaseModel):
             "result": "success",
             "stat": {
                 "test_case": {  # 用例维度
-                    "total": 0,  # 初始化的时候给个1，方便用户查看运行中的报告，后续会在流程中更新为实际的total
+                    "total": 0,
                     "success": 0,
                     "fail": 0,
                     "error": 0,

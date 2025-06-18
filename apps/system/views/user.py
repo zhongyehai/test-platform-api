@@ -111,9 +111,10 @@ def system_manage_get_user():
 def system_manage_add_user():
     """ 新增用户 """
     form = CreateUserForm()
-    for user_dict in form.user_list:
-        role_list = user_dict.pop("role_list")
-        user = User.model_create_and_get(user_dict)
+    for user_form in form.user_list:
+        user = dict(user_form)
+        role_list = user.pop("role_list")
+        user = User.model_create_and_get(user)
         user.insert_user_roles(role_list)
     return app.restful.add_success()
 

@@ -98,13 +98,6 @@ class PutRunEnvForm(GetRunEnvForm, RunEnvForm):
         return value
 
 
-class GetEnvGroupForm(BaseForm):
-    """ 获取环境分组 """
-    env_list: list = required_str_field(title="环境")
-    business_list: list = required_str_field(title="业务线")
-    command: str = required_str_field(title="操作类型")  # add、delete
-
-
 class EnvToBusinessForm(BaseForm):
     """ 批量管理环境与业务线的关系 绑定/解除绑定 """
     env_list: list = required_str_field(title="环境")

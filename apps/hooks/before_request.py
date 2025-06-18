@@ -17,7 +17,7 @@ def register_before_hook(app):
 
     @app.before_request
     def set_request_id():
-        g.request_id = uuid.uuid4()
+        g.request_id = request.headers.get("Request-Id") or uuid.uuid4()
 
     @app.before_request
     def parse_request_ip():

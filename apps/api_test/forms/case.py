@@ -118,7 +118,6 @@ class EditCaseForm(GetCaseForm):
     suite_id: int = Field(..., title="用例集id")
     name: str = required_str_field(title="用例名称")
     desc: str = required_str_field(title="用例描述")
-    script_list: List[int] = Field(default=[], title="引用脚本id")
     skip_if: List[SkipIfModel] = required_str_field(title="跳过条件")
     variables: List[VariablesModel] = required_str_field(title="变量")
     headers: List[HeaderModel] = required_str_field(title="头部信息")
@@ -140,7 +139,6 @@ class EditCaseForm(GetCaseForm):
     def validate_script_list(self):
         # 合并项目选择的自定义函数和用例选择的脚本文件
         all_script_list = getattr(self, 'project').script_list
-        all_script_list.extend(self.script_list)
         all_func_name = Script.get_func_by_script_id(all_script_list)
         setattr(self, 'all_func_name', all_func_name)
 
@@ -192,13 +190,11 @@ class RunCaseForm(BaseForm):
                 self.validate_header_format(headers)  # 校验格式
 
             # 2、校验数据引用是否合法
-            suite_id, case_script_list = Case.db.session.query(
-                Case.suite_id, Case.script_list).filter(Case.id == self.id_list[0]).first()
-            project = Project.query.filter(CaseSuite.id == suite_id, Project.id == CaseSuite.project_id).first()
+            suite_id = Case.db.session.query(Case.suite_id).filter(Case.id == self.id_list[0]).first()
+            project = Project.query.filter(CaseSuite.id == suite_id[0], Project.id == CaseSuite.project_id).first()
 
             # 自定义函数
             project_script_id_list = project.script_list
-            project_script_id_list.extend(case_script_list)
             all_func_name = Script.get_func_by_script_id(project_script_id_list)
             self.validate_func(all_func_name, content=self.dumps(variables))  # 校验引用的自定义函数
 
